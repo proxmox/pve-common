@@ -5,7 +5,7 @@ Setup PVE v2 Development Environment
 1.  Install Debian 'squeeze'
 2.  Install prerequisites for development environment:
 
-apt-get -y install build-essential subversion debhelper autotools-dev \
+apt-get -y install build-essential git-core debhelper autotools-dev \
 doxygen check pkg-config libnss3-dev groff quilt dpatch libxml2-dev \
 libncurses5-dev libslang2-dev libldap2-dev xsltproc python-pexpect \
 python-pycurl libdbus-1-dev openipmi sg3-utils libnet-snmp-perl \
@@ -21,23 +21,25 @@ libvncserver0 rpm2cpio  apache2-mpm-prefork libintl-perl \
 libapache2-request-perl libnet-dns-perl vlan libio-socket-ssl-perl \
 libfile-sync-perl ifenslave-2.6 libnet-ldap-perl console-data
 
-3.  Download and install the following svn modules in order from top to bottom:
+3.  Download and install the following git modules in order from top to bottom:
 
-svn://devel.proxmox.com/var/svn/pve/
+# git clone git://git.proxmox.com/git/<PACKAGE.git>
 
-libqb/trunk
-corosync/trunk
-openais/trunk
-pve-common/trunk
-pve-cluster/trunk
-redhat-cluster/trunk
-pve-access-control/trunk
-pve-storage/pve2
-pve-qemu-kvm/pve2
-qemu-server/pve2
-vncterm/pve2
-pve-manager/pve2
-pve-kernel-2.6.32-rh/pve2
+You currently need the following packages:
+
+libqb.git
+corosync-pve.git
+openais-pve.git
+pve-common.git
+pve-cluster.git
+redhat-cluster-pve.git
+pve-access-control.git
+pve-storage.git
+pve-qemu-kvm.git
+qemu-server.git
+vncterm.git
+pve-manager.git
+pve-kernel-2.6.32.git
 
 Most source can be installed with 'make dinstall' command.
 
@@ -48,7 +50,11 @@ Most source can be installed with 'make dinstall' command.
 There is an experimental package containing the API documentation
 as ExtJS application:
 
-pve2-api-doc/trunk
+pve2-api-doc.git
+
+You can view the source code at:
+
+https://git.proxmox.com
 
 
 REST vs. SOAP
