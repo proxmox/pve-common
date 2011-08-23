@@ -1,0 +1,331 @@
+2011-08-17  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/PodParser.pm: split out pod generation code 
+
+2011-08-16  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/JSONSchema.pm (dump_config): a simply way to generate
+	key/value configuration files.
+
+2011-08-15  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/JSONSchema.pm (parse_config): a simply way to verify
+	key/value configuration files.
+
+2011-08-11  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/*: remove useless 'fixme' comments.
+
+	* PVE/Tools.pm (lock_file): removed $text parameter (to simplify
+	code), better timeout error message.
+
+2011-08-10  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/RESTHandler.pm (cli_handler): renamed cli_handler2 to
+	cli_handler.
+
+	* PVE/CLIHandler.pm (print_pod_manpage): add method to generate
+	pod base manual pages (SYNOPSIS is auto generated).
+
+2011-08-05  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/CLIHandler.pm (help): avoid warning on undefined commands
+
+2011-08-02  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/CLIHandler.pm (handle_cmd): auto-complete commands
+
+2011-07-28  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/JSONSchema.pm (get_standard_option): register option
+	'pve-node-list'
+
+	* PVE/Tools.pm (run_command): fix $laststderr (do not suppress
+	last line in some rare cases).
+
+2011-07-14  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (encode_text, decode_text): useful functions to
+	store comments in config files (uri encoding)
+
+2011-07-04  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/JSONSchema.pm (check_format): allow to add '-opt' to format
+	specifier which allows to pass empty strings. For
+	example format 'email' always requires a valid email address,
+	whereas format 'email-opt' also accepts an emtpy string.
+
+2011-06-21  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (run_command): use alarm to impl. timeout
+
+	* PVE/RESTHandler.pm (api_dump): new - used to generate docu
+
+	* PVE/Tools.pm (upid_decode): fix upid parser
+
+2011-05-10  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/RESTHandler.pm (handle): untaint parameters after validate
+
+2011-03-23  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (debmirrors): return list of debian mirrors (per
+	country).
+
+2011-03-21  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/INotify.pm (read_active_workers): simply skip entries we
+	cannot parse, add additional 'id' field to upid
+
+2011-03-18  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (upid_read_status): read/parse last line from
+	worker output file.
+
+2011-03-17  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/INotify.pm (read/write_active_workers): list/update list of
+	active/recent worker processes
+
+2011-03-16  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (upid_*): add code to handle worker processes.
+
+2011-03-14  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (upid_encode,upid_decode): moved from
+	pve-access-control.
+
+2011-03-09  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/ProcFSTools.pm (read_proc_net_dev): first impl.
+
+	* PVE/Tools.pm (df): implement interruptible version of 'df'
+	(workd with timeout on NFS)
+
+2011-03-03  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/ProcFSTools.pm (read_memory_usage): memory usage of current
+	process
+
+2011-02-22  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/JSONSchema.pm (pve_verify_email): verify email address
+
+2011-02-16  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/RPCEnvironment.pm: moved to pve-access-control 
+
+2011-02-15  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (template_replace): support simple uri templates
+
+	* PVE/JSONSchema.pm: add permissions property (path,
+	privs). Allows use to specify required access permissions.
+
+2011-02-14  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/ProcFSTools.pm: impl. new helpers read_loadavg(),
+	read_meminfo() and read_proc_stat().
+
+2011-02-08  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/INotify.pm (update_file): use PVE::Tools, changed interface
+	(update_etc_resolv_conf): do not touch other options (like
+	'sortlist' and 'options'),
+	(read_etc_timezone): add timezone parser
+	(write_etc_timezone): add timezone writer
+
+	* PVE/JSONSchema.pm (pve_verify_ipv4): register IPv4 format.
+
+2011-02-02  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/Tools.pm (next_vnc_port): moved from qemu-server
+
+2011-01-28  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/SafeSyslog.pm (initlog): enable default for facility.
+
+2011-01-25  Proxmox Support Team  <support@proxmox.com>
+
+	* PVE/JSONSchema.pm (get_options): make boolean arguments
+	optional, allow "true|yes|on|false|no|off|0|1"
+
+2011-01-19  root  <root@maui.maurer-it.com>
+
+	* PVE/SafeSyslog.pm (tag): a way to read the log tag
+
+2011-01-12  root  <root@maui.maurer-it.com>
+
+	* INotify.pm (read/write_etc_resolv_conf): functions to read/write
+	resolv.config
+	(nodename): new method to read actual node name (hostname)
+
+2010-11-09  Proxmox Support Team  <support@proxmox.com>
+
+	* JSONSchema.pm (check_type): only allow '0' and '1' for boolean
+	values, because we often use perl directly to test (if
+	($param->{force}) ...)
+
+	* INotify.pm (read_vmlist): add parser for vmlist file.
+
+2010-11-08  Proxmox Support Team  <support@proxmox.com>
+
+	* INotify.pm (read_etc_hostname): impl. read/write /etc/hostname
+
+2010-09-17  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (AUTOLOAD): bug fix.
+	(usage_str): add info about required options.
+
+2010-09-15  Proxmox Support Team  <support@proxmox.com>
+
+	* RPCEnvironment.pm (fork_worker): moved from PVE::Utils
+	(get_remote_node_ip): new helper
+
+	* ProcFSTools.pm (read_proc_starttime): moved from PVE::Utils
+
+2010-09-14  Proxmox Support Team  <support@proxmox.com>
+
+	* JSONSchema.pm (get_standard_option): allow to set defaults.
+
+	* RPCEnvironment.pm (get_nodelist): new helper
+
+	* RESTHandler.pm (register_method): do not validate method (that
+	is too slow - delays startup).
+	(validate_method_schemas): new method to validate all registered
+	methods. We can no do that once when we create a package.
+
+2010-09-13  Proxmox Support Team  <support@proxmox.com>
+
+	* JSONSchema.pm (validate): add minLength/maxLength to the default
+	schema.
+
+2010-09-10  Proxmox Support Team  <support@proxmox.com>
+
+	* INotify.pm (ccache_info): fix serious bug by duplicating cache info
+	entry.
+
+	* CLIHandler.pm (print_usage_short): group command by class
+
+	* JSONSchema.pm (register_standard_option, get_standard_option): a
+	way to register/get commom schemas by name.
+
+	* Tools.pm (extract_param): new helper
+
+	* CLIHandler.pm: new verbose option for help.
+
+	* Tools.pm (kvmkeymaps): moved from PVE::Utils.
+
+	* JSONSchema.pm: add a new attribute caled 'typetext' (any better
+	name?), used to generate nice docs.
+
+2010-09-08  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (usage_str): only print indexed options
+	once (-vlan\d+ -scsi\d+)
+	(usage_str): sort options
+	(usage_str): use Text::Wrap to format output
+
+	* JSONSchema.pm (check_format): revert previous change - to keep
+	it simply
+
+2010-09-07  Proxmox Support Team  <support@proxmox.com>
+
+	* JSONSchema.pm (check_format): return parsed value
+
+	* ProcFSTools.pm: new file - utilities to read /proc/
+
+	* ProcFSTools.pm (get_cpu_info):  read cpu info from /proc
+
+2010-08-27  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (cli_handler2): simplify code - allow to pass
+	optional parameters as arguments.
+	(find_handler): return matched path template as 3rd argument
+
+2010-08-26  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (usage_str): new '$hidepw' parameter to correctly
+	handle hidden password parameter.
+
+	* README.dev: update docu about find_handler() 
+
+	* RESTHandler.pm (find_handler): use '$path' instead of strange
+	'$stack' parameter.
+
+2010-08-25  Proxmox Support Team  <support@proxmox.com>
+
+	* Exception.pm (raise_param_exc): allow to specify usage information.
+
+	* RESTHandler.pm (usage_str): first try to autogenerate usage information.
+	(cli_handler2): experimental code used by new CLIHandler.pm
+
+	* CLIHandler.pm: new class for command line tools like 'pvesm' -
+	automatically create 'help' and usage information.
+
+2010-08-24  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (handle): remove $conn parameter. We use new
+	RPCEnvironment class to pass environment values.
+
+2010-08-20  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (register_method): allow us to use regex in the
+	path template, for example path => '{method:(lvm|iscsi|nfs)}'
+
+	* JSONSchema.pm (validate): new 'fragmentDelimiter' option.
+
+	* RESTHandler.pm (find_handler): remove 'require' - we load
+	statically instead
+
+2010-08-17  Proxmox Support Team  <support@proxmox.com>
+
+	* JSONSchema.pm (get_options): we use option type 's' for boolean
+	values - that way we can pass true and false (and any alias for
+	them)
+
+	* Exception.pm (raise_param_exc): new helper function
+
+2010-08-16  Proxmox Support Team  <support@proxmox.com>
+
+	* Tools.pm (run_command): remove 'ticket' parameter - I think we
+	do not need it.
+	(file_read_firstline): new function to read first line of file -
+	moved fron Storage.pm
+	(trim): new trim() command
+
+	* RESTHandler.pm (handle): remove ugly $resp parameter - we can
+	now use the new Expection object to return better error info.
+
+	* JSONSchema.pm (validate): use new PVE::Exception::raise() in validate()
+
+	* Exception.pm (new): finalize implementation
+
+2010-08-13  Proxmox Support Team  <support@proxmox.com>
+
+	* JSONSchema.pm (register_format): implement a way to register
+	'format' verification methods.
+	(check_format): make it possible to automagically check comman
+	separated lists.
+
+2010-08-12  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (AUTOLOAD): cache autoload
+
+2010-08-11  Proxmox Support Team  <support@proxmox.com>
+
+	* RESTHandler.pm (cli_handler): helper function to call method
+	directly, parsing command line args using new JSONSchema::get_options()
+
+	* JSONSchema.pm (get_options): a way to parse command line
+	parameters, using a schema to configure Getopt::Long
+
+2010-08-10  Proxmox Support Team  <support@proxmox.com>
+
+	* INotify.pm (parse_ccache_options): new shadow option
+	(parse_ccache_options): new perm option (set file perm (example
+	0664));
+	(write_file): do not use PVE::AtomicFile, correctly set file
+	permissions
+

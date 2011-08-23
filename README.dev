@@ -1,0 +1,198 @@
+====================================
+Setup PVE v2 Development Environment
+====================================
+
+1.  Install Debian 'squeeze'
+2.  Install prerequisites for development environment:
+
+apt-get -y install build-essential subversion debhelper autotools-dev \
+doxygen check pkg-config libnss3-dev groff quilt dpatch libxml2-dev \
+libncurses5-dev libslang2-dev libldap2-dev xsltproc python-pexpect \
+python-pycurl libdbus-1-dev openipmi sg3-utils libnet-snmp-perl \
+libnet-telnet-perl snmp python-openssl libxml2-utils automake autoconf \
+libsqlite3-dev sqlite3 libfuse-dev libglib2.0-dev librrd-dev \
+librrds-perl rrdcached lintian libdevel-cycle-perl libjson-perl \
+liblinux-inotify2-perl libio-stringy-perl unzip fuse-utils \
+libcrypt-openssl-random-perl libcrypt-openssl-rsa-perl \
+libauthen-pam-perl libterm-readline-gnu-perl libssl-dev open-iscsi \
+libapache2-mod-perl2 libfilesys-df-perl libfile-readbackwards-perl \
+libpci-dev texi2html libgnutls-dev libsdl1.2-dev bridge-utils \
+libvncserver0 rpm2cpio  apache2-mpm-prefork libintl-perl \
+libapache2-request-perl libnet-dns-perl vlan libio-socket-ssl-perl \
+libfile-sync-perl ifenslave-2.6 libnet-ldap-perl console-data
+
+3.  Download and install the following svn modules in order from top to bottom:
+
+svn://devel.proxmox.com/var/svn/pve/
+
+libqb/trunk
+corosync/trunk
+openais/trunk
+pve-common/trunk
+pve-cluster/trunk
+redhat-cluster/trunk
+pve-access-control/trunk
+pve-storage/pve2
+pve-qemu-kvm/pve2
+qemu-server/pve2
+vncterm/pve2
+pve-manager/pve2
+pve-kernel-2.6.32-rh/pve2
+
+Most source can be installed with 'make dinstall' command.
+
+4.  Reboot the system.
+5.  Learn to use the quilt patch scripts.
+6.  Happy coding.
+
+There is an experimental package containing the API documentation
+as ExtJS application:
+
+pve2-api-doc/trunk
+
+
+REST vs. SOAP
+=============
+
+We decided to change our SOAP API (1.X) and use a REST like API. The
+concept is described in [1] (Resource Oriented Architecture
+(ROA)). The main advantage is that we are able to remove a lot of code
+(the whole SOAP stack) to reduce software complexity.
+
+We also moved away from server side content generation. Instead we use
+the ExtJS Rich Internet Application Framework
+(http://www.sencha.com). 
+
+That framework, like any other AJAX toolkit, can talk directly to the
+REST API using JSON. So we were able to remove the server side
+template toolkit completely.
+
+JSON and JSON Schema
+====================
+
+We use JSON as data format, because it is simple and parse-able by any
+web browser.
+
+Additionally, we use JSON Schema [2] to formally describe our API. So
+we can automatically generate the whole API Documentation, and we can
+verify all parameters and return values.
+
+An great side effect was that we are able to use JSON Schema to
+produce command line argument parsers automatically. In fact, the REST
+API and the command line tools use the same code.
+
+Object linkage is done using the JSON Hyper Schema (links property).
+
+A small utility called 'pvesh' exposes the whole REST API on the command
+line.
+
+So here is a summary of the advantage:
+
+   - easy, human readable data format (native web browser format)
+   - automatic parameter verification (we can also verify return values)
+   - automatic generation of API documentation
+   - easy way to create command line tools (using same API).
+
+API Implementation (PVE::RESTHandler)
+=====================================
+
+All classes exposing methods on the API use PVE::RESTHandler as base class.
+
+  use base qw(PVE::RESTHandler);
+
+To expose methods, one needs to call register_method():
+
+  __PACKAGE__->register_method ($schema);
+
+Where $schema is a PVE method schema as described in
+PVE::JSONSchema. It includes a description of parameters and return
+values, and a reference to the actual code
+
+__PACKAGE__->register_method ({
+    name => 'echo', 
+    path => 'echo', 
+    method => 'GET',
+    description => "simple return value of parameter 'text'",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    text => {
+	    	 type => 'string',
+	    }	  
+	},
+    },
+    returns => {
+	type => 'string',
+    },
+    code => sub {
+	my ($conn, $resp, $param) = @_;
+
+	return $param->{text};
+    }
+});
+
+The 'name' property is only used if you want to call the method
+directly from Perl. You can do that using:
+
+  print __PACKAGE__->echo({ text => "a test" });
+
+We use Perl's AUTOLOAD feature to implement this. Note: You need to
+pass parameters a HASH reference.
+
+There is a special helper method called cli_handler(). This is used by
+the CLIHandler Class for command line tools, where you want to pass
+arguments as array of strings. This uses Getopt::Long to parse parameters.
+
+There is a second way to map names to methods - using the 'path'
+property.  And you can register subclasses. That way you can set up a
+filesystem like hierarchy to access methods. 
+
+Here is an example:
+----------------------------
+package C1;
+
+__PACKAGE__->register_method ({
+    subclass => "C2",  
+    path => 'sub2',
+});
+
+
+__PACKAGE__->register_method ({
+    name => 'list1',    
+    path => 'index',
+    method => 'GET',
+    ...
+});
+
+package C2;
+
+__PACKAGE__->register_method ({
+    name => 'list2',    
+    path => 'index',
+    method => 'GET',
+    ...
+});
+-------------------------------
+
+The utily method find_handler (in PVE::RESTHandler) can be use to do
+'path' related method lookups.
+
+C1->find_handler('GET', "/index")      => C1::list1
+C1->find_handler('GET', "/sub2/index") => C2::list2
+
+The HTTP server use the URL (a path) to find the corresponding method. 
+
+
+References
+==========
+[1] RESTful Web Services
+Web services for the real world
+
+By
+    Leonard Richardson, Sam Ruby
+Publisher:
+    O'Reilly Media
+Released:
+    May 2007 
+
+[2] JSON Schema links: http://json-schema.org/
