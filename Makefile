@@ -25,8 +25,8 @@ dinstall: deb
 .PHONY: deb
 deb ${DEB}: 
 	rm -rf build
-	rsync -a --exclude .svn data/ build
-	rsync -a --exclude .svn debian/ build/debian
+	rsync -a data/ build
+	rsync -a debian/ build/debian
 	cd build; dpkg-buildpackage -rfakeroot -b -us -uc
 	lintian ${DEB}
 
