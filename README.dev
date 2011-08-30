@@ -40,6 +40,7 @@ qemu-server.git
 vncterm.git
 pve-manager.git
 pve-kernel-2.6.32.git
+fence-agents-pve.git
 
 Most source can be installed with 'make dinstall' command.
 
