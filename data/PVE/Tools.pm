@@ -212,7 +212,7 @@ sub run_command {
 	my $orig_pid = $$;
 
 	eval {
-	    local $ENV{LANG} = $lang;
+	    local $ENV{LC_ALL} = $lang;
 
 	    # suppress LVM warnings like: "File descriptor 3 left open";
 	    local $ENV{LVM_SUPPRESS_FD_WARNINGS} = "1";
