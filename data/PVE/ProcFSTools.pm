@@ -10,22 +10,16 @@ my $clock_ticks = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
 my $cpuinfo;
 
-# cycles_per_jiffy = frequency_of_your_cpu/jiffies_per_second
-# jiffies_per_second = 1000
-
-# frequency_of_your_cpu can be read from /proc/cpuinfo, as:
-# cpu MHz : <frequency_of_your_cpu>
-
 sub read_cpuinfo {
     my $fn = '/proc/cpuinfo';
 
     return $cpuinfo if $cpuinfo;
 
     my $res = {
+	user_hz => $clock_ticks,
 	model => 'unknown',
 	mhz => 0,
 	cpus => 1,
-	cpu_cycles_per_jiffy => 0,
     };
 
     my $fh = IO::File->new ($fn, "r");
@@ -39,7 +33,6 @@ sub read_cpuinfo {
 	    $res->{model} = $1 if $res->{model} eq 'unknown';
 	} elsif ($line =~ m/^cpu\s+MHz\s*:\s*(\d+\.\d+)\s*$/i) {
 	    $res->{mhz} = $1 if !$res->{mhz};
-	    $res->{cpu_cycles_per_jiffy} += $1 * 1000;
 	} elsif ($line =~ m/^flags\s*:.*(vmx|svm)/) {
 	    $res->{hvm} = 1; # Hardware Virtual Machine (Intel VT / AMD-V)
 	}
