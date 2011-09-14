@@ -53,7 +53,7 @@ sub read_proc_uptime {
     my $line = PVE::Tools::file_read_firstline("/proc/uptime");
     if ($line && $line =~ m|^(\d+\.\d+)\s+(\d+\.\d+)\s*$|) {
 	if ($ticks) {
-	    return (int($1*100), int($2*100));
+	    return (int($1*$clock_ticks), int($2*$clock_ticks));
 	} else {
 	    return (int($1), int($2));
 	}
@@ -124,18 +124,43 @@ sub read_proc_stat {
     return $res;
 }
 
-sub read_proc_starttime {
+sub read_proc_pid_stat {
     my $pid = shift;
 
     my $statstr = PVE::Tools::file_read_firstline("/proc/$pid/stat");
 
-    if ($statstr && $statstr =~ m/^$pid \(.*\) \S (-?\d+) -?\d+ -?\d+ -?\d+ -?\d+ \d+ \d+ \d+ \d+ \d+ (\d+) (\d+) (-?\d+) (-?\d+) -?\d+ -?\d+ -?\d+ 0 (\d+) (\d+) (-?\d+) \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ -?\d+ -?\d+ \d+ \d+ \d+/) {
-	my $starttime = $6;
-
-	return $starttime;
+    if ($statstr && $statstr =~ m/^$pid \(.*\) (\S) (-?\d+) -?\d+ -?\d+ -?\d+ -?\d+ \d+ \d+ \d+ \d+ \d+ (\d+) (\d+) (-?\d+) (-?\d+) -?\d+ -?\d+ -?\d+ 0 (\d+) (\d+) (-?\d+) \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ -?\d+ -?\d+ \d+ \d+ \d+/) {
+	return {
+	    status => $1,
+	    utime => $3,
+	    stime => $4,
+	    starttime => $7,
+	    vsize => $8,
+	    rss => $9 * 4096,
+	};
     }
 
-    return 0;
+    return undef;
+}
+
+sub check_process_running {
+    my ($pid, $pstart) = @_;
+
+    # note: waitpid only work for child processes, but not
+    # for processes spanned by other processes.
+    # kill(0, pid) return succes for zombies.
+    # So we read the status form /proc/$pid/stat instead
+ 
+    my $info = read_proc_pid_stat($pid);
+ 
+    return $info && ($info->{starttime} eq $pstart) && ($info->{status} ne 'Z') ? $info : undef;
+}
+
+sub read_proc_starttime {
+    my $pid = shift;
+
+    my $info = read_proc_pid_stat($pid);
+    return $info ? $info->{starttime} : 0;
 }
 
 sub read_meminfo {
