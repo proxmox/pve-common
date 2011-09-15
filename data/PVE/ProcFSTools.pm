@@ -153,7 +153,7 @@ sub check_process_running {
  
     my $info = read_proc_pid_stat($pid);
  
-    return $info && ($info->{starttime} eq $pstart) && ($info->{status} ne 'Z') ? $info : undef;
+    return $info && (!$pstart || ($info->{starttime} eq $pstart)) && ($info->{status} ne 'Z') ? $info : undef;
 }
 
 sub read_proc_starttime {
