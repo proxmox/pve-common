@@ -33,6 +33,7 @@ openais-pve.git
 pve-common.git
 pve-cluster.git
 redhat-cluster-pve.git
+lvm.git
 pve-access-control.git
 pve-storage.git
 pve-qemu-kvm.git
