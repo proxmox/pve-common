@@ -19,7 +19,8 @@ libapache2-mod-perl2 libfilesys-df-perl libfile-readbackwards-perl \
 libpci-dev texi2html libgnutls-dev libsdl1.2-dev bridge-utils \
 libvncserver0 rpm2cpio  apache2-mpm-prefork libintl-perl \
 libapache2-request-perl libnet-dns-perl vlan libio-socket-ssl-perl \
-libfile-sync-perl ifenslave-2.6 libnet-ldap-perl console-data
+libfile-sync-perl ifenslave-2.6 libnet-ldap-perl console-data \
+libtool dietlibc-dev
 
 3.  Download and install the following git modules in order from top to bottom:
 
