@@ -39,6 +39,7 @@ pve-storage.git
 pve-qemu-kvm.git
 qemu-server.git
 vncterm.git
+vzctl.git
 pve-manager.git
 pve-kernel-2.6.32.git
 fence-agents-pve.git
