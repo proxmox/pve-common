@@ -12,6 +12,7 @@ use Fcntl qw(:DEFAULT :flock);
 use base 'Exporter';
 use URI::Escape;
 use Encode;
+use Digest::SHA1;
 
 our @EXPORT_OK = qw(
 lock_file 
@@ -635,5 +636,27 @@ sub decode_text {
     return Encode::decode("utf8", uri_unescape($data));
 }
 
+sub random_ether_addr {
+
+    my $rand = Digest::SHA1::sha1_hex(rand(), time());
+
+    my $mac = '';
+    for (my $i = 0; $i < 6; $i++) {
+	my $ss = hex(substr($rand, $i*2, 2));
+	if (!$i) {
+	    $ss &= 0xfe; # clear multicast
+	    $ss |= 2; # set local id
+	}
+	$ss = sprintf("%02X", $ss);
+
+	if (!$i) {
+	    $mac .= "$ss";
+	} else {
+	    $mac .= ":$ss";
+	}
+    }
+
+    return $mac;
+}
 
 1;
