@@ -351,7 +351,9 @@ sub run_command {
 sub split_list {
     my $listtxt = shift || '';
 
-    $listtxt =~ s/[,;\0]/ /g;
+    return split (/\0/, $listtxt) if $listtxt =~ m/\0/;
+    
+    $listtxt =~ s/[,;]/ /g;
     $listtxt =~ s/^\s+//;
 
     my @data = split (/\s+/, $listtxt);
