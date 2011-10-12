@@ -187,9 +187,42 @@ sub handle_cmd {
 
     my $prefix = "$exename $cmd";
     my $res = $class->cli_handler($prefix, $name, \@ARGV, $arg_param, $uri_param, $pwcallback);
-    if ($outsub) {
-	&$outsub($res);
+
+    &$outsub($res) if $outsub;
+}
+
+sub handle_simple_cmd {
+    my ($def, $args, $pwcallback, $podfn) = @_;
+
+    my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def};
+    die "no class specified" if !$class;
+
+    if (scalar(@$args) == 1) {
+	if ($args->[0] eq 'help') {
+	    my $str = "USAGE: $name help\n";
+	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long');
+	    print STDERR "$str\n\n";
+	    return;
+	} elsif ($args->[0] eq 'verifyapi') {
+	    PVE::RESTHandler::validate_method_schemas();
+	    return;
+	} elsif ($args->[0] eq 'printmanpod') {
+	    my $synopsis = " $name help\n\n";
+	    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long');
+	    $str =~ s/^USAGE://;
+	    $str =~ s/\n/\n /g;
+	    $synopsis .= $str;
+
+	    my $parser = PVE::PodParser->new();
+	    $parser->{include}->{synopsis} = $synopsis;
+	    $parser->parse_from_file($podfn);
+	    return;
+	}
     }
+
+    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $pwcallback);
+
+    &$outsub($res) if $outsub;
 }
 
 1;
