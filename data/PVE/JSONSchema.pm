@@ -82,6 +82,9 @@ sub register_format {
 }
 
 # register some common type for pve
+
+register_format('string', sub {}); # allow format => 'string-list'
+
 register_format('pve-configid', \&pve_verify_configid);
 sub pve_verify_configid {
     my ($id, $noerr) = @_;
@@ -867,7 +870,11 @@ sub get_options {
 	} elsif ($pd->{type} eq 'boolean') {
 	    push @getopt, "$prop:s";
 	} else {
-	    push @getopt, "$prop=s";
+	    if ($pd->{format} && $pd->{format} =~ m/-list/) {
+		push @getopt, "$prop=s@";
+	    } else {
+		push @getopt, "$prop=s";
+	    }
 	}
     }
 
@@ -897,6 +904,22 @@ sub get_options {
 		    $opts->{$p} = 0;
 		} else {
 		    raise("unable to parse boolean option\n", code => HTTP_BAD_REQUEST);
+		}
+	    } elsif ($pd->{format} && $pd->{format} =~ m/-list/) {
+
+		if ($pd->{format} eq 'pve-vmid-list') {
+		    # allow --vmid 100 --vmid 101 and --vmid 100,101
+		    $opts->{$p} = join(",", @{$opts->{$p}});
+		} else {
+		    # we encode array as \0 separated strings
+		    # Note: CGI.pm also use this encoding
+		    if (scalar(@{$opts->{$p}}) != 1) {
+			$opts->{$p} = join("\0", @{$opts->{$p}});
+		    } else {
+			# st that split_list knows it is \0 terminated
+			my $v = $opts->{$p}->[0];
+			$opts->{$p} = "$v\0";
+		    }
 		}
 	    }
 	}	
