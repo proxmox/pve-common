@@ -15,6 +15,11 @@ use HTTP::Status qw(:constants);
 @ISA = qw(Exporter);
 
 use overload '""' => sub {local $@; shift->stringify};
+use overload 'cmp' => sub {
+    my ($a, $b) = @_;
+    local $@;  
+    return "$a" cmp "$b"; # compare as string
+};
 
 @EXPORT_OK = qw(raise raise_param_exc);
 
