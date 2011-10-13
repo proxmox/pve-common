@@ -177,11 +177,8 @@ sub run_command {
     my $pid;
 
     eval {
-	my $reader = IO::File->new();
-	my $writer = IO::File->new();
-	my $error  = IO::File->new();
-
 	my $input;
+	my $output;
 	my $outfunc;
 	my $errfunc;
 
@@ -198,6 +195,8 @@ sub run_command {
 		};
 	    } elsif ($p eq 'input') {
 		$input = $param{$p};
+	    } elsif ($p eq 'output') {
+		$output = $param{$p};
 	    } elsif ($p eq 'outfunc') {
 		$outfunc = $param{$p};
 	    } elsif ($p eq 'errfunc') {
@@ -206,6 +205,10 @@ sub run_command {
 		die "got unknown parameter '$p' for run_command\n";
 	    }
 	}
+
+	my $reader = $output && $output =~ m/^>&/ ? $output : IO::File->new();
+	my $writer = $input && $input =~ m/^<&/ ? $input : IO::File->new();
+	my $error  = IO::File->new();
 
 	# try to avoid locale related issues/warnings
 	my $lang = $param{lang} || 'C'; 
@@ -312,12 +315,14 @@ sub run_command {
 	} elsif (my $sig = ($? & 127)) {
 	    die "got signal $sig\n";
 	} elsif (my $ec = ($? >> 8)) {
-	    if ($errmsg && $laststderr) {
-		my $lerr = $laststderr;
-		$laststderr = undef;
-		die "$lerr\n";
+	    if (!($ec == 24 && ($cmdstr =~ m|^(\S+/)?rsync\s|))) {
+		if ($errmsg && $laststderr) {
+		    my $lerr = $laststderr;
+		    $laststderr = undef;
+		    die "$lerr\n";
+		}
+		die "exit code $ec\n";
 	    }
-	    die "exit code $ec\n";
 	}
 
         alarm(0);
@@ -346,6 +351,8 @@ sub run_command {
 	    die "command '$cmdstr' failed: $err";
 	}
     }
+
+    return undef;
 }
 
 sub split_list {
