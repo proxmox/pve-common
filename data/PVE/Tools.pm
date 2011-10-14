@@ -181,6 +181,7 @@ sub run_command {
 	my $output;
 	my $outfunc;
 	my $errfunc;
+	my $logfunc;
 
 	foreach my $p (keys %param) {
 	    if ($p eq 'timeout') {
@@ -201,6 +202,8 @@ sub run_command {
 		$outfunc = $param{$p};
 	    } elsif ($p eq 'errfunc') {
 		$errfunc = $param{$p};
+	    } elsif ($p eq 'logfunc') {
+		$logfunc = $param{$p};
 	    } else {
 		die "got unknown parameter '$p' for run_command\n";
 	    }
@@ -264,12 +267,13 @@ sub run_command {
 		}
 		$select->remove ($h) if !$count;
 		if ($h eq $reader) {
-		    if ($outfunc) {
+		    if ($outfunc || $logfunc) {
 			eval {
 			    $outlog .= $buf;
 			    while ($outlog =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//s) {
 				my $line = $1;
-				&$outfunc($line);
+				&$outfunc($line) if $outfunc;
+				&$logfunc($line) if $logfunc;
 			    }
 			};
 			my $err = $@;
@@ -283,12 +287,13 @@ sub run_command {
 			*STDOUT->flush();
 		    }
 		} elsif ($h eq $error) {
-		    if ($errfunc) {
+		    if ($errfunc || $logfunc) {
 			eval {
 			    $errlog .= $buf;
 			    while ($errlog =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//s) {
 				my $line = $1;
-				&$errfunc($line);
+				&$errfunc($line) if $errfunc;
+				&$logfunc($line) if $logfunc;
 			    }
 			};
 			my $err = $@;
@@ -306,7 +311,10 @@ sub run_command {
 	}
 
 	&$outfunc($outlog) if $outfunc && $outlog;
+	&$logfunc($outlog) if $logfunc && $outlog;
+
 	&$errfunc($errlog) if $errfunc && $errlog;
+	&$logfunc($errlog) if $logfunc && $errlog;
 
 	waitpid ($pid, 0);
   
