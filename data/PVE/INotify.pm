@@ -616,7 +616,7 @@ sub read_active_workers {
 
     my $res = []; 
     while (defined (my $line = <$fh>)) {
-	if ($line =~ m/^(\S+)\s(0|1)(\s([0-9A-Za-z]{8})(\s(\S.*))?)?$/) {
+	if ($line =~ m/^(\S+)\s(0|1)(\s([0-9A-Za-z]{8})(\s(\s*\S.*))?)?$/) {
 	    my $upid = $1;
 	    my $saved = $2;
 	    my $endtime = $4;
