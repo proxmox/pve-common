@@ -860,7 +860,7 @@ sub get_options {
     my @getopt = ();
     foreach my $prop (keys %{$schema->{properties}}) {
 	my $pd = $schema->{properties}->{$prop};
-	next if $prop eq $list_param;
+	next if $list_param && $prop eq $list_param;
 	next if defined($uri_param->{$prop});
 
 	if ($prop eq 'password' && $pwcallback) {
