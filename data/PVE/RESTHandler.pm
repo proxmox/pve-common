@@ -344,7 +344,8 @@ sub handle {
 #
 # $name        ... the name of the method
 # $prefix      ... usually something like "$exename $cmd" ('pvesm add')
-# $arg_param   ... list of parameters we want to get as ordered arguments on the command line
+# $arg_param   ... list of parameters we want to get as ordered arguments 
+#                  on the command line (or single parameter name for lists)
 # $fixed_param ... do not generate and info about those parameters
 # $format:
 #   'long'     ... default (list all options)
@@ -365,12 +366,20 @@ sub usage_str {
     my $arg_hash = {};
 
     my $args = '';
+
+    $arg_param = [ $arg_param ] if $arg_param && !ref($arg_param);
+
     foreach my $p (@$arg_param) {
 	next if !$prop->{$p}; # just to be sure
+	my $pd = $prop->{$p};
 
 	$arg_hash->{$p} = 1;
 	$args .= " " if $args;
-	$args .= $prop->{$p} && $prop->{$p}->{optional} ? "[<$p>]" : "<$p>";
+	if ($pd->{format} && $pd->{format} =~ m/-list/) {
+	    $args .= "{<vmid>}";
+	} else {
+	    $args .= $pd->{optional} ? "[<$p>]" : "<$p>";
+	}
     }
 
     my $get_prop_descr = sub {
@@ -473,13 +482,23 @@ sub cli_handler {
 	$param->{$p} = $fixed_param->{$p};
     }
 
-    foreach my $p (@$arg_param) {
-	$param->{$p} = shift @$args if $args->[0] && $args->[0] !~ m/^-/;
+    my $list_param;
+    if ($arg_param) {
+	if (ref($arg_param)) {
+	    foreach my $p (@$arg_param) {
+		$param->{$p} = shift @$args if $args->[0] && $args->[0] !~ m/^-/;
+	    }
+	} else {
+	    my $pd = $info->{parameters}->{properties}->{$arg_param};
+	    die "expected list format $pd->{format}"
+		if !($pd && $pd->{format} && $pd->{format} =~ m/-list/);
+	    $list_param = $arg_param;
+	}
     }
 
     my $res;
     eval {
-	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $param, $pwcallback);
+	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $param, $pwcallback, $list_param);
 
 	$res = $self->handle($info, $param);
     };

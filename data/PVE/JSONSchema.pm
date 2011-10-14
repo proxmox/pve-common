@@ -849,7 +849,7 @@ sub method_get_child_link {
 # a way to parse command line parameters, using a 
 # schema to configure Getopt::Long
 sub get_options {
-    my ($schema, $args, $uri_param, $pwcallback) = @_;
+    my ($schema, $args, $uri_param, $pwcallback, $list_param) = @_;
 
     if (!$schema || !$schema->{properties}) {
 	raise("too many arguments\n", code => HTTP_BAD_REQUEST)
@@ -860,6 +860,7 @@ sub get_options {
     my @getopt = ();
     foreach my $prop (keys %{$schema->{properties}}) {
 	my $pd = $schema->{properties}->{$prop};
+	next if $prop eq $list_param;
 	next if defined($uri_param->{$prop});
 
 	if ($prop eq 'password' && $pwcallback) {
@@ -882,6 +883,14 @@ sub get_options {
     raise("unable to parse option\n", code => HTTP_BAD_REQUEST)
 	if !Getopt::Long::GetOptionsFromArray($args, $opts, @getopt);
     
+    if ($list_param) {
+	my $pd = $schema->{properties}->{$list_param} ||
+	    die "no schema for list_param";
+
+	$opts->{$list_param} = $args;
+	$args = [];
+    }
+
     raise("too many arguments\n", code => HTTP_BAD_REQUEST)
 	if scalar(@$args) != 0;
 
