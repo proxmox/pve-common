@@ -225,6 +225,15 @@ sub run_command {
 	    local $ENV{LVM_SUPPRESS_FD_WARNINGS} = "1";
 
 	    $pid = open3($writer, $reader, $error, @$cmd) || die $!;
+
+	    # if we pipe fron STDIN, open3 closes STDIN, so we we
+	    # a perl warning "Filehandle STDIN reopened as GENXYZ .. "
+	    # as soon as we open a new file.
+	    # to avoid that we open /dev/null
+	    if (!ref($writer) && !defined(fileno(STDIN))) {
+		POSIX::close(0);
+		open(STDIN, "</dev/null");
+	    }
 	};
 
 	my $err = $@;
@@ -241,11 +250,13 @@ sub run_command {
 	local $SIG{ALRM} = sub { die "got timeout\n"; } if $timeout;
 	$oldtimeout = alarm($timeout) if $timeout;
 
-	print $writer $input if defined $input;
-	close $writer;
+	if (ref($writer)) {
+	    print $writer $input if defined $input;
+	    close $writer;
+	}
 
 	my $select = new IO::Select;
-	$select->add($reader);
+	$select->add($reader) if ref($reader);
 	$select->add($error);
 
 	my $outlog = '';
