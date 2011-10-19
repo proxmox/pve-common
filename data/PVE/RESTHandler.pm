@@ -486,7 +486,7 @@ sub cli_handler {
     if ($arg_param) {
 	if (ref($arg_param)) {
 	    foreach my $p (@$arg_param) {
-		$param->{$p} = shift @$args if $args->[0] && $args->[0] !~ m/^-/;
+		$param->{$p} = shift @$args if $args->[0] && $args->[0] !~ m/^-\S/;
 	    }
 	} else {
 	    my $pd = $info->{parameters}->{properties}->{$arg_param};
