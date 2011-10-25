@@ -687,4 +687,26 @@ sub random_ether_addr {
     return $mac;
 }
 
+sub shellquote {
+    my $str = shift;
+
+    return "''" if !defined ($str) || ($str eq '');
+    
+    die "unable to quote string containing null (\\000) bytes"
+	if $str =~ m/\x00/;
+
+    # from String::ShellQuote
+    if ($str =~ m|[^\w!%+,\-./:@^]|) {
+
+	# ' -> '\''
+	$str =~ s/'/'\\''/g;
+
+	$str = "'$str'";
+	$str =~ s/^''//;
+	$str =~ s/''$//;
+    }
+
+    return $str;
+}
+
 1;
