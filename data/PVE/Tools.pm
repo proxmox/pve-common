@@ -13,6 +13,7 @@ use base 'Exporter';
 use URI::Escape;
 use Encode;
 use Digest::SHA1;
+use Text::ParseWords;
 
 our @EXPORT_OK = qw(
 lock_file 
@@ -709,30 +710,11 @@ sub shellquote {
     return $str;
 }
 
-# a clumsy way to split an shell argument string into an array,
-# we simply pass it to the cli (exec call)
-# fixme: use Text::ParseWords::shellwords() ?
+# split an shell argument string into an array,
 sub split_args {
     my ($str) = @_;
 
-    my $args = [];
-
-    return $args if !$str;
-
-    my $cmd = 'perl -e \'foreach my $a (@ARGV) { print "$a\n"; } \' -- ' . $str;
-
-    eval {
-	run_command($cmd, outfunc => sub {
-	    my $data = shift;
-	    push @$args, $data;
-	});
-    };
-
-    my $err = $@;
-
-    die "unable to parse args: $str\n" if $err;
-
-    return $args;
+    return $str ? [ Text::ParseWords::shellwords($str) ] : [];
 }
 
 1;
