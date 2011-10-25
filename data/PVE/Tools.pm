@@ -14,6 +14,7 @@ use URI::Escape;
 use Encode;
 use Digest::SHA1;
 use Text::ParseWords;
+use String::ShellQuote;
 
 our @EXPORT_OK = qw(
 lock_file 
@@ -691,23 +692,7 @@ sub random_ether_addr {
 sub shellquote {
     my $str = shift;
 
-    return "''" if !defined ($str) || ($str eq '');
-    
-    die "unable to quote string containing null (\\000) bytes"
-	if $str =~ m/\x00/;
-
-    # from String::ShellQuote
-    if ($str =~ m|[^\w!%+,\-./:@^]|) {
-
-	# ' -> '\''
-	$str =~ s/'/'\\''/g;
-
-	$str = "'$str'";
-	$str =~ s/^''//;
-	$str =~ s/''$//;
-    }
-
-    return $str;
+    return String::ShellQuote::shell_quote($str);
 }
 
 # split an shell argument string into an array,
