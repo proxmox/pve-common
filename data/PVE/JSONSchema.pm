@@ -173,7 +173,7 @@ sub check_format {
 
     return if $format eq 'regex';
 
-    if ($format =~ m/^(.*)-list$/) {
+    if ($format =~ m/^(.*)-a?list$/) {
 	
 	my $code = $format_list->{$1};
 
@@ -871,7 +871,7 @@ sub get_options {
 	} elsif ($pd->{type} eq 'boolean') {
 	    push @getopt, "$prop:s";
 	} else {
-	    if ($pd->{format} && $pd->{format} =~ m/-list/) {
+	    if ($pd->{format} && $pd->{format} =~ m/-a?list/) {
 		push @getopt, "$prop=s@";
 	    } else {
 		push @getopt, "$prop=s";
@@ -914,12 +914,13 @@ sub get_options {
 		} else {
 		    raise("unable to parse boolean option\n", code => HTTP_BAD_REQUEST);
 		}
-	    } elsif ($pd->{format} && $pd->{format} =~ m/-list/) {
+	    } elsif ($pd->{format}) {
 
-		if ($pd->{format} eq 'pve-vmid-list') {
+		if ($pd->{format} =~ m/-list/) {
 		    # allow --vmid 100 --vmid 101 and --vmid 100,101
+		    # allow --dow mon --dow fri and --dow mon,fri
 		    $opts->{$p} = join(",", @{$opts->{$p}});
-		} else {
+		} elsif ($pd->{format} =~ m/-alist/) {
 		    # we encode array as \0 separated strings
 		    # Note: CGI.pm also use this encoding
 		    if (scalar(@{$opts->{$p}}) != 1) {
