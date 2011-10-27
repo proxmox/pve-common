@@ -620,7 +620,7 @@ sub upid_open {
  
     my $outfh = IO::File->new ($filename, O_WRONLY|O_CREAT|O_EXCL, $perm) ||
 	die "unable to create output file '$filename' - $!\n";
-    chown $wwwid, $outfh;
+    chown $wwwid, -1, $outfh;
 
     return $outfh;
 };
