@@ -702,4 +702,41 @@ sub split_args {
     return $str ? [ Text::ParseWords::shellwords($str) ] : [];
 }
 
+sub dump_logfile {
+    my ($filename, $start, $limit) = @_;
+
+    my $lines = [];
+    my $count = 0;
+
+    my $fh = IO::File->new($filename, "r");
+    if (!$fh) { 
+	$count++;
+	push @$lines, { n => $count, t => "unable to open file - $!"};
+	return ($count, $lines);
+    }
+
+    $start = 0 if !$start;
+    $limit = 50 if !$limit;
+
+    my $line;
+    while (defined($line = <$fh>)) {
+	next if $count++ < $start;
+	next if $limit <= 0;
+	chomp $line;
+	push @$lines, { n => $count, t => $line};
+	$limit--;
+    }
+
+    close($fh);
+
+    # HACK: ExtJS store.guaranteeRange() does not like empty array
+    # so we add a line
+    if (!$count) {
+	$count++;
+	push @$lines, { n => $count, t => "no content"};
+    }
+
+    return ($count, $lines);
+}
+
 1;
