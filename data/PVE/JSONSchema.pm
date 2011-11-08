@@ -887,7 +887,7 @@ sub get_options {
 	my $pd = $schema->{properties}->{$list_param} ||
 	    die "no schema for list_param";
 
-	$opts->{$list_param} = $args;
+	$opts->{$list_param} = $args if scalar($args);
 	$args = [];
     }
 
