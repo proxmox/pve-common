@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-7) unstable; urgency=low
+
+  * bug fixes (see git log)
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 09 Nov 2011 10:07:38 +0100
+
 libpve-common-perl (1.0-6) unstable; urgency=low
 
   * add PVE::Tools::random_ether_addr()
