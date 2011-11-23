@@ -849,7 +849,7 @@ sub method_get_child_link {
 # a way to parse command line parameters, using a 
 # schema to configure Getopt::Long
 sub get_options {
-    my ($schema, $args, $uri_param, $pwcallback, $list_param) = @_;
+    my ($schema, $args, $arg_param, $fixed_param, $pwcallback) = @_;
 
     if (!$schema || !$schema->{properties}) {
 	raise("too many arguments\n", code => HTTP_BAD_REQUEST)
@@ -857,11 +857,19 @@ sub get_options {
 	return {};
     }
 
+    my $list_param;
+    if ($arg_param && !ref($arg_param)) {
+	my $pd = $schema->{properties}->{$arg_param};
+	die "expected list format $pd->{format}"
+	    if !($pd && $pd->{format} && $pd->{format} =~ m/-list/);
+	$list_param = $arg_param;
+    }
+
     my @getopt = ();
     foreach my $prop (keys %{$schema->{properties}}) {
 	my $pd = $schema->{properties}->{$prop};
 	next if $list_param && $prop eq $list_param;
-	next if defined($uri_param->{$prop});
+	next if defined($fixed_param->{$prop});
 
 	if ($prop eq 'password' && $pwcallback) {
 	    # we do not accept plain password on input line, instead
@@ -882,17 +890,22 @@ sub get_options {
     my $opts = {};
     raise("unable to parse option\n", code => HTTP_BAD_REQUEST)
 	if !Getopt::Long::GetOptionsFromArray($args, $opts, @getopt);
-    
-    if ($list_param) {
-	my $pd = $schema->{properties}->{$list_param} ||
-	    die "no schema for list_param";
 
-	$opts->{$list_param} = $args if scalar($args);
-	$args = [];
+    if (my $acount = scalar(@$args)) {
+	if ($list_param) {
+	    $opts->{$list_param} = $args;
+	    $args = [];
+	} elsif (ref($arg_param)) {
+	    raise("wrong number of arguments\n", code => HTTP_BAD_REQUEST)
+		if scalar(@$arg_param) != $acount; 
+	    foreach my $p (@$arg_param) {
+		$opts->{$p} = shift @$args;
+	    }
+	} else {
+	    raise("too many arguments\n", code => HTTP_BAD_REQUEST)
+		if scalar(@$args) != 0;
+	}
     }
-
-    raise("too many arguments\n", code => HTTP_BAD_REQUEST)
-	if scalar(@$args) != 0;
 
     if (my $pd = $schema->{properties}->{password}) {
 	if ($pd->{type} ne 'boolean' && $pwcallback) {
@@ -935,8 +948,8 @@ sub get_options {
 	}	
     }
 
-    foreach my $p (keys %$uri_param) {
-	$opts->{$p} = $uri_param->{$p};
+    foreach my $p (keys %$fixed_param) {
+	$opts->{$p} = $fixed_param->{$p};
     }
 
     return $opts;

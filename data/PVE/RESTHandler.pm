@@ -477,29 +477,9 @@ sub cli_handler {
 
     my $info = $self->map_method_by_name($name);
 
-    my $param;
-    foreach my $p (keys %$fixed_param)  {
-	$param->{$p} = $fixed_param->{$p};
-    }
-
-    my $list_param;
-    if ($arg_param) {
-	if (ref($arg_param)) {
-	    foreach my $p (@$arg_param) {
-		$param->{$p} = shift @$args if $args->[0] && $args->[0] !~ m/^-\S/;
-	    }
-	} else {
-	    my $pd = $info->{parameters}->{properties}->{$arg_param};
-	    die "expected list format $pd->{format}"
-		if !($pd && $pd->{format} && $pd->{format} =~ m/-list/);
-	    $list_param = $arg_param;
-	}
-    }
-
     my $res;
     eval {
-	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $param, $pwcallback, $list_param);
-
+	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $pwcallback);
 	$res = $self->handle($info, $param);
     };
     if (my $err = $@) {
