@@ -170,7 +170,7 @@ sub run_command {
 
     $cmd = [ $cmd ] if !ref($cmd);
 
-    my $cmdstr = join (' ', @$cmd);
+    my $cmdstr = cmd2string($cmd);
 
     my $errmsg;
     my $laststderr;
@@ -693,6 +693,19 @@ sub shellquote {
     my $str = shift;
 
     return String::ShellQuote::shell_quote($str);
+}
+
+sub cmd2string {
+    my ($cmd) = @_;
+
+    die "no arguments" if !$cmd;
+
+    return $cmd if !ref($cmd);
+
+    my @qa = ();
+    foreach my $arg (@$cmd) { push @qa, shellquote($arg); }
+
+    return join (' ', @qa);
 }
 
 # split an shell argument string into an array,
