@@ -178,12 +178,13 @@ sub run_command {
     my $oldtimeout;
     my $pid;
 
+    my $outfunc;
+    my $errfunc;
+    my $logfunc;
+    my $input;
+    my $output;
+
     eval {
-	my $input;
-	my $output;
-	my $outfunc;
-	my $errfunc;
-	my $logfunc;
 
 	foreach my $p (keys %param) {
 	    if ($p eq 'timeout') {
@@ -192,10 +193,6 @@ sub run_command {
 		umask($param{$p});
 	    } elsif ($p eq 'errmsg') {
 		$errmsg = $param{$p};
-		$errfunc = sub {
-		    print STDERR "$laststderr\n" if $laststderr;
-		    $laststderr = shift; 
-		};
 	    } elsif ($p eq 'input') {
 		$input = $param{$p};
 	    } elsif ($p eq 'output') {
@@ -209,6 +206,20 @@ sub run_command {
 	    } else {
 		die "got unknown parameter '$p' for run_command\n";
 	    }
+	}
+
+	if ($errmsg) {
+	    my $origerrfunc = $errfunc;
+	    $errfunc = sub {
+		if ($laststderr) {
+		    if ($origerrfunc) {
+			&$origerrfunc("$laststderr\n");
+		    } else {
+			print STDERR "$laststderr\n" if $laststderr;
+		    }
+		}
+		$laststderr = shift; 
+	    };
 	}
 
 	my $reader = $output && $output =~ m/^>&/ ? $output : IO::File->new();
@@ -353,7 +364,9 @@ sub run_command {
 
     alarm(0);
 
-    print STDERR "$laststderr\n" if $laststderr;
+    if ($errmsg && $laststderr) {
+	&$errfunc(undef); # flush laststderr
+    }
 
     umask ($old_umask) if defined($old_umask);
 

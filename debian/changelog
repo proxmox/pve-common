@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-9) unstable; urgency=low
+
+  * bug fixes for run_command()
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 02 Dec 2011 10:28:27 +0100
+
 libpve-common-perl (1.0-8) unstable; urgency=low
 
   * make cli argument parser more flexible
