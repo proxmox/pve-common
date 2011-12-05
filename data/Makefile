@@ -16,6 +16,7 @@ LIB_SOURCES=			\
 	AtomicFile.pm		\
 	INotify.pm		\
 	Tools.pm		\
+	AbstractMigrate.pm	\
 	Exception.pm
 
 all:
