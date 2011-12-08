@@ -42,7 +42,7 @@ sub cmd {
 
     my $logfunc = sub {
 	my $line = shift;
-	logmsg('info', $line);
+	$self->log('info', $line);
     };
 
     $self->log('info', "# " . PVE::Tools::cmd2string($cmd));
@@ -134,7 +134,7 @@ sub migrate {
     local $ENV{RSYNC_RSH} = join(' ', @ssh_cmd);
 
     local $SIG{INT} = $SIG{TERM} = $SIG{QUIT} = $SIG{HUP} = $SIG{PIPE} = sub {
-	logmsg('err', "received interrupt - delayed");
+	$self->log('err', "received interrupt - delayed");
 	$self->{delayed_interrupt} = 1;
     };
 

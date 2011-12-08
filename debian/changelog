@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-10) unstable; urgency=low
+
+  * add helpers to implement migration
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 08 Dec 2011 11:03:54 +0100
+
 libpve-common-perl (1.0-9) unstable; urgency=low
 
   * bug fixes for run_command()
