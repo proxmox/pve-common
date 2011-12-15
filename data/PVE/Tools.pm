@@ -35,6 +35,42 @@ my $pvetaskdir = "$pvelogdir/tasks";
 mkdir $pvelogdir;
 mkdir $pvetaskdir;
 
+sub run_with_timeout {
+    my ($timeout, $code, @param) = @_;
+
+    die "got timeout\n" if $timeout <= 0;
+
+    my $prev_alarm;
+
+    my $sigcount = 0;
+
+    my $res;
+
+    local $SIG{ALRM} = sub { $sigcount++; }; # catch alarm outside eval
+
+    eval {
+	local $SIG{ALRM} = sub { $sigcount++; die "got timeout\n"; };
+	local $SIG{PIPE} = sub { $sigcount++; die "broken pipe\n" };
+	local $SIG{__DIE__};   # see SA bug 4631
+
+	$prev_alarm = alarm($timeout);
+
+	$res = &$code(@param);
+
+	alarm(0); # avoid race conditions
+    };
+
+    my $err = $@;
+
+    alarm($prev_alarm) if defined($prev_alarm);
+
+    die "unknown error" if $sigcount && !$err; # seems to happen sometimes
+
+    die $err if $err;
+
+    return $res;
+}
+
 # flock: we use one file handle per process, so lock file
 # can be called multiple times and succeeds for the same process.
 
@@ -43,37 +79,34 @@ my $lock_handles =  {};
 sub lock_file {
     my ($filename, $timeout, $code, @param) = @_;
 
-    my $res;
-
     $timeout = 10 if !$timeout;
 
-    eval {
-
-        local $SIG{ALRM} = sub { die "got timeout (can't lock '$filename')\n"; };
-
-        alarm ($timeout);
-
+    my $lock_func = sub {
         if (!$lock_handles->{$$}->{$filename}) {
             $lock_handles->{$$}->{$filename} = new IO::File (">>$filename") ||
-                die "can't open lock file '$filename' - $!\n";
+                die "can't open file - $!\n";
         }
 
         if (!flock ($lock_handles->{$$}->{$filename}, LOCK_EX|LOCK_NB)) {
             print STDERR "trying to aquire lock...";
             if (!flock ($lock_handles->{$$}->{$filename}, LOCK_EX)) {
                 print STDERR " failed\n";
-                die "can't aquire lock for '$filename' - $!\n";
+                die "can't aquire lock - $!\n";
             }
             print STDERR " OK\n";
         }
-        alarm (0);
-
-        $res = &$code(@param);
     };
 
-    my $err = $@;
+    my $res;
 
-    alarm (0);
+    eval { run_with_timeout($timeout, $lock_func); };
+    my $err = $@;
+    if ($err) {
+	$err = "can't lock file '$filename' - $err";
+    } else {
+	eval { $res = &$code(@param) };
+	$err = $@;
+    }
 
     if ($lock_handles->{$$}->{$filename}) {
         my $fh = $lock_handles->{$$}->{$filename};
