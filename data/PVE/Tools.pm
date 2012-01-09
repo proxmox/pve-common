@@ -200,10 +200,14 @@ sub run_command {
     my ($cmd, %param) = @_;
 
     my $old_umask;
+    my $cmdstr;
 
-    $cmd = [ $cmd ] if !ref($cmd);
-
-    my $cmdstr = cmd2string($cmd);
+    if (!ref($cmd)) {
+	$cmdstr = $cmd;
+	$cmd = [ $cmd ];
+    } else {
+	$cmdstr = cmd2string($cmd);
+    }
 
     my $errmsg;
     my $laststderr;

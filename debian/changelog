@@ -2,6 +2,8 @@ libpve-common-perl (1.0-12) unstable; urgency=low
 
   * new helper kvmkeymaplist()
 
+  * fix bug 77: only use cmd2string when necessary
+  
  -- Proxmox Support Team <support@proxmox.com>  Mon, 09 Jan 2012 11:44:11 +0100
 
 libpve-common-perl (1.0-11) unstable; urgency=low
