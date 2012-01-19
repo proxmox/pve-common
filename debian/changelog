@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-13) unstable; urgency=low
+
+  * correctly decode utf8 CLI parameters.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 19 Jan 2012 14:04:03 +0100
+
 libpve-common-perl (1.0-12) unstable; urgency=low
 
   * new helper kvmkeymaplist()
