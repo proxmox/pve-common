@@ -21,7 +21,7 @@ use overload 'cmp' => sub {
     return "$a" cmp "$b"; # compare as string
 };
 
-@EXPORT_OK = qw(raise raise_param_exc);
+@EXPORT_OK = qw(raise raise_param_exc raise_perm_exc);
 
 sub new {
     my ($class, $msg, %param) = @_;
@@ -44,6 +44,25 @@ sub new {
 sub raise {
 
     my $exc = PVE::Exception->new(@_);
+    
+    my ($pkg, $filename, $line) = caller;
+
+    $exc->{filename} = $filename;
+    $exc->{line} = $line;
+
+    die $exc;
+}
+
+sub raise_perm_exc {
+    my ($what) = @_;
+
+    my $param = { code => HTTP_FORBIDDEN };
+
+    my $msg = "Permission check failed";
+    
+    $msg .= " ($what)" if $what;
+
+    my $exc = PVE::Exception->new("$msg\n", %$param);
     
     my ($pkg, $filename, $line) = caller;
 
