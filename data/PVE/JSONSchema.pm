@@ -740,14 +740,21 @@ my $method_schema = {
 	    optional => 1,
 	    additionalProperties => 0,
 	    properties => {
+	        description => {
+	             description => "Describe access permissions.",
+	             optional => 1,
+	        },
                 user => {
-                    description => "A simply way to allow access for 'all' users. The special value 'arg' allows access for the user specified in the 'username' parameter. This is useful to allow access to things owned by a user, like changing the user password. Value 'world' is used to allow access without credentials.", 
+                    description => "A simply way to allow access for 'all' authenticated users. Value 'world' is used to allow access without credentials.", 
                     type => 'string', 
-                    enum => ['all', 'arg', 'world'],
+                    enum => ['all', 'world'],
                     optional => 1,
                 },
-                path => { type => 'string', optional => 1, requires => 'privs' },
-                privs => { type => 'array', optional => 1, requires => 'path' },
+                check => {
+                    description => "Array of permission checks (prefix notation).",
+                    type => 'array', 
+                    optional => 1 
+                },
             },
         },
         match_name => {
