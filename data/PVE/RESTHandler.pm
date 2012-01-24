@@ -376,7 +376,7 @@ sub usage_str {
 	$arg_hash->{$p} = 1;
 	$args .= " " if $args;
 	if ($pd->{format} && $pd->{format} =~ m/-list/) {
-	    $args .= "{<vmid>}";
+	    $args .= "{<$p>}";
 	} else {
 	    $args .= $pd->{optional} ? "[<$p>]" : "<$p>";
 	}
