@@ -454,6 +454,8 @@ sub trim {
 sub template_replace {
     my ($tmpl, $data) = @_;
 
+    return $tmpl if !$tmpl;
+ 
     my $res = '';
     while ($tmpl =~ m/([^{]+)?({([^}]+)})?/g) {
 	$res .= $1 if $1;
