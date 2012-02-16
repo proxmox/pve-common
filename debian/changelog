@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-14) unstable; urgency=low
+
+  * increase version to 1.0-14 for RC1
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 16 Feb 2012 15:12:15 +0100
+
 libpve-common-perl (1.0-13) unstable; urgency=low
 
   * correctly decode utf8 CLI parameters.
