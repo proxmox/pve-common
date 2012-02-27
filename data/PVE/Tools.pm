@@ -549,7 +549,7 @@ my $keymaphash =  {
     'pt-br'  => ['Brazil-Portuguese', 'pt-br', 'qwerty/br-latin1.kmap.gz', 'br', 'nodeadkeys'],
     #'ru'     => ['Russian', 'ru', 'qwerty/ru.kmap.gz', 'ru', undef], # dont know?
     'si'     => ['Slovenian', 'sl', 'qwertz/slovene.kmap.gz', 'si', undef],
-    #'sv'     => [], Swedish ?
+    'se'     => ['Swedish', 'sv', 'qwerty/se-latin1.kmap.gz', 'se', 'nodeadkeys'],
     #'th'     => [],
     #'tr'     => [],
 };
