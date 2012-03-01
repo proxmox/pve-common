@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-16) unstable; urgency=low
+
+  * try to keep comments in /etc/network/interfaces
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 01 Mar 2012 09:49:22 +0100
+
 libpve-common-perl (1.0-15) unstable; urgency=low
 
   * add Swedish keymap

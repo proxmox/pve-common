@@ -722,44 +722,51 @@ sub read_etc_network_interfaces {
 	    $ifaces->{$i}->{method} = $2;
 
 	    my $d = $ifaces->{$i};
-	    while (defined ($line = <$fh>) && ($line =~ m/^\s+((\S+)\s+(.+))$/)) {
-		my $option = $1;
-		my ($id, $value) = ($2, $3);
-		if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast')) {
-		    $d->{$id} = $value;
-		} elsif ($id eq 'gateway') {
-		    $d->{$id} = $value;
-		    $gateway = 1;
-		} elsif ($id eq 'slaves' || $id eq 'bridge_ports') {
-		    my $devs = {};
-		    foreach my $p (split (/\s+/, $value)) {
-			next if $p eq 'none';
-			$devs->{$p} = 1;
-		    }
-		    my $str = join (' ', sort keys %{$devs});
-		    $d->{$id} = $str || '';
-		} elsif ($id eq 'bridge_stp') {
-		    if ($value =~ m/^\s*(on|yes)\s*$/i) {
-			$d->{$id} = 'on';
-		    } else {
-			$d->{$id} = 'off';
-		    }
-		} elsif ($id eq 'bridge_fd') {
-		    $d->{$id} = $value;
-		} elsif ($id eq 'bond_miimon') {
-		    $d->{$id} = $value;
-		} elsif ($id eq 'bond_mode') {
-		    # always use names
-		    foreach my $bm (keys %$bond_modes) {
-			my $id = $bond_modes->{$bm};
-			if ($id eq $value) {
-			    $value = $bm;
-			    last;
+	    while (defined ($line = <$fh>)) {
+		if ($line =~ m/^#(.*)\s*$/) {
+		    $d->{comment} = '' if !$d->{comment};
+		    $d->{comment} .= PVE::Tools::decode_text($1) . "\n";
+		} elsif ($line =~ m/^\s+((\S+)\s+(.+))$/) {
+		    my $option = $1;
+		    my ($id, $value) = ($2, $3);
+		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast')) {
+			$d->{$id} = $value;
+		    } elsif ($id eq 'gateway') {
+			$d->{$id} = $value;
+			$gateway = 1;
+		    } elsif ($id eq 'slaves' || $id eq 'bridge_ports') {
+			my $devs = {};
+			foreach my $p (split (/\s+/, $value)) {
+			    next if $p eq 'none';
+			    $devs->{$p} = 1;
 			}
+			my $str = join (' ', sort keys %{$devs});
+			$d->{$id} = $str || '';
+		    } elsif ($id eq 'bridge_stp') {
+			if ($value =~ m/^\s*(on|yes)\s*$/i) {
+			    $d->{$id} = 'on';
+			} else {
+			    $d->{$id} = 'off';
+			}
+		    } elsif ($id eq 'bridge_fd') {
+			$d->{$id} = $value;
+		    } elsif ($id eq 'bond_miimon') {
+			$d->{$id} = $value;
+		    } elsif ($id eq 'bond_mode') {
+			# always use names
+			foreach my $bm (keys %$bond_modes) {
+			    my $id = $bond_modes->{$bm};
+			    if ($id eq $value) {
+				$value = $bm;
+				last;
+			    }
+			}
+			$d->{$id} = $value;
+		    } else {
+			push @{$d->{options}}, $option;
 		    }
-		    $d->{$id} = $value;
 		} else {
-		    push @{$d->{options}}, $option;
+		    last;
 		}
 	    }
 	}
@@ -862,6 +869,12 @@ sub __interface_to_string {
 
     foreach my $option (@{$d->{options}}) {
 	$raw .= "\t$option\n";
+    }
+
+    # add comments 
+    my $comment = $d->{comment} || '';
+    foreach my $cl (split(/\n/, $comment)) {
+	$raw .= '#' .  PVE::Tools::encode_text($cl) . "\n";
     }
 
     $raw .= "\n";
