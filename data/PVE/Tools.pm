@@ -417,6 +417,7 @@ sub run_command {
 	}
 
 	if ($errmsg) {
+	    $err =~ s/^usermod:\s*// if $cmdstr =~ m|^(\S+/)?usermod\s|;
 	    die "$errmsg: $err";
 	} else {
 	    die "command '$cmdstr' failed: $err";
