@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-18) unstable; urgency=low
+
+  * try to keep ordering in /etc/network/interfaces
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 02 Mar 2012 12:33:34 +0100
+
 libpve-common-perl (1.0-17) unstable; urgency=low
 
   * better error message for usermod command

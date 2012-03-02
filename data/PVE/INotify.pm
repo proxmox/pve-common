@@ -692,6 +692,9 @@ sub read_etc_network_interfaces {
 	close($fd2);
     }
 
+    # we try to keep order inside the file
+    my $priority = 2; # 1 is reserved for lo 
+
     # always add the vmbr0 bridge device
     $ifaces->{vmbr0}->{exists} = 1;
 
@@ -720,6 +723,7 @@ sub read_etc_network_interfaces {
 	} elsif ($line =~ m/^iface\s+(\S+)\s+inet\s+(\S+)\s*$/) {
 	    my $i = $1;
 	    $ifaces->{$i}->{method} = $2;
+	    $ifaces->{$i}->{priority} = $priority++;
 
 	    my $d = $ifaces->{$i};
 	    while (defined ($line = <$fh>)) {
@@ -778,6 +782,7 @@ sub read_etc_network_interfaces {
     }
 
     if (!$ifaces->{lo}) {
+	$ifaces->{lo}->{priority} = 1;
 	$ifaces->{lo}->{method} = 'loopback';
 	$ifaces->{lo}->{type} = 'loopback';
 	$ifaces->{lo}->{autostart} = 1;
@@ -889,16 +894,24 @@ sub write_etc_network_interfaces {
 
     my $printed = {};
 
-    foreach my $t (('lo', 'eth', '')) {
-	foreach my $iface (sort keys %$ifaces) {
-	    my $d = $ifaces->{$iface};
+    foreach my $iface (sort {
+	my $ref1 = $ifaces->{$a};
+	my $ref2 = $ifaces->{$b};
+	my $p1 = $ref1->{priority} || 100000;
+	my $p2 = $ref2->{priority} || 100000;
 
-	    next if $printed->{$iface};
-	    next if $iface !~ m/^$t/;
+	return $p1 <=> $p2 if $p1 != $p2;
 
-	    $printed->{$iface} = 1;
-	    $raw .= __interface_to_string($iface, $d);
-	}
+
+	return $a cmp $b;
+		       } keys %$ifaces) {
+
+	my $d = $ifaces->{$iface};
+
+	next if $printed->{$iface};
+
+	$printed->{$iface} = 1;
+	$raw .= __interface_to_string($iface, $d);
     }
     
     PVE::Tools::safe_print($filename, $fh, $raw);
