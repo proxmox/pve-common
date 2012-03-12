@@ -733,7 +733,7 @@ sub decode_text {
 sub decode_utf8_parameters {
     my ($param) = @_;
 
-    foreach my $p (qw(comment description firstname lastname)) {
+    foreach my $p (qw(name comment description firstname lastname)) {
 	$param->{$p} = decode('utf8', $param->{$p}) if $param->{$p};
     }
 
