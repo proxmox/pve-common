@@ -1,6 +1,6 @@
 libpve-common-perl (1.0-19) unstable; urgency=low
 
-  * add 'name' to the list of utf8 encoded parameters
+  * add dns-name format
 
  -- Proxmox Support Team <support@proxmox.com>  Mon, 12 Mar 2012 12:31:27 +0100
 

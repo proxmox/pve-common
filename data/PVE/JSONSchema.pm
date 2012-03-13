@@ -174,6 +174,19 @@ sub pve_verify_email {
     return $email;
 }
 
+register_format('dns-name', \&pve_verify_dns_name);
+sub pve_verify_dns_name {
+    my ($name, $noerr) = @_;
+
+    my $namere = "([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])";
+
+    if ($name !~ /^(${namere}\.)*${namere}$/) {
+	   return undef if $noerr;
+	   die "value does not look like a valid DNS name\n";
+    }
+    return $name;
+}
+
 # network interface name
 register_format('pve-iface', \&pve_verify_iface);
 sub pve_verify_iface {
