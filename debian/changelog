@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-20) unstable; urgency=low
+
+  * fix bug #116, #103: try to keep ordering in /etc/network/interfaces
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 19 Mar 2012 13:30:07 +0100
+
 libpve-common-perl (1.0-19) unstable; urgency=low
 
   * add dns-name format

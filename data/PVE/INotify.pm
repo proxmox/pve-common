@@ -727,9 +727,11 @@ sub read_etc_network_interfaces {
 
 	    my $d = $ifaces->{$i};
 	    while (defined ($line = <$fh>)) {
-		if ($line =~ m/^#(.*)\s*$/) {
-		    $d->{comment} = '' if !$d->{comment};
-		    $d->{comment} .= PVE::Tools::decode_text($1) . "\n";
+		if ($line =~ m/^\s*#(.*)\s*$/) {
+		    # NOTE: we use 'comments' instead of 'comment' to 
+		    # avoid automatic utf8 conversion
+		    $d->{comments} = '' if !$d->{comments};
+		    $d->{comments} .= "$1\n";
 		} elsif ($line =~ m/^\s+((\S+)\s+(.+))$/) {
 		    my $option = $1;
 		    my ($id, $value) = ($2, $3);
@@ -876,10 +878,10 @@ sub __interface_to_string {
 	$raw .= "\t$option\n";
     }
 
-    # add comments 
-    my $comment = $d->{comment} || '';
-    foreach my $cl (split(/\n/, $comment)) {
-	$raw .= '#' .  PVE::Tools::encode_text($cl) . "\n";
+    # add comments
+    my $comments = $d->{comments} || '';
+    foreach my $cl (split(/\n/, $comments)) {
+	$raw .= "#$cl\n";
     }
 
     $raw .= "\n";
@@ -894,14 +896,48 @@ sub write_etc_network_interfaces {
 
     my $printed = {};
 
+    my $if_type_hash = {
+	loopback => 10,
+	eth => 20,
+	bond => 30,
+	bridge => 40,
+    };
+
+    my $lookup_type_prio = sub {
+	my $iface = shift;
+
+	my $alias = 0;
+	if ($iface =~ m/^(\S+):\d+$/) {
+	    $iface = $1;
+	    $alias = 1;
+	}
+
+	my $pri;
+	if ($iface eq 'lo') {
+	    $pri = $if_type_hash->{loopback};
+	} elsif ($iface =~ m/^eth\d+$/) {
+	    $pri = $if_type_hash->{eth} + $alias;
+	} elsif ($iface =~ m/^bond\d+$/) {
+	    $pri = $if_type_hash->{bond} + $alias;
+	} elsif ($iface =~ m/^vmbr\d+$/) {
+	    $pri = $if_type_hash->{bridge} + $alias;
+	}
+
+	return $pri || ($if_type_hash->{unknown} + $alias);
+    };
+
     foreach my $iface (sort {
 	my $ref1 = $ifaces->{$a};
 	my $ref2 = $ifaces->{$b};
-	my $p1 = $ref1->{priority} || 100000;
-	my $p2 = $ref2->{priority} || 100000;
+	my $p1 = &$lookup_type_prio($a);
+	my $p2 = &$lookup_type_prio($b);
 
 	return $p1 <=> $p2 if $p1 != $p2;
 
+	$p1 = $ref1->{priority} || 100000;
+	$p2 = $ref2->{priority} || 100000;
+
+	return $p1 <=> $p2 if $p1 != $p2;
 
 	return $a cmp $b;
 		       } keys %$ifaces) {
