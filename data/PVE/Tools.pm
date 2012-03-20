@@ -12,7 +12,7 @@ use Fcntl qw(:DEFAULT :flock);
 use base 'Exporter';
 use URI::Escape;
 use Encode;
-use Digest::SHA1;
+use Digest::SHA;
 use Text::ParseWords;
 use String::ShellQuote;
 
@@ -742,7 +742,7 @@ sub decode_utf8_parameters {
 
 sub random_ether_addr {
 
-    my $rand = Digest::SHA1::sha1_hex(rand(), time());
+    my $rand = Digest::SHA::sha1_hex(rand(), time());
 
     my $mac = '';
     for (my $i = 0; $i < 6; $i++) {
