@@ -20,6 +20,7 @@ sub read_cpuinfo {
 	model => 'unknown',
 	mhz => 0,
 	cpus => 1,
+	sockets => 1,
     };
 
     my $fh = IO::File->new ($fn, "r");
@@ -35,7 +36,11 @@ sub read_cpuinfo {
 	    $res->{mhz} = $1 if !$res->{mhz};
 	} elsif ($line =~ m/^flags\s*:.*(vmx|svm)/) {
 	    $res->{hvm} = 1; # Hardware Virtual Machine (Intel VT / AMD-V)
+	} elsif ($line =~ m/^physical id\s*:\s*(\d+)\s*$/i) {
+	    my $sid = $1 + 1;
+	    $res->{sockets} = $sid if $sid > $res->{sockets};
 	}
+
     }
 
     $res->{cpus} = $count;

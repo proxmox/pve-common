@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-22) unstable; urgency=low
+
+  * return number of sockets in read_cpuinfo
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 26 Mar 2012 07:53:35 +0200
+
 libpve-common-perl (1.0-21) unstable; urgency=low
 
   * use Digest::SHA instead of Digest::SHA1
