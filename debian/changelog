@@ -3,6 +3,8 @@ libpve-common-perl (1.0-23) unstable; urgency=low
   * moved dir_glob_regex() and dir_glob_foreach() from PVE::Storage 
   to PVE::Tools
   
+  * add vlan setup code to PVE::Network
+  
  -- Proxmox Support Team <support@proxmox.com>  Wed, 28 Mar 2012 07:56:49 +0200
 
 libpve-common-perl (1.0-22) unstable; urgency=low
