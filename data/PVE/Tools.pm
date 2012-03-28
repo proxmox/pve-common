@@ -7,6 +7,7 @@ use IO::Select;
 use File::Basename;
 use File::Path qw(make_path);
 use IO::File;
+use IO::Dir;
 use IPC::Open3;
 use Fcntl qw(:DEFAULT :flock);
 use base 'Exporter';
@@ -22,6 +23,8 @@ run_command
 file_set_contents 
 file_get_contents
 file_read_firstline
+dir_glob_regex
+dir_glob_foreach
 split_list
 template_replace
 safe_print
@@ -824,6 +827,36 @@ sub dump_logfile {
     }
 
     return ($count, $lines);
+}
+
+sub dir_glob_regex {
+    my ($dir, $regex) = @_;
+
+    my $dh = IO::Dir->new ($dir);
+    return wantarray ? () : undef if !$dh;
+  
+    while (defined(my $tmp = $dh->read)) { 
+	if (my @res = $tmp =~ m/^($regex)$/) {
+	    $dh->close;
+	    return wantarray ? @res : $tmp;
+	}
+    }
+    $dh->close;
+
+    return wantarray ? () : undef;
+}
+
+sub dir_glob_foreach {
+    my ($dir, $regex, $func) = @_;
+
+    my $dh = IO::Dir->new ($dir);
+    if (defined $dh) {
+	while (defined(my $tmp = $dh->read)) {
+	    if (my @res = $tmp =~ m/^($regex)$/) {
+		&$func (@res);
+	    }
+	}
+    } 
 }
 
 1;
