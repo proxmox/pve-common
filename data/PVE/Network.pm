@@ -1,12 +1,43 @@
 package PVE::Network;
 
 use strict;
-use PVE::Tools;
+use PVE::Tools qw(run_command);
 use PVE::ProcFSTools;
 use PVE::INotify;
 use File::Basename;
 
 # host network related utility functions
+
+sub setup_tc_rate_limit {
+    my ($iface, $rate, $burst, $debug) = @_;
+
+    system("/sbin/tc qdisc del dev $iface ingres >/dev/null 2>&1");
+    system("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1");
+
+    run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
+
+    # this does not work wit virtio - don't know why
+    #run_command("/sbin/tc filter add dev $iface parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate ${rate}bps burst ${burst}b drop flowid :1");
+    # so we use avrate instead
+    run_command("/sbin/tc filter add dev $iface parent ffff: " .
+		"protocol ip prio 50 estimator 1sec 8sec " .
+		"u32 match ip src 0.0.0.0/0 police avrate ${rate}bps drop flowid :1");
+
+    # tbf does not work for unknown reason
+    #$TC qdisc add dev $DEV root tbf rate $RATE latency 100ms burst $BURST
+    # so we use htb instead
+    run_command("/sbin/tc qdisc add dev $iface root handle 1: htb default 1");
+    run_command("/sbin/tc class add dev $iface parent 1: classid 1:1 " .
+		"htb rate ${rate}bps burst ${burst}b");
+
+    if ($debug) {
+	print "DEBUG tc settings\n";
+	system("/sbin/tc qdisc ls dev $iface");
+	system("/sbin/tc class ls dev $iface");
+	system("/sbin/tc filter ls dev $iface parent ffff:");
+    }
+}
+
 
 sub copy_bridge_config {
     my ($br0, $br1) = @_;
