@@ -129,8 +129,7 @@ register_format('pve-node', \&pve_verify_node_name);
 sub pve_verify_node_name {
     my ($node, $noerr) = @_;
 
-    # todo: use better regex ?
-    if ($node !~ m/^[A-Za-z][[:alnum:]\-]*[[:alnum:]]+$/) {
+    if ($node !~ m/^([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)$/) {
 	return undef if $noerr;
 	die "value does not look like a valid node name\n";
     }
