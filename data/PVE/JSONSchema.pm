@@ -178,7 +178,7 @@ register_format('dns-name', \&pve_verify_dns_name);
 sub pve_verify_dns_name {
     my ($name, $noerr) = @_;
 
-    my $namere = "([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])";
+    my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
 
     if ($name !~ /^(${namere}\.)*${namere}$/) {
 	   return undef if $noerr;

@@ -1,3 +1,10 @@
+libpve-common-perl (1.0-24) unstable; urgency=low
+
+  * fix bug #135: allow single letter 'dns-name', allow to start names
+    with numbers
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 02 Apr 2012 12:04:02 +0200
+
 libpve-common-perl (1.0-23) unstable; urgency=low
 
   * moved dir_glob_regex() and dir_glob_foreach() from PVE::Storage 
