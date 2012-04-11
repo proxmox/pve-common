@@ -555,7 +555,7 @@ my $keymaphash =  {
     'si'     => ['Slovenian', 'sl', 'qwertz/slovene.kmap.gz', 'si', undef],
     'se'     => ['Swedish', 'sv', 'qwerty/se-latin1.kmap.gz', 'se', 'nodeadkeys'],
     #'th'     => [],
-    #'tr'     => [],
+    'tr'     => ['Turkish', 'tr', 'qwerty/trq.kmap.gz', 'tr', undef],
 };
 
 my $kvmkeymaparray = [];

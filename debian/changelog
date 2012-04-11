@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-26) unstable; urgency=low
+
+  * add Turkish keyboard mappings
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 11 Apr 2012 08:35:13 +0200
+
 libpve-common-perl (1.0-25) unstable; urgency=low
 
   * fix bug #135: use DNS compatible naming for 'pve-node'
