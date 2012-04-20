@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-27) unstable; urgency=low
+
+  * fix bug #172: use DNS compatible regex in upid parser
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 20 Apr 2012 08:31:44 +0200
+
 libpve-common-perl (1.0-26) unstable; urgency=low
 
   * add Turkish keyboard mappings

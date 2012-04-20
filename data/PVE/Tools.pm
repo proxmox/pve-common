@@ -652,16 +652,16 @@ sub upid_decode {
     my $filename;
 
     # "UPID:$node:$pid:$pstart:$startime:$dtype:$id:$user"
-    if ($upid =~ m/^UPID:([A-Za-z][[:alnum:]\-]*[[:alnum:]]+):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8}):([^:\s]+):([^:\s]*):([^:\s]+):$/) {
+    if ($upid =~ m/^UPID:([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8}):([^:\s]+):([^:\s]*):([^:\s]+):$/) {
 	$res->{node} = $1;
-	$res->{pid} = hex($2);
-	$res->{pstart} = hex($3);
-	$res->{starttime} = hex($4);
-	$res->{type} = $5;
-	$res->{id} = $6;
-	$res->{user} = $7;
+	$res->{pid} = hex($3);
+	$res->{pstart} = hex($4);
+	$res->{starttime} = hex($5);
+	$res->{type} = $6;
+	$res->{id} = $7;
+	$res->{user} = $8;
 
-	my $subdir = substr($4, 7, 8);
+	my $subdir = substr($5, 7, 8);
 	$filename = "$pvetaskdir/$subdir/$upid";
 
     } else {
