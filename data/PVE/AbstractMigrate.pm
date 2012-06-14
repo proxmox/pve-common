@@ -108,7 +108,7 @@ my $eval_int = sub {
 my @ssh_opts = ('-c', 'blowfish', '-o', 'BatchMode=yes');
 my @ssh_cmd = ('/usr/bin/ssh', @ssh_opts);
 my @scp_cmd = ('/usr/bin/scp', @ssh_opts);
-my @rsync_opts = ('-aH', '--delete', '--numeric-ids');
+my @rsync_opts = ('-aHAX', '--delete', '--numeric-ids');
 my @rsync_cmd = ('/usr/bin/rsync', @rsync_opts);
 
 sub migrate {

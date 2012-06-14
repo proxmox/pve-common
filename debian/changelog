@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-29) unstable; urgency=low
+
+  * AbsrtactMigrate: use rsync flags AX (preserve ACLs and xattr)
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 14 Jun 2012 09:08:11 +0200
+
 libpve-common-perl (1.0-28) unstable; urgency=low
 
   * added SectionConfig.pm, base class for Storage and Auth plugins.
