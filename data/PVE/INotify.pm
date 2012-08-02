@@ -685,7 +685,7 @@ sub read_etc_network_interfaces {
 
     if (my $fd2 = IO::File->new("/proc/net/dev", "r")) {
 	while (defined ($line = <$fd2>)) {
-	    if ($line =~ m/^\s*(eth[0-9]):.*/) {
+	    if ($line =~ m/^\s*(eth\d+):.*/) {
 		$ifaces->{$1}->{exists} = 1;
 	    }
 	}
@@ -810,7 +810,7 @@ sub read_etc_network_interfaces {
 		$ifaces->{$1}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
-	} elsif ($iface =~ m/^eth[0-9]$/) {
+	} elsif ($iface =~ m/^eth\d+$/) {
 	    $d->{type} = 'eth';
 	} elsif ($iface =~ m/^lo$/) {
 	    $d->{type} = 'loopback';
