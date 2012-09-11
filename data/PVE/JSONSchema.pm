@@ -953,9 +953,6 @@ sub get_options {
     }
 
     $opts = PVE::Tools::decode_utf8_parameters($opts);
-    if ($opts->{description}) {
-	print "TEST: " . PVE::Tools::encode_text($opts->{description}) . "\n";
-    }
 
     foreach my $p (keys %$opts) {
 	if (my $pd = $schema->{properties}->{$p}) {
