@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-32) unstable; urgency=low
+
+  * fix typo in error message
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 25 Sep 2012 06:08:02 +0200
+
 libpve-common-perl (1.0-31) unstable; urgency=low
 
   * minor fix: remove debug output

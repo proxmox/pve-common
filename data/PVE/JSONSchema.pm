@@ -97,7 +97,7 @@ sub pve_verify_configid {
  
     if ($id !~ m/^[a-z][a-z0-9_]+$/i) {
 	return undef if $noerr;
-	die "invalid cofiguration ID '$id'\n"; 
+	die "invalid configuration ID '$id'\n"; 
     }
     return $id;
 }
