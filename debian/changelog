@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-33) unstable; urgency=low
+
+  * fix run_command: restore umask correctly
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 26 Sep 2012 13:16:22 +0200
+
 libpve-common-perl (1.0-32) unstable; urgency=low
 
   * fix typo in error message

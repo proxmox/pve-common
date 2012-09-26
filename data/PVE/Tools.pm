@@ -230,7 +230,7 @@ sub run_command {
 	    if ($p eq 'timeout') {
 		$timeout = $param{$p};
 	    } elsif ($p eq 'umask') {
-		umask($param{$p});
+		$old_umask = umask($param{$p});
 	    } elsif ($p eq 'errmsg') {
 		$errmsg = $param{$p};
 	    } elsif ($p eq 'input') {
