@@ -173,7 +173,7 @@ sub file_read_firstline {
     my $fh = IO::File->new ($filename, "r");
     return undef if !$fh;
     my $res = <$fh>;
-    chomp $res;
+    chomp $res if $res;
     $fh->close;
     return $res;
 }
