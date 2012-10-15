@@ -210,7 +210,7 @@ sub read_memory_usage {
 
     my $line = PVE::Tools::file_read_firstline("/proc/$$/statm");
 
-    if ($line =~ m/^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+/) {
+    if ($line =~ m/^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*/) {
 	$res->{size} = $1*$ps;
 	$res->{resident} = $2*$ps;
 	$res->{shared} = $3*$ps;
