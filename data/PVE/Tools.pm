@@ -580,6 +580,30 @@ sub extract_param {
     return $res;
 }
 
+# Note: we use this to wait until vncterm is ready
+sub wait_for_vnc_port {
+    my ($port, $timeout) = @_;
+
+    $timeout = 5 if !$timeout;
+
+    for (my $i = 0; $i < $timeout; $i++) {
+	if (my $fh = IO::File->new ("/proc/net/tcp", "r")) {
+	    while (defined (my $line = <$fh>)) {
+		if ($line =~ m/^\s*\d+:\s+([0-9A-Fa-f]{8}):([0-9A-Fa-f]{4})\s/) {
+		    if ($port == hex($2)) {
+			close($fh);
+			return 1;
+		    }
+		}
+	    }
+	    close($fh);
+	}
+	sleep(1);
+    }
+
+    return undef;
+}
+
 sub next_vnc_port {
 
     for (my $p = 5900; $p < 6000; $p++) {
