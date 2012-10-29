@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-37) unstable; urgency=low
+
+  * fix bug #264: use option pipefail for shell commands
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 29 Oct 2012 09:45:11 +0100
+
 libpve-common-perl (1.0-36) unstable; urgency=low
 
   * new helper wait_for_vnc_port()

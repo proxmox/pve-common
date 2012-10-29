@@ -207,7 +207,12 @@ sub run_command {
 
     if (!ref($cmd)) {
 	$cmdstr = $cmd;
-	$cmd = [ $cmd ];
+	if ($cmd =~ m/|/) {
+	    # see 'man bash' for option pipefail
+	    $cmd = [ '/bin/bash', '-c', "set -o pipefail && $cmd" ];
+	} else {
+	    $cmd = [ $cmd ];
+	}
     } else {
 	$cmdstr = cmd2string($cmd);
     }
