@@ -104,8 +104,7 @@ my $eval_int = sub {
     };
 };
 
-# blowfish is a fast block cipher, much faster then 3des
-my @ssh_opts = ('-c', 'blowfish', '-o', 'BatchMode=yes');
+my @ssh_opts = ('-o', 'BatchMode=yes');
 my @ssh_cmd = ('/usr/bin/ssh', @ssh_opts);
 my @scp_cmd = ('/usr/bin/scp', @ssh_opts);
 my @rsync_opts = ('-aHAX', '--delete', '--numeric-ids');
