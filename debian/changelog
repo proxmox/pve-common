@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-39) unstable; urgency=low
+
+  * remove hardcoded blowfish cipher
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 31 Oct 2012 13:55:06 +0100
+
 libpve-common-perl (1.0-38) unstable; urgency=low
 
   * fix bug #273: retry flock if it fails with EINTR
