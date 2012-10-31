@@ -1,7 +1,7 @@
 package PVE::Tools;
 
 use strict;
-use POSIX;
+use POSIX qw(EINTR);
 use IO::Socket::INET;
 use IO::Select;
 use File::Basename;
@@ -92,7 +92,15 @@ sub lock_file {
 
         if (!flock ($lock_handles->{$$}->{$filename}, LOCK_EX|LOCK_NB)) {
             print STDERR "trying to aquire lock...";
-            if (!flock ($lock_handles->{$$}->{$filename}, LOCK_EX)) {
+	    my $success;
+	    while(1) {
+		$success = flock($lock_handles->{$$}->{$filename}, LOCK_EX);
+		# try again on EINTR (see bug #273)
+		if ($success || ($! != EINTR)) {
+		    last;
+		}
+	    }
+            if (!$success) {
                 print STDERR " failed\n";
                 die "can't aquire lock - $!\n";
             }
