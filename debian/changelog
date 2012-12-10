@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-40) unstable; urgency=low
+
+  * run_command: implement afterfork callback
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 10 Dec 2012 12:50:12 +0100
+
 libpve-common-perl (1.0-39) unstable; urgency=low
 
   * remove hardcoded blowfish cipher

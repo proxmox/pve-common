@@ -236,6 +236,7 @@ sub run_command {
     my $logfunc;
     my $input;
     my $output;
+    my $afterfork;
 
     eval {
 
@@ -256,6 +257,8 @@ sub run_command {
 		$errfunc = $param{$p};
 	    } elsif ($p eq 'logfunc') {
 		$logfunc = $param{$p};
+	    } elsif ($p eq 'afterfork') {
+		$afterfork = $param{$p};
 	    } else {
 		die "got unknown parameter '$p' for run_command\n";
 	    }
@@ -315,6 +318,8 @@ sub run_command {
 
 	local $SIG{ALRM} = sub { die "got timeout\n"; } if $timeout;
 	$oldtimeout = alarm($timeout) if $timeout;
+
+	&$afterfork() if $afterfork;
 
 	if (ref($writer)) {
 	    print $writer $input if defined $input;
