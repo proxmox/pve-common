@@ -26,6 +26,7 @@ sub read_cpuinfo {
     my $fh = IO::File->new ($fn, "r");
     return $res if !$fh;
 
+    my $idhash = {};
     my $count = 0;
     while (defined(my $line = <$fh>)) {
 	if ($line =~ m/^processor\s*:\s*\d+\s*$/i) {
@@ -37,11 +38,11 @@ sub read_cpuinfo {
 	} elsif ($line =~ m/^flags\s*:.*(vmx|svm)/) {
 	    $res->{hvm} = 1; # Hardware Virtual Machine (Intel VT / AMD-V)
 	} elsif ($line =~ m/^physical id\s*:\s*(\d+)\s*$/i) {
-	    my $sid = $1 + 1;
-	    $res->{sockets} = $sid if $sid > $res->{sockets};
+	    $idhash->{$1} = 1;
 	}
-
     }
+
+    $res->{sockets} = scalar(keys %$idhash) || 1;
 
     $res->{cpus} = $count;
 
