@@ -72,28 +72,14 @@ sub activate_bridge_vlan {
     die "got strange vlan tag '$tag_param'\n" if $tag < 1 || $tag > 4094;
 
     my $bridgevlan = "${bridge}v$tag";
-
-    my $dir = "/sys/class/net/$bridge/brif";
-
-    #check if we have an only one ethX or bondX interface in the bridge
-    
-    my $iface;
-    PVE::Tools::dir_glob_foreach($dir, '((eth|bond)\d+)', sub {
-	my ($slave) = @_;
-
-	die "more then one physical interfaces on bridge '$bridge'\n" if $iface;
-	$iface = $slave;
-
-    });
-
-    die "no physical interface on bridge '$bridge'\n" if !$iface;
-
+    my $iface = $bridge;
     my $ifacevlan = "${iface}.$tag";
+    my $vlanflags = "reorder_hdr on gvrp on";
 
     # create vlan on $iface is not already exist
     if (! -d "/sys/class/net/$ifacevlan") {
-	system("/sbin/vconfig add $iface $tag") == 0 ||
-	    die "can't add vlan tag $tag to interface $iface\n";
+      system("/sbin/ip link add link $iface name $ifacevlan type vlan id $tag $vlanflags") == 0 ||
+          die "can't add vlan tag $tag to interface $iface\n";
     }
 
     # be sure to have the $ifacevlan up
