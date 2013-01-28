@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-42) unstable; urgency=low
+
+  * tc: use rate filter with mtu 64k (instead of avrate)
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 28 Jan 2013 06:59:32 +0100
+
 libpve-common-perl (1.0-41) unstable; urgency=low
 
   * correctly count physical sockets
