@@ -18,9 +18,9 @@ sub setup_tc_rate_limit {
 
     # virtio uses large packets 64K, so we need to set mtu to that
     # value - else filter drops those packets and rate limit does not work.
-    run_command("/sbin/tc filter add dev $iface parent ffff: "
-		"protocol ip prio 50 u32 match ip src 0.0.0.0/0 "
-		"police rate ${rate}bps burst ${burst}b "
+    run_command("/sbin/tc filter add dev $iface parent ffff: " .
+		"protocol ip prio 50 u32 match ip src 0.0.0.0/0 " .
+		"police rate ${rate}bps burst ${burst}b " .
 		"mtu 64kb drop flowid :1");
 
     # tbf does not work for unknown reason
