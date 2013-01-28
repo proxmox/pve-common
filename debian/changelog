@@ -1,3 +1,10 @@
+libpve-common-perl (1.0-44) unstable; urgency=low
+
+  * vlan changes: use ip command instead of old vconfig, activate gvrp 
+  by default, use bridge instead of raw ethernet device as vlan bridge
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 28 Jan 2013 11:57:33 +0100
+
 libpve-common-perl (1.0-43) unstable; urgency=low
 
   * tc: use rate filter with mtu 64k (instead of avrate)
