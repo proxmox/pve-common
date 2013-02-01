@@ -1,6 +1,8 @@
 libpve-common-perl (1.0-45) unstable; urgency=low
 
   * read_meminfo: query KSM page sharing
+  
+  * revert tc rate filter changes: they do not work as expected
 
  -- Proxmox Support Team <support@proxmox.com>  Fri, 01 Feb 2013 09:04:27 +0100
 
