@@ -175,6 +175,7 @@ sub read_meminfo {
 	memtotal => 0,
 	memfree => 0,
 	memused => 0,
+	memshared => 0,
 	swaptotal => 0,
 	swapfree => 0,
 	swapused => 0,
@@ -198,6 +199,9 @@ sub read_meminfo {
     $res->{swaptotal} = $d->{swaptotal};
     $res->{swapfree} = $d->{swapfree};
     $res->{swapused} = $res->{swaptotal} - $res->{swapfree};
+
+    my $spages = PVE::Tools::file_read_firstline("/sys/kernel/mm/ksm/pages_sharing");
+    $res->{memshared} = int($spages) * 4096;
 
     return $res;
 }

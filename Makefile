@@ -1,7 +1,7 @@
 RELEASE=2.3
 
 VERSION=1.0
-PKGREL=44
+PKGREL=45
 
 PACKAGE=libpve-common-perl
 
