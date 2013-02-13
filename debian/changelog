@@ -1,6 +1,8 @@
 libpve-common-perl (1.0-46) unstable; urgency=low
 
   * revert vlan changes
+  
+  * add parser for /etc/iscsi/initiatorname.iscsi
 
  -- Proxmox Support Team <support@proxmox.com>  Wed, 13 Feb 2013 10:57:20 +0100
 

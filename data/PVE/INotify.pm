@@ -957,4 +957,20 @@ register_file('interfaces', "/etc/network/interfaces",
 	      \&read_etc_network_interfaces,
 	      \&write_etc_network_interfaces);
 
+
+sub read_iscsi_initiatorname {
+    my ($filename, $fd) = @_;
+
+    while (defined(my $line = <$fd>)) {
+	if ($line =~ m/^InitiatorName=(\S+)$/) {
+	    return $1;
+	}
+    }
+
+    return 'undefined';
+}
+
+register_file('initiatorname', "/etc/iscsi/initiatorname.iscsi",  
+	      \&read_iscsi_initiatorname);
+
 1;
