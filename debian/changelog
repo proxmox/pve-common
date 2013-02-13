@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-46) unstable; urgency=low
+
+  * revert vlan changes
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 13 Feb 2013 10:57:20 +0100
+
 libpve-common-perl (1.0-45) unstable; urgency=low
 
   * read_meminfo: query KSM page sharing
