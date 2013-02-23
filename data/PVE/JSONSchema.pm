@@ -8,6 +8,7 @@ use Devel::Cycle -quiet; # todo: remove?
 use PVE::Tools qw(split_list);
 use PVE::Exception qw(raise);
 use HTTP::Status qw(:constants);
+use Net::IP qw(:PROC);
 
 use base 'Exporter';
 
@@ -140,11 +141,8 @@ register_format('ipv4', \&pve_verify_ipv4);
 sub pve_verify_ipv4 {
     my ($ipv4, $noerr) = @_;
 
-   if ($ipv4 !~ m/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/ ||
-       !(($1 > 0) && ($1 < 255) &&
-	 ($2 <= 255) && ($3 <= 255) && 
-	 ($4 > 0) && ($4 < 255)))  {
-	   return undef if $noerr;
+    if (!Net::IP::ip_is_ipv4($ipv4))  {
+	return undef if $noerr;
 	die "value does not look like a valid IP address\n";
     }
     return $ipv4;
