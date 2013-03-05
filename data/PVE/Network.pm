@@ -74,6 +74,15 @@ sub tap_plug {
 	die "can't add interface to bridge\n";
 }
 
+sub tap_unplug {
+    my ($iface, $bridge, $tag) = @_;
+
+    $bridge .= "v$tag" if $tag;
+
+    system ("/usr/sbin/brctl delif $bridge $iface") == 0 ||
+	die "can't del interface from bridge\n";
+}
+
 sub copy_bridge_config {
     my ($br0, $br1) = @_;
 
