@@ -11,8 +11,12 @@ use File::Basename;
 sub setup_tc_rate_limit {
     my ($iface, $rate, $burst, $debug) = @_;
 
+    system("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1");
+    system("/sbin/tc filter del dev $iface parent ffff: protocol ip prio 50 estimator 1sec 8sec >/dev/null 2>&1");
     system("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1");
     system("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1");
+
+    return if (!$rate || ($rate && $rate == 0));
 
     run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
 
