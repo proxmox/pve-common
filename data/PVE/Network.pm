@@ -38,6 +38,15 @@ sub setup_tc_rate_limit {
     }
 }
 
+sub tap_rate_limit {
+    my ($iface, $rate) = @_;
+
+    my $debug = 0;
+    $rate = int($rate*1024*1024);
+    my $burst = 1024*1024;
+
+    setup_tc_rate_limit($iface, $rate, $burst, $debug);
+}
 
 sub copy_bridge_config {
     my ($br0, $br1) = @_;
