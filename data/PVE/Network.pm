@@ -11,7 +11,7 @@ use File::Basename;
 sub setup_tc_rate_limit {
     my ($iface, $rate, $burst, $debug) = @_;
 
-    system("/sbin/tc qdisc del dev $iface ingres >/dev/null 2>&1");
+    system("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1");
     system("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1");
 
     run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
