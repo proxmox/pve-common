@@ -64,6 +64,16 @@ sub tap_create {
 	die "interface activation failed\n" if $@;
 }
 
+sub tap_plug {
+    my ($iface, $bridge, $tag) = @_;
+
+    my $newbridge = activate_bridge_vlan($bridge, $tag);
+    copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
+
+    system ("/usr/sbin/brctl addif $newbridge $iface") == 0 ||
+	die "can't add interface to bridge\n";
+}
+
 sub copy_bridge_config {
     my ($br0, $br1) = @_;
 
