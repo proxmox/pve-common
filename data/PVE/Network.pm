@@ -52,6 +52,18 @@ sub tap_rate_limit {
     setup_tc_rate_limit($iface, $rate, $burst, $debug);
 }
 
+sub tap_create {
+    my ($iface, $bridge) = @_;
+
+    die "unable to get bridge setting\n" if !$bridge;
+
+    my $bridgemtu = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/mtu");
+	die "bridge '$bridge' does not exist\n" if !$bridgemtu;
+
+    eval{ PVE::Tools::run_command("/sbin/ifconfig $iface 0.0.0.0 promisc up mtu $bridgemtu");};
+	die "interface activation failed\n" if $@;
+}
+
 sub copy_bridge_config {
     my ($br0, $br1) = @_;
 
