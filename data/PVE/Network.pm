@@ -16,7 +16,7 @@ sub setup_tc_rate_limit {
     system("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1");
     system("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1");
 
-    return if (!$rate || ($rate && $rate == 0));
+    return if !$rate;
 
     run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
 
