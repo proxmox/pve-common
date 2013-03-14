@@ -89,7 +89,7 @@ sub copy_bridge_config {
     return if $br0 eq $br1;
 
     my $br_configs = [ 'ageing_time', 'stp_state', 'priority', 'forward_delay', 
-		       'hello_time', 'max_age'];
+		       'hello_time', 'max_age', 'multicast_snooping', 'multicast_querier'];
 
     foreach my $sysname (@$br_configs) {
 	eval {
