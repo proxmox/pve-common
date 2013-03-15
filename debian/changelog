@@ -1,3 +1,9 @@
+libpve-common-perl (1.0-49) unstable; urgency=low
+
+  * bridge: copy bridge multicast settings
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 15 Mar 2013 06:14:04 +0100
+
 libpve-common-perl (1.0-48) unstable; urgency=low
 
   * depend on libnet-ip-perl
