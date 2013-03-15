@@ -2,7 +2,7 @@
 Setup PVE v2 Development Environment
 ====================================
 
-1.  Install Debian 'squeeze'
+1.  Install Debian 'wheezy'
 2.  Install prerequisites for development environment:
 
 apt-get -y install build-essential git-core debhelper autotools-dev \
@@ -20,7 +20,8 @@ libpci-dev texi2html libgnutls-dev libsdl1.2-dev bridge-utils \
 libvncserver0 rpm2cpio  apache2-mpm-prefork libintl-perl \
 libapache2-request-perl libnet-dns-perl vlan libio-socket-ssl-perl \
 libfile-sync-perl ifenslave-2.6 libnet-ldap-perl console-data \
-libtool dietlibc-dev liblocale-po-perl
+libtool dietlibc-dev liblocale-po-perl libstring-shellquote-perl \
+libio-multiplex-perl liblockfile-simple-perl
 
 3.  Download and install the following git modules in order from top to bottom:
 
@@ -28,7 +29,6 @@ libtool dietlibc-dev liblocale-po-perl
 
 You currently need the following packages:
 
-libqb.git
 corosync-pve.git
 openais-pve.git
 pve-common.git
@@ -40,12 +40,17 @@ pve-storage.git
 pve-qemu-kvm.git
 qemu-server.git
 vncterm.git
+vzquota.git
 vzctl.git
+fence-agents-pve.git
+resource-agents-pve.git
 pve-manager.git
 pve-kernel-2.6.32.git
-fence-agents-pve.git
+libiscsi.git
+gfs2-utils.git
+ksm-control-daemon.git
 
-Most source can be installed with 'make dinstall' command.
+Most packages can be installed with 'make dinstall' command.
 
 4.  Reboot the system.
 5.  Learn to use the quilt patch scripts.
@@ -87,7 +92,7 @@ Additionally, we use JSON Schema [2] to formally describe our API. So
 we can automatically generate the whole API Documentation, and we can
 verify all parameters and return values.
 
-An great side effect was that we are able to use JSON Schema to
+A great side effect was that we are able to use JSON Schema to
 produce command line argument parsers automatically. In fact, the REST
 API and the command line tools use the same code.
 
