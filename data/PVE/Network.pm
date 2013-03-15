@@ -70,7 +70,7 @@ sub tap_plug {
     my $newbridge = activate_bridge_vlan($bridge, $tag);
     copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
 
-    system ("/usr/sbin/brctl addif $newbridge $iface") == 0 ||
+    system ("/sbin/brctl addif $newbridge $iface") == 0 ||
 	die "can't add interface to bridge\n";
 }
 
@@ -79,7 +79,7 @@ sub tap_unplug {
 
     $bridge .= "v$tag" if $tag;
 
-    system ("/usr/sbin/brctl delif $bridge $iface") == 0 ||
+    system ("/sbin/brctl delif $bridge $iface") == 0 ||
 	die "can't del interface from bridge\n";
 }
 
@@ -158,7 +158,7 @@ sub activate_bridge_vlan {
 
     # add bridgevlan if it doesn't already exist
     if (! -d "/sys/class/net/$bridgevlan") {
-        system("/usr/sbin/brctl addbr $bridgevlan") == 0 ||
+        system("/sbin/brctl addbr $bridgevlan") == 0 ||
             die "can't add bridge $bridgevlan\n";
     }
 
@@ -169,7 +169,7 @@ sub activate_bridge_vlan {
         die "can't up bridge $bridgevlan\n";
 
     # add $ifacevlan to the bridge
-    system("/usr/sbin/brctl addif $bridgevlan $ifacevlan") == 0 ||
+    system("/sbin/brctl addif $bridgevlan $ifacevlan") == 0 ||
 	die "can't add interface $ifacevlan to bridge $bridgevlan\n";
     
     return $bridgevlan;
