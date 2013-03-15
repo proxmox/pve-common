@@ -740,7 +740,7 @@ sub upid_read_status {
     my ($task, $filename) = upid_decode($upid);
     my $fh = IO::File->new($filename, "r");
     return "unable to open file - $!" if !$fh;
-    my $maxlen = 1024;
+    my $maxlen = 4096;
     sysseek($fh, -$maxlen, 2);
     my $readbuf = '';
     my $br = sysread($fh, $readbuf, $maxlen);
