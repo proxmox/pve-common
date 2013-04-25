@@ -19,6 +19,7 @@ use String::ShellQuote;
 
 our @EXPORT_OK = qw(
 lock_file 
+lock_file_full
 run_command 
 file_set_contents 
 file_get_contents
@@ -79,10 +80,12 @@ sub run_with_timeout {
 
 my $lock_handles =  {};
 
-sub lock_file {
-    my ($filename, $timeout, $code, @param) = @_;
+sub lock_file_full {
+    my ($filename, $timeout, $shared, $code, @param) = @_;
 
     $timeout = 10 if !$timeout;
+
+    my $mode = $shared ? LOCK_SH : LOCK_EX;
 
     my $lock_func = sub {
         if (!$lock_handles->{$$}->{$filename}) {
@@ -90,11 +93,11 @@ sub lock_file {
                 die "can't open file - $!\n";
         }
 
-        if (!flock ($lock_handles->{$$}->{$filename}, LOCK_EX|LOCK_NB)) {
+        if (!flock ($lock_handles->{$$}->{$filename}, $mode|LOCK_NB)) {
             print STDERR "trying to aquire lock...";
 	    my $success;
 	    while(1) {
-		$success = flock($lock_handles->{$$}->{$filename}, LOCK_EX);
+		$success = flock($lock_handles->{$$}->{$filename}, $mode);
 		# try again on EINTR (see bug #273)
 		if ($success || ($! != EINTR)) {
 		    last;
@@ -133,6 +136,13 @@ sub lock_file {
     $@ = undef;
 
     return $res;
+}
+
+
+sub lock_file {
+    my ($filename, $timeout, $code, @param) = @_;
+
+    return lock_file_full($filename, $timeout, 0, $code, @param);
 }
 
 sub file_set_contents {
