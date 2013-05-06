@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-2) unstable; urgency=low
+
+  * implement shared file locks
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 06 May 2013 11:49:10 +0200
+
 libpve-common-perl (3.0-1) unstable; urgency=low
 
   * start 3.0 development
