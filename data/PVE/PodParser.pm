@@ -4,11 +4,13 @@ use strict;
 use Pod::Parser;
 use base qw(Pod::Parser);
 
+my $currentYear = (localtime(time))[5] + 1900;
+
 my $stdinclude = {
     pve_copyright => <<EODATA,
 \=head1 COPYRIGHT AND DISCLAIMER
 
-Copyright (C) 2007-2011 Proxmox Server Solutions GmbH
+Copyright (C) 2007-$currentYear Proxmox Server Solutions GmbH
 
 This program is free software: you can redistribute it and\/or modify
 it under the terms of the GNU Affero General Public License as
