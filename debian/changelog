@@ -1,3 +1,11 @@
+libpve-common-perl (3.0-4) unstable; urgency=low
+
+  * fix bug #381: use persistent reservation file for ports
+
+  * new function PVE::Tools::next_migrate_port()
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 13 May 2013 07:23:35 +0200
+
 libpve-common-perl (3.0-3) unstable; urgency=low
 
   * fix date in copyright message
