@@ -632,24 +632,78 @@ sub wait_for_vnc_port {
     return undef;
 }
 
-sub next_vnc_port {
+sub next_unused_port {
+    my ($range_start, $range_end) = @_;
 
-    for (my $p = 5900; $p < 6000; $p++) {
+    # We use a file to register allocated ports.
+    # Those registrations expires after $expiretime.
+    # We use this to avoid race conditions between
+    # allocation and use of ports.
 
-	my $sock = IO::Socket::INET->new (Listen => 5,
-					  LocalAddr => 'localhost',
-					  LocalPort => $p,
-					  ReuseAddr => 1,
-					  Proto     => 0);
+    my $filename = "/var/tmp/pve-reserved-ports";
 
-	if ($sock) {
-	    close ($sock);
-	    return $p;
+    my $code = sub {
+
+	my $expiretime = 5;
+	my $ctime = time();
+
+	my $ports = {};
+
+	if (my $fh = IO::File->new ($filename, "r")) {
+	    while (my $line = <$fh>) {
+		if ($line =~ m/^(\d+)\s(\d+)$/) {
+		    my ($port, $timestamp) = ($1, $2);
+		    if (($timestamp + $expiretime) > $ctime) {
+			$ports->{$port} = $timestamp; # not expired
+		    }		
+		}
+	    }
 	}
-    }
+    
+	my $newport;
 
-    die "unable to find free vnc port";
-};
+	for (my $p = $range_start; $p < $range_end; $p++) {
+	    next if $ports->{$p}; # reserved
+
+	    my $sock = IO::Socket::INET->new(Listen => 5,
+					     LocalAddr => 'localhost',
+					     LocalPort => $p,
+					     ReuseAddr => 1,
+					     Proto     => 0);
+
+	    if ($sock) {
+		close($sock);
+		$newport = $p;
+		$ports->{$p} = $ctime;
+		last;
+	    }
+	}
+ 
+	my $data = "";
+	foreach my $p (keys %$ports) {
+	    $data .= "$p $ports->{$p}\n";
+	}
+    
+	file_set_contents($filename, $data);
+
+	return $newport;
+    };
+
+    my $p = lock_file($filename, 10, $code);
+    die $@ if $@;
+   
+    die "unable to find free port (${range_start}-${range_end})\n" if !$p;
+
+    return $p;
+}
+
+sub next_migrate_port {
+    return next_unused_port(60000, 60010);
+}
+
+sub next_vnc_port {
+    return next_unused_port(5900, 6000);
+}
 
 # NOTE: NFS syscall can't be interrupted, so alarm does 
 # not work to provide timeouts.
