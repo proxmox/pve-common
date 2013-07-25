@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-5) unstable; urgency=low
+
+  * add parser for "/etc/apt/auth.conf"
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 25 Jul 2013 09:57:55 +0200
+
 libpve-common-perl (3.0-4) unstable; urgency=low
 
   * fix bug #381: use persistent reservation file for ports
