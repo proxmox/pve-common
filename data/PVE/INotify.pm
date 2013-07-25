@@ -978,7 +978,7 @@ sub read_apt_auth {
 
     local $/;
 
-    my $raw = <$fd>;
+    my $raw = defined($fd) ? <$fd> : '';
 
     $raw =~ s/^\s+//;
 
