@@ -1041,6 +1041,6 @@ sub update_apt_auth {
 
 register_file('apt-auth', "/etc/apt/auth.conf",  
 	      \&read_apt_auth, \&write_apt_auth,
-	      \&update_apt_auth);
+	      \&update_apt_auth, perm => 0640);
 
 1;
