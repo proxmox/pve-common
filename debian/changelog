@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-6) unstable; urgency=low
+
+  * auth.conf: avoid warning if file does not exist
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 05 Aug 2013 07:57:16 +0200
+
 libpve-common-perl (3.0-5) unstable; urgency=low
 
   * add parser for "/etc/apt/auth.conf"
