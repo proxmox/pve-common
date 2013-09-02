@@ -13,6 +13,8 @@ MAN1DIR=${MANDIR}/man1/
 PERLDIR=${PREFIX}/share/perl5
 
 ARCH=all
+GITVERSION:=$(shell cat .git/refs/heads/master)
+
 DEB=${PACKAGE}_${VERSION}-${PKGREL}_${ARCH}.deb
 
 all: ${DEB}
@@ -27,6 +29,7 @@ deb ${DEB}:
 	rm -rf build
 	rsync -a data/ build
 	rsync -a debian/ build/debian
+	echo "git clone git://git.proxmox.com/git/pve-common.git\\ngit checkout ${GITVERSION}" > build/debian/SOURCE
 	cd build; dpkg-buildpackage -rfakeroot -b -us -uc
 	lintian ${DEB}
 
