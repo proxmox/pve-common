@@ -2,7 +2,6 @@ package PVE::RESTHandler;
 
 use strict;
 no strict 'refs'; # our autoload requires this
-
 use warnings;
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);

@@ -1,6 +1,7 @@
 package PVE::PodParser;
 
 use strict;
+use warnings;
 use Pod::Parser;
 use base qw(Pod::Parser);
 

@@ -1,7 +1,7 @@
 package PVE::JSONSchema;
 
-use warnings;
 use strict;
+use warnings;
 use Storable; # for dclone
 use Getopt::Long;
 use Devel::Cycle -quiet; # todo: remove?

@@ -1,6 +1,7 @@
 package PVE::ProcFSTools;
 
 use strict;
+use warnings;
 use POSIX;
 use Time::HiRes qw (gettimeofday);
 use IO::File;

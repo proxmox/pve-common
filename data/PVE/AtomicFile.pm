@@ -1,6 +1,7 @@
 package PVE::AtomicFile;
 
 use strict;
+use warnings;
 use IO::AtomicFile;
 use vars qw(@ISA);
 

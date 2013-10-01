@@ -3,6 +3,8 @@ package PVE::INotify;
 # todo: maybe we do not need update_file() ?
 
 use strict;
+use warnings;
+
 use POSIX;
 use IO::File;
 use IO::Dir;

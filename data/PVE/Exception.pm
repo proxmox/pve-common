@@ -1,12 +1,11 @@
-#!/usr/bin/perl -w
+package PVE::Exception;
 
 # a way to add more information to exceptions (see man perlfunc (die))
 # use PVE::Exception qw(raise);
 # raise ("my error message", code => 400, errors => { param1 => "err1", ...} );
 
-package PVE::Exception;
-
 use strict;
+use warnings;
 use vars qw(@ISA @EXPORT_OK);
 require Exporter;
 use Storable qw(dclone);       

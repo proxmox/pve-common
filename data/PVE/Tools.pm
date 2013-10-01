@@ -1,6 +1,7 @@
 package PVE::Tools;
 
 use strict;
+use warnings;
 use POSIX qw(EINTR);
 use IO::Socket::INET;
 use IO::Select;

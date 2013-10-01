@@ -1,6 +1,7 @@
 package PVE::Network;
 
 use strict;
+use warnings;
 use PVE::Tools qw(run_command);
 use PVE::ProcFSTools;
 use PVE::INotify;
