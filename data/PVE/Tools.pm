@@ -19,6 +19,8 @@ use Text::ParseWords;
 use String::ShellQuote;
 
 our @EXPORT_OK = qw(
+$IPV6RE
+$IPV4RE
 lock_file 
 lock_file_full
 run_command 
@@ -39,6 +41,22 @@ my $pvetaskdir = "$pvelogdir/tasks";
 
 mkdir $pvelogdir;
 mkdir $pvetaskdir;
+
+my $IPV4OCTET = "(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])";
+our $IPV4RE = "(?:(?:$IPV4OCTET\\.){3}$IPV4OCTET)";
+my $IPV6H16 = "(?:[0-9a-fA-F]{1,4})";
+my $IPV6LS32 = "(?:(?:$IPV4RE|$IPV6H16:$IPV6H16))";
+
+our $IPV6RE = "(?:" .
+    "(?:(?:" .                             "(?:$IPV6H16:){6})$IPV6LS32)|" .
+    "(?:(?:" .                           "::(?:$IPV6H16:){5})$IPV6LS32)|" .
+    "(?:(?:(?:" .              "$IPV6H16)?::(?:$IPV6H16:){4})$IPV6LS32)|" .
+    "(?:(?:(?:(?:$IPV6H16:){0,1}$IPV6H16)?::(?:$IPV6H16:){3})$IPV6LS32)|" .
+    "(?:(?:(?:(?:$IPV6H16:){0,2}$IPV6H16)?::(?:$IPV6H16:){2})$IPV6LS32)|" .
+    "(?:(?:(?:(?:$IPV6H16:){0,3}$IPV6H16)?::(?:$IPV6H16:){1})$IPV6LS32)|" .
+    "(?:(?:(?:(?:$IPV6H16:){0,4}$IPV6H16)?::" .           ")$IPV6LS32)|" .
+    "(?:(?:(?:(?:$IPV6H16:){0,5}$IPV6H16)?::" .            ")$IPV6H16)|" .
+    "(?:(?:(?:(?:$IPV6H16:){0,6}$IPV6H16)?::" .                    ")))";
 
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
