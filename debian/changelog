@@ -1,6 +1,8 @@
 libpve-common-perl (3.0-9) unstable; urgency=low
 
   * export regular expressions for IPv4 and IPv6 addresses
+  
+  * fix upid parser for long uptimes (> 497 days)
 
  -- Proxmox Support Team <support@proxmox.com>  Wed, 30 Oct 2013 12:45:52 +0100
 

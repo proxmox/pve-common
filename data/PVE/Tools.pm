@@ -765,6 +765,8 @@ sub df {
 sub upid_encode {
     my $d = shift;
 
+    # Note: pstart can be > 32bit if uptime > 497 days, so this can result in
+    # more that 8 characters for pstart
     return sprintf("UPID:%s:%08X:%08X:%08X:%s:%s:%s:", $d->{node}, $d->{pid}, 
 		   $d->{pstart}, $d->{starttime}, $d->{type}, $d->{id}, 
 		   $d->{user});
@@ -777,7 +779,8 @@ sub upid_decode {
     my $filename;
 
     # "UPID:$node:$pid:$pstart:$startime:$dtype:$id:$user"
-    if ($upid =~ m/^UPID:([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8}):([^:\s]+):([^:\s]*):([^:\s]+):$/) {
+    # Note: allow up to 9 characters for pstart (work until 20 years uptime)
+    if ($upid =~ m/^UPID:([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8,9}):([0-9A-Fa-f]{8}):([^:\s]+):([^:\s]*):([^:\s]+):$/) {
 	$res->{node} = $1;
 	$res->{pid} = hex($3);
 	$res->{pstart} = hex($4);
