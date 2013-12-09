@@ -729,6 +729,10 @@ sub next_vnc_port {
     return next_unused_port(5900, 6000);
 }
 
+sub next_spice_port {
+    return next_unused_port(61000, 61099);
+}
+
 # NOTE: NFS syscall can't be interrupted, so alarm does 
 # not work to provide timeouts.
 # from 'man nfs': "Only SIGKILL can interrupt a pending NFS operation"

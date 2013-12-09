@@ -1,3 +1,11 @@
+libpve-common-perl (3.0-10) unstable; urgency=low
+
+  * wait_for_vnc_port: avoid unnecessarry delay by using usleep
+  
+  * new helper next_spice_port()
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 09 Dec 2013 13:16:55 +0100
+
 libpve-common-perl (3.0-9) unstable; urgency=low
 
   * export regular expressions for IPv4 and IPv6 addresses
