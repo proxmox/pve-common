@@ -17,6 +17,7 @@ use Encode;
 use Digest::SHA;
 use Text::ParseWords;
 use String::ShellQuote;
+use Time::HiRes qw(usleep gettimeofday tv_interval);
 
 our @EXPORT_OK = qw(
 $IPV6RE
@@ -627,13 +628,16 @@ sub extract_param {
     return $res;
 }
 
-# Note: we use this to wait until vncterm is ready
+# Note: we use this to wait until vncterm/spiceterm is ready
 sub wait_for_vnc_port {
     my ($port, $timeout) = @_;
 
     $timeout = 5 if !$timeout;
+    my $sleeptime = 0;
+    my $starttime = [gettimeofday];
+    my $elapsed;
 
-    for (my $i = 0; $i < $timeout; $i++) {
+    while (($elapsed = tv_interval($starttime)) < $timeout) {
 	if (my $fh = IO::File->new ("/proc/net/tcp", "r")) {
 	    while (defined (my $line = <$fh>)) {
 		if ($line =~ m/^\s*\d+:\s+([0-9A-Fa-f]{8}):([0-9A-Fa-f]{4})\s/) {
@@ -645,7 +649,8 @@ sub wait_for_vnc_port {
 	    }
 	    close($fh);
 	}
-	sleep(1);
+	$sleeptime += 100000 if  $sleeptime < 1000000;
+	usleep($sleeptime);
     }
 
     return undef;
