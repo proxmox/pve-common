@@ -76,7 +76,6 @@ PVE::JSONSchema::register_standard_option('pve-storage-id', {
     type => 'string', format => 'pve-storage-id',
 }); 
 
-
 my $format_list = {};
 
 sub register_format {
@@ -228,6 +227,23 @@ sub pve_verify_iface {
     }
     return $id;
 }
+
+register_standard_option('spice-proxy', {
+    description => "SPICE proxy server. This can be used by the client to specify the proxy server. All nodes in a cluster runs 'spiceproxy', so it is up to the client to choose one. By default, we return the node where the VM is currently running. As resonable setting is to use same node you use to connect to the API (This is window.location.hostname for the JS GUI).",
+    type => 'string', format => 'dns-name',
+}); 
+
+register_standard_option('remote-viewer-config', {
+    description => "Returned values can be directly passed to the 'remote-viewer' application.",
+    additionalProperties => 1,
+    properties => {
+	type => { type => 'string' },
+	password => { type => 'string' },
+	proxy => { type => 'string' },
+	host => { type => 'string' },
+	'tls-port' => { type => 'integer' },
+    },
+});
 
 sub check_format {
     my ($format, $value) = @_;
