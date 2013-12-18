@@ -68,20 +68,36 @@ sub tap_create {
 sub tap_plug {
     my ($iface, $bridge, $tag) = @_;
 
-    my $newbridge = activate_bridge_vlan($bridge, $tag);
-    copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
+    #cleanup old port config from any openvswitch bridge
+    eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
 
-    system ("/sbin/brctl addif $newbridge $iface") == 0 ||
-	die "can't add interface to bridge\n";
+    if (-d "/sys/class/net/$bridge/bridge"){
+	    my $newbridge = activate_bridge_vlan($bridge, $tag);
+	    copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
+
+	    system ("/sbin/brctl addif $newbridge $iface") == 0 ||
+		die "can't add interface to bridge\n";
+    }else{
+	    my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
+	    $cmd .= " tag=$tag" if $tag;
+	    system ($cmd) == 0 ||
+		die "can't add interface to bridge\n";
+    }
 }
 
 sub tap_unplug {
     my ($iface, $bridge, $tag) = @_;
 
-    $bridge .= "v$tag" if $tag;
+    if (-d "/sys/class/net/$bridge/bridge"){
 
-    system ("/sbin/brctl delif $bridge $iface") == 0 ||
-	die "can't del interface from bridge\n";
+	$bridge .= "v$tag" if $tag;
+
+	    system ("/sbin/brctl delif $bridge $iface") == 0 ||
+		die "can't del interface from bridge\n";
+    }else{
+	    system ("/usr/bin/ovs-vsctl del-port $iface") == 0 ||
+		die "can't del interface from bridge\n";
+    }
 }
 
 sub copy_bridge_config {
