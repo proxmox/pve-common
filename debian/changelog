@@ -1,3 +1,13 @@
+libpve-common-perl (3.0-11) unstable; urgency=low
+
+  * add openvswitch support to tap_plug / tap_unplug
+  
+  * register CIDR format
+
+  * register standard options for SPICE
+  
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 21 Dec 2013 09:03:07 +0100
+
 libpve-common-perl (3.0-10) unstable; urgency=low
 
   * wait_for_vnc_port: avoid unnecessarry delay by using usleep
