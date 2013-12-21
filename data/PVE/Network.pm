@@ -61,8 +61,10 @@ sub tap_create {
     my $bridgemtu = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/mtu");
 	die "bridge '$bridge' does not exist\n" if !$bridgemtu;
 
-    eval{ PVE::Tools::run_command("/sbin/ifconfig $iface 0.0.0.0 promisc up mtu $bridgemtu");};
-	die "interface activation failed\n" if $@;
+    eval { 
+	PVE::Tools::run_command("/sbin/ifconfig $iface 0.0.0.0 promisc up mtu $bridgemtu");
+    };
+    die "interface activation failed\n" if $@;
 }
 
 sub tap_plug {
@@ -71,32 +73,31 @@ sub tap_plug {
     #cleanup old port config from any openvswitch bridge
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
 
-    if (-d "/sys/class/net/$bridge/bridge"){
-	    my $newbridge = activate_bridge_vlan($bridge, $tag);
-	    copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
+    if (-d "/sys/class/net/$bridge/bridge") {
+	my $newbridge = activate_bridge_vlan($bridge, $tag);
+	copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
 
-	    system ("/sbin/brctl addif $newbridge $iface") == 0 ||
-		die "can't add interface to bridge\n";
-    }else{
-	    my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
-	    $cmd .= " tag=$tag" if $tag;
-	    system ($cmd) == 0 ||
-		die "can't add interface to bridge\n";
+	system("/sbin/brctl addif $newbridge $iface") == 0 ||
+	    die "can't add interface to bridge\n";
+    } else {
+	my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
+	$cmd .= " tag=$tag" if $tag;
+	system($cmd) == 0 ||
+	    die "can't add interface to bridge\n";
     }
 }
 
 sub tap_unplug {
     my ($iface, $bridge, $tag) = @_;
 
-    if (-d "/sys/class/net/$bridge/bridge"){
-
+    if (-d "/sys/class/net/$bridge/bridge") {
 	$bridge .= "v$tag" if $tag;
 
-	    system ("/sbin/brctl delif $bridge $iface") == 0 ||
-		die "can't del interface from bridge\n";
-    }else{
-	    system ("/usr/bin/ovs-vsctl del-port $iface") == 0 ||
-		die "can't del interface from bridge\n";
+	system("/sbin/brctl delif $bridge $iface") == 0 ||
+	    die "can't del interface from bridge\n";
+    } else {
+	system ("/usr/bin/ovs-vsctl del-port $iface") == 0 ||
+	    die "can't del interface from bridge\n";
     }
 }
 
