@@ -5,7 +5,7 @@ use warnings;
 use Storable; # for dclone
 use Getopt::Long;
 use Devel::Cycle -quiet; # todo: remove?
-use PVE::Tools qw(split_list);
+use PVE::Tools qw(split_list $IPV6RE $IPV4RE);
 use PVE::Exception qw(raise);
 use HTTP::Status qw(:constants);
 use Net::IP qw(:PROC);
@@ -189,6 +189,20 @@ sub pve_verify_ipv4mask {
 	die "value does not look like a valid IP netmask\n";
     }
     return $mask;
+}
+
+register_format('CIDR', \&pve_verify_cidr);
+sub pve_verify_cidr {
+    my ($cidr, $noerr) = @_;
+
+    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 < 32)) {
+	return $cidr;
+    } elsif ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 <= 120)) {
+	return $cidr;
+    }
+
+    return undef if $noerr;
+    die "value does not look like a valid CIDR network\n";
 }
 
 register_format('email', \&pve_verify_email);
