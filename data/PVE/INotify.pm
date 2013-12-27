@@ -674,9 +674,75 @@ my $bond_modes = { 'balance-rr' => 0,
 		   'balance-alb' => 6,
 	       };
 
+my $ovs_bond_modes = {
+    'active-backup' => 1,
+    'balance-tcp' => 1, 
+    'balance-slb' => 1,
+};
+
 #sub get_bond_modes {
 #    return $bond_modes;
 #}
+
+my $parse_ovs_option = sub {
+    my ($data) = @_;
+
+    my $opts = {};
+    foreach my $kv (split (/\s+/, $data || '')) {
+	my ($k, $v) = split('=', $kv, 2);
+	$opts->{$k} = $v if $k && $v;
+    }
+    return $opts;
+};
+
+my $set_ovs_option = sub {
+    my ($d, %params) = @_;
+
+    my $opts = &$parse_ovs_option($d->{ovs_options});
+
+    foreach my $k (keys %params) {
+	my $v = $params{$k};
+	if ($v) {
+	    $opts->{$k} = $v;
+	} else {
+	    delete $opts->{$k};
+	}
+    }
+
+    my $res = [];
+    foreach my $k (keys %$opts) {
+	push @$res, "$k=$opts->{$k}";
+    }
+
+    if (my $new = join(' ', @$res)) {
+	$d->{ovs_options} = $new;
+	return $d->{ovs_options};
+    } else {
+	delete $d->{ovs_options};
+	return undef;
+    }
+};
+
+my $extract_ovs_option = sub {
+    my ($d, $name) = @_;
+
+    my $opts = &$parse_ovs_option($d->{ovs_options});
+
+    my $v = delete $opts->{$name};
+
+    my $res = [];
+    foreach my $k (keys %$opts) {
+	push @$res, "$k=$opts->{$k}";
+    }
+
+    if (my $new = join(' ', @$res)) {
+	$d->{ovs_options} = $new;
+    } else {
+	delete $d->{ovs_options};
+    }
+
+    return $v;
+};
 
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
@@ -699,15 +765,6 @@ sub read_etc_network_interfaces {
 
     # always add the vmbr0 bridge device
     $ifaces->{vmbr0}->{exists} = 1;
-
-    if (my $fd2 = IO::File->new("/proc/net/if_inet6", "r")) {
-	while (defined ($line = <$fd2>)) {
-	    if ($line =~ m/^[a-f0-9]{32}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+(lo|eth\d+|vmbr\d+|bond\d+)$/) {
-		$ifaces->{$1}->{active} = 1;
-	    }
-	}
-	close ($fd2);
-    }
 
     my $gateway = 0;
 
@@ -742,6 +799,9 @@ sub read_etc_network_interfaces {
 		    } elsif ($id eq 'gateway') {
 			$d->{$id} = $value;
 			$gateway = 1;
+		    } elsif ($id eq 'ovs_type' || $id eq 'ovs_options'|| $id eq 'ovs_bridge' ||
+			     $id eq 'ovs_bonds' || $id eq 'ovs_ports') {
+			$d->{$id} = $value;
 		    } elsif ($id eq 'slaves' || $id eq 'bridge_ports') {
 			my $devs = {};
 			foreach my $p (split (/\s+/, $value)) {
@@ -795,14 +855,29 @@ sub read_etc_network_interfaces {
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
 	if ($iface =~ m/^bond\d+$/) {
-	    $d->{type} = 'bond';
-	} elsif ($iface =~ m/^vmbr\d+$/) {
-	    $d->{type} = 'bridge';
-	    if (!defined ($d->{bridge_fd})) {
-		$d->{bridge_fd} = 0;
+	    if (!$d->{ovs_type}) {
+		$d->{type} = 'bond';
+	    } elsif ($d->{ovs_type} eq 'OVSBond') {
+		$d->{type} = $d->{ovs_type};
+		# translate: ovs_options => bond_mode
+		$d->{'bond_mode'} = &$extract_ovs_option($d, 'bond_mode');
+	    } else {
+		$d->{type} = 'unknown';
 	    }
-	    if (!defined ($d->{bridge_stp})) {
-		$d->{bridge_stp} = 'off';
+	} elsif ($iface =~ m/^vmbr\d+$/) {
+	    if (!$d->{ovs_type}) {
+		$d->{type} = 'bridge';
+
+		if (!defined ($d->{bridge_fd})) {
+		    $d->{bridge_fd} = 0;
+		}
+		if (!defined ($d->{bridge_stp})) {
+		    $d->{bridge_stp} = 'off';
+		}
+	    } elsif ($d->{ovs_type} eq 'OVSBridge') {
+		$d->{type} = $d->{ovs_type};
+	    } else {
+		$d->{type} = 'unknown';
 	    }
 	} elsif ($iface =~ m/^(\S+):\d+$/) {
 	    $d->{type} = 'alias';
@@ -813,14 +888,33 @@ sub read_etc_network_interfaces {
 		$d->{exists} = 0;
 	    }
 	} elsif ($iface =~ m/^eth\d+$/) {
-	    $d->{type} = 'eth';
+	    if (!$d->{ovs_type}) {
+		$d->{type} = 'eth';
+	    } elsif ($d->{ovs_type} eq 'OVSPort') {
+		$d->{type} = $d->{ovs_type};
+	    } else {
+		$d->{type} = 'unknown';
+	    }
 	} elsif ($iface =~ m/^lo$/) {
 	    $d->{type} = 'loopback';
 	} else {
-	    $d->{type} = 'unknown';
+	    if (!$d->{ovs_type}) {
+		$d->{type} = 'unknown';
+	    } elsif ($d->{ovs_type} eq 'OVSIntPort') {
+		$d->{type} = $d->{ovs_type};
+	    }
 	}
 
 	$d->{method} = 'manual' if !$d->{method};
+    }
+
+    if (my $fd2 = IO::File->new("/proc/net/if_inet6", "r")) {
+	while (defined ($line = <$fd2>)) {
+	    if ($line =~ m/^[a-f0-9]{32}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+(\S+)$/) {
+		$ifaces->{$1}->{active} = 1 if defined($ifaces->{$1});
+	    }
+	}
+	close ($fd2);
     }
 
     return $ifaces;
@@ -833,47 +927,90 @@ sub __interface_to_string {
 
     my $raw = '';
 
-    if ($d->{autostart}) {
-	$raw .= "auto $iface\n";
-    }
     $raw .= "iface $iface inet $d->{method}\n";
     $raw .= "\taddress  $d->{address}\n" if $d->{address};
     $raw .= "\tnetmask  $d->{netmask}\n" if $d->{netmask};
     $raw .= "\tgateway  $d->{gateway}\n" if $d->{gateway};
     $raw .= "\tbroadcast  $d->{broadcast}\n" if $d->{broadcast};
 
-    if ($d->{bridge_ports} || ($iface =~ m/^vmbr\d+$/)) {
+    my $done = { type => 1, priority => 1, method => 1, active => 1, exists => 1,
+		 comments => 1, autostart => 1, options => 1,
+		 address => 1, netmask => 1, gateway => 1, broadcast => 1 };
+ 
+    if ($d->{type} eq 'bridge') {
+
 	my $ports = $d->{bridge_ports} || 'none';
 	$raw .= "\tbridge_ports $ports\n";
-    }
+	$done->{bridge_ports} = 1;
 
-    if ($d->{bridge_stp} || ($iface =~ m/^vmbr\d+$/)) {
-	my $v = $d->{bridge_stp};
-	$v = defined ($v) ? $v : 'off';
+	my $v = defined($d->{bridge_stp}) ? $d->{bridge_stp} : 'off';
 	$raw .= "\tbridge_stp $v\n";
-    }
+	$done->{bridge_stp} = 1;
 
-    if (defined ($d->{bridge_fd}) || ($iface =~ m/^vmbr\d+$/)) {
-	my $v = $d->{bridge_fd};
-	$v = defined ($v) ? $v : 0;
+	$v = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
 	$raw .= "\tbridge_fd $v\n";
-    }
+	$done->{bridge_fd} = 1;
+    
+    } elsif ($d->{type} eq 'bond') {
 
-    if ($d->{slaves} || ($iface =~ m/^bond\d+$/)) {
 	my $slaves = $d->{slaves} || 'none';
 	$raw .= "\tslaves $slaves\n";
-    }
+	$done->{slaves} = 1;
 
-    if (defined ($d->{'bond_miimon'}) || ($iface =~ m/^bond\d+$/)) {
-	my $v = $d->{'bond_miimon'};
-	$v = defined ($v) ? $v : 100;
+	my $v = defined ($d->{'bond_miimon'}) ? $d->{'bond_miimon'} : 100;
 	$raw .= "\tbond_miimon $v\n";
+	$done->{'bond_miimon'} = 1;
+
+	$v = defined ($d->{'bond_mode'}) ? $d->{'bond_mode'} : 'balance-rr';
+	$raw .= "\tbond_mode $v\n";
+	$done->{'bond_mode'} = 1;
+
+    } elsif ($d->{type} eq 'OVSBridge') {
+
+	$raw .= "\tovs_type $d->{type}\n";
+	$done->{ovs_type} = 1;
+
+	$raw .= "\tovs_ports $d->{ovs_ports}\n" if $d->{ovs_ports};
+	$done->{ovs_ports} = 1;
+
+    } elsif ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' ||
+	     $d->{type} eq 'OVSBond') {
+
+	$d->{autostart} = 0; # started by the bridge
+
+	if ($d->{type} eq 'OVSBond') {
+
+	    $d->{bond_mode} = 'active-backup' if !$d->{bond_mode};
+
+	    $ovs_bond_modes->{$d->{bond_mode}} ||
+		die "OVS does not support bond mode '$d->{bond_mode}\n";
+
+	    &$set_ovs_option($d, bond_mode => $d->{bond_mode});
+	    $done->{bond_mode} = 1;
+
+	    $raw .= "\tovs_bonds $d->{ovs_bonds}\n" if $d->{ovs_bonds};
+	    $done->{ovs_bonds} = 1;
+	}
+
+	if ($d->{ovs_bridge}) {
+	    $raw = "allow-$d->{ovs_bridge} $iface\n$raw";
+	}
+
+	$raw .= "\tovs_type $d->{type}\n";
+	$done->{ovs_type} = 1;
+
+	if ($d->{ovs_bridge}) {
+	    $raw .= "\tovs_bridge $d->{ovs_bridge}\n";
+	    $done->{ovs_bridge} = 1;
+	}
+	# fixme: use Data::Dumper; print Dumper($d);
     }
 
-    if (defined ($d->{'bond_mode'}) || ($iface =~ m/^bond\d+$/)) {
-	my $v = $d->{'bond_mode'};
-	$v = defined ($v) ? $v : 'balance-rr';
-	$raw .= "\tbond_mode $v\n";
+    # print other settings
+    foreach my $k (keys %$d) {
+	next if $done->{$k};
+	next if !$d->{$k};
+	$raw .= "\t$k $d->{$k}\n";
     }
 
     foreach my $option (@{$d->{options}}) {
@@ -886,6 +1023,10 @@ sub __interface_to_string {
 	$raw .= "#$cl\n";
     }
 
+    if ($d->{autostart}) {
+	$raw = "auto $iface\n$raw";
+    }
+
     $raw .= "\n";
 
     return $raw;
@@ -894,16 +1035,87 @@ sub __interface_to_string {
 sub write_etc_network_interfaces {
     my ($filename, $fh, $ifaces) = @_;
 
+    my $used_ports = {};
+
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+
+	my $ports = '';
+	foreach my $k (qw(bridge_ports ovs_ports slaves ovs_bonds)) {
+	    $ports .= " $d->{$k}" if $d->{$k};
+	}
+
+	foreach my $p (PVE::Tools::split_list($ports)) {
+	    die "port '$p' is already used on interface '$used_ports->{$p}'\n"
+		if $used_ports->{$p} && $used_ports->{$p} ne $iface;
+	    $used_ports->{$p} = $iface;
+	}
+    }
+
+    # delete unused OVS ports
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' || 
+	    $d->{type} eq 'OVSBond') {
+	    my $brname = $used_ports->{$iface};
+	    if (!$brname || !$ifaces->{$brname}) { 
+		delete $ifaces->{$iface}; 
+		next;
+	    }
+	    my $bd = $ifaces->{$brname};
+	    if ($bd->{type} ne 'OVSBridge') {
+		delete $ifaces->{$iface};
+		next;
+	    }
+	}
+    }
+
+    # create OVS bridge ports
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if ($d->{type} eq 'OVSBridge' && $d->{ovs_ports}) {
+	    foreach my $p (split (/\s+/, $d->{ovs_ports})) {
+		my $n = $ifaces->{$p};
+		die "OVS bridge '$iface' - unable to find port '$p'\n"
+		    if !$n;
+		if ($n->{type} eq 'eth') {
+		    $n->{type} = 'OVSPort';
+		    $n->{ovs_bridge} = $iface;		    
+		} elsif ($n->{type} eq 'OVSBond' || $n->{type} eq 'OVSPort' ||
+		    $n->{type} eq 'OVSIntPort') {
+		    $n->{ovs_bridge} = $iface;
+		} else {
+		    die "interface '$p' is not defined as OVS port/bond\n";
+		}
+	    }
+	}
+    }
+
+    # check OVS bond ports
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if ($d->{type} eq 'OVSBond' && $d->{ovs_bonds}) {
+	    foreach my $p (split (/\s+/, $d->{ovs_bonds})) {
+		my $n = $ifaces->{$p};
+		die "OVS bond '$iface' - unable to find slave '$p'\n"
+		    if !$n;
+		die "OVS bond '$iface' - wrong interface type on slave '$p' " .
+		    "('$n->{type}' != 'eth')\n" if $n->{type} ne 'eth';
+	    }
+	}
+    }
+
     my $raw = "# network interface settings\n";
 
     my $printed = {};
 
     my $if_type_hash = {
+	unknown => 0,
 	loopback => 10,
 	eth => 20,
 	bond => 30,
 	bridge => 40,
-    };
+   };
 
     my $lookup_type_prio = sub {
 	my $iface = shift;
