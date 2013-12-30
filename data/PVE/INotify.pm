@@ -676,8 +676,9 @@ my $bond_modes = { 'balance-rr' => 0,
 
 my $ovs_bond_modes = {
     'active-backup' => 1,
-    'balance-tcp' => 1, 
     'balance-slb' => 1,
+    'lacp-balance-slb' => 1,
+    'lacp-balance-tcp' => 1, 
 };
 
 #sub get_bond_modes {
@@ -861,6 +862,16 @@ sub read_etc_network_interfaces {
 		$d->{type} = $d->{ovs_type};
 		# translate: ovs_options => bond_mode
 		$d->{'bond_mode'} = &$extract_ovs_option($d, 'bond_mode');
+		my $lacp = &$extract_ovs_option($d, 'lacp');
+		if ($lacp && $lacp eq 'active') {
+		    if ($d->{'bond_mode'} eq 'balance-slb') {
+			$d->{'bond_mode'} = 'lacp-balance-slb';
+		    }
+		}
+		# Note: balance-tcp needs lacp
+		if ($d->{'bond_mode'} eq 'balance-tcp') {
+		    $d->{'bond_mode'} = 'lacp-balance-tcp';
+		}
 	    } else {
 		$d->{type} = 'unknown';
 	    }
@@ -985,7 +996,16 @@ sub __interface_to_string {
 	    $ovs_bond_modes->{$d->{bond_mode}} ||
 		die "OVS does not support bond mode '$d->{bond_mode}\n";
 
-	    &$set_ovs_option($d, bond_mode => $d->{bond_mode});
+	    if ($d->{bond_mode} eq 'lacp-balance-slb') {
+		&$set_ovs_option($d, lacp => 'active');
+		&$set_ovs_option($d, bond_mode => 'balance-slb');
+	    } elsif ($d->{bond_mode} eq 'lacp-balance-tcp') {
+		&$set_ovs_option($d, lacp => 'active');
+		&$set_ovs_option($d, bond_mode => 'balance-tcp');
+	    } else {
+		&$set_ovs_option($d, lacp => undef);
+		&$set_ovs_option($d, bond_mode => $d->{bond_mode});
+	    }
 	    $done->{bond_mode} = 1;
 
 	    $raw .= "\tovs_bonds $d->{ovs_bonds}\n" if $d->{ovs_bonds};
