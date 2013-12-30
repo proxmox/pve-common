@@ -821,6 +821,8 @@ sub read_etc_network_interfaces {
 			$d->{$id} = $value;
 		    } elsif ($id eq 'bond_miimon') {
 			$d->{$id} = $value;
+		    } elsif ($id eq 'bond_xmit_hash_policy') {
+			$d->{$id} = $value;
 		    } elsif ($id eq 'bond_mode') {
 			# always use names
 			foreach my $bm (keys %$bond_modes) {
@@ -975,6 +977,12 @@ sub __interface_to_string {
 	$v = defined ($d->{'bond_mode'}) ? $d->{'bond_mode'} : 'balance-rr';
 	$raw .= "\tbond_mode $v\n";
 	$done->{'bond_mode'} = 1;
+
+	if ($d->{'bond_mode'} && $d->{'bond_xmit_hash_policy'} &&
+	    ($d->{'bond_mode'} eq 'balance-xor' || $d->{'bond_mode'} eq '802.3ad')) {
+	    $raw .= "\tbond_xmit_hash_policy $d->{'bond_xmit_hash_policy'}\n";
+	}
+	$done->{'bond_xmit_hash_policy'} = 1;
 
     } elsif ($d->{type} eq 'OVSBridge') {
 
