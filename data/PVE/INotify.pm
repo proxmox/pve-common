@@ -874,6 +874,8 @@ sub read_etc_network_interfaces {
 		if ($d->{'bond_mode'} eq 'balance-tcp') {
 		    $d->{'bond_mode'} = 'lacp-balance-tcp';
 		}
+		my $tag = &$extract_ovs_option($d, 'tag');
+		$d->{ovs_tag} = $tag if defined($tag);
 	    } else {
 		$d->{type} = 'unknown';
 	    }
@@ -905,6 +907,8 @@ sub read_etc_network_interfaces {
 		$d->{type} = 'eth';
 	    } elsif ($d->{ovs_type} eq 'OVSPort') {
 		$d->{type} = $d->{ovs_type};
+		my $tag = &$extract_ovs_option($d, 'tag');
+		$d->{ovs_tag} = $tag if defined($tag);
 	    } else {
 		$d->{type} = 'unknown';
 	    }
@@ -915,6 +919,8 @@ sub read_etc_network_interfaces {
 		$d->{type} = 'unknown';
 	    } elsif ($d->{ovs_type} eq 'OVSIntPort') {
 		$d->{type} = $d->{ovs_type};
+		my $tag = &$extract_ovs_option($d, 'tag');
+		$d->{ovs_tag} = $tag if defined($tag);
 	    }
 	}
 
@@ -996,6 +1002,11 @@ sub __interface_to_string {
 	     $d->{type} eq 'OVSBond') {
 
 	$d->{autostart} = 0; # started by the bridge
+
+	if (defined($d->{ovs_tag})) {
+	    &$set_ovs_option($d, tag => $d->{ovs_tag});
+	}
+	$done->{ovs_tag} = 1;
 
 	if ($d->{type} eq 'OVSBond') {
 
