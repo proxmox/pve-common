@@ -882,7 +882,9 @@ sub decode_utf8_parameters {
 
 sub random_ether_addr {
 
-    my $rand = Digest::SHA::sha1_hex(rand(), time());
+    my ($seconds, $microseconds) = gettimeofday;
+
+    my $rand = Digest::SHA::sha1_hex($$, rand(), $seconds, $microseconds);
 
     my $mac = '';
     for (my $i = 0; $i < 6; $i++) {
