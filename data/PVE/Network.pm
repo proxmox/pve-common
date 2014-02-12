@@ -121,36 +121,10 @@ sub copy_bridge_config {
     }
 }
 
-sub activate_bridge_vlan {
-    my ($bridge, $tag_param) = @_;
-
-    die "bridge '$bridge' is not active\n" if ! -d "/sys/class/net/$bridge";
-
-    return $bridge if !defined($tag_param); # no vlan, simply return
-
-    my $tag = int($tag_param);
-
-    die "got strange vlan tag '$tag_param'\n" if $tag < 1 || $tag > 4094;
-
-    my $bridgevlan = "${bridge}v$tag";
-
-    my $dir = "/sys/class/net/$bridge/brif";
-
-    #check if we have an only one ethX or bondX interface in the bridge
-    
-    my $iface;
-    PVE::Tools::dir_glob_foreach($dir, '((eth|bond)\d+)', sub {
-	my ($slave) = @_;
-
-	die "more then one physical interfaces on bridge '$bridge'\n" if $iface;
-	$iface = $slave;
-
-    });
-
-    die "no physical interface on bridge '$bridge'\n" if !$iface;
-
+sub activate_bridge_vlan_slave {
+    my ($bridgevlan, $iface, $tag) = @_;
     my $ifacevlan = "${iface}.$tag";
-
+	
     # create vlan on $iface is not already exist
     if (! -d "/sys/class/net/$ifacevlan") {
 	system("/sbin/vconfig add $iface $tag") == 0 ||
@@ -165,13 +139,28 @@ sub activate_bridge_vlan {
     my $path= "/sys/class/net/$ifacevlan/brport/bridge";
     if (-l $path) {
         my $tbridge = basename(readlink($path));
-	if ($tbridge eq $bridgevlan) {
-	    # already member of bridge - assume setup is already done
-	    return $bridgevlan;
-	} else {
+	if ($tbridge ne $bridgevlan) {
 	    die "interface $ifacevlan already exist in bridge $tbridge\n";
 	}
     }
+
+    # add $ifacevlan to the bridge
+    system("/sbin/brctl addif $bridgevlan $ifacevlan") == 0 ||
+	die "can't add interface $ifacevlan to bridge $bridgevlan\n";
+}
+
+sub activate_bridge_vlan {
+    my ($bridge, $tag_param) = @_;
+
+    die "bridge '$bridge' is not active\n" if ! -d "/sys/class/net/$bridge";
+
+    return $bridge if !defined($tag_param); # no vlan, simply return
+
+    my $tag = int($tag_param);
+
+    die "got strange vlan tag '$tag_param'\n" if $tag < 1 || $tag > 4094;
+
+    my $bridgevlan = "${bridge}v$tag";
 
     # add bridgevlan if it doesn't already exist
     if (! -d "/sys/class/net/$bridgevlan") {
@@ -179,16 +168,23 @@ sub activate_bridge_vlan {
             die "can't add bridge $bridgevlan\n";
     }
 
+    # for each physical interface (eth or bridge) bind them to bridge vlan
+    my $ifcount = 0;
+    my $dir = "/sys/class/net/$bridge/brif";
+    PVE::Tools::dir_glob_foreach($dir, '((eth|bond)\d+)', sub {
+        my ($slave) = @_;
+        activate_bridge_vlan_slave($bridgevlan, $slave, $tag);
+        $ifcount++;
+    });
+
+    die "no physical interface on bridge '$bridge'\n" if $ifcount == 0;
+
     #fixme: set other bridge flags
 
     # be sure to have the bridge up
     system("/sbin/ip link set $bridgevlan up") == 0 ||
         die "can't up bridge $bridgevlan\n";
-
-    # add $ifacevlan to the bridge
-    system("/sbin/brctl addif $bridgevlan $ifacevlan") == 0 ||
-	die "can't add interface $ifacevlan to bridge $bridgevlan\n";
-    
+   
     return $bridgevlan;
 }
 
