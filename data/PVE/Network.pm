@@ -141,6 +141,9 @@ sub activate_bridge_vlan_slave {
         my $tbridge = basename(readlink($path));
 	if ($tbridge ne $bridgevlan) {
 	    die "interface $ifacevlan already exist in bridge $tbridge\n";
+	} else {
+            # Port already attached to bridge: do nothing.
+            return;
 	}
     }
 
