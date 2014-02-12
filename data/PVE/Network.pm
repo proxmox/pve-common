@@ -165,6 +165,14 @@ sub activate_bridge_vlan {
 
     my $bridgevlan = "${bridge}v$tag";
 
+    my @ifaces = ();
+    my $dir = "/sys/class/net/$bridge/brif";
+    PVE::Tools::dir_glob_foreach($dir, '((eth|bond)\d+)', sub {
+        push(@ifaces, $_[0]);
+    });
+
+    die "no physical interface on bridge '$bridge'\n" if $ifcount == 0;
+
     # add bridgevlan if it doesn't already exist
     if (! -d "/sys/class/net/$bridgevlan") {
         system("/sbin/brctl addbr $bridgevlan") == 0 ||
@@ -172,15 +180,9 @@ sub activate_bridge_vlan {
     }
 
     # for each physical interface (eth or bridge) bind them to bridge vlan
-    my $ifcount = 0;
-    my $dir = "/sys/class/net/$bridge/brif";
-    PVE::Tools::dir_glob_foreach($dir, '((eth|bond)\d+)', sub {
-        my ($slave) = @_;
-        activate_bridge_vlan_slave($bridgevlan, $slave, $tag);
-        $ifcount++;
-    });
-
-    die "no physical interface on bridge '$bridge'\n" if $ifcount == 0;
+    foreach my $iface (@ifaces) {
+        activate_bridge_vlan_slave($bridgevlan, $iface, $tag);
+    }
 
     #fixme: set other bridge flags
 
