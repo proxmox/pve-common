@@ -114,8 +114,7 @@ sub copy_bridge_config {
 	    my $v0 = PVE::Tools::file_read_firstline("/sys/class/net/$br0/bridge/$sysname");
 	    my $v1 = PVE::Tools::file_read_firstline("/sys/class/net/$br1/bridge/$sysname");
 	    if ($v0 ne $v1) {
-		system("echo \"$v0\" > /sys/class/net/$br1/bridge/$sysname") == 0 ||
-		    warn "unable to set bridge config '$sysname'\n";
+		write_proc_entry("/sys/class/net/$br1/bridge/$sysname", $v0);
 	    }
 	};
 	warn $@ if $@;
