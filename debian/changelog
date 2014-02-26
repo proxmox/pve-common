@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-14) unstable; urgency=low
+
+  * correctly copy bridge config for vlan bridges
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 26 Feb 2014 07:50:47 +0100
+
 libpve-common-perl (3.0-13) unstable; urgency=low
 
   * improve random MAC address generation
