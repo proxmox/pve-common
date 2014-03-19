@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-15) unstable; urgency=low
+
+  * Add support for bridges with more than one physical link
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 19 Mar 2014 06:52:11 +0100
+
 libpve-common-perl (3.0-14) unstable; urgency=low
 
   * correctly copy bridge config for vlan bridges
