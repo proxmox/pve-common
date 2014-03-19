@@ -168,10 +168,10 @@ sub activate_bridge_vlan {
     my @ifaces = ();
     my $dir = "/sys/class/net/$bridge/brif";
     PVE::Tools::dir_glob_foreach($dir, '((eth|bond)\d+)', sub {
-        push(@ifaces, $_[0]);
+        push @ifaces, $_[0];
     });
 
-    die "no physical interface on bridge '$bridge'\n" if $ifcount == 0;
+    die "no physical interface on bridge '$bridge'\n" if scalar(@ifaces) == 0;
 
     # add bridgevlan if it doesn't already exist
     if (! -d "/sys/class/net/$bridgevlan") {
