@@ -76,6 +76,13 @@ PVE::JSONSchema::register_standard_option('pve-storage-id', {
     type => 'string', format => 'pve-storage-id',
 }); 
 
+PVE::JSONSchema::register_standard_option('pve-config-digest', {
+    description => 'Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.',
+    type => 'string',
+    optional => 1,
+    maxLength => 40, # sha1 hex digest lenght is 40
+});
+
 my $format_list = {};
 
 sub register_format {

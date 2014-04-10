@@ -84,12 +84,7 @@ sub updateSchema {
 	}
     }
 
-    $props->{digest} = {
-	type => 'string',
-	description => 'Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.',
-	maxLength => 40,
-	optional => 1,
-    };
+    $props->{digest} = get_standard_option('pve-config-digest');
 
     $props->{delete} = {
 	type => 'string', format => 'pve-configid-list',
