@@ -428,9 +428,7 @@ sub write_config {
 sub assert_if_modified {
     my ($cfg, $digest) = @_;
 
-    if ($digest && ($cfg->{digest} ne $digest)) {
-	die "detected modified configuration - file change by other user? Try again.\n";
-    }
+    PVE::Tools::assert_if_modified($cfg->{digest}, $digest);
 }
 
 1;

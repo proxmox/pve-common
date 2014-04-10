@@ -998,4 +998,12 @@ sub dir_glob_foreach {
     } 
 }
 
+sub assert_if_modified {
+    my ($digest1, $digest2) = @_;
+
+    if ($digest1 && $digest2 && ($digest1 ne $digest2)) {
+	die "detected modified configuration - file change by other user? Try again.\n";
+    }
+}
+
 1;
