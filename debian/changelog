@@ -1,3 +1,11 @@
+libpve-common-perl (3.0-16) unstable; urgency=low
+
+  * register new standard option pve-config-digest
+  
+  * move assert_if_modified to PVE::Tools
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 10 Apr 2014 09:49:30 +0200
+
 libpve-common-perl (3.0-15) unstable; urgency=low
 
   * Add support for bridges with more than one physical link
