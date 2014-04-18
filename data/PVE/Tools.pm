@@ -932,7 +932,7 @@ sub split_args {
 }
 
 sub dump_logfile {
-    my ($filename, $start, $limit) = @_;
+    my ($filename, $start, $limit, $filter) = @_;
 
     my $lines = [];
     my $count = 0;
@@ -948,12 +948,25 @@ sub dump_logfile {
     $limit = 50 if !$limit;
 
     my $line;
-    while (defined($line = <$fh>)) {
-	next if $count++ < $start;
-	next if $limit <= 0;
-	chomp $line;
-	push @$lines, { n => $count, t => $line};
-	$limit--;
+
+    if ($filter) {
+	# duplicate code, so that we do not slow down normal path
+	while (defined($line = <$fh>)) {
+	    next if $line !~ m/$filter/;
+	    next if $count++ < $start;
+	    next if $limit <= 0;
+	    chomp $line;
+	    push @$lines, { n => $count, t => $line};
+	    $limit--;
+	}
+    } else {
+	while (defined($line = <$fh>)) {
+	    next if $count++ < $start;
+	    next if $limit <= 0;
+	    chomp $line;
+	    push @$lines, { n => $count, t => $line};
+	    $limit--;
+	}
     }
 
     close($fh);
