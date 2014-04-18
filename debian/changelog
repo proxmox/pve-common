@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-17) unstable; urgency=low
+
+  * dump_logfile: add filter regex
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 18 Apr 2014 07:20:57 +0200
+
 libpve-common-perl (3.0-16) unstable; urgency=low
 
   * register new standard option pve-config-digest
