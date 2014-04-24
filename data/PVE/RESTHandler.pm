@@ -274,7 +274,7 @@ sub map_path_to_methods {
 
     my $path_lookup = $method_path_lookup->{$class};
 
-    while (my $comp = shift @$stack) {
+    while (defined(my $comp = shift @$stack)) {
 	return undef if !$path_lookup; # not registerd?
 	if ($path_lookup->{regex}) {
 	    my $name = $path_lookup->{regex}->{match_name};
