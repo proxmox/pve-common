@@ -13,6 +13,7 @@ use Storable qw(dclone);
 
 my $method_registry = {};
 my $method_by_name = {};
+my $method_path_lookup = {};
 
 our $AUTOLOAD;  # it's a package global
 
@@ -156,17 +157,68 @@ sub register_method {
     my $match_re = [];
     my $match_name = [];
 
+    my $errprefix;
+
+    my $method;
+    if ($info->{subclass}) {
+	$errprefix = "register subclass $info->{subclass} at ${self}/$info->{path} -";
+	$method = 'SUBCLASS';
+    } else {
+	$errprefix = "register method ${self}/$info->{path} -";
+	$info->{method} = 'GET' if !$info->{method};
+	$method = $info->{method};
+    }
+
+    $method_path_lookup->{$self} = {} if !defined($method_path_lookup->{$self});
+    my $path_lookup = $method_path_lookup->{$self};
+
+    die "$errprefix no path" if !defined($info->{path});
+    
     foreach my $comp (split(/\/+/, $info->{path})) {
-	die "path compoment has zero length" if $comp eq '';
+	die "$errprefix path compoment has zero length\n" if $comp eq '';
+	my ($name, $regex);
 	if ($comp =~ m/^\{(\w+)(:(.*))?\}$/) {
-	    my $name = $1;
-	    push @$match_re, $3 ? $3 : '\S+';
-	    push @$match_name,  $1;
+	    $name = $1;
+	    $regex = $3 ? $3 : '\S+';
+	    push @$match_re, $regex;
+	    push @$match_name, $name;
 	} else {
-	    push @$match_re, $comp;
-	    push @$match_name,  undef;
+	    $name = $comp;
+	    push @$match_re, $name;
+	    push @$match_name, undef;
+	}
+
+	if ($regex) {
+	    $path_lookup->{regex} = {} if !defined($path_lookup->{regex});	
+
+	    my $old_name = $path_lookup->{regex}->{match_name};
+	    die "$errprefix found changed regex match name\n"
+		if defined($old_name) && ($old_name ne $name);
+	    my $old_re = $path_lookup->{regex}->{match_re};
+	    die "$errprefix found changed regex\n"
+		if defined($old_re) && ($old_re ne $regex);
+	    $path_lookup->{regex}->{match_name} = $name;
+	    $path_lookup->{regex}->{match_re} = $regex;
+	    
+	    die "$errprefix path match error - regex and fixed items\n"
+		if defined($path_lookup->{folders});
+
+	    $path_lookup = $path_lookup->{regex};
+	    
+	} else {
+	    $path_lookup->{folders}->{$name} = {} if !defined($path_lookup->{folders}->{$name});	
+
+	    die "$errprefix path match error - regex and fixed items\n"
+		if defined($path_lookup->{regex});
+
+	    $path_lookup = $path_lookup->{folders}->{$name};
 	}
     }
+
+    die "$errprefix duplicate method definition\n" 
+	if defined($path_lookup->{$method});
+
+    $path_lookup->{$method} = $info;
 
     $info->{match_re} = $match_re;
     $info->{match_name} = $match_name;
@@ -174,7 +226,7 @@ sub register_method {
     $method_by_name->{$self} = {} if !defined($method_by_name->{$self});
 
     if ($info->{name}) {
-	die "method '${self}::$info->{name}' already defined\n"
+	die "$errprefix method name already defined\n"
 	    if defined($method_by_name->{$self}->{$info->{name}});
 
 	$method_by_name->{$self}->{$info->{name}} = $info;
@@ -217,97 +269,68 @@ sub map_method_by_name {
     return $info;
 }
 
-sub map_method {
-    my ($self, $stack, $method, $uri_param) = @_;
+sub map_path_to_methods {
+    my ($class, $stack, $uri_param) = @_;
 
-    my $ma = $method_registry->{$self};
+    my $path_lookup = $method_path_lookup->{$class};
 
-    my $stacklen = scalar(@$stack);
+    while (my $comp = shift @$stack) {
+	return undef if !$path_lookup; # not registerd?
+	if ($path_lookup->{regex}) {
+	    my $name = $path_lookup->{regex}->{match_name};
+	    my $regex = $path_lookup->{regex}->{match_re};
 
-    #syslog ('info', "MAPTEST:$method:$self: " . join ('/', @$stack));
-
-    foreach my $info (@$ma) {
-	#syslog ('info', "TEST0 " . Dumper($info));
-	next if !($info->{subclass} || ($info->{method} eq $method));
-	my $regexlen = scalar(@{$info->{match_re}});
-	if ($info->{subclass}) {
-	    next if $stacklen < $regexlen;
+	    return undef if $comp !~ m/^($regex)$/;
+	    $uri_param->{$name} = $1;
+	    $path_lookup = $path_lookup->{regex};
+	} elsif ($path_lookup->{folders}) {
+	    $path_lookup = $path_lookup->{folders}->{$comp};
 	} else {
-	    next if $stacklen != $regexlen;
+	    die "internal error";
 	}
+ 
+	return undef if !$path_lookup;
 
-	#syslog ('info', "TEST1 " . Dumper($info));
+	if (my $info = $path_lookup->{SUBCLASS}) {
+	    $class = $info->{subclass};
 
-	my $param = {};
-	my $i = 0;
-	for (; $i < $regexlen; $i++) {
-	    my $comp = $stack->[$i];
-	    my $re = $info->{match_re}->[$i];
-	    #print "COMPARE $comp $info->{match_re}->[$i]\n";
-	    my ($match) = $stack->[$i] =~ m/^($re)$/;
-	    last if !defined($match);
-	    if (my $name = $info->{match_name}->[$i]) {
-		$param->{$name} = $match; 
+	    my $fd = $info->{fragmentDelimiter};
+
+	    if (defined($fd)) {
+		# we only support the empty string '' (match whole URI)
+		die "unsupported fragmentDelimiter '$fd'" 
+		    if $fd ne '';
+
+		$stack = [ join ('/', @$stack) ] if scalar(@$stack) > 1;
 	    }
+	    $path_lookup = $method_path_lookup->{$class};
 	}
-
-	next if $i != $regexlen;
-
-	#print "MATCH $info->{name}\n";
-	
-	foreach my $p (keys %$param) {
-	    $uri_param->{$p} = $param->{$p};
-	}
-
-	return $info;
     }
+
+    return undef if !$path_lookup;
+
+    return ($class, $path_lookup);
 }
-
-sub __find_handler_full {
-    my ($class, $method, $stack, $uri_param, $pathmatchref) = @_;
-
-    my $info;
-    eval {
-	$info = $class->map_method($stack, $method, $uri_param);
-    };
-    syslog('err', $@) if $@;
-
-    return undef if !$info;
-
-    $$pathmatchref .= '/' . $info->{path};
-
-    if (my $subh = $info->{subclass}) {
-
-	my $matchlen = scalar(@{$info->{match_re}});
-
-	for (my $i = 0; $i < $matchlen; $i++) {
-	    shift @$stack; # pop from stack
-	}
-
-	my $fd = $info->{fragmentDelimiter};
-
-	if (defined($fd)) {
-
-	    # we only support the empty string '' (match whole URI)
-	    die "unsupported fragmentDelimiter '$fd'" 
-		if $fd ne '';
-
-	    $stack = [ join ('/', @$stack) ] if scalar(@$stack) > 1;
-	}
-
-	return $subh->__find_handler_full($method, $stack, $uri_param, $pathmatchref);
-    }
-
-    return ($class, $info, $$pathmatchref);
-};
 
 sub find_handler {
     my ($class, $method, $path, $uri_param) = @_;
 
     my $stack = [ grep { length($_) > 0 }  split('\/+' , $path)]; # skip empty fragments
 
-    my $pathmatch = '';
-    return $class->__find_handler_full($method, $stack, $uri_param, \$pathmatch);
+    my ($handler_class, $path_info);
+    eval {
+	($handler_class, $path_info) = $class->map_path_to_methods($stack, $uri_param);
+    };
+    my $err = $@;
+    syslog('err', $err) if $err;
+
+    return undef if !($handler_class && $path_info);
+
+    my $method_info = $path_info->{$method};
+
+    return undef if !$method_info;
+
+    return ($handler_class, $method_info);
 }
 
 sub handle {
