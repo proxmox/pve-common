@@ -295,9 +295,16 @@ sub map_method_by_name {
 }
 
 sub map_path_to_methods {
-    my ($class, $stack, $uri_param) = @_;
+    my ($class, $stack, $uri_param, $pathmatchref) = @_;
 
     my $path_lookup = $method_path_lookup->{$class};
+
+    # Note: $pathmatchref can be used to obtain path including
+    # uri patterns like '/cluster/firewall/groups/{group}'.
+    # Used by pvesh to display help
+    if (defined($pathmatchref)) {
+	$$pathmatchref = '' if !$$pathmatchref;
+    }
 
     while (defined(my $comp = shift @$stack)) {
 	return undef if !$path_lookup; # not registerd?
@@ -308,8 +315,10 @@ sub map_path_to_methods {
 	    return undef if $comp !~ m/^($regex)$/;
 	    $uri_param->{$name} = $1;
 	    $path_lookup = $path_lookup->{regex};
+	    $$pathmatchref .= '/{' . $name . '}' if defined($pathmatchref);
 	} elsif ($path_lookup->{folders}) {
 	    $path_lookup = $path_lookup->{folders}->{$comp};
+	    $$pathmatchref .= '/' . $comp if defined($pathmatchref);
 	} else {
 	    die "internal error";
 	}
@@ -338,13 +347,13 @@ sub map_path_to_methods {
 }
 
 sub find_handler {
-    my ($class, $method, $path, $uri_param) = @_;
+    my ($class, $method, $path, $uri_param, $pathmatchref) = @_;
 
     my $stack = [ grep { length($_) > 0 }  split('\/+' , $path)]; # skip empty fragments
 
     my ($handler_class, $path_info);
     eval {
-	($handler_class, $path_info) = $class->map_path_to_methods($stack, $uri_param);
+	($handler_class, $path_info) = $class->map_path_to_methods($stack, $uri_param, $pathmatchref);
     };
     my $err = $@;
     syslog('err', $err) if $err;
