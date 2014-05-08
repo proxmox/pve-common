@@ -83,20 +83,15 @@ my $parse_tap_devive_name = sub {
     return ($vmid, $devid);
 };
 
-my $compute_fwbr_names_linux = sub {
+my $compute_fwbr_names = sub {
     my ($vmid, $devid) = @_;
 
     my $fwbr = "fwbr${vmid}i${devid}";
     my $vethfw = "link${vmid}i${devid}";
     my $vethfwpeer = "link${vmid}p${devid}";
+    my $ovsintport = "fwint${vmid}i${devid}";
 
-    return ($fwbr, $vethfw, $vethfwpeer);
-};
-
-my $compute_ovs_firewall_port_name = sub {
-    my ($vmid, $devid) = @_;
-
-    return "fwint${vmid}i${devid}";
+    return ($fwbr, $vethfw, $vethfwpeer, $ovsintport);
 };
 
 my $cond_create_bridge = sub {
@@ -113,6 +108,16 @@ my $bridge_add_interface = sub {
 
     system("/sbin/brctl addif $bridge $iface") == 0 ||
 	die "can't add interface 'iface' to bridge '$bridge'\n";
+};
+
+my $ovs_bridge_add_port = sub {
+    my ($bridge, $iface, $tag, $internal) = @_;
+
+    my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
+    $cmd .= " tag=$tag" if $tag;
+    $cmd .= " -- set Interface $iface type=internal" if $internal;
+    system($cmd) == 0 ||
+	die "can't add ovs port '$iface'\n";
 };
 
 my $activate_interface = sub {
@@ -135,12 +140,11 @@ sub tap_create {
     die "interface activation failed\n" if $@;
 }
 
-
 my $create_firewall_bridge_linux = sub {
     my ($iface, $bridge) = @_;
 
     my ($vmid, $devid) = &$parse_tap_devive_name($iface);
-    my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names_linux($vmid, $devid);
+    my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
 
     my $bridgemtu = &$read_bridge_mtu($bridge);
 
@@ -164,11 +168,37 @@ my $create_firewall_bridge_linux = sub {
     return $fwbr;
 };
 
-my $cleanup_firewall_bridge_linux  = sub {
+my $create_firewall_bridge_ovs = sub {
+    my ($iface, $bridge, $tag) = @_;
+
+    my ($vmid, $devid) = &$parse_tap_devive_name($iface);
+    my ($fwbr, undef, undef, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
+
+    my $bridgemtu = &$read_bridge_mtu($bridge);
+
+    &$cond_create_bridge($fwbr);
+    &$activate_interface($fwbr);
+
+    &$bridge_add_interface($fwbr, $iface);
+
+    &$ovs_bridge_add_port($bridge, $ovsintport, $tag, 1);
+
+    # set the same mtu for ovs int port
+    PVE::Tools::run_command("/sbin/ifconfig $ovsintport mtu $bridgemtu");
+    
+    &$bridge_add_interface($fwbr, $ovsintport);
+};
+
+my $cleanup_firewall_bridge = sub {
     my ($iface) = @_;
 
     my ($vmid, $devid) = &$parse_tap_devive_name($iface);
-    my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names_linux($vmid, $devid);
+    my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
+
+    # cleanup old port config from any openvswitch bridge
+    if (-d "/sys/class/net/$ovsintport") {
+	run_command("/usr/bin/ovs-vsctl del-port $ovsintport", outfunc => sub {}, errfunc => sub {});
+    }
 
     # delete old vethfw interface
     if (-d "/sys/class/net/$vethfw") {
@@ -189,7 +219,7 @@ sub tap_plug {
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
 
     if (-d "/sys/class/net/$bridge/bridge") {
-	&$cleanup_firewall_bridge_linux($iface); # remove stale devices
+	&$cleanup_firewall_bridge($iface); # remove stale devices
 
 	my $newbridge = activate_bridge_vlan($bridge, $tag);
 	copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
@@ -198,10 +228,13 @@ sub tap_plug {
 
 	&$bridge_add_interface($newbridge, $iface);
     } else {
-	my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
-	$cmd .= " tag=$tag" if $tag;
-	system($cmd) == 0 ||
-	    die "can't add interface to bridge\n";
+	&$cleanup_firewall_bridge($iface); # remove stale devices
+
+	if ($firewall) {
+	    &$create_firewall_bridge_ovs($iface, $bridge, $tag);
+	} else {
+	    &$ovs_bridge_add_port($bridge, $iface, $tag);
+	}
     }
 }
 
@@ -217,11 +250,9 @@ sub tap_unplug {
 	system("/sbin/brctl delif $bridge $iface") == 0 ||
 	    die "can't del interface '$iface' from bridge '$bridge'\n";
 
-	&$cleanup_firewall_bridge_linux($iface);
-    } else {
-	system ("/usr/bin/ovs-vsctl del-port $iface") == 0 ||
-	    die "can't del ovs port '$iface'\n";
     }
+    
+    &$cleanup_firewall_bridge($iface);
 }
 
 sub copy_bridge_config {
