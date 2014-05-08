@@ -88,16 +88,19 @@ sub tap_plug {
 }
 
 sub tap_unplug {
-    my ($iface, $bridge, $tag) = @_;
+    my ($iface) = @_;
 
-    if (-d "/sys/class/net/$bridge/bridge") {
-	$bridge .= "v$tag" if $tag;
+    my $path= "/sys/class/net/$iface/brport/bridge";
+    if (-l $path) {
+	my $bridge = basename(readlink($path));
+	#avoid insecure dependency;
+	($bridge) = $bridge =~ /(\S+)/;
 
 	system("/sbin/brctl delif $bridge $iface") == 0 ||
-	    die "can't del interface from bridge\n";
+	    die "can't del interface '$iface' from bridge '$bridge'\n";
     } else {
 	system ("/usr/bin/ovs-vsctl del-port $iface") == 0 ||
-	    die "can't del interface from bridge\n";
+	    die "can't del ovs port '$iface'\n";
     }
 }
 
