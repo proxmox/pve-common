@@ -53,13 +53,81 @@ sub tap_rate_limit {
     setup_tc_rate_limit($iface, $rate, $burst, $debug);
 }
 
+my $read_bridge_mtu = sub {
+    my ($bridge) = @_;
+
+    my $mtu = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/mtu");
+    die "bridge '$bridge' does not exist\n" if !$mtu;
+    # avoid insecure dependency;
+    die "unable to parse mtu value" if $mtu !~ /^(\d+)$/;
+    $mtu = int($1);
+
+    return $mtu;
+};
+
+my $parse_tap_devive_name = sub {
+    my ($iface) = @_;
+
+    my ($vmid, $devid);
+
+    if ($iface =~ m/^tap(\d+)i(\d+)$/) {
+	$vmid = $1;
+	$devid = $2;
+    } elsif ($iface =~ m/^veth(\d+)\.(\d+)$/) {
+	$vmid = $1;
+	$devid = $2;
+    } else {
+	die "wrong interface name $iface";
+    }
+
+    return ($vmid, $devid);
+};
+
+my $compute_fwbr_names_linux = sub {
+    my ($vmid, $devid) = @_;
+
+    my $fwbr = "fwbr${vmid}i${devid}";
+    my $vethfw = "link${vmid}i${devid}";
+    my $vethfwpeer = "link${vmid}p${devid}";
+
+    return ($fwbr, $vethfw, $vethfwpeer);
+};
+
+my $compute_ovs_firewall_port_name = sub {
+    my ($vmid, $devid) = @_;
+
+    return "fwint${vmid}i${devid}";
+};
+
+my $cond_create_bridge = sub {
+    my ($bridge) = @_;
+
+    if (! -d "/sys/class/net/$bridge") {
+        system("/sbin/brctl addbr $bridge") == 0 ||
+            die "can't add bridge '$bridge'\n";
+    }
+};
+
+my $bridge_add_interface = sub {
+    my ($bridge, $iface) = @_;
+
+    system("/sbin/brctl addif $bridge $iface") == 0 ||
+	die "can't add interface 'iface' to bridge '$bridge'\n";
+};
+
+my $activate_interface = sub {
+    my ($iface) = @_;
+
+    system("/sbin/ip link set $iface up") == 0 ||
+	die "can't activate interface '$iface'\n";
+};
+
 sub tap_create {
     my ($iface, $bridge) = @_;
 
     die "unable to get bridge setting\n" if !$bridge;
 
-    my $bridgemtu = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/mtu");
-	die "bridge '$bridge' does not exist\n" if !$bridgemtu;
+    my $bridgemtu = &$read_bridge_mtu($bridge);
 
     eval { 
 	PVE::Tools::run_command("/sbin/ifconfig $iface 0.0.0.0 promisc up mtu $bridgemtu");
@@ -67,18 +135,68 @@ sub tap_create {
     die "interface activation failed\n" if $@;
 }
 
+
+my $create_firewall_bridge_linux = sub {
+    my ($iface, $bridge) = @_;
+
+    my ($vmid, $devid) = &$parse_tap_devive_name($iface);
+    my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names_linux($vmid, $devid);
+
+    my $bridgemtu = &$read_bridge_mtu($bridge);
+
+    &$cond_create_bridge($fwbr);
+    &$activate_interface($fwbr);
+
+    copy_bridge_config($bridge, $fwbr);
+    # create veth pair
+    if (! -d "/sys/class/net/$vethfw") {
+	system("/sbin/ip link add name $vethfw type veth peer name $vethfwpeer mtu $bridgemtu") == 0 ||
+	    die "can't create interface $vethfw\n";
+    }
+
+    # up vethpair
+    &$activate_interface($vethfw);
+    &$activate_interface($vethfwpeer);
+
+    &$bridge_add_interface($bridge, $vethfw);
+    &$bridge_add_interface($fwbr, $vethfwpeer);
+
+    return $fwbr;
+};
+
+my $cleanup_firewall_bridge_linux  = sub {
+    my ($iface) = @_;
+
+    my ($vmid, $devid) = &$parse_tap_devive_name($iface);
+    my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names_linux($vmid, $devid);
+
+    # delete old vethfw interface
+    if (-d "/sys/class/net/$vethfw") {
+	run_command("/sbin/ip link delete dev $vethfw", outfunc => sub {}, errfunc => sub {});
+    }
+
+    # cleanup fwbr bridge
+    if (-d "/sys/class/net/$fwbr") {
+	run_command("/sbin/ip link set dev $fwbr down", outfunc => sub {}, errfunc => sub {});
+	run_command("/sbin/brctl delbr $fwbr", outfunc => sub {}, errfunc => sub {});
+    }
+};
+
 sub tap_plug {
-    my ($iface, $bridge, $tag) = @_;
+    my ($iface, $bridge, $tag, $firewall) = @_;
 
     #cleanup old port config from any openvswitch bridge
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
 
     if (-d "/sys/class/net/$bridge/bridge") {
+	&$cleanup_firewall_bridge_linux($iface); # remove stale devices
+
 	my $newbridge = activate_bridge_vlan($bridge, $tag);
 	copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
 
-	system("/sbin/brctl addif $newbridge $iface") == 0 ||
-	    die "can't add interface to bridge\n";
+	$newbridge = &$create_firewall_bridge_linux($iface, $newbridge) if $firewall;
+
+	&$bridge_add_interface($newbridge, $iface);
     } else {
 	my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
 	$cmd .= " tag=$tag" if $tag;
@@ -98,6 +216,8 @@ sub tap_unplug {
 
 	system("/sbin/brctl delif $bridge $iface") == 0 ||
 	    die "can't del interface '$iface' from bridge '$bridge'\n";
+
+	&$cleanup_firewall_bridge_linux($iface);
     } else {
 	system ("/usr/bin/ovs-vsctl del-port $iface") == 0 ||
 	    die "can't del ovs port '$iface'\n";
@@ -135,8 +255,7 @@ sub activate_bridge_vlan_slave {
     }
 
     # be sure to have the $ifacevlan up
-    system("/sbin/ip link set $ifacevlan up") == 0 ||
-        die "can't up interface $ifacevlan\n";
+    &$activate_interface($ifacevlan);
 
     # test if $vlaniface is already enslaved in another bridge
     my $path= "/sys/class/net/$ifacevlan/brport/bridge";
@@ -151,8 +270,7 @@ sub activate_bridge_vlan_slave {
     }
 
     # add $ifacevlan to the bridge
-    system("/sbin/brctl addif $bridgevlan $ifacevlan") == 0 ||
-	die "can't add interface $ifacevlan to bridge $bridgevlan\n";
+    &$bridge_add_interface($bridgevlan, $ifacevlan);
 }
 
 sub activate_bridge_vlan {
