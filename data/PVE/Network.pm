@@ -89,7 +89,7 @@ my $compute_fwbr_names = sub {
     my $fwbr = "fwbr${vmid}i${devid}";
     my $vethfw = "link${vmid}i${devid}";
     my $vethfwpeer = "link${vmid}p${devid}";
-    my $ovsintport = "fwint${vmid}i${devid}";
+    my $ovsintport = "link${vmid}o${devid}";
 
     return ($fwbr, $vethfw, $vethfwpeer, $ovsintport);
 };
