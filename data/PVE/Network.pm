@@ -87,6 +87,7 @@ my $compute_fwbr_names = sub {
     my ($vmid, $devid) = @_;
 
     my $fwbr = "fwbr${vmid}i${devid}";
+    # Note: the firewall use 'fwln+' to filter traffic to VMs
     my $vethfw = "fwln${vmid}i${devid}";
     my $vethfwpeer = "fwpr${vmid}p${devid}";
     my $ovsintport = "fwln${vmid}o${devid}";
