@@ -87,9 +87,9 @@ my $compute_fwbr_names = sub {
     my ($vmid, $devid) = @_;
 
     my $fwbr = "fwbr${vmid}i${devid}";
-    my $vethfw = "link${vmid}i${devid}";
-    my $vethfwpeer = "link${vmid}p${devid}";
-    my $ovsintport = "link${vmid}o${devid}";
+    my $vethfw = "fwln${vmid}i${devid}";
+    my $vethfwpeer = "fwpr${vmid}p${devid}";
+    my $ovsintport = "fwln${vmid}o${devid}";
 
     return ($fwbr, $vethfw, $vethfwpeer, $ovsintport);
 };
@@ -162,8 +162,8 @@ my $create_firewall_bridge_linux = sub {
     &$activate_interface($vethfw);
     &$activate_interface($vethfwpeer);
 
-    &$bridge_add_interface($bridge, $vethfw);
-    &$bridge_add_interface($fwbr, $vethfwpeer);
+    &$bridge_add_interface($fwbr, $vethfw);
+    &$bridge_add_interface($bridge, $vethfwpeer);
 
     return $fwbr;
 };
