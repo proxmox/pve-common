@@ -66,7 +66,7 @@ my $read_bridge_mtu = sub {
 };
 
 my $parse_tap_devive_name = sub {
-    my ($iface) = @_;
+    my ($iface, $noerr) = @_;
 
     my ($vmid, $devid);
 
@@ -77,7 +77,8 @@ my $parse_tap_devive_name = sub {
 	$vmid = $1;
 	$devid = $2;
     } else {
-	die "wrong interface name $iface";
+	return undef if $noerr;
+	die "can't create firewall bridge for random interface name '$iface'\n";
     }
 
     return ($vmid, $devid);
@@ -193,7 +194,8 @@ my $create_firewall_bridge_ovs = sub {
 my $cleanup_firewall_bridge = sub {
     my ($iface) = @_;
 
-    my ($vmid, $devid) = &$parse_tap_devive_name($iface);
+    my ($vmid, $devid) = &$parse_tap_devive_name($iface, 1);
+    return if !defined($vmid);  
     my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
 
     # cleanup old port config from any openvswitch bridge
