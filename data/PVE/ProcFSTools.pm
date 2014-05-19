@@ -256,4 +256,32 @@ sub write_proc_entry {
     $fh->close();
 }
 
+sub read_proc_net_route {
+    my $filename = "/proc/net/route";
+
+    my $res = [];
+
+    my $fh = IO::File->new ($filename, "r");
+    return $res if !$fh;
+
+    my $int_to_quad = sub {
+       return join '.' => map { ($_[0] >> 8*(3-$_)) % 256 } (3, 2, 1, 0);
+    };
+
+    while (defined(my $line = <$fh>)) {
+       next if $line =~/^Iface\s+Destination/; # skip head
+       my ($iface, $dest, $gateway, $metric, $mask, $mtu) = (split(/\s+/, $line))[0,1,2,6,7,8];
+       push @$res, {
+           dest => &$int_to_quad(hex($dest)),
+           gateway => &$int_to_quad(hex($gateway)),
+           mask => &$int_to_quad(hex($mask)),
+           metric => $metric,
+           mtu => $mtu,
+	   iface => $iface,
+       };
+    }
+
+    return $res;
+}
+
 1;
