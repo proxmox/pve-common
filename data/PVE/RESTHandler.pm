@@ -218,6 +218,11 @@ sub register_method {
     die "$errprefix duplicate method definition\n" 
 	if defined($path_lookup->{$method});
 
+    if ($method eq 'SUBCLASS') {
+	foreach my $m (qw(GET PUT POST DELETE)) {
+	    die "$errprefix duplicate method definition SUBCLASS and $m\n" if $path_lookup->{$m};
+	}
+    }
     $path_lookup->{$method} = $info;
 
     $info->{match_re} = $match_re;
