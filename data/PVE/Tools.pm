@@ -1019,4 +1019,26 @@ sub assert_if_modified {
     }
 }
 
+# Digest for short strings
+# like FNV32a, but we only return 31 bits (positive numbers)
+sub fnv31a {
+    my ($string) = @_;
+
+    my $hval = 0x811c9dc5;
+
+    foreach my $c (unpack('C*', $string)) {
+	$hval ^= $c;
+	$hval += (
+	    (($hval << 1) ) +
+	    (($hval << 4) ) +
+	    (($hval << 7) ) +
+	    (($hval << 8) ) +
+	    (($hval << 24) ) );
+	$hval = $hval & 0xffffffff;
+    }
+    return $hval & 0x7fffffff;
+}
+
+sub fnv31a_hex { return sprintf("%X", fnv31a(@_)); }
+
 1;
