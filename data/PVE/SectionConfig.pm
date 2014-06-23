@@ -115,7 +115,7 @@ sub init {
     foreach my $type (keys %$plugins) {
 	my $props = $plugins->{$type}->properties();
 	foreach my $p (keys %$props) {
-	    die "duplicate property" if defined($propertyList->{$p});
+	    die "duplicate property '$p'" if defined($propertyList->{$p});
 	    my $res = $propertyList->{$p} = {};
 	    my $data = $props->{$p};
 	    for my $a (keys %$data) {
