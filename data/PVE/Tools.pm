@@ -19,6 +19,9 @@ use Text::ParseWords;
 use String::ShellQuote;
 use Time::HiRes qw(usleep gettimeofday tv_interval);
 
+# avoid warning when parsing long hex values with hex()
+no warnings 'portable'; # Support for 64-bit ints required
+
 our @EXPORT_OK = qw(
 $IPV6RE
 $IPV4RE
