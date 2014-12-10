@@ -184,6 +184,7 @@ my $create_firewall_bridge_ovs = sub {
     &$bridge_add_interface($fwbr, $iface);
 
     &$ovs_bridge_add_port($bridge, $ovsintport, $tag, 1);
+    &$activate_interface($ovsintport);
 
     # set the same mtu for ovs int port
     PVE::Tools::run_command("/sbin/ifconfig $ovsintport mtu $bridgemtu");
