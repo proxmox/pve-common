@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-20) unstable; urgency=low
+
+  * create_firewall_bridge_ovs : activate ovsint interface
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 11 Dec 2014 06:36:17 +0100
+
 libpve-common-perl (3.0-19) unstable; urgency=low
 
   * new helper register_page_formater
