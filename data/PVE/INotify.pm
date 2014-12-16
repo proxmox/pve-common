@@ -315,7 +315,7 @@ sub parse_ccache_options {
 sub register_file {
     my ($id, $filename, $parser, $writer, $update, %options) = @_;
 
-    die "can't register file after initify_init" if $inotify;
+    die "can't register file '$filename' after inotify_init" if $inotify;
 
     die "file '$filename' already added :ERROR" if defined ($ccache->{$filename});
     die "ID '$id' already used :ERROR" if defined ($ccachemap->{$id});
