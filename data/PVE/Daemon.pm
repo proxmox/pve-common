@@ -126,12 +126,14 @@ my $server_run = sub {
 	warn $@ if $@;
 
 	&$server_cleanup($self);
-   };
-
-    $SIG{HUP} = sub {
-	eval { $self->hup(); };
-	warn $@ if $@;
     };
+
+    if ($self->can('hup')) {
+	$SIG{HUP} = sub {
+	    eval { $self->hup() };
+	    warn $@ if $@;
+	};
+    }
 
     eval { $self->run() };
     my $err = $@;
@@ -164,15 +166,10 @@ sub new {
 
     my $class = ref($this) || $this;
 
-    my $self = bless { name => $name }, $class;
-
-    $self->{pidfile} = "/var/run/${name}.pid";
-
-    $self->{nodename} = PVE::INotify::nodename();
-
-    $self->{cmdline} = $cmdline;
-
-    $0 = $name;
+    my $self = bless { 
+	name => $name,
+	run_dir => '/var/run',
+    }, $class;
 
     foreach my $opt (keys %params) {
 	my $value = $params{$opt};
@@ -180,10 +177,21 @@ sub new {
 	    $self->{$opt} = $value;
 	} elsif ($opt eq 'stop_wait_time') {
 	    $self->{$opt} = $value;
+	} elsif ($opt eq 'run_dir') {
+	    $self->{$opt} = $value;
 	} else {
 	    die "unknown option '$opt'";
 	}
     }
+
+    $self->{pidfile} = "$self->{run_dir}/${name}.pid";
+
+    $self->{nodename} = PVE::INotify::nodename();
+
+    $self->{cmdline} = $cmdline;
+
+    $0 = $name;
+
 
     return $self;
 }
@@ -231,12 +239,12 @@ sub shutdown {
     1 while (waitpid(-1, POSIX::WNOHANG()) > 0);
 }
 
-# please overwrite in subclass
-sub hup {
-    my ($self) = @_;
-
-    syslog('info' , "received signal HUP (restart)");
-}
+# please define in subclass
+#sub hup {
+#    my ($self) = @_;
+#
+#    syslog('info' , "received signal HUP (restart)");
+#}
 
 # please overwrite in subclass
 sub run {
@@ -254,10 +262,24 @@ sub start {
     &$server_run($self, $debug);
 }
 
+my $read_pid = sub {
+    my ($self) = @_;
+
+    my $pid_str = PVE::Tools::file_read_firstline($self->{pidfile});
+
+    return 0 if !$pid_str;
+
+    return 0 if $pid_str !~ m/^(\d+)$/; # untaint
+ 
+    my $pid = int($1);
+
+    return $pid;
+};
+
 sub running {
     my ($self) = @_;
 
-    my $pid = int(PVE::Tools::file_read_firstline($self->{pidfile}) || 0);
+    my $pid = &$read_pid($self);
 
     if ($pid) {
 	my $res = PVE::ProcFSTools::check_process_running($pid) ? 1 : 0;
@@ -270,7 +292,8 @@ sub running {
 sub stop {
     my ($self) = @_;
 
-    my $pid = int(PVE::Tools::file_read_firstline($self->{pidfile}) || 0);
+    my $pid = &$read_pid($self);
+
     return if !$pid;
 
     if (PVE::ProcFSTools::check_process_running($pid)) {
@@ -328,8 +351,28 @@ sub register_start_command {
 	}});  
 }
 
+my $reload_daemon = sub {
+    my ($self, $use_hup) = @_;
+
+    if (my $restart = $ENV{RESTART_PVE_DAEMON}) {
+	$self->start();
+    } else {
+	my ($running, $pid) = $self->running(); 
+	if (!$running) {
+	    $self->start();
+	} else {
+	    if ($use_hup) {
+		kill(1, $pid);
+	    } else {
+		$self->stop();
+		$self->start();
+	    }
+	}
+    }
+};
+
 sub register_restart_command {
-    my ($self, $class, $description) = @_;
+    my ($self, $class, $use_hup, $description) = @_;
 
     $class->register_method({
 	name => 'restart',
@@ -345,16 +388,30 @@ sub register_restart_command {
 	code => sub {
 	    my ($param) = @_;
 
-	    if (my $restart = $ENV{RESTART_PVE_DAEMON}) {
-		$self->start();
-	    } else {
-		my ($running, $pid) = $self->running(); 
-		if (!$running) {
-		    $self->start();
-		} else {
-		    kill(1, $pid);
-		}
-	    }
+	    &$reload_daemon($self, $use_hup);
+
+	    return undef;
+	}});		   
+}
+
+sub register_reload_command {
+    my ($self, $class, $description) = @_;
+
+    $class->register_method({
+	name => 'reload',
+	path => 'reload',
+	method => 'POST',
+	description => $description || "Reload daemon configuration (or start if not running).",
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {},
+	},
+	returns => { type => 'null' },
+
+	code => sub {
+	    my ($param) = @_;
+
+	    &$reload_daemon($self, 1);
 
 	    return undef;
 	}});		   
