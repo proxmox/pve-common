@@ -109,6 +109,8 @@ my $server_run = sub {
 
     &$writepidfile($self);
 
+    POSIX::setsid(); 
+
     if ($restart) {
 	syslog('info' , "restarting server");
     } else {
