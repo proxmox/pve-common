@@ -6,7 +6,9 @@ package PVE::Daemon;
 # * lock and write PID file /var/run/$name.pid to make sure onyl
 #   one instance is running.
 # * correctly daemonize (redirect STDIN/STDOUT)
-# * daemon restart (option 'restart_on_error')
+# * restart by stop/start, exec, or signal HUP
+# * daemon restart on error (option 'restart_on_error')
+#
 
 use strict;
 use warnings;
