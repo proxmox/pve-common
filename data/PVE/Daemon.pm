@@ -561,7 +561,9 @@ sub stop {
 }
 
 sub register_start_command {
-    my ($self, $class, $description) = @_;
+    my ($self, $description) = @_;
+
+    my $class = ref($self);
 
     $class->register_method({
 	name => 'start',
@@ -612,7 +614,9 @@ my $reload_daemon = sub {
 };
 
 sub register_restart_command {
-    my ($self, $class, $use_hup, $description) = @_;
+    my ($self, $use_hup, $description) = @_;
+
+    my $class = ref($self);
 
     $class->register_method({
 	name => 'restart',
@@ -635,7 +639,9 @@ sub register_restart_command {
 }
 
 sub register_reload_command {
-    my ($self, $class, $description) = @_;
+    my ($self, $description) = @_;
+
+    my $class = ref($self);
 
     $class->register_method({
 	name => 'reload',
@@ -658,7 +664,9 @@ sub register_reload_command {
 }
 
 sub register_stop_command {
-    my ($self, $class, $description) = @_;
+    my ($self, $description) = @_;
+
+    my $class = ref($self);
 
     $class->register_method({
 	name => 'stop',
@@ -681,7 +689,9 @@ sub register_stop_command {
 }
 
 sub register_status_command {
-    my ($self, $class, $description) = @_;
+    my ($self, $description) = @_;
+
+    my $class = ref($self);
 
     $class->register_method({
 	name => 'status',
