@@ -352,60 +352,69 @@ my $server_run = sub {
 sub new {
     my ($this, $name, $cmdline, %params) = @_;
 
-    die "missing name" if !$name;
+    $name = 'daemon' if !$name; # should not happen
 
     initlog($name);
 
-    my $restart = $ENV{RESTART_PVE_DAEMON};
-    delete $ENV{RESTART_PVE_DAEMON};
+    my $self;
 
-    my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
-    delete $ENV{PVE_DAEMON_LOCK_FD};
+    eval {
 
-    die "please run as root\n" if !$restart && ($> != 0);
+	my $restart = $ENV{RESTART_PVE_DAEMON};
+	delete $ENV{RESTART_PVE_DAEMON};
 
-    die "can't create more that one PVE::Daemon" if $daemon_initialized;
-    $daemon_initialized = 1;
+	my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
+	delete $ENV{PVE_DAEMON_LOCK_FD};
 
-    PVE::INotify::inotify_init();
+	die "please run as root\n" if !$restart && ($> != 0);
 
-    my $class = ref($this) || $this;
+	die "can't create more that one PVE::Daemon" if $daemon_initialized;
+	$daemon_initialized = 1;
 
-    my $self = bless { 
-	name => $name,
-	run_dir => '/var/run',
-	env_restart_pve_daemon => $restart,
-	env_pve_lock_fd => $lockfd,
-	workers => {},
-    }, $class;
+	PVE::INotify::inotify_init();
 
-    foreach my $opt (keys %params) {
-	my $value = $params{$opt};
-	if ($opt eq 'restart_on_error') {
-	    $self->{$opt} = $value;
-	} elsif ($opt eq 'stop_wait_time') {
-	    $self->{$opt} = $value;
-	} elsif ($opt eq 'run_dir') {
-	    $self->{$opt} = $value;
-	} elsif ($opt eq 'max_workers') {
-	    $self->{$opt} = $value;
-	} else {
-	    die "unknown option '$opt'";
+	my $class = ref($this) || $this;
+
+	$self = bless { 
+	    name => $name,
+	    run_dir => '/var/run',
+	    env_restart_pve_daemon => $restart,
+	    env_pve_lock_fd => $lockfd,
+	    workers => {},
+	}, $class;
+
+	foreach my $opt (keys %params) {
+	    my $value = $params{$opt};
+	    if ($opt eq 'restart_on_error') {
+		$self->{$opt} = $value;
+	    } elsif ($opt eq 'stop_wait_time') {
+		$self->{$opt} = $value;
+	    } elsif ($opt eq 'run_dir') {
+		$self->{$opt} = $value;
+	    } elsif ($opt eq 'max_workers') {
+		$self->{$opt} = $value;
+	    } else {
+		die "unknown daemon option '$opt'\n";
+	    }
 	}
+
+	$self->{pidfile} = "$self->{run_dir}/${name}.pid";
+
+	$self->{nodename} = PVE::INotify::nodename();
+
+	$self->{cmdline} = [];
+
+	foreach my $el (@$cmdline) {
+	    $el =~ m/^(.*)$/; # untaint
+	    push @{$self->{cmdline}}, $1;
+	}
+
+	$0 = $name;
+    };
+    if (my $err = $@) {
+	&$log_err($err);
+	exit(-1);
     }
-
-    $self->{pidfile} = "$self->{run_dir}/${name}.pid";
-
-    $self->{nodename} = PVE::INotify::nodename();
-
-    $self->{cmdline} = [];
-
-    foreach my $el (@$cmdline) {
-	$el =~ m/^(.*)$/; # untaint
-	push @{$self->{cmdline}}, $1;
-    }
-
-    $0 = $name;
 
     return $self;
 }
