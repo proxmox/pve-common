@@ -65,12 +65,15 @@ my $lockpidfile = sub {
 
     my $lkfn = $self->{pidfile} . ".lock";
 
+    my $waittime = 0;
+
     if (my $fd = $self->{env_pve_lock_fd}) {
 
 	$self->{daemon_lock_fh} = IO::Handle->new_from_fd($fd, "a");
-    
+	
     } else {
 
+	$waittime = 5;
 	$self->{daemon_lock_fh} = IO::File->new(">>$lkfn");
     }
 
@@ -78,7 +81,7 @@ my $lockpidfile = sub {
 	die "can't open lock '$lkfn' - $!\n";
     }
 
-    for (my $i = 0; $i < 5; $i ++) {
+    for (my $i = 0; $i < $waittime; $i ++) {
 	return if flock ($self->{daemon_lock_fh}, LOCK_EX|LOCK_NB);
 	sleep(1);
     }
