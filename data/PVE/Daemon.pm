@@ -222,10 +222,6 @@ my $server_run = sub {
     # run in background
     my $spid;
 
-    my $restart = $ENV{RESTART_PVE_DAEMON};
-
-    delete $ENV{RESTART_PVE_DAEMON};
-
     $self->{debug} = 1 if $debug;
 
     $self->init();
@@ -235,7 +231,7 @@ my $server_run = sub {
 	open STDOUT, '>/dev/null' || die "can't write /dev/null";
     }
 
-    if (!$restart && !$debug) {
+    if (!$self->{env_restart_pve_daemon} && !$debug) {
 	PVE::INotify::inotify_close();
 	$spid = fork();
 	if (!defined ($spid)) {
@@ -252,7 +248,7 @@ my $server_run = sub {
 
     POSIX::setsid(); 
 
-    if ($restart) {
+    if ($self->{env_restart_pve_daemon}) {
 	syslog('info' , "restarting server");
     } else {
 	syslog('info' , "starting server");
@@ -344,7 +340,11 @@ my $server_run = sub {
 sub new {
     my ($this, $name, $cmdline, %params) = @_;
 
-    die "please run as root\n" if !$ENV{RESTART_PVE_DAEMON} && ($> != 0);
+    my $restart = $ENV{RESTART_PVE_DAEMON};
+
+    delete $ENV{RESTART_PVE_DAEMON};
+
+    die "please run as root\n" if !$restart && ($> != 0);
 
     die "missing name" if !$name;
 
@@ -360,6 +360,7 @@ sub new {
     my $self = bless { 
 	name => $name,
 	run_dir => '/var/run',
+	env_restart_pve_daemon => $restart,
 	workers => {},
     }, $class;
 
@@ -554,7 +555,7 @@ sub register_start_command {
 my $reload_daemon = sub {
     my ($self, $use_hup) = @_;
 
-    if (my $restart = $ENV{RESTART_PVE_DAEMON}) {
+    if ($self->{env_restart_pve_daemon}) {
 	$self->start();
     } else {
 	my ($running, $pid) = $self->running(); 
