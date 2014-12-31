@@ -145,8 +145,7 @@ sub lock_file_full {
 	$err = $@;
     }
 
-    if ($lock_handles->{$$}->{$filename}) {
-        my $fh = $lock_handles->{$$}->{$filename};
+    if (my $fh = $lock_handles->{$$}->{$filename}) {
         $lock_handles->{$$}->{$filename} = undef;
         close ($fh);
     }
