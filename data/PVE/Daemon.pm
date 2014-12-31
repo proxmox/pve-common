@@ -22,15 +22,6 @@ use Time::HiRes qw (gettimeofday);
 
 use base qw(PVE::CLIHandler);
 
-$SIG{'__WARN__'} = sub {
-    my $err = $@;
-    my $t = $_[0];
-    chomp $t;
-    print "$t\n";
-    syslog('warning', "WARNING: %s", $t);
-    $@ = $err;
-};
-
 $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
 my $daemon_initialized = 0; # we only allow one instance
@@ -42,6 +33,13 @@ my $close_daemon_lock = sub {
 
     close $self->{daemon_lock_fh};
     delete $self->{daemon_lock_fh};
+};
+
+my $log_err = sub {
+    my ($msg) = @_;
+    chomp $msg;
+    print STDERR "$msg\n";
+    syslog('err', "%s", $msg);
 };
 
 # call this if you fork() from child
@@ -87,7 +85,14 @@ my $lockpidfile = sub {
 
     if (!flock ($self->{daemon_lock_fh}, LOCK_EX|LOCK_NB)) {
 	&$close_daemon_lock($self);
-	die "can't aquire lock '$lkfn' - $!\n";
+	my $err = $!;
+
+	my ($running, $pid) = $self->running();
+	if ($running) {
+	    die "can't aquire lock '$lkfn' - daemon already started (pid = $pid)\n";
+	} else {
+	    die "can't aquire lock '$lkfn' - $err\n";
+	}
     }
 };
 
@@ -96,11 +101,8 @@ my $writepidfile = sub {
 
     my $pidfile = $self->{pidfile};
 
-    if (!open (PIDFH, ">$pidfile")) {
-	my $msg = "can't open pid file '$pidfile' - $!";
-	syslog ('err', $msg);
-	die "ERROR: $msg\n";
-    }
+    die "can't open pid file '$pidfile' - $!\n" if !open (PIDFH, ">$pidfile");
+
     print PIDFH "$$\n";
     close (PIDFH);
 };
@@ -229,10 +231,6 @@ my $server_run = sub {
 
     $ENV{PVE_DAEMON_LOCK_FD} = $self->{daemon_lock_fh}->fileno;
 
-#    my $fd = POSIX::dup($self->{daemon_lock_fh}) ||
-#	die "unable to duplicate daemon_lock_fh\n";
-
-
     # run in background
     my $spid;
 
@@ -249,24 +247,21 @@ my $server_run = sub {
 	PVE::INotify::inotify_close();
 	$spid = fork();
 	if (!defined ($spid)) {
-	    my $msg =  "can't put server into background - fork failed";
-	    syslog('err', $msg);
-	    die "ERROR: $msg\n";
+	    die "can't put server into background - fork failed";
 	} elsif ($spid) { # parent
 	    exit (0);
 	}
 	PVE::INotify::inotify_init();
     }
 
-    &$writepidfile($self);
-
-    POSIX::setsid(); 
-
     if ($self->{env_restart_pve_daemon}) {
 	syslog('info' , "restarting server");
     } else {
+	&$writepidfile($self);
 	syslog('info' , "starting server");
     }
+
+    POSIX::setsid(); 
 
     open STDERR, '>&STDOUT' || die "can't close STDERR\n";
 
@@ -479,7 +474,8 @@ sub start {
 
     eval  { &$server_run($self, $debug); };
     if (my $err = $@) {
-	syslog('err', "start failed - $err");
+	&$log_err("start failed - $err");
+	exit(-1);
     }
 }
 
@@ -542,7 +538,7 @@ sub stop {
 	    &$server_cleanup($self);
 	};
 	if (my $err = $@) {
-	    syslog('err', "cleanup failed - $err");
+	    &$log_err("cleanup failed - $err");
 	}
     }
 }
