@@ -35,19 +35,32 @@ $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
 my $daemon_initialized = 0; # we only allow one instance
 
+my $close_daemon_lock = sub {
+    my ($self) = @_;
+
+    close $self->{daemon_lock_fh};
+    delete $self->{daemon_lock_fh};
+};
+
 my $lockpidfile = sub {
     my ($self) = @_;
 
     my $lkfn = $self->{pidfile} . ".lock";
 
-    if (!open (FLCK, ">>$lkfn")) {
+    $self->{daemon_lock_fh} = IO::File->new(">>$lkfn");
+    if (!$self->{daemon_lock_fh}) {
 	my $msg = "can't aquire lock on file '$lkfn' - $!";
 	syslog ('err', $msg);
 	die "ERROR: $msg\n";
     }
 
-    if (!flock (FLCK, LOCK_EX|LOCK_NB)) {
-	close (FLCK);
+    for (my $i = 0; $i < 5; $i ++) {
+	return if flock ($self->{daemon_lock_fh}, LOCK_EX|LOCK_NB);
+	sleep(1);
+    }
+
+    if (!flock ($self->{daemon_lock_fh}, LOCK_EX|LOCK_NB)) {
+	&$close_daemon_lock($self);
         my $msg = "can't aquire lock '$lkfn' - $!";
 	syslog ('err', $msg);
 	die "ERROR: $msg\n";
@@ -116,7 +129,7 @@ my $start_workers = sub {
 	} else {
 	    $0 = "$self->{name} worker";
 
-	    close(FLCK);
+	    &$close_daemon_lock($self);
 
 	    PVE::INotify::inotify_close();
 
