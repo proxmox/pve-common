@@ -265,6 +265,8 @@ sub register_page_formatter {
     $info->{formatter}->{$format} = $code;
 }
 
+sub DESTROY {}; # avoid problems with autoload
+
 sub AUTOLOAD {
     my ($this) = @_;
 
