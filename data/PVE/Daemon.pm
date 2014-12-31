@@ -67,11 +67,17 @@ my $lockpidfile = sub {
 
     my $lkfn = $self->{pidfile} . ".lock";
 
-    $self->{daemon_lock_fh} = IO::File->new(">>$lkfn");
+    if (my $fd = $self->{env_pve_lock_fd}) {
+
+	$self->{daemon_lock_fh} = IO::Handle->new_from_fd($fd, "a");
+    
+    } else {
+
+	$self->{daemon_lock_fh} = IO::File->new(">>$lkfn");
+    }
+
     if (!$self->{daemon_lock_fh}) {
-	my $msg = "can't aquire lock on file '$lkfn' - $!";
-	syslog ('err', $msg);
-	die "ERROR: $msg\n";
+	die "can't open lock '$lkfn' - $!\n";
     }
 
     for (my $i = 0; $i < 5; $i ++) {
@@ -81,9 +87,7 @@ my $lockpidfile = sub {
 
     if (!flock ($self->{daemon_lock_fh}, LOCK_EX|LOCK_NB)) {
 	&$close_daemon_lock($self);
-        my $msg = "can't aquire lock '$lkfn' - $!";
-	syslog ('err', $msg);
-	die "ERROR: $msg\n";
+	die "can't aquire lock '$lkfn' - $!\n";
     }
 };
 
@@ -217,7 +221,17 @@ my $terminate_server = sub {
 my $server_run = sub {
     my ($self, $debug) = @_;
 
+    # fixme: handle restart lockfd
     &$lockpidfile($self);
+
+    # remove FD_CLOEXEC bit to reuse on exec
+    $self->{daemon_lock_fh}->fcntl(Fcntl::F_SETFD(), 0);
+
+    $ENV{PVE_DAEMON_LOCK_FD} = $self->{daemon_lock_fh}->fileno;
+
+#    my $fd = POSIX::dup($self->{daemon_lock_fh}) ||
+#	die "unable to duplicate daemon_lock_fh\n";
+
 
     # run in background
     my $spid;
@@ -340,20 +354,22 @@ my $server_run = sub {
 sub new {
     my ($this, $name, $cmdline, %params) = @_;
 
-    my $restart = $ENV{RESTART_PVE_DAEMON};
+    die "missing name" if !$name;
 
+    initlog($name);
+
+    my $restart = $ENV{RESTART_PVE_DAEMON};
     delete $ENV{RESTART_PVE_DAEMON};
 
-    die "please run as root\n" if !$restart && ($> != 0);
+    my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
+    delete $ENV{PVE_DAEMON_LOCK_FD};
 
-    die "missing name" if !$name;
+    die "please run as root\n" if !$restart && ($> != 0);
 
     die "can't create more that one PVE::Daemon" if $daemon_initialized;
     $daemon_initialized = 1;
 
     PVE::INotify::inotify_init();
-
-    initlog($name);
 
     my $class = ref($this) || $this;
 
@@ -361,6 +377,7 @@ sub new {
 	name => $name,
 	run_dir => '/var/run',
 	env_restart_pve_daemon => $restart,
+	env_pve_lock_fd => $lockfd,
 	workers => {},
     }, $class;
 
@@ -460,7 +477,10 @@ sub run {
 sub start {
     my ($self, $debug) = @_;
 
-    &$server_run($self, $debug);
+    eval  { &$server_run($self, $debug); };
+    if (my $err = $@) {
+	syslog('err', "start failed - $err");
+    }
 }
 
 my $read_pid = sub {
@@ -516,9 +536,14 @@ sub stop {
     }
 
     if (-f $self->{pidfile}) {
-	# try to get the lock
-	&$lockpidfile($self);
-	&$server_cleanup($self);
+	eval {
+	    # try to get the lock
+	    &$lockpidfile($self);
+	    &$server_cleanup($self);
+	};
+	if (my $err = $@) {
+	    syslog('err', "cleanup failed - $err");
+	}
     }
 }
 
