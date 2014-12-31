@@ -366,6 +366,11 @@ sub new {
 	my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
 	delete $ENV{PVE_DAEMON_LOCK_FD};
 
+	if (defined($lockfd)) {
+	    $lockfd =~ m/^(\d+)$/;
+	    $lockfd = $1; # untaint
+	}
+
 	die "please run as root\n" if !$restart && ($> != 0);
 
 	die "can't create more that one PVE::Daemon" if $daemon_initialized;
