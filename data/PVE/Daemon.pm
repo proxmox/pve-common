@@ -38,9 +38,29 @@ my $daemon_initialized = 0; # we only allow one instance
 my $close_daemon_lock = sub {
     my ($self) = @_;
 
+    return if !$self->{daemon_lock_fh};
+
     close $self->{daemon_lock_fh};
     delete $self->{daemon_lock_fh};
 };
+
+# call this if you fork() from child
+# Note: we already call this for workers, so it is only required
+# if you fork inside a simple daemon (max_workers == 0).
+sub after_fork_cleanup {
+    my ($self) = @_;
+
+    &$close_daemon_lock($self);
+
+    PVE::INotify::inotify_close();
+
+    for my $sig (qw(CHLD HUP INT TERM QUIT)) {
+	$SIG{$sig} = 'DEFAULT'; # restore default handler
+	# AnyEvent signals only works if $SIG{XX} is 
+	# undefined (perl event loop)
+	delete $SIG{$sig}; # so that we can handle events with AnyEvent
+    }
+}
 
 my $lockpidfile = sub {
     my ($self) = @_;
@@ -129,16 +149,7 @@ my $start_workers = sub {
 	} else {
 	    $0 = "$self->{name} worker";
 
-	    &$close_daemon_lock($self);
-
-	    PVE::INotify::inotify_close();
-
-	    for my $sig (qw(CHLD HUP INT TERM QUIT)) {
-		$SIG{$sig} = 'DEFAULT'; # restore default handler
-		# AnyEvent signals only works if $SIG{XX} is 
-		# undefined (perl event loop)
-		delete $SIG{$sig}; # so that we can handle events with AnyEvent
-	    }
+	    $self->after_fork_cleanup();
 
 	    eval { $self->run(); };
 	    if (my $err = $@) {
