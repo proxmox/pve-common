@@ -5,11 +5,14 @@ package PVE::Daemon;
 # Features:
 # * lock and write PID file /var/run/$name.pid to make sure onyl
 #   one instance is running.
+# * keep lock open during restart
 # * correctly daemonize (redirect STDIN/STDOUT)
 # * restart by stop/start, exec, or signal HUP
 # * daemon restart on error (option 'restart_on_error')
 # * handle worker processes (option 'max_workers')
-
+# * allow to restart while workers are still runningl
+#   (option 'leave_children_open_on_reload')
+ 
 use strict;
 use warnings;
 use PVE::SafeSyslog;
@@ -120,11 +123,13 @@ my $server_cleanup = sub {
 my $finish_workers = sub {
     my ($self) = @_;
 
-    foreach my $cpid (keys %{$self->{workers}}) {
-        my $waitpid = waitpid($cpid, WNOHANG);
-        if (defined($waitpid) && ($waitpid == $cpid)) {
-            delete ($self->{workers}->{$cpid});
-	    syslog('info', "worker $cpid finished");
+    foreach my $id (qw(workers old_workers)) {
+	foreach my $cpid (keys %{$self->{$id}}) {
+	    my $waitpid = waitpid($cpid, WNOHANG);
+	    if (defined($waitpid) && ($waitpid == $cpid)) {
+		delete ($self->{$id}->{$cpid});
+		syslog('info', "worker $cpid finished");
+	    }
 	}
     }
 };
@@ -191,6 +196,9 @@ my $terminate_server = sub {
     foreach my $cpid (keys %{$self->{workers}}) {
 	kill(15, $cpid); # TERM childs
     }
+
+    return if $self->{got_hup_signal} &&
+	$self->{leave_children_open_on_reload};
 
     # nicely shutdown childs (give them max 10 seconds to shut down)
     my $previous_alarm = alarm(10);
@@ -387,6 +395,7 @@ sub new {
 	    env_restart_pve_daemon => $restart,
 	    env_pve_lock_fd => $lockfd,
 	    workers => {},
+	    old_workers => {},
 	}, $class;
 
 	foreach my $opt (keys %params) {
@@ -399,8 +408,20 @@ sub new {
 		$self->{$opt} = $value;
 	    } elsif ($opt eq 'max_workers') {
 		$self->{$opt} = $value;
+	    } elsif ($opt eq 'leave_children_open_on_reload') {
+		$self->{$opt} = $value;
 	    } else {
 		die "unknown daemon option '$opt'\n";
+	    }
+	}
+	
+	if ($restart && $self->{max_workers}) {
+	    if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
+		foreach my $pid (split(':', $wpids)) {
+		    if ($pid =~ m/^(\d+)$/) {
+			$self->{old_workers}->{$1} = 1;
+		    }
+		}
 	    }
 	}
 
@@ -441,6 +462,12 @@ sub restart_daemon {
     syslog('info', "server shutdown (restart)");
 
     $ENV{RESTART_PVE_DAEMON} = 1;
+
+    if ($self->{max_workers}) {
+	my @workers = keys %{$self->{workers}};
+	push @workers, keys %{$self->{old_workers}};
+	$ENV{PVE_DAEMON_WORKER_PIDS} = join(':', @workers);
+    }
 
     sleep($waittime) if $waittime; # avoid high server load due to restarts
 
