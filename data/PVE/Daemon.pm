@@ -20,6 +20,9 @@ use PVE::INotify;
 
 use POSIX ":sys_wait_h";
 use Fcntl ':flock';
+use Socket qw(IPPROTO_TCP TCP_NODELAY SOMAXCONN);
+use IO::Socket::INET;
+
 use Getopt::Long;
 use Time::HiRes qw (gettimeofday);
 
@@ -754,6 +757,50 @@ sub register_status_command {
 	    return $self->running() ? 'running' : 'stopped';
 	}});
 }
+
+# some useful helper
+
+sub create_reusable_socket {
+    my ($self, $port, $host) = @_;
+
+    die "no port specifed" if !$port;
+
+    my ($socket, $sockfd);
+
+    if (defined($sockfd = $ENV{"PVE_DAEMON_SOCKET_$port"}) &&
+	$self->{env_restart_pve_daemon}) {
+
+	die "unable to parse socket fd '$sockfd'\n" 
+	    if $sockfd !~ m/^(\d+)$/;
+	$sockfd = $1; # untaint
+
+	$socket = IO::Socket::INET->new;
+	$socket->fdopen($sockfd, 'w') || 
+	    die "cannot fdopen file descriptor '$sockfd' - $!\n";
+
+    } else {
+
+	$socket = IO::Socket::INET->new(
+	    LocalAddr => $host,
+	    LocalPort => $port,
+	    Listen => SOMAXCONN,
+	    Proto  => 'tcp',
+	    ReuseAddr => 1) ||
+	    die "unable to create socket - $@\n";
+
+	# we often observe delays when using Nagle algorithm,
+	# so we disable that to maximize performance
+	setsockopt($socket, IPPROTO_TCP, TCP_NODELAY, 1);
+
+	$ENV{"PVE_DAEMON_SOCKET_$port"} = $socket->fileno;
+    }
+
+    # remove FD_CLOEXEC bit to reuse on exec
+    $socket->fcntl(Fcntl::F_SETFD(), 0);
+    
+    return $socket;
+}
+
 
 1;
 
