@@ -367,7 +367,8 @@ sub new {
 	delete $ENV{PVE_DAEMON_LOCK_FD};
 
 	if (defined($lockfd)) {
-	    $lockfd =~ m/^(\d+)$/;
+	    die "unable to parse lock fd '$lockfd'\n"
+		if $lockfd !~ m/^(\d+)$/;
 	    $lockfd = $1; # untaint
 	}
 
