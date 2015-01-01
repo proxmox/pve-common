@@ -191,14 +191,20 @@ my $terminate_server = sub {
     eval { $self->shutdown(); };
     warn $@ if $@;
 
-    # we have workers - terminate them
+    # we have workers - send TERM signal
 
     foreach my $cpid (keys %{$self->{workers}}) {
 	kill(15, $cpid); # TERM childs
     }
 
+    # if configured, leave children running on HUP
     return if $self->{got_hup_signal} &&
 	$self->{leave_children_open_on_reload};
+
+    # else, send TERM to old workers
+    foreach my $cpid (keys %{$self->{old_workers}}) {
+	kill(15, $cpid); # TERM childs
+    }
 
     # nicely shutdown childs (give them max 10 seconds to shut down)
     my $previous_alarm = alarm(10);
@@ -206,9 +212,11 @@ my $terminate_server = sub {
 	local $SIG{ALRM} = sub { die "timeout\n" };
 
 	while ((my $pid = waitpid (-1, 0)) > 0) {
-	    if (defined($self->{workers}->{$pid})) {
-		delete($self->{workers}->{$pid});
-		syslog('info', "worker $pid finished");
+	    foreach my $id (qw(workers old_workers)) {
+		if (defined($self->{$id}->{$pid})) {
+		    delete($self->{$id}->{$pid});
+		    syslog('info', "worker $pid finished");
+		}
 	    }
 	}
 	alarm(0); # avoid race condition
@@ -219,13 +227,15 @@ my $terminate_server = sub {
 
     if ($err) {
 	syslog('err', "error stopping workers (will kill them now) - $err");
-	foreach my $cpid (keys %{$self->{workers}}) {
-	    # KILL childs still alive!
-	    if (kill (0, $cpid)) {
-		delete($self->{workers}->{$cpid});
-		syslog("err", "kill worker $cpid");
-		kill(9, $cpid);
-		# fixme: waitpid?
+	foreach my $id (qw(workers old_workers)) {
+	    foreach my $cpid (keys %{$self->{$id}}) {
+		# KILL childs still alive!
+		if (kill (0, $cpid)) {
+		    delete($self->{$id}->{$cpid});
+		    syslog("err", "kill worker $cpid");
+		    kill(9, $cpid);
+		    # fixme: waitpid?
+		}
 	    }
 	}
     }
