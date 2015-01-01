@@ -341,7 +341,7 @@ my $server_run = sub {
     if ($err) {
 	syslog ('err', "ERROR: $err");
 
-	# fixme: kill all workers
+	&$terminate_server($self);
 
 	if (my $wait_time = $self->{restart_on_error}) {
 	    $self->restart_daemon($wait_time);
