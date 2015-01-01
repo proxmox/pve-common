@@ -299,9 +299,9 @@ my $server_run = sub {
     $SIG{HUP} = sub {
 	local ($@, $!, $?); # do not overwrite error vars
 	syslog('info', "received signal HUP");
+	$self->{got_hup_signal} = 1;
 	if ($self->{max_workers}) {
 	    &$terminate_server($self);
-	    $self->{got_hup_signal} = 1;
 	} elsif ($self->can('hup')) {
 	    eval { $self->hup() };
 	    warn $@ if $@;
