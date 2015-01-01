@@ -335,7 +335,11 @@ my $server_run = sub {
 		&$old_sig_chld(@_) if $old_sig_chld;
 	    };
 
-	    for (;;) { # forever
+	    # catch worker finished during restart phase 
+	    &$finish_workers($self);
+
+	    # now loop forever (until we receive terminate signal)
+	    for (;;) { 
 		&$start_workers($self);
 		sleep(5);
 		&$finish_workers($self);
