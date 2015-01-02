@@ -411,12 +411,13 @@ sub new {
 
 	$self = bless { 
 	    name => $name,
-	    run_dir => '/var/run',
+	    pidfile => "/var/run/${name}.pid",
 	    env_restart_pve_daemon => $restart,
 	    env_pve_lock_fd => $lockfd,
 	    workers => {},
 	    old_workers => {},
 	}, $class;
+
 
 	foreach my $opt (keys %params) {
 	    my $value = $params{$opt};
@@ -424,7 +425,7 @@ sub new {
 		$self->{$opt} = $value;
 	    } elsif ($opt eq 'stop_wait_time') {
 		$self->{$opt} = $value;
-	    } elsif ($opt eq 'run_dir') {
+	    } elsif ($opt eq 'pidfile') {
 		$self->{$opt} = $value;
 	    } elsif ($opt eq 'max_workers') {
 		$self->{$opt} = $value;
@@ -463,8 +464,6 @@ sub new {
 		}
 	    }
 	}
-
-	$self->{pidfile} = "$self->{run_dir}/${name}.pid";
 
 	$self->{nodename} = PVE::INotify::nodename();
 
