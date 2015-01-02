@@ -12,9 +12,12 @@ package PVE::Daemon;
 # * handle worker processes (option 'max_workers')
 # * allow to restart while workers are still runningl
 #   (option 'leave_children_open_on_reload')
+# * run as different user using setuid/setgid
  
 use strict;
 use warnings;
+use English;
+
 use PVE::SafeSyslog;
 use PVE::INotify;
 
@@ -427,11 +430,30 @@ sub new {
 		$self->{$opt} = $value;
 	    } elsif ($opt eq 'leave_children_open_on_reload') {
 		$self->{$opt} = $value;
+	    } elsif ($opt eq 'setgid') {
+		$self->{$opt} = $value;
+	    } elsif ($opt eq 'setuid') {
+		$self->{$opt} = $value;
 	    } else {
 		die "unknown daemon option '$opt'\n";
 	    }
 	}
 	
+	if (my $gidstr = $self->{setgid}) {
+	    my $gid = getgrnam($gidstr) || die "getgrnam failed - $!\n";
+	    POSIX::setgid($gid) || die "setgid $gid failed - $!\n";
+	    $EGID = "$gid $gid"; # this calls setgroups
+	    # just to be sure
+	    die "detected strange gid\n" if !($GID eq "$gid $gid" && $EGID eq "$gid $gid");
+	}
+
+	if (my $uidstr = $self->{setuid}) {
+	    my $uid = getpwnam($uidstr) || die "getpwnam failed - $!\n";
+	    POSIX::setuid($uid) || die "setuid $uid failed - $!\n";
+	    # just to be sure
+	    die "detected strange uid\n" if !($UID == $uid && $EUID == $uid);
+	}
+
 	if ($restart && $self->{max_workers}) {
 	    if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
 		foreach my $pid (split(':', $wpids)) {
