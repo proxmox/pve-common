@@ -181,7 +181,7 @@ my $start_workers = sub {
 };
 
 my $terminate_server = sub {
-    my ($self) = @_;
+    my ($self, $allow_open_children) = @_;
 
     $self->{terminate} = 1; # set flag to avoid worker restart
 
@@ -201,7 +201,7 @@ my $terminate_server = sub {
     }
 
     # if configured, leave children running on HUP
-    return if $self->{got_hup_signal} &&
+    return if $allow_open_children &&
 	$self->{leave_children_open_on_reload};
 
     # else, send TERM to old workers
@@ -293,7 +293,7 @@ my $server_run = sub {
     local $SIG{TERM} = sub {
 	local ($@, $!, $?); # do not overwrite error vars
 	syslog('info', "received signal TERM");
-	&$terminate_server($self);
+	&$terminate_server($self, 0);
 	&$server_cleanup($self);
 	&$old_sig_term(@_) if $old_sig_term;
     };
@@ -302,7 +302,7 @@ my $server_run = sub {
     local $SIG{QUIT} = sub {
 	local ($@, $!, $?); # do not overwrite error vars
 	syslog('info', "received signal QUIT");
-	&$terminate_server($self);
+	&$terminate_server($self, 0);
 	&$server_cleanup($self);
 	&$old_sig_quit(@_) if $old_sig_quit;
     };
@@ -312,7 +312,7 @@ my $server_run = sub {
 	local ($@, $!, $?); # do not overwrite error vars
 	syslog('info', "received signal INT");
 	$SIG{INT} = 'DEFAULT'; # allow to terminate now
-	&$terminate_server($self);
+	&$terminate_server($self, 0);
 	&$server_cleanup($self);
 	&$old_sig_int(@_) if $old_sig_int;
     };
@@ -322,7 +322,7 @@ my $server_run = sub {
 	syslog('info', "received signal HUP");
 	$self->{got_hup_signal} = 1;
 	if ($self->{max_workers}) {
-	    &$terminate_server($self);
+	    &$terminate_server($self, 1);
 	} elsif ($self->can('hup')) {
 	    eval { $self->hup() };
 	    warn $@ if $@;
@@ -358,7 +358,7 @@ my $server_run = sub {
     if ($err) {
 	syslog ('err', "ERROR: $err");
 
-	&$terminate_server($self);
+	&$terminate_server($self, 1);
 
 	if (my $wait_time = $self->{restart_on_error}) {
 	    $self->restart_daemon($wait_time);
