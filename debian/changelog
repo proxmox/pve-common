@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-22) unstable; urgency=low
+
+  * implement pre-fork daemon
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 08 Jan 2015 14:49:37 +0100
+
 libpve-common-perl (3.0-21) unstable; urgency=low
 
   * add abstract class to implement daemons
