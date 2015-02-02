@@ -724,7 +724,7 @@ sub next_unused_port {
 }
 
 sub next_migrate_port {
-    return next_unused_port(60000, 60010);
+    return next_unused_port(60000, 60050);
 }
 
 sub next_vnc_port {
