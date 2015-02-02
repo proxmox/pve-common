@@ -692,7 +692,7 @@ sub next_unused_port {
 	    next if $ports->{$p}; # reserved
 
 	    my $sock = IO::Socket::INET->new(Listen => 5,
-					     LocalAddr => 'localhost',
+					     LocalAddr => '0.0.0.0',
 					     LocalPort => $p,
 					     ReuseAddr => 1,
 					     Proto     => 0);
