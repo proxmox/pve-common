@@ -764,9 +764,6 @@ sub read_etc_network_interfaces {
     # we try to keep order inside the file
     my $priority = 2; # 1 is reserved for lo 
 
-    # always add the vmbr0 bridge device
-    $ifaces->{vmbr0}->{exists} = 1;
-
     my $gateway = 0;
 
     while (defined ($line = <$fh>)) {
@@ -844,9 +841,6 @@ sub read_etc_network_interfaces {
     }
 
 
-    if (!$gateway) {
-	$ifaces->{vmbr0}->{gateway} = '';
-    }
 
     if (!$ifaces->{lo}) {
 	$ifaces->{lo}->{priority} = 1;
