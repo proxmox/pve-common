@@ -1,3 +1,9 @@
+libpve-common-perl (3.0-23) unstable; urgency=low
+
+  * read_etc_network_interfaces : don't always add vmbr0
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 09 Feb 2015 07:01:58 +0100
+
 libpve-common-perl (3.0-22) unstable; urgency=low
 
   * implement pre-fork daemon
