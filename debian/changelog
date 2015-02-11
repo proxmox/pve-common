@@ -1,3 +1,11 @@
+libpve-common-perl (3.0-24) unstable; urgency=low
+
+  * next_migrate_port: higher port range 
+
+  * next_unused_port: test with bind to all IPs
+  
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 11 Feb 2015 06:37:44 +0100
+
 libpve-common-perl (3.0-23) unstable; urgency=low
 
   * read_etc_network_interfaces : don't always add vmbr0
