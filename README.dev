@@ -1,10 +1,20 @@
 ====================================
-Setup PVE v2 Development Environment
+Setup PVE Development Environment
 ====================================
 
-1.  Install Debian 'wheezy'
+1.  Install Debian 'jessie'
 2.  Install prerequisites for development environment:
 
+# new jessie depends
+apt-get -y install build-essential git-core debhelper autotools-dev \
+doxygen check pkg-config groff quilt dpatch automake autoconf libtool  \
+lintian libdevel-cycle-perl libjson-perl libcommon-sense-perl 	  \
+liblinux-inotify2-perl libio-stringy-perl libstring-shellquote-perl  \
+dh-systemd rpm2cpio libsqlite3-dev sqlite3 libglib2.0-dev librrd-dev \
+librrds-perl rrdcached libdigest-hmac-perl libxml-parser-perl \
+gdb 
+
+# old wheezy depends
 apt-get -y install build-essential git-core debhelper autotools-dev \
 doxygen check pkg-config libnss3-dev groff quilt dpatch libxml2-dev \
 libncurses5-dev libslang2-dev libldap2-dev xsltproc python-pexpect \
@@ -29,6 +39,7 @@ libio-multiplex-perl liblockfile-simple-perl
 
 You currently need the following packages:
 
+libqb.git
 corosync-pve.git
 openais-pve.git
 pve-common.git
