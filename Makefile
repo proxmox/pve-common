@@ -27,7 +27,7 @@ dinstall: deb
 .PHONY: deb
 deb ${DEB}: 
 	rm -rf build
-	rsync -a data/ build
+	rsync -a src/ build
 	rsync -a debian/ build/debian
 	echo "git clone git://git.proxmox.com/git/pve-common.git\\ngit checkout ${GITVERSION}" > build/debian/SOURCE
 	cd build; dpkg-buildpackage -rfakeroot -b -us -uc

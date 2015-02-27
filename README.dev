@@ -12,7 +12,15 @@ lintian libdevel-cycle-perl libjson-perl libcommon-sense-perl 	  \
 liblinux-inotify2-perl libio-stringy-perl libstring-shellquote-perl  \
 dh-systemd rpm2cpio libsqlite3-dev sqlite3 libglib2.0-dev librrd-dev \
 librrds-perl rrdcached libdigest-hmac-perl libxml-parser-perl \
-gdb 
+gdb libcrypt-openssl-random-perl libcrypt-openssl-rsa-perl \
+libnet-ldap-perl libauthen-pam-perl libjson-xs-perl libterm-readline-gnu-perl oathtool libmime-base32-perl liboath0 libpci-dev texi2html libsdl1.2-dev \
+libgnutls28-dev libspice-protocol-dev xfslibs-dev libnuma-dev libaio-dev \
+libspice-server-dev libusbredirparser-dev glusterfs-common libusb-1.0-0-dev \
+librbd-dev libpopt-dev iproute bridge-utils numactl glusterfs-common \
+ceph-common python-ceph libgoogle-perftools4 libfile-chdir-perl lvm2 \
+glusterfs-client liblockfile-simple-perl libsystemd-daemon-dev \
+libreadline-gplv2-dev libio-multiplex-perl libnetfilter-log-dev \
+libipset3 ipset socat libsasl2-dev
 
 # old wheezy depends
 apt-get -y install build-essential git-core debhelper autotools-dev \
