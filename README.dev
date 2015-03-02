@@ -2,44 +2,40 @@
 Setup PVE Development Environment
 ====================================
 
-1.  Install Debian 'jessie'
-2.  Install prerequisites for development environment:
+1. Install Debian 'jessie'
+2. Configure pvetest repository in apt sources.list
+3. make sure you have a read IP address for your hostname in /etc/hosts
+   (using 127.0.1.1 will not work)
+3. run: apt-get update
+3. run: apt-get dist-upgrade
+4. run: apt-get install proxmox-ve-3.10.0
+
+5. Install prerequisites for development environment:
 
 # new jessie depends
-apt-get -y install build-essential git-core debhelper autotools-dev \
-doxygen check pkg-config groff quilt dpatch automake autoconf libtool  \
-lintian libdevel-cycle-perl libjson-perl libcommon-sense-perl 	  \
-liblinux-inotify2-perl libio-stringy-perl libstring-shellquote-perl  \
-dh-systemd rpm2cpio libsqlite3-dev sqlite3 libglib2.0-dev librrd-dev \
-librrds-perl rrdcached libdigest-hmac-perl libxml-parser-perl \
-gdb libcrypt-openssl-random-perl libcrypt-openssl-rsa-perl \
-libnet-ldap-perl libauthen-pam-perl libjson-xs-perl libterm-readline-gnu-perl oathtool libmime-base32-perl liboath0 libpci-dev texi2html libsdl1.2-dev \
-libgnutls28-dev libspice-protocol-dev xfslibs-dev libnuma-dev libaio-dev \
-libspice-server-dev libusbredirparser-dev glusterfs-common libusb-1.0-0-dev \
-librbd-dev libpopt-dev iproute bridge-utils numactl glusterfs-common \
-ceph-common python-ceph libgoogle-perftools4 libfile-chdir-perl lvm2 \
-glusterfs-client liblockfile-simple-perl libsystemd-daemon-dev \
-libreadline-gplv2-dev libio-multiplex-perl libnetfilter-log-dev \
-libipset3 ipset socat libsasl2-dev
 
-# old wheezy depends
 apt-get -y install build-essential git-core debhelper autotools-dev \
-doxygen check pkg-config libnss3-dev groff quilt dpatch libxml2-dev \
-libncurses5-dev libslang2-dev libldap2-dev xsltproc python-pexpect \
-python-pycurl libdbus-1-dev openipmi sg3-utils libnet-snmp-perl \
-libnet-telnet-perl snmp python-openssl libxml2-utils automake autoconf \
-libsqlite3-dev sqlite3 libfuse-dev libglib2.0-dev librrd-dev \
-librrds-perl rrdcached lintian libdevel-cycle-perl libjson-perl \
-liblinux-inotify2-perl libio-stringy-perl unzip fuse-utils \
-libcrypt-openssl-random-perl libcrypt-openssl-rsa-perl \
-libauthen-pam-perl libterm-readline-gnu-perl libssl-dev open-iscsi \
-libapache2-mod-perl2 libfilesys-df-perl libfile-readbackwards-perl \
-libpci-dev texi2html libgnutls-dev libsdl1.2-dev bridge-utils \
-libvncserver0 rpm2cpio  apache2-mpm-prefork libintl-perl \
-libapache2-request-perl libnet-dns-perl vlan libio-socket-ssl-perl \
-libfile-sync-perl ifenslave-2.6 libnet-ldap-perl console-data \
-libtool dietlibc-dev liblocale-po-perl libstring-shellquote-perl \
-libio-multiplex-perl liblockfile-simple-perl
+autogen dh-autoreconf dkms doxygen check pkg-config groff quilt dpatch \
+automake autoconf libtool lintian libdevel-cycle-perl libjson-perl \
+libcommon-sense-perl liblinux-inotify2-perl libio-stringy-perl \
+libstring-shellquote-perl dh-systemd rpm2cpio libsqlite3-dev sqlite3 \
+libglib2.0-dev librrd-dev librrds-perl rrdcached libdigest-hmac-perl \
+libxml-parser-perl gdb libcrypt-openssl-random-perl \
+libcrypt-openssl-rsa-perl libnet-ldap-perl libauthen-pam-perl \
+libjson-xs-perl libterm-readline-gnu-perl oathtool libmime-base32-perl \
+liboath0 libpci-dev texi2html libsdl1.2-dev libgnutls28-dev \
+libspice-protocol-dev xfslibs-dev libnuma-dev libaio-dev \
+libspice-server-dev libusbredirparser-dev glusterfs-common \
+libusb-1.0-0-dev librbd-dev libpopt-dev iproute bridge-utils numactl \
+glusterfs-common ceph-common python-ceph libgoogle-perftools4 \
+libfile-chdir-perl lvm2 glusterfs-client liblockfile-simple-perl \
+libsystemd-daemon-dev libreadline-gplv2-dev libio-multiplex-perl \
+libnetfilter-log-dev libipset3 ipset socat libsasl2-dev libogg-dev \
+python-pyparsing libfilesys-df-perl libcrypt-ssleay-perl \
+libfile-readbackwards-perl libanyevent-perl libanyevent-http-perl \
+unzip liblocale-po-perl vlan ifenslave-2.6 libfile-sync-perl cstream \
+lzop dtach apt-transport-https hdparm gdisk parted ttf-dejavu-core \
+liblzma-dev dosfstools mtools libxen-dev
 
 3.  Download and install the following git modules in order from top to bottom:
 
@@ -49,24 +45,23 @@ You currently need the following packages:
 
 libqb.git
 corosync-pve.git
-openais-pve.git
 pve-common.git
 pve-cluster.git
-redhat-cluster-pve.git
 lvm.git
 pve-access-control.git
 pve-storage.git
 pve-qemu-kvm.git
 qemu-server.git
 vncterm.git
-vzquota.git
-vzctl.git
-fence-agents-pve.git
-resource-agents-pve.git
+spiceterm.git
+#vzquota.git
+#vzctl.git
+#fence-agents-pve.git
+#resource-agents-pve.git
 pve-manager.git
-pve-kernel-2.6.32.git
+pve-kernel-3.10.0.git
 libiscsi.git
-gfs2-utils.git
+#gfs2-utils.git
 ksm-control-daemon.git
 
 Most packages can be installed with 'make dinstall' command.
