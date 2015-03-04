@@ -1,18 +1,24 @@
-====================================
-Setup PVE Development Environment
-====================================
+= Setup PVE Development Environment =
 
 1. Install Debian 'jessie'
 2. Configure pvetest repository in apt sources.list
-3. make sure you have a read IP address for your hostname in /etc/hosts
+
+ deb http://download.proxmox.com/debian jessie pvetest
+
+3. Add our repository key with apt-key:
+
+ wget -O- "http://download.proxmox.com/debian/key.asc" | apt-key add -
+
+4. make sure you have a read IP address for your hostname in /etc/hosts
    (using 127.0.1.1 will not work)
-3. run: apt-get update
-3. run: apt-get dist-upgrade
-4. run: apt-get install proxmox-ve-3.10.0
 
-5. Install prerequisites for development environment:
+5. run: apt-get update
+6. run: apt-get dist-upgrade
+7. run: apt-get install proxmox-ve-3.10.0
 
-# new jessie depends
+You should now have a working Proxmox VE installation.
+
+= Install build prerequisites for development environment =
 
 apt-get -y install build-essential git-core debhelper autotools-dev \
 autogen dh-autoreconf dkms doxygen check pkg-config groff quilt dpatch \
@@ -37,7 +43,9 @@ unzip liblocale-po-perl vlan ifenslave-2.6 libfile-sync-perl cstream \
 lzop dtach apt-transport-https hdparm gdisk parted ttf-dejavu-core \
 liblzma-dev dosfstools mtools libxen-dev
 
-3.  Download and install the following git modules in order from top to bottom:
+= Compile PVE packages from Source =
+
+Download and install the following git modules in order from top to bottom:
 
 # git clone git://git.proxmox.com/git/<PACKAGE.git>
 
@@ -80,8 +88,7 @@ You can view the source code at:
 https://git.proxmox.com
 
 
-REST vs. SOAP
-=============
+= REST vs. SOAP =
 
 We decided to change our SOAP API (1.X) and use a REST like API. The
 concept is described in [1] (Resource Oriented Architecture
@@ -96,8 +103,7 @@ That framework, like any other AJAX toolkit, can talk directly to the
 REST API using JSON. So we were able to remove the server side
 template toolkit completely.
 
-JSON and JSON Schema
-====================
+= JSON and JSON Schema =
 
 We use JSON as data format, because it is simple and parse-able by any
 web browser.
@@ -122,8 +128,7 @@ So here is a summary of the advantage:
    - automatic generation of API documentation
    - easy way to create command line tools (using same API).
 
-API Implementation (PVE::RESTHandler)
-=====================================
+= API Implementation (PVE::RESTHandler) =
 
 All classes exposing methods on the API use PVE::RESTHandler as base class.
 
@@ -212,8 +217,8 @@ C1->find_handler('GET', "/sub2/index") => C2::list2
 The HTTP server use the URL (a path) to find the corresponding method. 
 
 
-References
-==========
+= References =
+
 [1] RESTful Web Services
 Web services for the real world
 
