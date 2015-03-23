@@ -31,7 +31,7 @@ libcrypt-openssl-rsa-perl libnet-ldap-perl libauthen-pam-perl \
 libjson-xs-perl libterm-readline-gnu-perl oathtool libmime-base32-perl \
 liboath0 libpci-dev texi2html libsdl1.2-dev libgnutls28-dev \
 libspice-protocol-dev xfslibs-dev libnuma-dev libaio-dev \
-libspice-server-dev libusbredirparser-dev glusterfs-common \
+pve-libspice-server-dev libusbredirparser-dev glusterfs-common \
 libusb-1.0-0-dev librbd-dev libpopt-dev iproute bridge-utils numactl \
 glusterfs-common ceph-common python-ceph libgoogle-perftools4 \
 libfile-chdir-perl lvm2 glusterfs-client liblockfile-simple-perl \
