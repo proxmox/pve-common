@@ -37,7 +37,7 @@ sub get_standard_option {
     my ($name, $base) = @_;
 
     my $std =  $standard_options->{$name};
-    die "no such standard option\n" if !$std;
+    die "no such standard option '$name'\n" if !$std;
 
     my $res = $base || {};
 
