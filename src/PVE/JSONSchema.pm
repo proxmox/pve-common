@@ -266,7 +266,7 @@ register_standard_option('remote-viewer-config', {
     },
 });
 
-PVE::JSONSchema::register_format('pve-startup-order', \&pve_verify_startup_order);
+register_format('pve-startup-order', \&pve_verify_startup_order);
 sub pve_verify_startup_order {
     my ($value, $noerr) = @_;
 
