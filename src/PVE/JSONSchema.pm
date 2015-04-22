@@ -266,6 +266,48 @@ register_standard_option('remote-viewer-config', {
     },
 });
 
+PVE::JSONSchema::register_format('pve-startup-order', \&pve_verify_startup_order);
+sub pve_verify_startup_order {
+    my ($value, $noerr) = @_;
+
+    return $value if pve_parse_startup_order($value);
+
+    return undef if $noerr;
+
+    die "unable to parse startup options\n";
+}
+
+sub pve_parse_startup_order {
+    my ($value) = @_;
+
+    return undef if !$value;
+
+    my $res = {};
+
+    foreach my $p (split(/,/, $value)) {
+	next if $p =~ m/^\s*$/;
+
+	if ($p =~ m/^(order=)?(\d+)$/) {
+	    $res->{order} = $2;
+	} elsif ($p =~ m/^up=(\d+)$/) {
+	    $res->{up} = $1;
+	} elsif ($p =~ m/^down=(\d+)$/) {
+	    $res->{down} = $1;
+	} else {
+	    return undef;
+	}
+    }
+
+    return $res;
+}
+
+PVE::JSONSchema::register_standard_option('pve-startup-order', {
+    description => "Startup and shutdown behavior. Order is a non-negative number defining the general startup order. Shutdown in done with reverse ordering. Additionally you can set the 'up' or 'down' delay in seconds, which specifies a delay to wait before the next VM is started or stopped.",
+    optional => 1,
+    type => 'string', format => 'pve-startup-order',
+    typetext => '[[order=]\d+] [,up=\d+] [,down=\d+] ',
+});
+
 sub check_format {
     my ($format, $value) = @_;
 
