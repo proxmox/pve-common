@@ -155,7 +155,7 @@ sub pve_verify_ipv4 {
 }
 
 register_format('ipv6', \&pve_verify_ipv6);
-sub pve_verify_ipv4 {
+sub pve_verify_ipv6 {
     my ($ipv6, $noerr) = @_;
 
     if ($ipv6 !~ m/^(?:$IPV6RE)$/) {
