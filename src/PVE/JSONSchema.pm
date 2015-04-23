@@ -147,11 +147,33 @@ register_format('ipv4', \&pve_verify_ipv4);
 sub pve_verify_ipv4 {
     my ($ipv4, $noerr) = @_;
 
-    if (!Net::IP::ip_is_ipv4($ipv4))  {
-	return undef if $noerr;
-	die "value does not look like a valid IP address\n";
+    if ($ipv4 !~ m/^(?:$IPV4RE)$/) {
+ 	return undef if $noerr;
+	die "value does not look like a valid IPv4 address\n";
     }
     return $ipv4;
+}
+
+register_format('ipv6', \&pve_verify_ipv6);
+sub pve_verify_ipv4 {
+    my ($ipv6, $noerr) = @_;
+
+    if ($ipv6 !~ m/^(?:$IPV6RE)$/) {
+ 	return undef if $noerr;
+	die "value does not look like a valid IPv6 address\n";
+    }
+    return $ipv6;
+}
+
+register_format('ip', \&pve_verify_ip);
+sub pve_verify_ip {
+    my ($ip, $noerr) = @_;
+
+    if ($ip !~ m/^(?:(?:$IPV4RE)|(?:$IPV6RE))$/) {
+ 	return undef if $noerr;
+	die "value does not look like a valid IP address\n";
+    }
+    return $ip;
 }
 
 my $ipv4_mask_hash = {
