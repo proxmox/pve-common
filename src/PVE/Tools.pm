@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use POSIX qw(EINTR);
 use IO::Socket::IP;
-use Socket qw(AF_INET AF_INET6);
+use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED);
 use IO::Select;
 use File::Basename;
 use File::Path qw(make_path);
@@ -1050,6 +1050,16 @@ sub unpack_sockaddr_in46 {
     my ($port, $host) = ($family == AF_INET6 ? Socket::unpack_sockaddr_in6($sin)
                                              : Socket::unpack_sockaddr_in($sin));
     return ($family, $port, $host);
+}
+
+sub get_host_address_family {
+    my ($hostname, $socktype) = @_;
+    my %hints = ( flags => AI_V4MAPPED | AI_ALL,
+		  socktype => $socktype );
+    my ($err, @res) = Socket::getaddrinfo($hostname, '0', \%hints);
+    die "failed to resolve $hostname: $err\n" if $err;
+
+    return ${res[0]}->{family};
 }
 
 1;
