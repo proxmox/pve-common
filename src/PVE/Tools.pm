@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use POSIX qw(EINTR);
 use IO::Socket::IP;
+use Socket qw(AF_INET AF_INET6);
 use IO::Select;
 use File::Basename;
 use File::Path qw(make_path);
@@ -1042,5 +1043,13 @@ sub fnv31a {
 }
 
 sub fnv31a_hex { return sprintf("%X", fnv31a(@_)); }
+
+sub unpack_sockaddr_in46 {
+    my ($sin) = @_;
+    my $family = Socket::sockaddr_family($sin);
+    my ($port, $host) = ($family == AF_INET6 ? Socket::unpack_sockaddr_in6($sin)
+                                             : Socket::unpack_sockaddr_in($sin));
+    return ($family, $port, $host);
+}
 
 1;
