@@ -782,7 +782,7 @@ sub register_status_command {
 # some useful helper
 
 sub create_reusable_socket {
-    my ($self, $port, $host) = @_;
+    my ($self, $port, $host, $family) = @_;
 
     die "no port specifed" if !$port;
 
@@ -805,6 +805,7 @@ sub create_reusable_socket {
 	    LocalAddr => $host,
 	    LocalPort => $port,
 	    Listen => SOMAXCONN,
+	    Family => $family,
 	    Proto  => 'tcp',
 	    ReuseAddr => 1) ||
 	    die "unable to create socket - $@\n";
