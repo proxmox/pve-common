@@ -3,7 +3,7 @@ package PVE::Tools;
 use strict;
 use warnings;
 use POSIX qw(EINTR);
-use IO::Socket::INET;
+use IO::Socket::IP;
 use IO::Select;
 use File::Basename;
 use File::Path qw(make_path);
@@ -691,11 +691,11 @@ sub next_unused_port {
 	for (my $p = $range_start; $p < $range_end; $p++) {
 	    next if $ports->{$p}; # reserved
 
-	    my $sock = IO::Socket::INET->new(Listen => 5,
-					     LocalAddr => '0.0.0.0',
-					     LocalPort => $p,
-					     ReuseAddr => 1,
-					     Proto     => 0);
+	    my $sock = IO::Socket::IP->new(Listen => 5,
+					   LocalAddr => '0.0.0.0',
+					   LocalPort => $p,
+					   ReuseAddr => 1,
+					   Proto     => 0);
 
 	    if ($sock) {
 		close($sock);

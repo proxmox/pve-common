@@ -24,7 +24,7 @@ use PVE::INotify;
 use POSIX ":sys_wait_h";
 use Fcntl ':flock';
 use Socket qw(IPPROTO_TCP TCP_NODELAY SOMAXCONN);
-use IO::Socket::INET;
+use IO::Socket::IP;
 
 use Getopt::Long;
 use Time::HiRes qw (gettimeofday);
@@ -795,13 +795,13 @@ sub create_reusable_socket {
 	    if $sockfd !~ m/^(\d+)$/;
 	$sockfd = $1; # untaint
 
-	$socket = IO::Socket::INET->new;
+	$socket = IO::Socket::IP->new;
 	$socket->fdopen($sockfd, 'w') || 
 	    die "cannot fdopen file descriptor '$sockfd' - $!\n";
 
     } else {
 
-	$socket = IO::Socket::INET->new(
+	$socket = IO::Socket::IP->new(
 	    LocalAddr => $host,
 	    LocalPort => $port,
 	    Listen => SOMAXCONN,
