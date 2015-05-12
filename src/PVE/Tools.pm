@@ -1055,14 +1055,19 @@ sub unpack_sockaddr_in46 {
     return ($family, $port, $host);
 }
 
+sub getaddrinfo_all {
+    my ($hostname, @opts) = @_;
+    my %hints = ( flags => AI_V4MAPPED | AI_ALL,
+                  @opts );
+    my ($err, @res) = Socket::getaddrinfo($hostname, '0', \%hints);
+    die "failed to get address info for: $hostname: $err\n" if $err;
+    return @res;
+}
+
 sub get_host_address_family {
     my ($hostname, $socktype) = @_;
-    my %hints = ( flags => AI_V4MAPPED | AI_ALL,
-		  socktype => $socktype );
-    my ($err, @res) = Socket::getaddrinfo($hostname, '0', \%hints);
-    die "failed to resolve $hostname: $err\n" if $err;
-
-    return ${res[0]}->{family};
+    my @res = getaddrinfo_all($hostname, socktype => $socktype);
+    return $res[0]->{family};
 }
 
 1;
