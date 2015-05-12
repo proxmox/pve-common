@@ -4,6 +4,10 @@ libpve-common-perl (4.0-3) unstable; urgency=medium
 
   * provide Tools::unpack_sockaddr_in46
 
+  * new helper: getaddrinfo_all
+
+  * add a socket family argument to next_*_port functions
+
  -- Proxmox Support Team <support@proxmox.com>  Fri, 08 May 2015 12:37:55 +0200
 
 libpve-common-perl (4.0-2) unstable; urgency=medium
