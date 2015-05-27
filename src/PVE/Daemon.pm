@@ -807,6 +807,7 @@ sub create_reusable_socket {
 	    Listen => SOMAXCONN,
 	    Family => $family,
 	    Proto  => 'tcp',
+	    GetAddrInfoFlags => 0,
 	    ReuseAddr => 1) ||
 	    die "unable to create socket - $@\n";
 

@@ -696,7 +696,8 @@ sub next_unused_port {
 					   LocalPort => $p,
 					   ReuseAddr => 1,
 					   Family    => $family,
-					   Proto     => 0);
+					   Proto     => 0,
+					   GetAddrInfoFlags => 0);
 
 	    if ($sock) {
 		close($sock);
