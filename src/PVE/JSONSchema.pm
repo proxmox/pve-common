@@ -271,9 +271,23 @@ sub pve_verify_iface {
     return $id;
 }
 
+# general addresses by name or IP
+register_format('address', \&pve_verify_address);
+sub pve_verify_address {
+    my ($addr, $noerr) = @_;
+
+    if (!(pve_verify_ip($addr, 1) ||
+	  pve_verify_dns_name($addr, 1)))
+    {
+	   return undef if $noerr;
+	   die "value does not look like a valid address: $addr\n";
+    }
+    return $addr;
+}
+
 register_standard_option('spice-proxy', {
     description => "SPICE proxy server. This can be used by the client to specify the proxy server. All nodes in a cluster runs 'spiceproxy', so it is up to the client to choose one. By default, we return the node where the VM is currently running. As resonable setting is to use same node you use to connect to the API (This is window.location.hostname for the JS GUI).",
-    type => 'string', format => 'dns-name',
+    type => 'string', format => 'address',
 }); 
 
 register_standard_option('remote-viewer-config', {
