@@ -247,6 +247,59 @@ my $terminate_server = sub {
     }
 };
 
+sub setup {
+    my ($self) = @_;
+
+    initlog($self->{name});
+
+    my $restart = $ENV{RESTART_PVE_DAEMON};
+    delete $ENV{RESTART_PVE_DAEMON};
+    $self->{env_restart_pve_daemon} = $restart;
+
+    my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
+    delete $ENV{PVE_DAEMON_LOCK_FD};
+    if (defined($lockfd)) {
+	die "unable to parse lock fd '$lockfd'\n"
+	    if $lockfd !~ m/^(\d+)$/;
+	$lockfd = $1; # untaint
+    }
+    $self->{env_pve_lock_fd} = $lockfd;
+
+    die "please run as root\n" if !$restart && ($> != 0);
+
+    die "can't create more that one PVE::Daemon" if $daemon_initialized;
+    $daemon_initialized = 1;
+
+    PVE::INotify::inotify_init();
+
+    if (my $gidstr = $self->{setgid}) {
+	my $gid = getgrnam($gidstr) || die "getgrnam failed - $!\n";
+	POSIX::setgid($gid) || die "setgid $gid failed - $!\n";
+	$EGID = "$gid $gid"; # this calls setgroups
+	# just to be sure
+	die "detected strange gid\n" if !($GID eq "$gid $gid" && $EGID eq "$gid $gid");
+    }
+
+    if (my $uidstr = $self->{setuid}) {
+	my $uid = getpwnam($uidstr) || die "getpwnam failed - $!\n";
+	POSIX::setuid($uid) || die "setuid $uid failed - $!\n";
+	# just to be sure
+	die "detected strange uid\n" if !($UID == $uid && $EUID == $uid);
+    }
+
+    if ($restart && $self->{max_workers}) {
+	if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
+	    foreach my $pid (split(':', $wpids)) {
+		if ($pid =~ m/^(\d+)$/) {
+		    $self->{old_workers}->{$1} = 1;
+		}
+	    }
+	}
+    }
+
+    $self->{nodename} = PVE::INotify::nodename();
+}
+
 my $server_run = sub {
     my ($self, $debug) = @_;
 
@@ -382,38 +435,14 @@ sub new {
 
     $name = 'daemon' if !$name; # should not happen
 
-    initlog($name);
-
     my $self;
 
     eval {
-
-	my $restart = $ENV{RESTART_PVE_DAEMON};
-	delete $ENV{RESTART_PVE_DAEMON};
-
-	my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
-	delete $ENV{PVE_DAEMON_LOCK_FD};
-
-	if (defined($lockfd)) {
-	    die "unable to parse lock fd '$lockfd'\n"
-		if $lockfd !~ m/^(\d+)$/;
-	    $lockfd = $1; # untaint
-	}
-
-	die "please run as root\n" if !$restart && ($> != 0);
-
-	die "can't create more that one PVE::Daemon" if $daemon_initialized;
-	$daemon_initialized = 1;
-
-	PVE::INotify::inotify_init();
-
 	my $class = ref($this) || $this;
 
 	$self = bless { 
 	    name => $name,
 	    pidfile => "/var/run/${name}.pid",
-	    env_restart_pve_daemon => $restart,
-	    env_pve_lock_fd => $lockfd,
 	    workers => {},
 	    old_workers => {},
 	}, $class;
@@ -440,39 +469,9 @@ sub new {
 	    }
 	}
 	
-	if (my $gidstr = $self->{setgid}) {
-	    my $gid = getgrnam($gidstr) || die "getgrnam failed - $!\n";
-	    POSIX::setgid($gid) || die "setgid $gid failed - $!\n";
-	    $EGID = "$gid $gid"; # this calls setgroups
-	    # just to be sure
-	    die "detected strange gid\n" if !($GID eq "$gid $gid" && $EGID eq "$gid $gid");
-	}
 
-	if (my $uidstr = $self->{setuid}) {
-	    my $uid = getpwnam($uidstr) || die "getpwnam failed - $!\n";
-	    POSIX::setuid($uid) || die "setuid $uid failed - $!\n";
-	    # just to be sure
-	    die "detected strange uid\n" if !($UID == $uid && $EUID == $uid);
-	}
-
-	if ($restart && $self->{max_workers}) {
-	    if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
-		foreach my $pid (split(':', $wpids)) {
-		    if ($pid =~ m/^(\d+)$/) {
-			$self->{old_workers}->{$1} = 1;
-		    }
-		}
-	    }
-	}
-
-	$self->{nodename} = PVE::INotify::nodename();
-
-	$self->{cmdline} = [];
-
-	foreach my $el (@$cmdline) {
-	    $el =~ m/^(.*)$/; # untaint
-	    push @{$self->{cmdline}}, $1;
-	}
+	# untaint
+	$self->{cmdline} = [map { /^(.*)$/ } @$cmdline];
 
 	$0 = $name;
     };
@@ -555,7 +554,10 @@ sub run {
 sub start {
     my ($self, $debug) = @_;
 
-    eval  { &$server_run($self, $debug); };
+    eval  {
+	$self->setup();
+	&$server_run($self, $debug);
+    };
     if (my $err = $@) {
 	&$log_err("start failed - $err");
 	exit(-1);

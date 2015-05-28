@@ -158,7 +158,7 @@ sub print_usage_short {
 }
 
 sub handle_cmd {
-    my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn) = @_;
+    my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn, $preparefunc) = @_;
 
     $cmddef = $def;
     $exename = $cmdname;
@@ -175,6 +175,8 @@ sub handle_cmd {
 	print_pod_manpage($podfn);
 	return;
     }
+
+    &$preparefunc() if $preparefunc;
 
     $cmd = &$expand_command_name($cmddef, $cmd);
 
