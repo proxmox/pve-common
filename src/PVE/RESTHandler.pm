@@ -275,8 +275,6 @@ sub AUTOLOAD {
     my $sub = $AUTOLOAD;
     (my $method = $sub) =~ s/.*:://;
 
-    $method =~ s/.*:://;
-
     my $info = $this->map_method_by_name($method);
 
     *{$sub} = sub {
