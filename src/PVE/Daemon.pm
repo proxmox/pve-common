@@ -578,6 +578,16 @@ my $read_pid = sub {
     return $pid;
 };
 
+# checks if the process was started by systemd
+my $init_ppid = sub {
+
+    if (getppid() == 1) {
+       return 1;
+    } else {
+       return 0;
+    }
+}; 
+
 sub running {
     my ($self) = @_;
 
@@ -654,7 +664,11 @@ sub register_start_command {
 	code => sub {
 	    my ($param) = @_;
 
-	    $self->start($param->{debug});
+            if (&$init_ppid()) {
+                $self->start($param->{debug});
+            } else {
+                PVE::Tools::run_command(['systemctl', 'start', $self->{name}]);
+            }
 
 	    return undef;
 	}});  
@@ -700,7 +714,11 @@ sub register_restart_command {
 	code => sub {
 	    my ($param) = @_;
 
-	    &$reload_daemon($self, $use_hup);
+	    if (&$init_ppid()) {
+		&$reload_daemon($self, $use_hup);
+	    } else {
+		PVE::Tools::run_command(['systemctl', $use_hup ? 'reload-or-restart' : 'restart', $self->{name}]);
+	    }
 
 	    return undef;
 	}});		   
@@ -750,7 +768,11 @@ sub register_stop_command {
 	code => sub {
 	    my ($param) = @_;
 	    
-	    $self->stop();
+	    if (&$init_ppid()) {
+		$self->stop();
+	    } else {
+		PVE::Tools::run_command(['systemctl', 'stop', $self->{name}]);
+	    }
 
 	    return undef;
 	}});		   
