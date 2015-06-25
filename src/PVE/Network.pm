@@ -142,27 +142,37 @@ sub tap_create {
     die "interface activation failed\n" if $@;
 }
 
+sub veth_create {
+    my ($veth, $vethpeer, $bridge, $mac) = @_;
+
+    die "unable to get bridge setting\n" if !$bridge;
+
+    my $bridgemtu = &$read_bridge_mtu($bridge);
+
+    # create veth pair
+    if (! -d "/sys/class/net/$veth") {
+	my $cmd = "/sbin/ip link add name $veth type veth peer name $vethpeer mtu $bridgemtu";
+	$cmd .= " addr $mac" if $mac;
+	system($cmd) == 0 || die "can't create interface $veth\n";
+    }
+
+    # up vethpair
+    &$activate_interface($veth);
+    &$activate_interface($vethpeer);
+}
+
+
 my $create_firewall_bridge_linux = sub {
     my ($iface, $bridge) = @_;
 
     my ($vmid, $devid) = &$parse_tap_devive_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
 
-    my $bridgemtu = &$read_bridge_mtu($bridge);
-
     &$cond_create_bridge($fwbr);
     &$activate_interface($fwbr);
 
     copy_bridge_config($bridge, $fwbr);
-    # create veth pair
-    if (! -d "/sys/class/net/$vethfw") {
-	system("/sbin/ip link add name $vethfw type veth peer name $vethfwpeer mtu $bridgemtu") == 0 ||
-	    die "can't create interface $vethfw\n";
-    }
-
-    # up vethpair
-    &$activate_interface($vethfw);
-    &$activate_interface($vethfwpeer);
+    veth_create($vethfw, $vethfwpeer, $bridge);
 
     &$bridge_add_interface($fwbr, $vethfw);
     &$bridge_add_interface($bridge, $vethfwpeer);
