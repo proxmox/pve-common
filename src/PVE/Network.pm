@@ -161,6 +161,14 @@ sub veth_create {
     &$activate_interface($vethpeer);
 }
 
+sub veth_delete {
+    my ($veth) = @_;
+
+    if (-d "/sys/class/net/$veth") {
+	run_command("/sbin/ip link delete dev $veth", outfunc => sub {}, errfunc => sub {});
+    }
+
+}
 
 my $create_firewall_bridge_linux = sub {
     my ($iface, $bridge) = @_;
@@ -215,9 +223,7 @@ my $cleanup_firewall_bridge = sub {
     }
 
     # delete old vethfw interface
-    if (-d "/sys/class/net/$vethfw") {
-	run_command("/sbin/ip link delete dev $vethfw", outfunc => sub {}, errfunc => sub {});
-    }
+    veth_delete($vethfw);
 
     # cleanup fwbr bridge
     if (-d "/sys/class/net/$fwbr") {
