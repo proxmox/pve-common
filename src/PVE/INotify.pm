@@ -766,30 +766,39 @@ sub read_etc_network_interfaces {
 
     my $gateway = 0;
 
-    while (defined ($line = <$fh>)) {
+    SECTION: while (defined ($line = <$fh>)) {
 	chomp ($line);
-	next if $line =~ m/^#/;
+	next if $line =~ m/^\s*#/;
  
-	if ($line =~ m/^auto\s+(.*)$/) {
+	if ($line =~ m/^\s*auto\s+(.*)$/) {
 	    my @aa = split (/\s+/, $1);
 
 	    foreach my $a (@aa) {
 		$ifaces->{$a}->{autostart} = 1;
 	    }
 
-	} elsif ($line =~ m/^iface\s+(\S+)\s+inet\s+(\S+)\s*$/) {
+	} elsif ($line =~ m/^\s*iface\s+(\S+)\s+inet\s+(\S+)\s*$/) {
 	    my $i = $1;
 	    $ifaces->{$i}->{method} = $2;
 	    $ifaces->{$i}->{priority} = $priority++;
 
 	    my $d = $ifaces->{$i};
 	    while (defined ($line = <$fh>)) {
-		if ($line =~ m/^\s*#(.*)\s*$/) {
+		chomp $line;
+		if ($line =~ m/^\s*#(.*?)\s*$/) {
 		    # NOTE: we use 'comments' instead of 'comment' to 
 		    # avoid automatic utf8 conversion
 		    $d->{comments} = '' if !$d->{comments};
 		    $d->{comments} .= "$1\n";
-		} elsif ($line =~ m/^\s+((\S+)\s+(.+))$/) {
+		} elsif ($line =~ m/^\s*(?:iface\s
+                                          |mapping\s
+                                          |auto\s
+                                          |allow-
+                                          |source\s
+                                          |source-directory\s
+                                        )/x) {
+		    last;
+		} elsif ($line =~ m/^\s*((\S+)\s+(.+))$/) {
 		    my $option = $1;
 		    my ($id, $value) = ($2, $3);
 		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast')) {
@@ -837,6 +846,8 @@ sub read_etc_network_interfaces {
 		    last;
 		}
 	    }
+	    last SECTION if !defined($line);
+	    redo SECTION;
 	}
     }
 
