@@ -40,6 +40,9 @@ clean:
 .PHONY: distclean
 distclean: clean
 
+.PHONY: check
+check:
+	$(MAKE) -C test check
 
 .PHONY: upload
 upload: ${DEB}
