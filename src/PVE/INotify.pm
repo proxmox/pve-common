@@ -784,6 +784,13 @@ my $extract_ovs_option = sub {
 # }
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
+    my $proc_net_dev = IO::File->new('/proc/net/dev', 'r');
+    my $proc_net_if_inet6 = IO::File->new('/proc/net/if_inet6', 'r');
+    return __read_etc_network_interfaces($fh, $proc_net_dev, $proc_net_if_inet6);
+}
+
+sub __read_etc_network_interfaces {
+    my ($fh, $proc_net_dev, $proc_net_if_inet6) = @_;
 
     my $config = {};
     my $ifaces = $config->{ifaces} = {};
@@ -791,13 +798,13 @@ sub read_etc_network_interfaces {
 
     my $line;
 
-    if (my $fd2 = IO::File->new("/proc/net/dev", "r")) {
-	while (defined ($line = <$fd2>)) {
+    if ($proc_net_dev) {
+	while (defined ($line = <$proc_net_dev>)) {
 	    if ($line =~ m/^\s*(eth\d+):.*/) {
 		$ifaces->{$1}->{exists} = 1;
 	    }
 	}
-	close($fd2);
+	close($proc_net_dev);
     }
 
     # we try to keep order inside the file
@@ -976,15 +983,17 @@ sub read_etc_network_interfaces {
 
 	$d->{method} = 'manual' if !$d->{method};
 	$d->{method6} = 'manual' if !$d->{method6};
+
+	$d->{families} ||= ['inet'];
     }
 
-    if (my $fd2 = IO::File->new("/proc/net/if_inet6", "r")) {
-	while (defined ($line = <$fd2>)) {
+    if ($proc_net_if_inet6) {
+	while (defined ($line = <$proc_net_if_inet6>)) {
 	    if ($line =~ m/^[a-f0-9]{32}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+(\S+)$/) {
 		$ifaces->{$1}->{active} = 1 if defined($ifaces->{$1});
 	    }
 	}
-	close ($fd2);
+	close ($proc_net_if_inet6);
     }
 
     return $config;
@@ -1121,8 +1130,14 @@ sub __interface_to_string {
     return $raw;
 }
 
+
 sub write_etc_network_interfaces {
     my ($filename, $fh, $config) = @_;
+    my $raw = __write_etc_network_interfaces($config);
+    PVE::Tools::safe_print($filename, $fh, $raw);
+}
+sub __write_etc_network_interfaces {
+    my ($config) = @_;
 
     my $ifaces = $config->{ifaces};
     my @options = @{$config->{options}};
@@ -1278,8 +1293,7 @@ NETWORKDOC
     }
 
     $raw .= $_->[1] . "\n" foreach @options;
-
-    PVE::Tools::safe_print($filename, $fh, $raw);
+    return $raw;
 }
 
 register_file('interfaces', "/etc/network/interfaces",
