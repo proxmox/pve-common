@@ -745,10 +745,49 @@ my $extract_ovs_option = sub {
     return $v;
 };
 
+# config => {
+#   ifaces => {
+#     $ifname => {
+#       <optional> exists => BOOL,
+#       <optional> active => BOOL,
+#       <optional> autostart => BOOL,
+#       <auto> priority => INT,
+#
+#       type => "eth" | "bridge" | "bond" | "loopback" | "OVS*" | ... ,
+#
+#       families => ["inet", "inet6", ...],
+#
+#       method => "manual" | "static" | "dhcp" | ... ,
+#       address => IP,
+#       netmask => SUBNET,
+#       broadcast => IP,
+#       gateway => IP,
+#       comments => [ "..." ],
+#
+#       method6 => "manual" | "static" | "dhcp" | ... ,
+#       address6 => IP,
+#       netmask6 => SUBNET,
+#       gateway6 => IP,
+#       comments6 => [ "..." ],
+#
+#       <known options>, # like bridge_ports, ovs_*
+#
+#       # extra/unknown options stored by-family:
+#       options => { <inet options>... }
+#       options6 => { <inet6 options>... }
+#     }
+#   },
+#   options => [
+#     # mappings end up here as well, as we don't need to understand them
+#     [priority,line]
+#   ]
+# }
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
 
-    my $ifaces = {};
+    my $config = {};
+    my $ifaces = $config->{ifaces} = {};
+    my $options = $config->{options} = [];
 
     my $line;
 
@@ -775,19 +814,23 @@ sub read_etc_network_interfaces {
 		$ifaces->{$a}->{autostart} = 1;
 	    }
 
-	} elsif ($line =~ m/^\s*iface\s+(\S+)\s+inet\s+(\S+)\s*$/) {
+	} elsif ($line =~ m/^\s*iface\s+(\S+)\s+(inet6?)\s+(\S+)\s*$/) {
 	    my $i = $1;
-	    $ifaces->{$i}->{method} = $2;
-	    $ifaces->{$i}->{priority} = $priority++;
+	    my $family = $2;
+	    my $f = { method => $3 }; # by family, merged to $d with a $suffix
+	    (my $suffix = $family) =~ s/^inet//;
 
 	    my $d = $ifaces->{$i};
+	    $d->{priority} = $priority++ if !$d->{priority};
+	    push @{$d->{families}}, $family;
+
 	    while (defined ($line = <$fh>)) {
 		chomp $line;
 		if ($line =~ m/^\s*#(.*?)\s*$/) {
 		    # NOTE: we use 'comments' instead of 'comment' to 
 		    # avoid automatic utf8 conversion
-		    $d->{comments} = '' if !$d->{comments};
-		    $d->{comments} .= "$1\n";
+		    $f->{comments} = '' if !$f->{comments};
+		    $f->{comments} .= "$1\n";
 		} elsif ($line =~ m/^\s*(?:iface\s
                                           |mapping\s
                                           |auto\s
@@ -800,7 +843,7 @@ sub read_etc_network_interfaces {
 		    my $option = $1;
 		    my ($id, $value) = ($2, $3);
 		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast') || ($id eq 'gateway')) {
-			$d->{$id} = $value;
+			$f->{$id} = $value;
 		    } elsif ($id eq 'ovs_type' || $id eq 'ovs_options'|| $id eq 'ovs_bridge' ||
 			     $id eq 'ovs_bonds' || $id eq 'ovs_ports') {
 			$d->{$id} = $value;
@@ -811,7 +854,11 @@ sub read_etc_network_interfaces {
 			    $devs->{$p} = 1;
 			}
 			my $str = join (' ', sort keys %{$devs});
-			$d->{$id} = $str || '';
+			if ($d->{$id}) {
+			    $d->{$id} .= ' ' . $str if $str;
+			} else {
+			    $d->{$id} = $str || '';
+			}
 		    } elsif ($id eq 'bridge_stp') {
 			if ($value =~ m/^\s*(on|yes)\s*$/i) {
 			    $d->{$id} = 'on';
@@ -835,14 +882,17 @@ sub read_etc_network_interfaces {
 			}
 			$d->{$id} = $value;
 		    } else {
-			push @{$d->{options}}, $option;
+			push @{$f->{options}}, $option;
 		    }
 		} else {
 		    last;
 		}
 	    }
+	    $d->{"$_$suffix"} = $f->{$_} foreach (keys %$f);
 	    last SECTION if !defined($line);
 	    redo SECTION;
+	} elsif ($line =~ /\w/) {
+	    push @$options, [$priority++, $line];
 	}
     }
 
@@ -925,6 +975,7 @@ sub read_etc_network_interfaces {
 	}
 
 	$d->{method} = 'manual' if !$d->{method};
+	$d->{method6} = 'manual' if !$d->{method6};
     }
 
     if (my $fd2 = IO::File->new("/proc/net/if_inet6", "r")) {
@@ -936,27 +987,33 @@ sub read_etc_network_interfaces {
 	close ($fd2);
     }
 
-    return $ifaces;
+    return $config;
 }
 
 sub __interface_to_string {
-    my ($iface, $d) = @_;
+    my ($iface, $d, $family, $first_block) = @_;
 
-    return '' if !($d && $d->{method});
+    (my $suffix = $family) =~ s/^inet//;
+
+    return '' if !($d && $d->{"method$suffix"});
 
     my $raw = '';
 
-    $raw .= "iface $iface inet $d->{method}\n";
-    $raw .= "\taddress  $d->{address}\n" if $d->{address};
-    $raw .= "\tnetmask  $d->{netmask}\n" if $d->{netmask};
-    $raw .= "\tgateway  $d->{gateway}\n" if $d->{gateway};
-    $raw .= "\tbroadcast  $d->{broadcast}\n" if $d->{broadcast};
+    $raw .= "iface $iface $family " . $d->{"method$suffix"} . "\n";
+    $raw .= "\taddress  " . $d->{"address$suffix"} . "\n" if $d->{"address$suffix"};
+    $raw .= "\tnetmask  " . $d->{"netmask$suffix"} . "\n" if $d->{"netmask$suffix"};
+    $raw .= "\tgateway  " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
+    $raw .= "\tbroadcast  " . $d->{"broadcast$suffix"} . "\n" if $d->{"broadcast$suffix"};
 
     my $done = { type => 1, priority => 1, method => 1, active => 1, exists => 1,
 		 comments => 1, autostart => 1, options => 1,
-		 address => 1, netmask => 1, gateway => 1, broadcast => 1 };
- 
-    if ($d->{type} eq 'bridge') {
+		 address => 1, netmask => 1, gateway => 1, broadcast => 1,
+		 method6 => 1, families => 1, options6 => 1,
+		 address6 => 1, netmask6 => 1, gateway6 => 1, broadcast6 => 1 };
+
+    if (!$first_block) {
+	# not printing out options
+    } elsif ($d->{type} eq 'bridge') {
 
 	my $ports = $d->{bridge_ports} || 'none';
 	$raw .= "\tbridge_ports $ports\n";
@@ -997,7 +1054,6 @@ sub __interface_to_string {
 
 	$raw .= "\tovs_ports $d->{ovs_ports}\n" if $d->{ovs_ports};
 	$done->{ovs_ports} = 1;
-
     } elsif ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' ||
 	     $d->{type} eq 'OVSBond') {
 
@@ -1031,39 +1087,33 @@ sub __interface_to_string {
 	    $done->{ovs_bonds} = 1;
 	}
 
-	if ($d->{ovs_bridge}) {
-	    $raw = "allow-$d->{ovs_bridge} $iface\n$raw";
-	}
-
 	$raw .= "\tovs_type $d->{type}\n";
 	$done->{ovs_type} = 1;
 
 	if ($d->{ovs_bridge}) {
+	    $raw = "allow-$d->{ovs_bridge} $iface\n$raw";
 	    $raw .= "\tovs_bridge $d->{ovs_bridge}\n";
 	    $done->{ovs_bridge} = 1;
 	}
-	# fixme: use Data::Dumper; print Dumper($d);
     }
 
-    # print other settings
-    foreach my $k (keys %$d) {
-	next if $done->{$k};
-	next if !$d->{$k};
-	$raw .= "\t$k $d->{$k}\n";
+    if ($first_block) {
+	# print other settings
+	foreach my $k (keys %$d) {
+	   next if $done->{$k};
+	   next if !$d->{$k};
+	   $raw .= "\t$k $d->{$k}\n";
+	}
     }
 
-    foreach my $option (@{$d->{options}}) {
+    foreach my $option (@{$d->{"options$suffix"}}) {
 	$raw .= "\t$option\n";
     }
 
     # add comments
-    my $comments = $d->{comments} || '';
+    my $comments = $d->{"comments$suffix"} || '';
     foreach my $cl (split(/\n/, $comments)) {
 	$raw .= "#$cl\n";
-    }
-
-    if ($d->{autostart}) {
-	$raw = "auto $iface\n$raw";
     }
 
     $raw .= "\n";
@@ -1072,7 +1122,10 @@ sub __interface_to_string {
 }
 
 sub write_etc_network_interfaces {
-    my ($filename, $fh, $ifaces) = @_;
+    my ($filename, $fh, $config) = @_;
+
+    my $ifaces = $config->{ifaces};
+    my @options = @{$config->{options}};
 
     my $used_ports = {};
 
@@ -1199,10 +1252,21 @@ sub write_etc_network_interfaces {
 
 	next if $printed->{$iface};
 
+	if (@options && $options[0]->[0] < $d->{priority}) {
+	    do {
+		$raw .= (shift @options)->[1] . "\n";
+	    } while (@options && $options[0]->[0] < $d->{priority});
+	    $raw .= "\n";
+	}
+
 	$printed->{$iface} = 1;
-	$raw .= __interface_to_string($iface, $d);
+	$raw .= "auto $iface\n" if $d->{autostart};
+	my $i = 0; # some options should be printed only once
+	$raw .= __interface_to_string($iface, $d, $_, !$i++) foreach @{$d->{families}};
     }
-    
+
+    $raw .= $_->[1] . "\n" foreach @options;
+
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
