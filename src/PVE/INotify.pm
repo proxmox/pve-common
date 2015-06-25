@@ -1304,12 +1304,10 @@ NETWORKDOC
 	return $p1 <=> $p2 if $p1 != $p2;
 
 	return $a cmp $b;
-		       } keys %$ifaces) {
-
-	my $d = $ifaces->{$iface};
-
+    } keys %$ifaces) {
 	next if $printed->{$iface};
 
+	my $d = $ifaces->{$iface};
 	if (@options && $options[0]->[0] < $d->{priority}) {
 	    do {
 		$raw .= (shift @options)->[1] . "\n";
