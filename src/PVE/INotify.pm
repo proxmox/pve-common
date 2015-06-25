@@ -764,8 +764,6 @@ sub read_etc_network_interfaces {
     # we try to keep order inside the file
     my $priority = 2; # 1 is reserved for lo 
 
-    my $gateway = 0;
-
     SECTION: while (defined ($line = <$fh>)) {
 	chomp ($line);
 	next if $line =~ m/^\s*#/;
@@ -801,11 +799,8 @@ sub read_etc_network_interfaces {
 		} elsif ($line =~ m/^\s*((\S+)\s+(.+))$/) {
 		    my $option = $1;
 		    my ($id, $value) = ($2, $3);
-		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast')) {
+		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast') || ($id eq 'gateway')) {
 			$d->{$id} = $value;
-		    } elsif ($id eq 'gateway') {
-			$d->{$id} = $value;
-			$gateway = 1;
 		    } elsif ($id eq 'ovs_type' || $id eq 'ovs_options'|| $id eq 'ovs_bridge' ||
 			     $id eq 'ovs_bonds' || $id eq 'ovs_ports') {
 			$d->{$id} = $value;
