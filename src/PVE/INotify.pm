@@ -996,6 +996,30 @@ sub __read_etc_network_interfaces {
 	close ($proc_net_if_inet6);
     }
 
+    # OVS bridges create "allow-$BRIDGE $IFACE" lines which we need to remove
+    # from the {options} hash for them to be removed correctly.
+    @$options = grep {defined($_)} map {
+	my ($pri, $line) = @$_;
+	if ($line =~ /^allow-(\S+)\s+(.*)$/) {
+	    my $bridge = $1;
+	    my @ports = split(/\s+/, $2);
+	    if (defined(my $br = $ifaces->{$bridge})) {
+		# if this port is part of a bridge, remove it
+		my %in_ovs_ports = map {$_=>1} split(/\s+/, $br->{ovs_ports});
+		@ports = grep { not $in_ovs_ports{$_} } @ports;
+	    }
+	    # create the allow line for the remaining ports, or delete if empty
+	    if (@ports) {
+		[$pri, "allow-$bridge " . join(' ', @ports)];
+	    } else {
+		undef;
+	    }
+	} else {
+	    # don't modify other lines
+	    $_;
+	}
+    } @$options;
+
     return $config;
 }
 
@@ -1166,7 +1190,14 @@ sub __write_etc_network_interfaces {
 	    $d->{type} eq 'OVSBond') {
 	    my $brname = $used_ports->{$iface};
 	    if (!$brname || !$ifaces->{$brname}) { 
-		delete $ifaces->{$iface}; 
+		if ($iface =~ /^eth/) {
+		    $ifaces->{$iface} = { type => 'eth',
+					  exists => 1,
+					  method => 'manual',
+					  families => ['inet'] };
+		} else {
+		    delete $ifaces->{$iface};
+		}
 		next;
 	    }
 	    my $bd = $ifaces->{$brname};
