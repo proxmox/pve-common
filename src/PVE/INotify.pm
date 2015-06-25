@@ -1261,10 +1261,10 @@ NETWORKDOC
 
     my $if_type_hash = {
 	unknown => 0,
-	loopback => 10,
-	eth => 20,
-	bond => 30,
-	bridge => 40,
+	loopback => 100000,
+	eth => 200000,
+	bond => 300000,
+	bridge => 400000,
    };
 
     my $lookup_type_prio = sub {
@@ -1296,10 +1296,8 @@ NETWORKDOC
 	my $p1 = &$lookup_type_prio($a);
 	my $p2 = &$lookup_type_prio($b);
 
-	return $p1 <=> $p2 if $p1 != $p2;
-
-	$p1 = $ref1->{priority} || 100000;
-	$p2 = $ref2->{priority} || 100000;
+	$p1 += $ref1->{priority} // 50000;
+	$p2 += $ref2->{priority} // 50000;
 
 	return $p1 <=> $p2 if $p1 != $p2;
 
@@ -1308,10 +1306,11 @@ NETWORKDOC
 	next if $printed->{$iface};
 
 	my $d = $ifaces->{$iface};
-	if (@options && $options[0]->[0] < $d->{priority}) {
+	my $pri = $d->{priority} // 0;
+	if (@options && $options[0]->[0] < $pri) {
 	    do {
 		$raw .= (shift @options)->[1] . "\n";
-	    } while (@options && $options[0]->[0] < $d->{priority});
+	    } while (@options && $options[0]->[0] < $pri);
 	    $raw .= "\n";
 	}
 
