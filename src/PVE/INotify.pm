@@ -827,7 +827,7 @@ sub __read_etc_network_interfaces {
 	    my $f = { method => $3 }; # by family, merged to $d with a $suffix
 	    (my $suffix = $family) =~ s/^inet//;
 
-	    my $d = $ifaces->{$i};
+	    my $d = $ifaces->{$i} ||= {};
 	    $d->{priority} = $priority++ if !$d->{priority};
 	    push @{$d->{families}}, $family;
 
