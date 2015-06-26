@@ -25,7 +25,8 @@ dinstall: deb
 
 
 .PHONY: deb
-deb ${DEB}: 
+deb ${DEB}:
+	$(MAKE) -C test check
 	rm -rf build
 	rsync -a src/ build
 	rsync -a debian/ build/debian
