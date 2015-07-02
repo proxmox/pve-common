@@ -41,7 +41,8 @@ python-pyparsing libfilesys-df-perl libcrypt-ssleay-perl \
 libfile-readbackwards-perl libanyevent-perl libanyevent-http-perl \
 unzip liblocale-po-perl vlan ifenslave-2.6 libfile-sync-perl cstream \
 lzop dtach apt-transport-https hdparm gdisk parted ttf-dejavu-core \
-liblzma-dev dosfstools mtools libxen-dev
+liblzma-dev dosfstools mtools libxen-dev libfuse-dev libcorosync-pve-dev \
+libqb-dev
 
 = Compile PVE packages from Source =
 
