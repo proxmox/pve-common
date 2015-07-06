@@ -284,4 +284,29 @@ sub read_proc_net_route {
     return $res;
 }
 
+sub read_proc_net_ipv6_route {
+    my $filename = "/proc/net/ipv6_route";
+
+    my $res = [];
+
+    my $fh = IO::File->new ($filename, "r");
+    return $res if !$fh;
+
+    my $read_v6addr = sub { s/....(?!$)/$&:/g };
+
+    # ipv6_route has no header
+    while (defined(my $line = <$fh>)) {
+	my ($dest, $prefix, $nexthop, $metric, $iface) = (split(/\s+/, $line))[0,1,4,5,9];
+	push @$res, {
+	    dest => &$read_v6addr($dest),
+	    prefix => $prefix,
+	    gateway => &$read_v6addr($nexthop),
+	    metric => $metric,
+	    iface => $iface
+	};
+    }
+
+    return $res;
+}
+
 1;
