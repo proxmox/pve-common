@@ -395,7 +395,7 @@ sub handle {
 
     # todo: this is only to be safe - disable?
     if (my $schema = $info->{returns}) {
-	PVE::JSONSchema::validate($result, $schema, "Result verification vailed\n");
+	PVE::JSONSchema::validate($result, $schema, "Result verification failed\n");
     }
 
     return $result;
