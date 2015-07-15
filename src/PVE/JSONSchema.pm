@@ -1150,13 +1150,12 @@ sub parse_config {
 
     my $cfg = {};
 
-    while ($raw && $raw =~ s/^(.*?)(\n|$)//) {
+    while ($raw =~ /^\s*(.+?)\s*$/gm) {
 	my $line = $1;
- 
-	next if $line =~ m/^\#/; # skip comment lines
-	next if $line =~ m/^\s*$/; # skip empty lines
 
-	if ($line =~ m/^(\S+):\s*(\S+)\s*$/) {
+	next if $line =~ /^#/;
+
+	if ($line =~ m/^(\S+?):\s*(.*)$/) {
 	    my $key = $1;
 	    my $value = $2;
 	    if ($schema->{properties}->{$key} && 

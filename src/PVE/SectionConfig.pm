@@ -231,19 +231,22 @@ sub parse_config {
     my $ids = {};
     my $order = {};
 
-    my $digest = Digest::SHA::sha1_hex(defined($raw) ? $raw : '');
+    $raw = '' if !defined($raw);
+
+    my $digest = Digest::SHA::sha1_hex($raw);
     
     my $pri = 1;
 
     my $lineno = 0;
+    my @lines = split(/\n/, $raw);
+    my $nextline = sub {
+	while (my $line = shift @lines) {
+	    $lineno++;
+	    return $line if $line !~ /^\s*(?:#|$)/;
+	}
+    };
 
-    while ($raw && $raw =~ s/^(.*?)(\n|$)//) {
-	my $line = $1;
-	$lineno++;
-
-	next if $line =~ m/^\#/;
-	next if $line =~ m/^\s*$/;
-
+    while (my $line = &$nextline()) {
 	my $errprefix = "file $filename line $lineno";
 
 	my ($type, $sectionId, $errmsg, $config) = $class->parse_section_header($line);
@@ -266,13 +269,7 @@ sub parse_config {
 		}
 	    }
 
-	    while ($raw && $raw =~ s/^(.*?)(\n|$)//) {
-		$line = $1;
-		$lineno++;
-
-		next if $line =~ m/^\#/;
-		last if $line =~ m/^\s*$/;
-
+	    while ($line = &$nextline()) {
 		next if $ignore; # skip
 
 		$errprefix = "file $filename line $lineno";
