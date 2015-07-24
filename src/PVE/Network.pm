@@ -160,10 +160,22 @@ my $cond_create_bridge = sub {
 };
 
 my $bridge_add_interface = sub {
-    my ($bridge, $iface) = @_;
+    my ($bridge, $iface, $tag) = @_;
 
     system("/sbin/brctl addif $bridge $iface") == 0 ||
 	die "can't add interface 'iface' to bridge '$bridge'\n";
+
+   my $vlan_aware = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/bridge/vlan_filtering");
+
+   if ($vlan_aware) {
+	if ($tag) {
+	    system("/sbin/bridge vlan add dev $iface vid $tag pvid untagged") == 0 ||
+	    die "unable to add vlan $tag to interface $iface\n";
+	} else {
+	    system("/sbin/bridge vlan add dev $iface vid 2-4094") == 0 ||
+	    die "unable to add vlan $tag to interface $iface\n";
+	} 
+   }
 };
 
 my $ovs_bridge_add_port = sub {
@@ -225,7 +237,7 @@ sub veth_delete {
 }
 
 my $create_firewall_bridge_linux = sub {
-    my ($iface, $bridge) = @_;
+    my ($iface, $bridge, $tag) = @_;
 
     my ($vmid, $devid) = &$parse_tap_devive_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
@@ -237,9 +249,9 @@ my $create_firewall_bridge_linux = sub {
     veth_create($vethfw, $vethfwpeer, $bridge);
 
     &$bridge_add_interface($fwbr, $vethfw);
-    &$bridge_add_interface($bridge, $vethfwpeer);
+    &$bridge_add_interface($bridge, $vethfwpeer, $tag);
 
-    return $fwbr;
+    &$bridge_add_interface($fwbr, $iface);
 };
 
 my $create_firewall_bridge_ovs = sub {
@@ -295,12 +307,20 @@ sub tap_plug {
     if (-d "/sys/class/net/$bridge/bridge") {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
 
-	my $newbridge = activate_bridge_vlan($bridge, $tag);
-	copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
+	my $vlan_aware = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/bridge/vlan_filtering");
 
-	$newbridge = &$create_firewall_bridge_linux($iface, $newbridge) if $firewall;
+	if (!$vlan_aware) {
+	    my $newbridge = activate_bridge_vlan($bridge, $tag);
+	    copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
+	    $tag = undef;
+	}
 
-	&$bridge_add_interface($newbridge, $iface);
+	if ($firewall) {
+	    &$create_firewall_bridge_linux($iface, $bridge, $tag);
+	} else {
+	    &$bridge_add_interface($bridge, $iface, $tag);
+	}
+
     } else {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
 
