@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-11) unstable; urgency=medium
+
+  * add ProcFSTools::read_proc_net_ipv6_route
+
+  * added constants: ipv4_reverse_mask and ipv4_mask_hash_localnet 
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 27 Jul 2015 13:12:28 +0200
+
 libpve-common-perl (4.0-10) unstable; urgency=medium
 
   * add veth_create and veth_delete
