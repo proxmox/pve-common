@@ -375,7 +375,7 @@ sub activate_bridge_vlan_slave {
 	
     # create vlan on $iface is not already exist
     if (! -d "/sys/class/net/$ifacevlan") {
-	system("/sbin/vconfig add $iface $tag") == 0 ||
+	system("/sbin/ip link add link $iface name ${iface}.${tag} type vlan id $tag") == 0 ||
 	    die "can't add vlan tag $tag to interface $iface\n";
     }
 
