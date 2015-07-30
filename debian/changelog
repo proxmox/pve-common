@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-12) unstable; urgency=medium
+
+  * tap_plug : add support for vlan aware linux bridge
+
+  * replace /sbin/vconfig with /sbin/ip call
+  
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Jul 2015 08:59:52 +0200
+
 libpve-common-perl (4.0-11) unstable; urgency=medium
 
   * add ProcFSTools::read_proc_net_ipv6_route
