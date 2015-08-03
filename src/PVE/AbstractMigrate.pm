@@ -218,7 +218,7 @@ sub migrate {
 	die "migration problems\n"
     }
 
-    $self->log('info', "migration finished successfuly (duration $duration)");
+    $self->log('info', "migration finished successfully (duration $duration)");
 }
 
 sub lock_vm {
