@@ -312,6 +312,7 @@ sub tap_plug {
 	if (!$vlan_aware) {
 	    my $newbridge = activate_bridge_vlan($bridge, $tag);
 	    copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
+	    $bridge = $newbridge;
 	    $tag = undef;
 	}
 
