@@ -42,7 +42,7 @@ sub get_standard_option {
     my $res = $base || {};
 
     foreach my $opt (keys %$std) {
-	next if $res->{$opt};
+	next if defined($res->{$opt});
 	$res->{$opt} = $std->{$opt};
     }
 
