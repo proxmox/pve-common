@@ -119,7 +119,7 @@ my $read_bridge_mtu = sub {
     return $mtu;
 };
 
-my $parse_tap_devive_name = sub {
+my $parse_tap_device_name = sub {
     my ($iface, $noerr) = @_;
 
     my ($vmid, $devid);
@@ -127,7 +127,7 @@ my $parse_tap_devive_name = sub {
     if ($iface =~ m/^tap(\d+)i(\d+)$/) {
 	$vmid = $1;
 	$devid = $2;
-    } elsif ($iface =~ m/^veth(\d+)\.(\d+)$/) {
+    } elsif ($iface =~ m/^veth(\d+)i(\d+)$/) {
 	$vmid = $1;
 	$devid = $2;
     } else {
@@ -239,7 +239,7 @@ sub veth_delete {
 my $create_firewall_bridge_linux = sub {
     my ($iface, $bridge, $tag) = @_;
 
-    my ($vmid, $devid) = &$parse_tap_devive_name($iface);
+    my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
 
     &$cond_create_bridge($fwbr);
@@ -257,7 +257,7 @@ my $create_firewall_bridge_linux = sub {
 my $create_firewall_bridge_ovs = sub {
     my ($iface, $bridge, $tag) = @_;
 
-    my ($vmid, $devid) = &$parse_tap_devive_name($iface);
+    my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, undef, undef, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
 
     my $bridgemtu = &$read_bridge_mtu($bridge);
@@ -279,7 +279,7 @@ my $create_firewall_bridge_ovs = sub {
 my $cleanup_firewall_bridge = sub {
     my ($iface) = @_;
 
-    my ($vmid, $devid) = &$parse_tap_devive_name($iface, 1);
+    my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
     return if !defined($vmid);  
     my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
 
