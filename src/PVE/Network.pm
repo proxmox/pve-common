@@ -67,20 +67,11 @@ sub setup_tc_rate_limit {
     my ($iface, $rate, $burst, $debug) = @_;
 
     system("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1");
-    system("/sbin/tc filter del dev $iface parent ffff: protocol ip prio 50 estimator 1sec 8sec >/dev/null 2>&1");
+    system("/sbin/tc filter del dev $iface parent ffff: protocol all pref 50 u32 >/dev/null 2>&1");
     system("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1");
     system("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1");
 
     return if !$rate;
-
-    run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
-
-    # this does not work wit virtio - don't know why (setting "mtu 64kb" does not help)
-    #run_command("/sbin/tc filter add dev $iface parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate ${rate}bps burst ${burst}b drop flowid :1");
-    # so we use avrate instead
-    run_command("/sbin/tc filter add dev $iface parent ffff: " .
-		"protocol ip prio 50 estimator 1sec 8sec " .
-		"u32 match ip src 0.0.0.0/0 police avrate ${rate}bps drop flowid :1");
 
     # tbf does not work for unknown reason
     #$TC qdisc add dev $DEV root tbf rate $RATE latency 100ms burst $BURST
@@ -88,6 +79,12 @@ sub setup_tc_rate_limit {
     run_command("/sbin/tc qdisc add dev $iface root handle 1: htb default 1");
     run_command("/sbin/tc class add dev $iface parent 1: classid 1:1 " .
 		"htb rate ${rate}bps burst ${burst}b");
+
+    run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
+    run_command("/sbin/tc filter add dev $iface parent ffff: " .
+		"protocol all prio 50 u32 match u32 0 0 " .
+		"police rate ${rate}bps burst ${burst}b mtu 64kb " .
+		"drop flowid :1");
 
     if ($debug) {
 	print "DEBUG tc settings\n";
