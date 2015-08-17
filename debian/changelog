@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-16) unstable; urgency=medium
+
+  * fix bug #860: fix tc rate control
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 17 Aug 2015 09:43:41 +0200
+
 libpve-common-perl (4.0-15) unstable; urgency=medium
 
   * add tap device name parse fix
