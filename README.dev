@@ -42,7 +42,9 @@ libfile-readbackwards-perl libanyevent-perl libanyevent-http-perl \
 unzip liblocale-po-perl vlan ifenslave-2.6 libfile-sync-perl cstream \
 lzop dtach apt-transport-https hdparm gdisk parted ttf-dejavu-core \
 liblzma-dev dosfstools mtools libxen-dev libfuse-dev libcorosync-pve-dev \
-libqb-dev
+libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor libcgmanager-dev \
+graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
+libudev-dev
 
 = Compile PVE packages from Source =
 
@@ -68,10 +70,13 @@ spiceterm.git
 #fence-agents-pve.git
 #resource-agents-pve.git
 pve-manager.git
-pve-kernel-3.10.0.git
+#pve-kernel-3.10.0.git
 libiscsi.git
 #gfs2-utils.git
 ksm-control-daemon.git
+pve-container.git
+pve-firewall.git
+pve-kernel.git
 
 Most packages can be installed with 'make dinstall' command.
 
