@@ -1102,4 +1102,17 @@ sub get_host_address_family {
     return $res[0]->{family};
 }
 
+# Parses any sane kind of host, or host+port pair:
+# The port is always optional and thus may be undef.
+sub parse_host_and_port {
+    my ($address) = @_;
+    if ($address =~ /^($IPV4RE|[[:alnum:]\-.]+)(?::(\d+))?$/ ||             # ipv4 or host with optional ':port'
+        $address =~ /^\[($IPV6RE|$IPV4RE|[[:alnum:]\-.]+)\](?::(\d+))?$/ || # anything in brackets with optional ':port'
+        $address =~ /^($IPV6RE)(?:\.(\d+))?$/)                              # ipv6 with optional port separated by dot
+    {
+	return ($1, $2, 1); # end with 1 to support simple if(parse...) tests
+    }
+    return; # nothing
+}
+
 1;
