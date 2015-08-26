@@ -18,7 +18,7 @@ use Encode;
 use Digest::SHA;
 use Text::ParseWords;
 use String::ShellQuote;
-use Time::HiRes qw(usleep gettimeofday tv_interval);
+use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
 
 # avoid warning when parsing long hex values with hex()
 no warnings 'portable'; # Support for 64-bit ints required
@@ -68,30 +68,31 @@ sub run_with_timeout {
 
     die "got timeout\n" if $timeout <= 0;
 
-    my $prev_alarm;
+    my $prev_alarm = alarm 0; # suspend outer alarm early
 
     my $sigcount = 0;
 
     my $res;
-
-    local $SIG{ALRM} = sub { $sigcount++; }; # catch alarm outside eval
 
     eval {
 	local $SIG{ALRM} = sub { $sigcount++; die "got timeout\n"; };
 	local $SIG{PIPE} = sub { $sigcount++; die "broken pipe\n" };
 	local $SIG{__DIE__};   # see SA bug 4631
 
-	$prev_alarm = alarm($timeout);
+	alarm($timeout);
 
-	$res = &$code(@param);
+	eval { $res = &$code(@param); };
 
 	alarm(0); # avoid race conditions
+
+	die $@ if $@;
     };
 
     my $err = $@;
 
-    alarm($prev_alarm) if defined($prev_alarm);
+    alarm $prev_alarm;
 
+    # this shouldn't happen anymore?
     die "unknown error" if $sigcount && !$err; # seems to happen sometimes
 
     die $err if $err;
