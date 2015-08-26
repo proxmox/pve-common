@@ -6,6 +6,8 @@ use PVE::Tools qw(run_command);
 use PVE::ProcFSTools;
 use PVE::INotify;
 use File::Basename;
+use IO::Socket::IP;
+use POSIX qw(ECONNREFUSED);
 
 # host network related utility functions
 
@@ -435,6 +437,34 @@ sub activate_bridge_vlan {
         die "can't up bridge $bridgevlan\n";
    
     return $bridgevlan;
+}
+
+sub tcp_ping {
+    my ($host, $port, $timeout) = @_;
+
+    my $refused = 1;
+
+    $timeout = 3 if !$timeout; # sane default
+    if (!$port) {
+	# Net::Ping defaults to the echo port
+	$port = 7;
+    } else {
+	# Net::Ping's port_number() implies service_check(1)
+	$refused = 0;
+    }
+
+    my ($sock, $result);
+    eval {
+	$result = PVE::Tools::run_with_timeout($timeout, sub {
+	    $sock = IO::Socket::IP->new(PeerHost => $host, PeerPort => $port, Type => SOCK_STREAM);
+	    $result = $refused if $! == ECONNREFUSED;
+	});
+    };
+    if ($sock) {
+	$sock->close();
+	$result = 1;
+    }
+    return $result;
 }
 
 1;
