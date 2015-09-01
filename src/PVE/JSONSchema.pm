@@ -83,6 +83,13 @@ PVE::JSONSchema::register_standard_option('pve-config-digest', {
     maxLength => 40, # sha1 hex digest lenght is 40
 });
 
+PVE::JSONSchema::register_standard_option('extra-args', {
+    description => "Extra arguments as array",
+    type => 'array',
+    items => { type => 'string' },
+    optional => 1
+});
+
 my $format_list = {};
 
 sub register_format {
@@ -1074,16 +1081,24 @@ sub get_options {
     raise("unable to parse option\n", code => HTTP_BAD_REQUEST)
 	if !Getopt::Long::GetOptionsFromArray($args, $opts, @getopt);
 
-    if (my $acount = scalar(@$args)) {
+    if (@$args) {
 	if ($list_param) {
 	    $opts->{$list_param} = $args;
 	    $args = [];
 	} elsif (ref($arg_param)) {
-	    raise("wrong number of arguments\n", code => HTTP_BAD_REQUEST)
-		if scalar(@$arg_param) != $acount; 
-	    foreach my $p (@$arg_param) {
-		$opts->{$p} = shift @$args;
+	    foreach my $arg_name (@$arg_param) {
+		if ($opts->{'extra-args'}) {
+		    raise("internal error: extra-args must be the last argument\n", code => HTTP_BAD_REQUEST);
+		}
+		if ($arg_name eq 'extra-args') {
+		    $opts->{'extra-args'} = $args;
+		    $args = [];
+		    next;
+		}
+		raise("not enough arguments\n", code => HTTP_BAD_REQUEST) if !@$args;
+		$opts->{$arg_name} = shift @$args;
 	    }
+	    raise("too many arguments\n", code => HTTP_BAD_REQUEST) if @$args;
 	} else {
 	    raise("too many arguments\n", code => HTTP_BAD_REQUEST)
 		if scalar(@$args) != 0;

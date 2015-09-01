@@ -386,9 +386,11 @@ sub handle {
 	# warn "validate ". Dumper($param}) . "\n" . Dumper($schema);
 	PVE::JSONSchema::validate($param, $schema);
 	# untaint data (already validated)
+	my $extra = delete $param->{'extra-args'};
 	while (my ($key, $val) = each %$param) {
 	    ($param->{$key}) = $val =~ /^(.*)$/s;
 	}
+	$param->{'extra-args'} = [map { /^(.*)$/ } @$extra] if $extra;
     }
 
     my $result = &$func($param); 
