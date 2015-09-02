@@ -1082,6 +1082,8 @@ sub get_options {
 	}
     }
 
+    Getopt::Long::Configure('prefix_pattern=(--|-)');
+
     my $opts = {};
     raise("unable to parse option\n", code => HTTP_BAD_REQUEST)
 	if !Getopt::Long::GetOptionsFromArray($args, $opts, @getopt);
