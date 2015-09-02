@@ -2,6 +2,7 @@ package PVE::CLIHandler;
 
 use strict;
 use warnings;
+use Data::Dumper;
 
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::RESTHandler;
@@ -157,6 +158,109 @@ sub print_usage_short {
     }
 }
 
+my $print_bash_completion = sub {
+    my ($cmddef, $simple_cmd, $bash_command, $cur, $prev) = @_;
+
+    my $debug = 0;
+
+    return if !(defined($cur) && defined($prev) && defined($bash_command));
+    return if !defined($ENV{COMP_LINE});
+    return if !defined($ENV{COMP_POINT});
+
+    my $cmdline = substr($ENV{COMP_LINE}, 0, $ENV{COMP_POINT});
+    print STDERR "\nCMDLINE: $ENV{COMP_LINE}\n" if $debug;
+
+    # fixme: shell quoting??
+    my @args = split(/\s+/, $cmdline);
+    my $pos = scalar(@args) - 2;
+    $pos += 1 if $cmdline =~ m/\s+$/;
+
+    print STDERR "CMDLINE:$pos:$cmdline\n" if $debug;
+
+    return if $pos < 0;
+
+    my $print_result = sub {
+	foreach my $p (@_) {
+	    print "$p\n" if $p =~ m/^$cur/;
+	}
+    };
+
+    my $cmd;
+    if ($simple_cmd) {
+	$cmd = $simple_cmd;
+    } else {
+	if ($pos == 0) {
+	    &$print_result(keys %$cmddef);
+	    return;
+	}
+	$cmd = $args[1];
+    }
+
+    my $def = $cmddef->{$cmd};
+    return if !$def;
+
+    print STDERR "CMDLINE1:$pos:$cmdline\n" if $debug;
+
+    my $skip_param = {};
+
+    my ($class, $name, $arg_param, $uri_param) = @$def;
+    $arg_param //= [];
+    $uri_param //= {};
+
+    map { $skip_param->{$_} = 1; } @$arg_param;
+    map { $skip_param->{$_} = 1; } keys %$uri_param;
+
+    my $fpcount = scalar(@$arg_param);
+
+    my $info = $class->map_method_by_name($name);
+
+    my $schema = $info->{parameters};
+    my $prop = $schema->{properties};
+
+    my $print_parameter_completion = sub {
+	my ($pname) = @_;
+	my $d = $prop->{$pname};
+	if ($d->{completion}) {
+	    my $vt = ref($d->{completion});
+	    if ($vt eq 'CODE') {
+		my $res = $d->{completion}->($cmd, $pname, $cur);
+		&$print_result(@$res);
+	    }
+	} elsif ($d->{type} eq 'boolean') {
+	    &$print_result('0', '1');
+	} elsif ($d->{enum}) {
+	    &$print_result(@{$d->{enum}});
+	}
+    };
+
+    # positional arguments
+    $pos += 1 if $simple_cmd;
+    if ($fpcount && $pos <= $fpcount) {
+	my $pname = $arg_param->[$pos -1];
+	&$print_parameter_completion($pname);
+	return;
+    }
+
+    my @option_list = ();
+    foreach my $key (keys %$prop) {
+	next if $skip_param->{$key};
+	push @option_list, "--$key";
+    }
+
+    if ($cur =~ m/^-/) {
+	&$print_result(@option_list);
+	return;
+    }
+
+    if ($prev =~ m/^--?(.+)$/ && $prop->{$1}) {
+	my $pname = $1;
+	&$print_parameter_completion($pname);
+	return;
+    }
+
+    &$print_result(@option_list);
+};
+
 sub handle_cmd {
     my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn, $preparefunc) = @_;
 
@@ -173,6 +277,9 @@ sub handle_cmd {
 	return;
     } elsif ($cmd eq 'printmanpod') {
 	print_pod_manpage($podfn);
+	return;
+    } elsif ($cmd eq 'bashcomplete') {
+	&$print_bash_completion($cmddef, 0, @$args);
 	return;
     }
 
@@ -199,11 +306,15 @@ sub handle_simple_cmd {
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def};
     die "no class specified" if !$class;
 
-    if (scalar(@$args) == 1) {
+    if (scalar(@$args) >= 1) {
 	if ($args->[0] eq 'help') {
 	    my $str = "USAGE: $name help\n";
 	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long');
 	    print STDERR "$str\n\n";
+	    return;
+	} elsif ($args->[0] eq 'bashcomplete') {
+	    shift @$args;
+	    &$print_bash_completion({ $name => $def }, $name, @$args);
 	    return;
 	} elsif ($args->[0] eq 'verifyapi') {
 	    PVE::RESTHandler::validate_method_schemas();

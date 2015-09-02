@@ -2,6 +2,8 @@ libpve-common-perl (4.0-18) unstable; urgency=medium
 
   * added 'extra-args' CLI handling
 
+  * add bash completion handler
+
  -- Proxmox Support Team <support@proxmox.com>  Tue, 01 Sep 2015 17:47:18 +0200
 
 libpve-common-perl (4.0-17) unstable; urgency=medium
