@@ -817,6 +817,11 @@ my $default_schema_noref = {
 	    optional => 1,
 	    description => "This indicates the default for the instance property."
 	},
+        completion => {
+	    type => 'coderef',
+	    description => "Bash completion function. This function should return a list of possible values.",
+	    optional => 1,
+        },
         disallow => {
      	    type => "object",
 	    optional => 1,
