@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 
+use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::RESTHandler;
 use PVE::PodParser;
@@ -292,6 +293,35 @@ sub generate_pod_manpage {
     die "unable to find source for class '$class'" if !$podfn;
 
     print_pod_manpage($podfn);
+}
+
+sub run {
+    my ($class, $pwcallback, $preparefunc) = @_;
+
+    $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
+
+    no strict 'refs';
+    $cmddef = ${"${class}::cmddef"};
+
+    $exename = $class;
+    $exename =~ s/^.*:://;
+
+    initlog($exename);
+
+    die "please run as root\n" if $> != 0;
+
+    PVE::INotify::inotify_init();
+
+    my $rpcenv = PVE::RPCEnvironment->init('cli');
+    $rpcenv->init_request();
+    $rpcenv->set_language($ENV{LANG});
+    $rpcenv->set_user('root@pam');
+
+    my $cmd = shift @ARGV;
+
+    handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $0, $preparefunc);
+
+    exit 0;
 }
 
 sub handle_cmd {
