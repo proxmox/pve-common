@@ -284,6 +284,10 @@ sub read_proc_net_route {
     return $res;
 }
 
+sub read_proc_mounts {
+    return PVE::Tools::file_get_contents("/proc/mounts");
+}
+
 sub read_proc_net_ipv6_route {
     my $filename = "/proc/net/ipv6_route";
 
