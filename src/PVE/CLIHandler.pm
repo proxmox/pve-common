@@ -261,6 +261,39 @@ my $print_bash_completion = sub {
     &$print_result(@option_list);
 };
 
+sub verify_api {
+    my ($class) = @_;
+
+    # simply verify all registered methods
+    PVE::RESTHandler::validate_method_schemas();
+}
+
+sub generate_pod_manpage {
+    my ($class, $podfn) = @_;
+
+    no strict 'refs'; 
+    $cmddef = ${"${class}::cmddef"};
+
+    $exename = $class;
+    $exename =~ s/^.*:://;
+
+    if (!defined($podfn)) {
+	my $cpath = "$class.pm";
+	$cpath =~ s/::/\//g;
+	foreach my $p (@INC) {
+	    my $testfn = "$p/$cpath";
+	    if (-f $testfn) {
+		$podfn = $testfn;
+		last;
+	    }
+	}
+    }
+
+    die "unable to find source for class '$class'" if !$podfn;
+
+    print_pod_manpage($podfn);
+}
+
 sub handle_cmd {
     my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn, $preparefunc) = @_;
 
