@@ -288,6 +288,18 @@ sub read_proc_mounts {
     return PVE::Tools::file_get_contents("/proc/mounts");
 }
 
+sub is_mounted {
+    my ($mountpoint) = @_;
+
+    my $mountdata = read_proc_mounts();
+
+    if ($mountdata =~ m/\s$mountpoint\s/) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
 sub read_proc_net_ipv6_route {
     my $filename = "/proc/net/ipv6_route";
 
