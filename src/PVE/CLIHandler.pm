@@ -372,14 +372,17 @@ sub run_cli {
 
     initlog($exename);
 
-    die "please run as root\n" if $> != 0;
 
-    PVE::INotify::inotify_init() if $class !~ m/^PVE::Service::/;
+    if ($class !~ m/^PVE::Service::/) {
+	die "please run as root\n" if $> != 0;
 
-    my $rpcenv = PVE::RPCEnvironment->init('cli');
-    $rpcenv->init_request();
-    $rpcenv->set_language($ENV{LANG});
-    $rpcenv->set_user('root@pam');
+	PVE::INotify::inotify_init();
+
+	my $rpcenv = PVE::RPCEnvironment->init('cli');
+	$rpcenv->init_request();
+	$rpcenv->set_language($ENV{LANG});
+	$rpcenv->set_user('root@pam');
+    }
 
     no strict 'refs';
     my $def = ${"${class}::cmddef"};
