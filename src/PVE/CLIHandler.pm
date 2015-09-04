@@ -333,7 +333,7 @@ sub generate_pod_manpage {
     no strict 'refs';
     my $def = ${"${class}::cmddef"};
 
-    if (ref($def eq 'ARRAY')) {
+    if (ref($def) eq 'ARRAY') {
 	print_simple_pod_manpage($podfn, @$def);
     } else {
 	$cmddef = $def;
