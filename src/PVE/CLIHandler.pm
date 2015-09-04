@@ -269,6 +269,26 @@ sub verify_api {
     PVE::RESTHandler::validate_method_schemas();
 }
 
+sub generate_bash_completions {
+    my ($class) = @_;
+
+    # generate bash completion config
+
+    $exename = $class;
+    $exename =~ s/^.*:://;
+
+    print <<__EOD__;
+# $exename bash completion
+
+# see http://tiswww.case.edu/php/chet/bash/FAQ
+# and __ltrim_colon_completions() in /usr/share/bash-completion/bash_completion
+# this modifies global var, but I found no better way
+COMP_WORDBREAKS=\${COMP_WORDBREAKS//:}
+
+complete -C '$exename bashcomplete' $exename
+__EOD__
+}
+
 sub generate_pod_manpage {
     my ($class, $podfn) = @_;
 
