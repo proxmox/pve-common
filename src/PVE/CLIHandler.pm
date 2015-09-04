@@ -93,6 +93,20 @@ __PACKAGE__->register_method ({
 
     }});
 
+sub print_simple_pod_manpage {
+    my ($podfn, $class, $name, $arg_param, $uri_param) = @_;
+
+    my $synopsis = " $name help\n\n";
+    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long');
+    $str =~ s/^USAGE://;
+    $str =~ s/\n/\n /g;
+    $synopsis .= $str;
+
+    my $parser = PVE::PodParser->new();
+    $parser->{include}->{synopsis} = $synopsis;
+    $parser->parse_from_file($podfn);
+}
+
 sub print_pod_manpage {
     my ($podfn) = @_;
 
@@ -289,39 +303,48 @@ complete -C '$exename bashcomplete' $exename
 __EOD__
 }
 
+sub find_cli_class_source {
+    my ($exename) = @_;
+
+    my $filename;
+
+    my $cpath = "PVE/CLI/${exename}.pm";
+    foreach my $p (@INC) {
+	my $testfn = "$p/$cpath";
+	if (-f $testfn) {
+	    $filename = $testfn;
+	    last;
+	}
+    }
+
+    return $filename;
+}
+
 sub generate_pod_manpage {
     my ($class, $podfn) = @_;
-
-    no strict 'refs'; 
-    $cmddef = ${"${class}::cmddef"};
 
     $exename = $class;
     $exename =~ s/^.*:://;
 
-    if (!defined($podfn)) {
-	my $cpath = "$class.pm";
-	$cpath =~ s/::/\//g;
-	foreach my $p (@INC) {
-	    my $testfn = "$p/$cpath";
-	    if (-f $testfn) {
-		$podfn = $testfn;
-		last;
-	    }
-	}
-    }
+    $podfn = find_cli_class_source($exename) if !defined($podfn);
 
     die "unable to find source for class '$class'" if !$podfn;
 
-    print_pod_manpage($podfn);
+    no strict 'refs';
+    my $def = ${"${class}::cmddef"};
+
+    if (ref($def eq 'ARRAY')) {
+	print_simple_pod_manpage($podfn, @$def);
+    } else {
+	$cmddef = $def;
+	print_pod_manpage($podfn);
+    }
 }
 
 sub run {
-    my ($class, $pwcallback, $preparefunc) = @_;
+    my ($class, $pwcallback, $podfn, $preparefunc) = @_;
 
     $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
-
-    no strict 'refs';
-    $cmddef = ${"${class}::cmddef"};
 
     $exename = $class;
     $exename =~ s/^.*:://;
@@ -337,9 +360,16 @@ sub run {
     $rpcenv->set_language($ENV{LANG});
     $rpcenv->set_user('root@pam');
 
-    my $cmd = shift @ARGV;
+    no strict 'refs';
+    my $def = ${"${class}::cmddef"};
 
-    handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $0, $preparefunc);
+    if (ref($def) eq 'ARRAY') {
+	handle_simple_cmd($def, \@ARGV, $pwcallback, $podfn, $preparefunc);
+    } else {
+	$cmddef = $def;
+	my $cmd = shift @ARGV;
+	handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $podfn, $preparefunc);
+    }
 
     exit 0;
 }
@@ -384,7 +414,7 @@ sub handle_cmd {
 }
 
 sub handle_simple_cmd {
-    my ($def, $args, $pwcallback, $podfn) = @_;
+    my ($def, $args, $pwcallback, $podfn, $preparefunc) = @_;
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def};
     die "no class specified" if !$class;
@@ -403,18 +433,13 @@ sub handle_simple_cmd {
 	    PVE::RESTHandler::validate_method_schemas();
 	    return;
 	} elsif ($args->[0] eq 'printmanpod') {
-	    my $synopsis = " $name help\n\n";
-	    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long');
-	    $str =~ s/^USAGE://;
-	    $str =~ s/\n/\n /g;
-	    $synopsis .= $str;
-
-	    my $parser = PVE::PodParser->new();
-	    $parser->{include}->{synopsis} = $synopsis;
-	    $parser->parse_from_file($podfn);
+	    $podfn = find_cli_class_source($name) if !defined($podfn);
+	    print_simple_pod_manpage($podfn, @$def);
 	    return;
 	}
     }
+
+    &$preparefunc() if $preparefunc;
 
     my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $pwcallback);
 
