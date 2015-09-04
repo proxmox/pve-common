@@ -34,6 +34,19 @@ my $expand_command_name = sub {
     return $cmd;
 };
 
+my $complete_command_names = sub {
+    my $res = [];
+
+    return if ref($cmddef) ne 'HASH';
+
+    foreach my $cmd (keys %$cmddef) {
+	next if $cmd eq 'help';
+	push @$res, $cmd;
+    }
+
+    return $res;
+};
+
 __PACKAGE__->register_method ({
     name => 'help', 
     path => 'help',
@@ -46,6 +59,7 @@ __PACKAGE__->register_method ({
 		description => "Command name",
 		type => 'string',
 		optional => 1,
+		completion => $complete_command_names,
 	    },
 	    verbose => {
 		description => "Verbose output format.",
@@ -309,12 +323,16 @@ sub find_cli_class_source {
     my $filename;
 
     my $cpath = "PVE/CLI/${exename}.pm";
+    my $spath = "PVE/Service/${exename}.pm";
     foreach my $p (@INC) {
-	my $testfn = "$p/$cpath";
-	if (-f $testfn) {
-	    $filename = $testfn;
-	    last;
+	foreach my $s (($cpath, $spath)) {
+	    my $testfn = "$p/$s";
+	    if (-f $testfn) {
+		$filename = $testfn;
+		last;
+	    }
 	}
+	last if defined($filename);
     }
 
     return $filename;
@@ -337,11 +355,14 @@ sub generate_pod_manpage {
 	print_simple_pod_manpage($podfn, @$def);
     } else {
 	$cmddef = $def;
+
+	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
+
 	print_pod_manpage($podfn);
     }
 }
 
-sub run {
+sub run_cli {
     my ($class, $pwcallback, $podfn, $preparefunc) = @_;
 
     $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
@@ -353,7 +374,7 @@ sub run {
 
     die "please run as root\n" if $> != 0;
 
-    PVE::INotify::inotify_init();
+    PVE::INotify::inotify_init() if $class !~ m/^PVE::Service::/;
 
     my $rpcenv = PVE::RPCEnvironment->init('cli');
     $rpcenv->init_request();
@@ -389,6 +410,7 @@ sub handle_cmd {
 	PVE::RESTHandler::validate_method_schemas();
 	return;
     } elsif ($cmd eq 'printmanpod') {
+	$podfn = find_cli_class_source($exename) if !defined($podfn);
 	print_pod_manpage($podfn);
 	return;
     } elsif ($cmd eq 'bashcomplete') {
