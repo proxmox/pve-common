@@ -1139,7 +1139,7 @@ sub get_options {
 		if ($pd->{format} =~ m/-list/) {
 		    # allow --vmid 100 --vmid 101 and --vmid 100,101
 		    # allow --dow mon --dow fri and --dow mon,fri
-		    $opts->{$p} = join(",", @{$opts->{$p}});
+		    $opts->{$p} = join(",", @{$opts->{$p}}) if ref($opts->{$p}) eq 'ARRAY';
 		} elsif ($pd->{format} =~ m/-alist/) {
 		    # we encode array as \0 separated strings
 		    # Note: CGI.pm also use this encoding
