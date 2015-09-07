@@ -6,6 +6,7 @@ use POSIX;
 use Time::HiRes qw (gettimeofday);
 use IO::File;
 use PVE::Tools;
+use Cwd;
 
 my $clock_ticks = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
@@ -290,6 +291,8 @@ sub read_proc_mounts {
 
 sub is_mounted {
     my ($mountpoint) = @_;
+
+    $mountpoint = Cwd::realpath($mountpoint);
 
     my $mountdata = read_proc_mounts();
 
