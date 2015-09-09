@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-20) unstable; urgency=medium
+
+  * avoid Exporter warning with Cwd
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 09 Sep 2015 09:13:11 +0200
+
 libpve-common-perl (4.0-19) unstable; urgency=medium
 
   * add missing formatter property to method schema
