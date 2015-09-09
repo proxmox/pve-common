@@ -6,7 +6,7 @@ use POSIX;
 use Time::HiRes qw (gettimeofday);
 use IO::File;
 use PVE::Tools;
-use Cwd;
+use Cwd qw();
 
 my $clock_ticks = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
