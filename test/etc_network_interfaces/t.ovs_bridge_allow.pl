@@ -48,19 +48,18 @@ iface vmbr0 inet static
 
 /etc/network/interfaces
 
-# Adding an interface to the bridge needs to add allow- lines:
+# Adding an interface to the bridge needs to add allow- lines and remove
+# its autostart property.
 update_iface('vmbr0', [], ovs_ports => 'eth1 eth2');
 expect load('loopback') . <<"/etc/network/interfaces";
 auto eth0
 iface eth0 inet manual
 
-auto eth1
 allow-vmbr0 eth1
 iface eth1 inet manual
 	ovs_type OVSPort
 	ovs_bridge vmbr0
 
-auto eth2
 allow-vmbr0 eth2
 iface eth2 inet manual
 	ovs_type OVSPort

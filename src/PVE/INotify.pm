@@ -1216,6 +1216,7 @@ sub __write_etc_network_interfaces {
 		my $n = $ifaces->{$p};
 		die "OVS bridge '$iface' - unable to find port '$p'\n"
 		    if !$n;
+		$n->{autostart} = 0;
 		if ($n->{type} eq 'eth') {
 		    $n->{type} = 'OVSPort';
 		    $n->{ovs_bridge} = $iface;		    
@@ -1225,6 +1226,19 @@ sub __write_etc_network_interfaces {
 		} else {
 		    die "interface '$p' is not defined as OVS port/bond\n";
 		}
+	    }
+	}
+    }
+
+    # Remove autostart from linux bridge ports
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if ($d->{type} eq 'bridge' && $d->{bridge_ports}) {
+	    foreach my $p (split (/\s+/, $d->{bridge_ports})) {
+		my $n = $ifaces->{$p};
+		die "bridge '$iface' - unable to find port '$p'\n"
+		    if !$n;
+		$n->{autostart} = 0;
 	    }
 	}
     }
