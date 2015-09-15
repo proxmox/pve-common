@@ -241,6 +241,19 @@ sub safe_read_from {
     return $input;
 }
 
+# The $cmd parameter can be:
+#  -) a string
+#    This is generally executed by passing it to the shell with the -c option.
+#    However, it can be executed in one of two ways, depending on whether
+#    there's a pipe involved:
+#      *) with pipe: passed explicitly to bash -c, prefixed with:
+#          set -o pipefail &&
+#      *) without a pipe: passed to perl's open3 which uses 'sh -c'
+#      (Note that this may result in two different syntax requirements!)
+#      FIXME?
+#  -) an array of arguments (strings)
+#    Will be executed without interference from a shell. (Parameters are passed
+#    as is, no escape sequences of strings will be touched.)
 sub run_command {
     my ($cmd, %param) = @_;
 
