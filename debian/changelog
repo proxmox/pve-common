@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-21) unstable; urgency=medium
+
+  * remove autostart property from bridge ports
+
+  * CLIHandler: allow binaries with '-' in command name
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 15 Sep 2015 09:04:01 +0200
+
 libpve-common-perl (4.0-20) unstable; urgency=medium
 
   * avoid Exporter warning with Cwd
