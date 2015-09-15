@@ -297,13 +297,22 @@ sub verify_api {
     PVE::RESTHandler::validate_method_schemas();
 }
 
+my $get_exe_name = sub {
+    my ($class) = @_;
+    
+    my $name = $class;
+    $name =~ s/^.*:://;
+    $name =~ s/_/-/g;
+
+    return $name;
+};
+
 sub generate_bash_completions {
     my ($class) = @_;
 
     # generate bash completion config
 
-    $exename = $class;
-    $exename =~ s/^.*:://;
+    $exename = &$get_exe_name($class);
 
     print <<__EOD__;
 # $exename bash completion
@@ -318,12 +327,14 @@ __EOD__
 }
 
 sub find_cli_class_source {
-    my ($exename) = @_;
+    my ($name) = @_;
 
     my $filename;
 
-    my $cpath = "PVE/CLI/${exename}.pm";
-    my $spath = "PVE/Service/${exename}.pm";
+    $name =~ s/-/_/g;
+
+    my $cpath = "PVE/CLI/${name}.pm";
+    my $spath = "PVE/Service/${name}.pm";
     foreach my $p (@INC) {
 	foreach my $s (($cpath, $spath)) {
 	    my $testfn = "$p/$s";
@@ -341,8 +352,7 @@ sub find_cli_class_source {
 sub generate_pod_manpage {
     my ($class, $podfn) = @_;
 
-    $exename = $class;
-    $exename =~ s/^.*:://;
+    $exename = &$get_exe_name($class);
 
     $podfn = find_cli_class_source($exename) if !defined($podfn);
 
@@ -367,8 +377,7 @@ sub run_cli {
 
     $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
-    $exename = $class;
-    $exename =~ s/^.*:://;
+    $exename = &$get_exe_name($class);
 
     initlog($exename);
 
