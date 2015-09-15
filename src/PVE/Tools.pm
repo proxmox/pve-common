@@ -254,13 +254,39 @@ sub safe_read_from {
 #  -) an array of arguments (strings)
 #    Will be executed without interference from a shell. (Parameters are passed
 #    as is, no escape sequences of strings will be touched.)
+#  -) an array of arrays
+#    Each array represents a command, and each command's output is piped into
+#    the following command's standard input.
+#    For this a shell command string is created with pipe symbols between each
+#    command.
+#    Each command is a list of strings meant to end up in the final command
+#    unchanged. In order to achieve this, every argument is shell-quoted.
+#    Quoting can be disabled for a particular argument by turning it into a
+#    reference, this allows inserting arbitrary shell options.
+#    For instance: the $cmd [ [ 'echo', 'hello', \'>/dev/null' ] ] will not
+#    produce any output, while the $cmd [ [ 'echo', 'hello', '>/dev/null' ] ]
+#    will literally print: hello >/dev/null
 sub run_command {
     my ($cmd, %param) = @_;
 
     my $old_umask;
     my $cmdstr;
 
-    if (!ref($cmd)) {
+    if (my $ref = ref($cmd)) {
+	if (ref($cmd->[0])) {
+	    $cmdstr = 'set -o pipefail && ';
+	    my $pipe = '';
+	    foreach my $command (@$cmd) {
+		# concatenate quoted parameters
+		# strings which are passed by reference are NOT shell quoted
+		$cmdstr .= $pipe .  join(' ', map { ref($_) ? $$_ : shellquote($_) } @$command);
+		$pipe = ' | ';
+	    }
+	    $cmd = [ '/bin/bash', '-c', "set -o pipefail && $cmdstr" ];
+	} else {
+	    $cmdstr = cmd2string($cmd);
+	}
+    } else {
 	$cmdstr = $cmd;
 	if ($cmd =~ m/\|/) {
 	    # see 'man bash' for option pipefail
@@ -268,8 +294,6 @@ sub run_command {
 	} else {
 	    $cmd = [ $cmd ];
 	}
-    } else {
-	$cmdstr = cmd2string($cmd);
     }
 
     my $errmsg;
