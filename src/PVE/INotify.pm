@@ -874,6 +874,8 @@ sub __read_etc_network_interfaces {
 			}
 		    } elsif ($id eq 'bridge_fd') {
 			$d->{$id} = $value;
+		    } elsif ($id eq 'bridge_vlan_aware') {
+			$d->{$id} = 1;
 		    } elsif ($id eq 'bond_miimon') {
 			$d->{$id} = $value;
 		    } elsif ($id eq 'bond_xmit_hash_policy') {
@@ -1059,6 +1061,11 @@ sub __interface_to_string {
 	$v = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
 	$raw .= "\tbridge_fd $v\n";
 	$done->{bridge_fd} = 1;
+
+	if( defined($d->{bridge_vlan_aware})) {
+	    $raw .= "\tbridge_vlan_aware yes\n";
+	}
+	$done->{bridge_vlan_aware} = 1;
     
     } elsif ($d->{type} eq 'bond') {
 
