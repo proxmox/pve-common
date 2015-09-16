@@ -2,7 +2,9 @@ libpve-common-perl (4.0-22) unstable; urgency=medium
 
   * Tools::run_command: support command pipes (array of arrays)
 
-  *  Tools::run_command: add documentation
+  * Tools::run_command: add documentation
+
+  * parse/set bridge_vlan_aware flag
 
  -- Proxmox Support Team <support@proxmox.com>  Wed, 16 Sep 2015 09:11:29 +0200
 
