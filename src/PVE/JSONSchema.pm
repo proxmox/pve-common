@@ -245,8 +245,8 @@ register_format('email', \&pve_verify_email);
 sub pve_verify_email {
     my ($email, $noerr) = @_;
 
-    # we use same regex as extjs Ext.form.VTypes.email
-    if ($email !~ /^(\w+)([\-+.][\w]+)*@(\w[\-\w]*\.){1,5}([A-Za-z]){2,6}$/) {
+    # we use same regex as in Utils.js
+    if ($email !~ /^(\w+)([\-+.][\w]+)*@(\w[\-\w]*\.){1,5}([A-Za-z]){2,63}$/) {
 	   return undef if $noerr;
 	   die "value does not look like a valid email address\n";
     }
