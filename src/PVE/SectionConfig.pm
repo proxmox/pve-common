@@ -75,13 +75,17 @@ sub updateSchema {
 	    $props->{$p} = $propertyList->{$p};
 	    next;
 	}
+
+	my $modifyable = 0;
+
 	foreach my $t (keys %$plugins) {
-	    my $opts = $pdata->{options}->{$t};
+	    my $opts = $pdata->{options}->{$t} || {};
 	    next if !defined($opts->{$p});
-	    if (!$opts->{$p}->{fixed}) {
-		$props->{$p} = $propertyList->{$p};
-	    }
+	    $modifyable = 1 if !$opts->{$p}->{fixed};
 	}
+	next if !$modifyable;
+
+	$props->{$p} = $propertyList->{$p};
     }
 
     $props->{digest} = get_standard_option('pve-config-digest');
