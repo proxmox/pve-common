@@ -63,6 +63,13 @@ our $IPV6RE = "(?:" .
     "(?:(?:(?:(?:$IPV6H16:){0,5}$IPV6H16)?::" .            ")$IPV6H16)|" .
     "(?:(?:(?:(?:$IPV6H16:){0,6}$IPV6H16)?::" .                    ")))";
 
+use constant (CLONE_NEWNS   => 0x00020000,
+              CLONE_NEWUTS  => 0x04000000,
+              CLONE_NEWIPC  => 0x08000000,
+              CLONE_NEWUSER => 0x10000000,
+              CLONE_NEWPID  => 0x20000000,
+              CLONE_NEWNET  => 0x40000000);
+
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
 
@@ -1151,6 +1158,11 @@ sub parse_host_and_port {
 	return ($1, $2, 1); # end with 1 to support simple if(parse...) tests
     }
     return; # nothing
+}
+
+sub unshare {
+    my ($flags) = @_;
+    syscall 272, $flags;
 }
 
 1;
