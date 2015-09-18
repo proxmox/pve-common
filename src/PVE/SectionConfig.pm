@@ -52,11 +52,52 @@ sub createSchema {
 
     my $pdata = $class->private();
     my $propertyList = $pdata->{propertyList};
+    my $plugins = $pdata->{plugins};
+
+    my $props = {};
+
+    my $copy_property = sub {
+	my ($src) = @_;
+
+	my $res = {};
+	foreach my $k (keys %$src) {
+	    $res->{$k} = $src->{$k};
+	}
+
+	return $res;
+    };
+
+    foreach my $p (keys %$propertyList) {
+	next if $p eq 'type';
+	if (!$propertyList->{$p}->{optional}) {
+	    $props->{$p} = $propertyList->{$p};
+	    next;
+	}
+
+	my $required = 1;
+
+	my $copts = $class->options();
+	$required = 0 if defined($copts->{$p}) && $copts->{$p}->{optional};
+
+	foreach my $t (keys %$plugins) {
+	    my $opts = $pdata->{options}->{$t} || {};
+	    $required = 0 if !defined($opts->{$p}) || $opts->{$p}->{optional};
+	}
+
+	if ($required) {
+	    # make a copy, because we modify the optional property
+	    my $res = &$copy_property($propertyList->{$p});
+	    $res->{optional} = 0;
+	    $props->{$p} = $res;
+	} else {
+	    $props->{$p} = $propertyList->{$p};
+	}
+    }
 
     return {
 	type => "object",
 	additionalProperties => 0,
-	properties => $propertyList,
+	properties => $props,
     };
 }
 
