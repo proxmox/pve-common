@@ -199,8 +199,8 @@ my $print_bash_completion = sub {
     my $cmdline = substr($ENV{COMP_LINE}, 0, $ENV{COMP_POINT});
     print STDERR "\nCMDLINE: $ENV{COMP_LINE}\n" if $debug;
 
-    my @args = PVE::Tools::split_args($cmdline);
-    my $pos = scalar(@args) - 2;
+    my $args = PVE::Tools::split_args($cmdline);
+    my $pos = scalar(@$args) - 2;
     $pos += 1 if $cmdline =~ m/\s+$/;
 
     print STDERR "CMDLINE:$pos:$cmdline\n" if $debug;
@@ -221,7 +221,7 @@ my $print_bash_completion = sub {
 	    &$print_result(keys %$cmddef);
 	    return;
 	}
-	$cmd = $args[1];
+	$cmd = $args->[1];
     }
 
     my $def = $cmddef->{$cmd};
@@ -251,7 +251,7 @@ my $print_bash_completion = sub {
 	if ($d->{completion}) {
 	    my $vt = ref($d->{completion});
 	    if ($vt eq 'CODE') {
-		my $res = $d->{completion}->($cmd, $pname, $cur, [@args]);
+		my $res = $d->{completion}->($cmd, $pname, $cur, $args);
 		&$print_result(@$res);
 	    }
 	} elsif ($d->{type} eq 'boolean') {
