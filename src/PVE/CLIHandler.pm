@@ -199,8 +199,7 @@ my $print_bash_completion = sub {
     my $cmdline = substr($ENV{COMP_LINE}, 0, $ENV{COMP_POINT});
     print STDERR "\nCMDLINE: $ENV{COMP_LINE}\n" if $debug;
 
-    # fixme: shell quoting??
-    my @args = split(/\s+/, $cmdline);
+    my @args = PVE::Tools::split_args($cmdline);
     my $pos = scalar(@args) - 2;
     $pos += 1 if $cmdline =~ m/\s+$/;
 
