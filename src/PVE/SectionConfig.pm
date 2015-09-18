@@ -68,7 +68,6 @@ sub createSchema {
     };
 
     foreach my $p (keys %$propertyList) {
-	next if $p eq 'type';
 	if (!$propertyList->{$p}->{optional}) {
 	    $props->{$p} = $propertyList->{$p};
 	    next;
