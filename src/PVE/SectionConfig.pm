@@ -119,6 +119,9 @@ sub updateSchema {
 
 	my $modifyable = 0;
 
+	my $copts = $class->options();
+	$modifyable = 1 if defined($copts->{$p}) && !$copts->{$p}->{fixed};
+
 	foreach my $t (keys %$plugins) {
 	    my $opts = $pdata->{options}->{$t} || {};
 	    next if !defined($opts->{$p});
