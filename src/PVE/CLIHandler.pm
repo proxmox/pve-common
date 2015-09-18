@@ -251,7 +251,7 @@ my $print_bash_completion = sub {
 	if ($d->{completion}) {
 	    my $vt = ref($d->{completion});
 	    if ($vt eq 'CODE') {
-		my $res = $d->{completion}->($cmd, $pname, $cur);
+		my $res = $d->{completion}->($cmd, $pname, $cur, [@args]);
 		&$print_result(@$res);
 	    }
 	} elsif ($d->{type} eq 'boolean') {
