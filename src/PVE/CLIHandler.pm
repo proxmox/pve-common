@@ -235,6 +235,8 @@ my $print_bash_completion = sub {
     $arg_param //= [];
     $uri_param //= {};
 
+    $arg_param = [ $arg_param ] if !ref($arg_param);
+
     map { $skip_param->{$_} = 1; } @$arg_param;
     map { $skip_param->{$_} = 1; } keys %$uri_param;
 
