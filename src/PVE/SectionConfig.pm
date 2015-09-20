@@ -393,6 +393,9 @@ my $format_config_line = sub {
 
     my $ct = $schema->{type};
 
+    die "property '$key' contains a line feed\n"
+	if ($key =~ m/[\n\r]/) || ($value =~ m/[\n\r]/);
+
     if ($ct eq 'boolean') {
 	return $value ? "\t$key\n" : '';
     } else {
