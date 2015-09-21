@@ -1,3 +1,15 @@
+libpve-common-perl (4.0-23) unstable; urgency=medium
+
+  * support QinQ / vlan stacking
+
+  * improve bash completion
+
+  * Tools: add unshare system call
+
+  * Allow top level devel domain name up to 63 characters in email adresse
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 21 Sep 2015 12:11:17 +0200
+
 libpve-common-perl (4.0-22) unstable; urgency=medium
 
   * Tools::run_command: support command pipes (array of arrays)
