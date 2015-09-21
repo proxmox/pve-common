@@ -563,6 +563,19 @@ sub check_object {
     }
 }
 
+sub check_object_warn {
+    my ($path, $schema, $value, $additional_properties) = @_;
+    my $errors = {};
+    check_object($path, $schema, $value, $additional_properties, $errors);
+    if (scalar(%$errors)) {
+	foreach my $k (keys %$errors) {
+	    warn "parse error: $k: $errors->{$k}\n";
+	}
+	return 0;
+    }
+    return 1;
+}
+
 sub check_prop {
     my ($value, $schema, $path, $errors) = @_;
 
