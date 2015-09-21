@@ -797,6 +797,11 @@ my $default_schema_noref = {
 	    optional => 1,
 	    description => "This provides a description of the purpose the instance property. The value can be a string or it can be an object with properties corresponding to various different instance languages (with an optional default property indicating the default description).",
 	},
+	format_description => {
+	    type => "string",
+	    optional => 1,
+	    description => "This provides a shorter (usually just one word) description for a property used to generate descriptions for comma separated list property strings.",
+	},
         title => {
      	    type => "string",
 	    optional => 1,
@@ -1225,6 +1230,34 @@ sub dump_config {
     }
 
     return $data;
+}
+
+sub generate_typetext {
+    my ($schema) = @_;
+    my $typetext = '';
+    my (@optional, @required);
+    foreach my $key (sort keys %$schema) {
+	next if !$schema->{$key}->{format_description};
+	if ($schema->{$key}->{optional}) {
+	    push @optional, $key;
+	} else {
+	    push @required, $key;
+	}
+    }
+    my ($pre, $post) = ('', '');
+    foreach my $key (@required) {
+	my $desc = $schema->{$key}->{format_description};
+	$typetext .= "$pre$key=<$desc>$post";
+	$pre = ', ';
+    }
+    $pre = ' [,' if $pre;
+    foreach my $key (@optional) {
+	my $desc = $schema->{$key}->{format_description};
+	$typetext .= "$pre$key=<$desc>$post";
+	$pre = ' [,';
+	$post = ']';
+    }
+    return $typetext;
 }
 
 1;
