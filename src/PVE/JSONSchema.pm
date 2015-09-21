@@ -227,18 +227,62 @@ sub pve_verify_ipv4mask {
     return $mask;
 }
 
-register_format('CIDR', \&pve_verify_cidr);
-sub pve_verify_cidr {
+register_format('CIDRv6', \&pve_verify_cidrv6);
+sub pve_verify_cidrv6 {
     my ($cidr, $noerr) = @_;
 
-    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 < 32)) {
-	return $cidr;
-    } elsif ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 <= 120)) {
+    if ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 <= 120)) {
 	return $cidr;
     }
 
     return undef if $noerr;
-    die "value does not look like a valid CIDR network\n";
+    die "value does not look like a valid IPv6 CIDR network\n";
+}
+
+register_format('CIDRv4', \&pve_verify_cidrv4);
+sub pve_verify_cidrv4 {
+    my ($cidr, $noerr) = @_;
+
+    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 < 32)) {
+	return $cidr;
+    }
+
+    return undef if $noerr;
+    die "value does not look like a valid IPv4 CIDR network\n";
+}
+
+register_format('CIDR', \&pve_verify_cidr);
+sub pve_verify_cidr {
+    my ($cidr, $noerr) = @_;
+
+    if (!(pve_verify_cidrv4($cidr, 1) ||
+	  pve_verify_cidrv6($cidr, 1)))
+    {
+	return undef if $noerr;
+	die "value does not look like a valid CIDR network\n";
+    }
+
+    return $cidr;
+}
+
+register_format('pve-ipv4-config', \&pve_verify_ipv4_config);
+sub pve_verify_ipv4_config {
+    my ($config, $noerr) = @_;
+
+    return $config if $config =~ /^(?:dhcp|manual)$/ ||
+                      pve_verify_cidrv4($config, 1);
+    return undef if $noerr;
+    die "value does not look like a valid ipv4 network configuration\n";
+}
+
+register_format('pve-ipv6-config', \&pve_verify_ipv6_config);
+sub pve_verify_ipv6_config {
+    my ($config, $noerr) = @_;
+
+    return $config if $config =~ /^(?:auto|dhcp|manual)$/ ||
+                      pve_verify_cidrv6($config, 1);
+    return undef if $noerr;
+    die "value does not look like a valid ipv6 network configuration\n";
 }
 
 register_format('email', \&pve_verify_email);
