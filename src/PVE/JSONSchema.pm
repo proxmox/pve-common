@@ -1317,11 +1317,11 @@ sub generate_typetext {
 	&$add($key);
 	$pre = ', ';
     }
-    $pre = ' [,' if $pre;
+    $pre = $pre ? ' [,' : '[';
+    $post = ']';
     foreach my $key (@optional) {
 	&$add($key);
 	$pre = ' [,';
-	$post = ']';
     }
     return $typetext;
 }
