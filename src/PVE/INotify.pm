@@ -961,6 +961,14 @@ sub __read_etc_network_interfaces {
 		$ifaces->{$1}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
+	} elsif ($iface =~ m/^(\S+)\.\d+$/) {
+	    $d->{type} = 'vlan';
+	    if (defined ($ifaces->{$1})) {
+		$d->{exists} = $ifaces->{$1}->{exists};
+	    } else {
+		$ifaces->{$1}->{exists} = 0;
+		$d->{exists} = 0;
+	    }
 	} elsif ($iface =~ m/^eth\d+$/) {
 	    if (!$d->{ovs_type}) {
 		$d->{type} = 'eth';
@@ -1291,24 +1299,24 @@ NETWORKDOC
     my $lookup_type_prio = sub {
 	my $iface = shift;
 
-	my $alias = 0;
-	if ($iface =~ m/^(\S+):\d+$/) {
+	my $child = 0;
+	if ($iface =~ m/^(\S+)(\.|:)\d+$/) {
 	    $iface = $1;
-	    $alias = 1;
+	    $child = 1;
 	}
 
 	my $pri;
 	if ($iface eq 'lo') {
 	    $pri = $if_type_hash->{loopback};
 	} elsif ($iface =~ m/^eth\d+$/) {
-	    $pri = $if_type_hash->{eth} + $alias;
+	    $pri = $if_type_hash->{eth} + $child;
 	} elsif ($iface =~ m/^bond\d+$/) {
-	    $pri = $if_type_hash->{bond} + $alias;
+	    $pri = $if_type_hash->{bond} + $child;
 	} elsif ($iface =~ m/^vmbr\d+$/) {
-	    $pri = $if_type_hash->{bridge} + $alias;
+	    $pri = $if_type_hash->{bridge} + $child;
 	}
 
-	return $pri || ($if_type_hash->{unknown} + $alias);
+	return $pri || ($if_type_hash->{unknown} + $child);
     };
 
     foreach my $iface (sort {
