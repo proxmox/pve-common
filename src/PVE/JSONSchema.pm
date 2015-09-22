@@ -1294,7 +1294,8 @@ sub generate_typetext {
     my $typetext = '';
     my (@optional, @required);
     foreach my $key (sort keys %$schema) {
-	next if !$schema->{$key}->{format_description};
+	next if !$schema->{$key}->{format_description} &&
+	        !$schema->{$key}->{typetext};
 	if ($schema->{$key}->{optional}) {
 	    push @optional, $key;
 	} else {
@@ -1302,15 +1303,23 @@ sub generate_typetext {
 	}
     }
     my ($pre, $post) = ('', '');
+    my $add = sub {
+	my ($key) = @_;
+	if (my $desc = $schema->{$key}->{format_description}) {
+	    $typetext .= "$pre$key=<$desc>$post";
+	} elsif (my $text = $schema->{$key}->{typetext}) {
+	    $typetext .= "$pre$text$post";
+	} else {
+	    die "internal error: neither format_description nor typetext found";
+	}
+    };
     foreach my $key (@required) {
-	my $desc = $schema->{$key}->{format_description};
-	$typetext .= "$pre$key=<$desc>$post";
+	&$add($key);
 	$pre = ', ';
     }
     $pre = ' [,' if $pre;
     foreach my $key (@optional) {
-	my $desc = $schema->{$key}->{format_description};
-	$typetext .= "$pre$key=<$desc>$post";
+	&$add($key);
 	$pre = ' [,';
 	$post = ']';
     }
