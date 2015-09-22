@@ -1357,13 +1357,17 @@ sub generate_typetext {
     my ($pre, $post) = ('', '');
     my $add = sub {
 	my ($key) = @_;
-	if (my $desc = $schema->{$key}->{format_description}) {
-	    $typetext .= "$pre$key=<$desc>$post";
-	} elsif (my $text = $schema->{$key}->{typetext}) {
-	    $typetext .= "$pre$text$post";
+	$typetext .= $pre;
+	my $entry = $schema->{$key};
+	if (my $desc = $entry->{format_description}) {
+	    $typetext .= $entry->{default_key} ? "[$key=]" : "$key=";
+	    $typetext .= "<$desc>";
+	} elsif (my $text = $entry->{typetext}) {
+	    $typetext .= $text;
 	} else {
 	    die "internal error: neither format_description nor typetext found";
 	}
+	$typetext .= $post;
     };
     foreach my $key (@required) {
 	&$add($key);
