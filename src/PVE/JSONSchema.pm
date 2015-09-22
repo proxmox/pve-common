@@ -396,8 +396,9 @@ PVE::JSONSchema::register_standard_option('pve-startup-order', {
 });
 
 sub check_format {
-    my ($format, $value) = @_;
+    my ($format, $value, $path) = @_;
 
+    return parse_property_string($format, $value, $path) if ref($format) eq 'HASH';
     return if $format eq 'regex';
 
     if ($format =~ m/^(.*)-a?list$/) {
@@ -427,6 +428,7 @@ sub check_format {
 
 	die "undefined format '$format'\n" if !$code;
 
+	return parse_property_string($code, $value, $path) if ref($code) eq 'HASH';
 	&$code($value);
     }
 } 
@@ -728,7 +730,7 @@ sub check_prop {
     } else {
 
 	if (my $format = $schema->{format}) {
-	    eval { check_format($format, $value); };
+	    eval { check_format($format, $value, $path); };
 	    if ($@) {
 		add_error($errors, $path, "invalid format - $@");
 		return;
@@ -915,7 +917,7 @@ my $default_schema_noref = {
      	    description => "indicates a required property or a schema that must be validated if this property is present",
         },
         format => {
-     	    type => "string",
+	    type => [ "string", "object" ],
 	    optional => 1,
      	    description => "This indicates what format the data is among some predefined formats which may include:\n\ndate - a string following the ISO format \naddress \nschema - a schema definition object \nperson \npage \nhtml - a string representing HTML",
         },
