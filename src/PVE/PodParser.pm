@@ -61,6 +61,11 @@ sub schema_get_type_text {
 	} elsif (defined($phash->{maximum})) {
 	    return "$phash->{type} (-N - $phash->{maximum})";
 	}
+    } elsif ($phash->{type} eq 'string') {
+	my $format = $phash->{format};
+	if ($format && ref($format) eq 'HASH') {
+	    return PVE::JSONSchema::generate_typetext($format);
+	}
     }
 
     my $type = $phash->{type} || 'string';
