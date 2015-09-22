@@ -431,6 +431,51 @@ sub check_format {
     }
 } 
 
+sub parse_property_string {
+    my ($format, $data, $path) = @_;
+
+    my $default_key;
+
+    my $res = {};
+    foreach my $part (split(/,/, $data)) {
+	next if $part =~ /^\s*$/;
+
+	if ($part =~ /^([^=]+)=(.+)$/) {
+	    my ($k, $v) = ($1, $2);
+	    die "duplicate key in comma-separated list property: $k" if defined($res->{$k});
+	    my $schema = $format->{$k};
+	    die "invalid key in comma-separated list property: $k" if !$schema;
+	    if ($schema->{type} && $schema->{type} eq 'boolean') {
+		$v = 1 if $v =~ m/^(1|on|yes|true)$/i;
+		$v = 0 if $v =~ m/^(0|off|no|false)$/i;
+	    }
+	    $res->{$k} = $v;
+	} elsif ($part !~ /=/) {
+	    die "duplicate key in comma-separated list property: $default_key" if $default_key;
+	    foreach my $key (keys %$format) {
+		if ($format->{$key}->{default_key}) {
+		    $default_key = $key;
+		    if (!$res->{$default_key}) {
+			$res->{$default_key} = $part;
+			last;
+		    }
+		    die "duplicate key in comma-separated list property: $default_key";
+		}
+	    }
+	} else {
+	    die "missing key in comma-separated list property";
+	}
+    }
+
+    my $errors = {};
+    check_object($path, $format, $res, undef, $errors);
+    if (scalar(%$errors)) {
+	raise "format error", errors => $errors;
+    }
+
+    return $res;
+}
+
 sub add_error {
     my ($errors, $path, $msg) = @_;
 
@@ -874,6 +919,11 @@ my $default_schema_noref = {
 	    optional => 1,
      	    description => "This indicates what format the data is among some predefined formats which may include:\n\ndate - a string following the ISO format \naddress \nschema - a schema definition object \nperson \npage \nhtml - a string representing HTML",
         },
+	default_key => {
+	    type => "boolean",
+	    optional => 1,
+	    description => "Whether this is the default key in a comma separated list property string.",
+	},
 	default => {
 	    type => "any",
 	    optional => 1,
