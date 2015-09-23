@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-24) unstable; urgency=medium
+
+  * JSONSchema: verify comma-separated property strings
+
+  * JSONSchema: pve-ipv4/6-config and CIDR split
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 23 Sep 2015 08:20:44 +0200
+
 libpve-common-perl (4.0-23) unstable; urgency=medium
 
   * support QinQ / vlan stacking
