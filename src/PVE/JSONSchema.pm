@@ -532,6 +532,74 @@ sub parse_property_string {
     return $res;
 }
 
+sub print_property_string {
+    my ($data, $format, $skip, $path) = @_;
+
+    if (ref($format) ne 'HASH') {
+	my $schema = $format_list->{$format};
+	die "not a valid format: $format" if !$schema;
+	$format = $schema;
+    }
+
+    my $errors = {};
+    check_object($path, $format, $data, undef, $errors);
+    if (scalar(%$errors)) {
+	raise "format error", errors => $errors;
+    }
+
+    my $default_key;
+    my %skipped = map { $_ => 1 } @$skip;
+    my %allowed;
+    my %required; # this is a set, all present keys are required regardless of value
+    foreach my $key (keys %$format) {
+	$allowed{$key} = 1;
+	if (!$format->{$key}->{optional} && !$skipped{$key}) {
+	    $required{$key} = 1;
+	}
+
+	# Skip default keys
+	if ($format->{$key}->{default_key}) {
+	    if ($default_key) {
+		warn "multiple default keys in schema ($default_key, $key)";
+	    } else {
+		$default_key = $key;
+		$skipped{$key} = 1;
+	    }
+	}
+    }
+
+    my ($text, $comma);
+    if ($default_key) {
+	$text = "$data->{$default_key}";
+	$comma = ',';
+    } else {
+	$text = '';
+	$comma = '';
+    }
+
+    foreach my $key (sort keys %$data) {
+	die "invalid key: $key" if !$allowed{$key};
+	delete $required{$key};
+	next if $skipped{$key};
+
+	my $type = $format->{$key}->{type};
+	my $value = $data->{$key};
+	$text .= $comma;
+	$comma = ',';
+	if ($type eq 'disk-size') {
+	    $text .= "$key=" . format_size($value);
+	} else {
+	    $text .= "$key=$value";
+	}
+    }
+
+    if (my $missing = join(',', keys %required)) {
+	die "missing properties: $missing";
+    }
+
+    return $text;
+}
+
 sub add_error {
     my ($errors, $path, $msg) = @_;
 
