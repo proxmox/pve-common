@@ -44,6 +44,47 @@ sub command {
 
 # helpers used to generate our manual pages
 
+sub generate_typetext {
+    my ($schema) = @_;
+    my $typetext = '';
+    my (@optional, @required);
+    foreach my $key (sort keys %$schema) {
+	next if !$schema->{$key}->{format_description} &&
+	        !$schema->{$key}->{typetext};
+	if ($schema->{$key}->{optional}) {
+	    push @optional, $key;
+	} else {
+	    push @required, $key;
+	}
+    }
+    my ($pre, $post) = ('', '');
+    my $add = sub {
+	my ($key) = @_;
+	$typetext .= $pre;
+	my $entry = $schema->{$key};
+	if (my $desc = $entry->{format_description}) {
+	    $typetext .= $entry->{default_key} ? "[$key=]" : "$key=";
+	    $typetext .= "<$desc>";
+	} elsif (my $text = $entry->{typetext}) {
+	    $typetext .= $text;
+	} else {
+	    die "internal error: neither format_description nor typetext found";
+	}
+	$typetext .= $post;
+    };
+    foreach my $key (@required) {
+	&$add($key);
+	$pre = ', ';
+    }
+    $pre = $pre ? ' [,' : '[';
+    $post = ']';
+    foreach my $key (@optional) {
+	&$add($key);
+	$pre = ' [,';
+    }
+    return $typetext;
+}
+
 sub schema_get_type_text {
     my ($phash) = @_;
 
@@ -62,9 +103,11 @@ sub schema_get_type_text {
 	    return "$phash->{type} (-N - $phash->{maximum})";
 	}
     } elsif ($phash->{type} eq 'string') {
-	my $format = $phash->{format};
-	if ($format && ref($format) eq 'HASH') {
-	    return PVE::JSONSchema::generate_typetext($format);
+	if (my $format = $phash->{format}) {
+	    $format = PVE::JSONSchema::get_format($format) if ref($format) ne 'HASH';
+	    if (ref($format) eq 'HASH') {
+		return generate_typetext($format);
+	    }
 	}
     }
 

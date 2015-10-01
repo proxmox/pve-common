@@ -101,6 +101,11 @@ sub register_format {
     $format_list->{$format} = $code;
 }
 
+sub get_format {
+    my ($format) = @_;
+    return $format_list->{$format};
+}
+
 # register some common type for pve
 
 register_format('string', sub {}); # allow format => 'string-list'
@@ -1339,47 +1344,6 @@ sub dump_config {
     }
 
     return $data;
-}
-
-sub generate_typetext {
-    my ($schema) = @_;
-    my $typetext = '';
-    my (@optional, @required);
-    foreach my $key (sort keys %$schema) {
-	next if !$schema->{$key}->{format_description} &&
-	        !$schema->{$key}->{typetext};
-	if ($schema->{$key}->{optional}) {
-	    push @optional, $key;
-	} else {
-	    push @required, $key;
-	}
-    }
-    my ($pre, $post) = ('', '');
-    my $add = sub {
-	my ($key) = @_;
-	$typetext .= $pre;
-	my $entry = $schema->{$key};
-	if (my $desc = $entry->{format_description}) {
-	    $typetext .= $entry->{default_key} ? "[$key=]" : "$key=";
-	    $typetext .= "<$desc>";
-	} elsif (my $text = $entry->{typetext}) {
-	    $typetext .= $text;
-	} else {
-	    die "internal error: neither format_description nor typetext found";
-	}
-	$typetext .= $post;
-    };
-    foreach my $key (@required) {
-	&$add($key);
-	$pre = ', ';
-    }
-    $pre = $pre ? ' [,' : '[';
-    $post = ']';
-    foreach my $key (@optional) {
-	&$add($key);
-	$pre = ' [,';
-    }
-    return $typetext;
 }
 
 1;
