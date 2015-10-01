@@ -1,3 +1,15 @@
+libpve-common-perl (4.0-26) unstable; urgency=medium
+
+  * added JSONSchema::print_property_string
+
+  * JSONSchema: added disk-size format
+
+  * Added PVE::JSONSchema::parse_size/format_size
+
+  * Support named formats in typetext generation
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 01 Oct 2015 11:26:11 +0200
+
 libpve-common-perl (4.0-25) unstable; urgency=medium
 
   * read|write network interfaces : add support for vlan interfaces
