@@ -482,11 +482,13 @@ sub run_cli_handler {
     foreach my $key (keys %params) {
 	next if $key eq 'podfn';
 	next if $key eq 'prepare';
+	next if $key eq 'no_init'; # used by lxc hooks
 	die "unknown parameter '$key'";
     }
 
     my $podfn = $params{podfn};
     my $preparefunc = $params{prepare};
+    my $no_init = $params{no_init};
 
     my $pwcallback = $class->can('read_password');
 
@@ -497,10 +499,10 @@ sub run_cli_handler {
     if ($class !~ m/^PVE::Service::/) {
 	die "please run as root\n" if $> != 0;
 
-	PVE::INotify::inotify_init();
+	PVE::INotify::inotify_init() if !$no_init;
 
 	my $rpcenv = PVE::RPCEnvironment->init('cli');
-	$rpcenv->init_request();
+	$rpcenv->init_request() if !$no_init;
 	$rpcenv->set_language($ENV{LANG});
 	$rpcenv->set_user('root@pam');
     }
