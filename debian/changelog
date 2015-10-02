@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-27) unstable; urgency=medium
+
+  * CLIHandler: fix manpage for method using 'password' handlers.
+
+  * run_cli_handler: replaces run_cli()
+  
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 02 Oct 2015 10:43:14 +0200
+
 libpve-common-perl (4.0-26) unstable; urgency=medium
 
   * added JSONSchema::print_property_string
