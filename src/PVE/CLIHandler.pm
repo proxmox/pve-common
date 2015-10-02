@@ -13,6 +13,7 @@ use base qw(PVE::RESTHandler);
 
 my $cmddef;
 my $exename;
+my $cli_handler_class;
 
 my $expand_command_name = sub {
     my ($def, $cmd) = @_;
@@ -73,7 +74,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	die "not initialized" if !($cmddef && $exename);
+	die "not initialized" if !($cmddef && $exename && $cli_handler_class);
 
 	my $cmd = $param->{cmd};
 
@@ -95,8 +96,10 @@ __PACKAGE__->register_method ({
 
 	raise_param_exc({ cmd => "no such command '$cmd'"}) if !$class;
 
+	my $pwcallback = $cli_handler_class->can('read_password');
 
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param, $verbose ? 'full' : 'short');
+	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param,
+				    $verbose ? 'full' : 'short', $pwcallback);
 	if ($verbose) {
 	    print "$str\n";
 	} else {
@@ -110,8 +113,11 @@ __PACKAGE__->register_method ({
 sub print_simple_pod_manpage {
     my ($podfn, $class, $name, $arg_param, $uri_param) = @_;
 
+    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+    my $pwcallback = $cli_handler_class->can('read_password');
+
     my $synopsis = " $name help\n\n";
-    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long');
+    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback);
     $str =~ s/^USAGE://;
     $str =~ s/\n/\n /g;
     $synopsis .= $str;
@@ -124,8 +130,10 @@ sub print_simple_pod_manpage {
 sub print_pod_manpage {
     my ($podfn) = @_;
 
-    die "not initialized" if !($cmddef && $exename);
+    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
     die "no pod file specified" if !$podfn;
+
+    my $pwcallback = $cli_handler_class->can('read_password');
 
     my $synopsis = "";
     
@@ -135,8 +143,8 @@ sub print_pod_manpage {
     my $oldclass;
     foreach my $cmd (sorted_commands()) {
 	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, 
-				    $uri_param, $style);
+	my $str = $class->usage_str($name, "$exename $cmd", $arg_param,
+				    $uri_param, $style, $pwcallback);
 	$str =~ s/^USAGE: //;
 
 	$synopsis .= "\n" if $oldclass && $oldclass ne $class;
@@ -154,13 +162,16 @@ sub print_pod_manpage {
 
 sub print_usage_verbose {
 
-    die "not initialized" if !($cmddef && $exename);
+    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+
+    my $pwcallback = $cli_handler_class->can('read_password');
 
     print "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n\n";
 
     foreach my $cmd (sort keys %$cmddef) {
 	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param, 'full');
+	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param,
+				    'full', $pwcallback);
 	print "$str\n\n";
     }
 }
@@ -172,7 +183,9 @@ sub sorted_commands {
 sub print_usage_short {
     my ($fd, $msg) = @_;
 
-    die "not initialized" if !($cmddef && $exename);
+    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+
+    my $pwcallback = $cli_handler_class->can('read_password');
 
     print $fd "ERROR: $msg\n" if $msg;
     print $fd "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n";
@@ -180,7 +193,7 @@ sub print_usage_short {
     my $oldclass;
     foreach my $cmd (sorted_commands()) {
 	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param, 'short');
+	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param, 'short', $pwcallback);
 	print $fd "\n" if $oldclass && $oldclass ne $class;
 	print $fd "       $str";
 	$oldclass = $class;
@@ -353,6 +366,8 @@ sub find_cli_class_source {
 sub generate_pod_manpage {
     my ($class, $podfn) = @_;
 
+    $cli_handler_class = $class;
+
     $exename = &$get_exe_name($class);
 
     $podfn = find_cli_class_source($exename) if !defined($podfn);
@@ -373,42 +388,7 @@ sub generate_pod_manpage {
     }
 }
 
-sub run_cli {
-    my ($class, $pwcallback, $podfn, $preparefunc) = @_;
-
-    $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
-
-    $exename = &$get_exe_name($class);
-
-    initlog($exename);
-
-
-    if ($class !~ m/^PVE::Service::/) {
-	die "please run as root\n" if $> != 0;
-
-	PVE::INotify::inotify_init();
-
-	my $rpcenv = PVE::RPCEnvironment->init('cli');
-	$rpcenv->init_request();
-	$rpcenv->set_language($ENV{LANG});
-	$rpcenv->set_user('root@pam');
-    }
-
-    no strict 'refs';
-    my $def = ${"${class}::cmddef"};
-
-    if (ref($def) eq 'ARRAY') {
-	handle_simple_cmd($def, \@ARGV, $pwcallback, $podfn, $preparefunc);
-    } else {
-	$cmddef = $def;
-	my $cmd = shift @ARGV;
-	handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $podfn, $preparefunc);
-    }
-
-    exit 0;
-}
-
-sub handle_cmd {
+my $handle_cmd  = sub {
     my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn, $preparefunc) = @_;
 
     $cmddef = $def;
@@ -446,9 +426,9 @@ sub handle_cmd {
     my $res = $class->cli_handler($prefix, $name, \@ARGV, $arg_param, $uri_param, $pwcallback);
 
     &$outsub($res) if $outsub;
-}
+};
 
-sub handle_simple_cmd {
+my $handle_simple_cmd = sub {
     my ($def, $args, $pwcallback, $podfn, $preparefunc) = @_;
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def};
@@ -457,7 +437,7 @@ sub handle_simple_cmd {
     if (scalar(@$args) >= 1) {
 	if ($args->[0] eq 'help') {
 	    my $str = "USAGE: $name help\n";
-	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long');
+	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback);
 	    print STDERR "$str\n\n";
 	    return;
 	} elsif ($args->[0] eq 'bashcomplete') {
@@ -479,6 +459,57 @@ sub handle_simple_cmd {
     my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $pwcallback);
 
     &$outsub($res) if $outsub;
+};
+
+sub run_cli {
+    my ($class, $pwcallback, $podfn, $preparefunc) = @_;
+
+    # Note: "depreciated function run_cli - use run_cli_handler instead";
+    
+    die "password callback is no longer supported" if $pwcallback;
+
+    run_cli_handler($class, podfn => $podfn, preparefunc => $preparefunc);
+}
+
+sub run_cli_handler {
+    my ($class, %params) = @_;
+
+    $cli_handler_class = $class;
+
+    $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
+
+    my $podfn = $params{podfn};
+    my $preparefunc = $params{preparefunc};
+
+    my $pwcallback = $class->can('read_password');
+
+    $exename = &$get_exe_name($class);
+
+    initlog($exename);
+
+    if ($class !~ m/^PVE::Service::/) {
+	die "please run as root\n" if $> != 0;
+
+	PVE::INotify::inotify_init();
+
+	my $rpcenv = PVE::RPCEnvironment->init('cli');
+	$rpcenv->init_request();
+	$rpcenv->set_language($ENV{LANG});
+	$rpcenv->set_user('root@pam');
+    }
+
+    no strict 'refs';
+    my $def = ${"${class}::cmddef"};
+
+    if (ref($def) eq 'ARRAY') {
+	&$handle_simple_cmd($def, \@ARGV, $pwcallback, $podfn, $preparefunc);
+    } else {
+	$cmddef = $def;
+	my $cmd = shift @ARGV;
+	&$handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $podfn, $preparefunc);
+    }
+
+    exit 0;
 }
 
 1;
