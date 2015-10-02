@@ -479,6 +479,12 @@ sub run_cli_handler {
 
     $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
+    foreach my $key (keys %params) {
+	next if $key eq 'podfn';
+	next if $key eq 'preparefunc';
+	die "unknown parameter '$key'";
+    }
+
     my $podfn = $params{podfn};
     my $preparefunc = $params{preparefunc};
 
