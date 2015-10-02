@@ -113,7 +113,8 @@ __PACKAGE__->register_method ({
 sub print_simple_pod_manpage {
     my ($podfn, $class, $name, $arg_param, $uri_param) = @_;
 
-    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+    die "not initialized" if !$cli_handler_class;
+
     my $pwcallback = $cli_handler_class->can('read_password');
 
     my $synopsis = " $name help\n\n";
