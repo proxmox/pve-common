@@ -469,7 +469,7 @@ sub run_cli {
     
     die "password callback is no longer supported" if $pwcallback;
 
-    run_cli_handler($class, podfn => $podfn, preparefunc => $preparefunc);
+    run_cli_handler($class, podfn => $podfn, prepare => $preparefunc);
 }
 
 sub run_cli_handler {
@@ -481,12 +481,12 @@ sub run_cli_handler {
 
     foreach my $key (keys %params) {
 	next if $key eq 'podfn';
-	next if $key eq 'preparefunc';
+	next if $key eq 'prepare';
 	die "unknown parameter '$key'";
     }
 
     my $podfn = $params{podfn};
-    my $preparefunc = $params{preparefunc};
+    my $preparefunc = $params{prepare};
 
     my $pwcallback = $class->can('read_password');
 
