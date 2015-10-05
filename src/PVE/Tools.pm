@@ -63,6 +63,8 @@ our $IPV6RE = "(?:" .
     "(?:(?:(?:(?:$IPV6H16:){0,5}$IPV6H16)?::" .            ")$IPV6H16)|" .
     "(?:(?:(?:(?:$IPV6H16:){0,6}$IPV6H16)?::" .                    ")))";
 
+our $IPRE = "(?:$IPV4RE|$IPV6RE)";
+
 use constant (CLONE_NEWNS   => 0x00020000,
               CLONE_NEWUTS  => 0x04000000,
               CLONE_NEWIPC  => 0x08000000,

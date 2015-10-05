@@ -540,7 +540,7 @@ sub read_etc_resolv_conf {
 	chomp $line;
 	if ($line =~ m/^(search|domain)\s+(\S+)\s*/) {
 	    $res->{search} = $2;
-	} elsif ($line =~ m/^nameserver\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*/) {
+	} elsif ($line =~ m/^\s*nameserver\s+($PVE::Tools::IPRE)\s*/) {
 	    $nscount++;
 	    if ($nscount <= 3) {
 		$res->{"dns$nscount"} = $1;
