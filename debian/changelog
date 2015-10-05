@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-29) unstable; urgency=medium
+
+  * INotify::read_etc_resolv_conf: ipv6 support
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 05 Oct 2015 12:32:00 +0200
+
 libpve-common-perl (4.0-28) unstable; urgency=medium
 
   * run_cli_handler: add no_init parameter for lxc mount hook
