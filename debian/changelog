@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-30) unstable; urgency=medium
+
+  * depend on libclone-perl
+
+  * api_clone_schema: use Clone::clone instead of Storable::dclone
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 07 Oct 2015 08:52:09 +0200
+
 libpve-common-perl (4.0-29) unstable; urgency=medium
 
   * INotify::read_etc_resolv_conf: ipv6 support
