@@ -940,21 +940,13 @@ sub random_ether_addr {
 
     my $rand = Digest::SHA::sha1_hex($$, rand(), $seconds, $microseconds);
 
-    my $mac = '';
-    for (my $i = 0; $i < 6; $i++) {
-	my $ss = hex(substr($rand, $i*2, 2));
-	if (!$i) {
-	    $ss &= 0xfe; # clear multicast
-	    $ss |= 2; # set local id
-	}
-	$ss = sprintf("%02X", $ss);
+# clear multicast, set local id
+    vec($rand, 0, 8) = (vec($rand, 0, 8) & 0xfe) | 2;
 
-	if (!$i) {
-	    $mac .= "$ss";
-	} else {
-	    $mac .= ":$ss";
-	}
-    }
+    my $mac = sprintf("%02X:" x 6, unpack("C6", $rand));
+
+# remove superfluous ":" at end
+    chop($mac);
 
     return $mac;
 }
