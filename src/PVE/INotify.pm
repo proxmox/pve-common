@@ -1289,7 +1289,6 @@ NETWORKDOC
     my $printed = {};
 
     my $if_type_hash = {
-	unknown => 0,
 	loopback => 100000,
 	eth => 200000,
 	bond => 300000,
@@ -1316,17 +1315,21 @@ NETWORKDOC
 	    $pri = $if_type_hash->{bridge} + $child;
 	}
 
-	return $pri || ($if_type_hash->{unknown} + $child);
+	return $pri;
     };
 
     foreach my $iface (sort {
 	my $ref1 = $ifaces->{$a};
 	my $ref2 = $ifaces->{$b};
-	my $p1 = &$lookup_type_prio($a);
-	my $p2 = &$lookup_type_prio($b);
+	my $tp1 = &$lookup_type_prio($a);
+	my $tp2 = &$lookup_type_prio($b);
 
-	$p1 += $ref1->{priority} // 50000;
-	$p2 += $ref2->{priority} // 50000;
+	# Only recognized types are in relation to each other. If one type
+	# is unknown then only consider the interfaces' priority attributes.
+	$tp1 = $tp2 = 0 if !defined($tp1) || !defined($tp2);
+
+	my $p1 = $tp1 + ($ref1->{priority} // 50000);
+	my $p2 = $tp2 + ($ref2->{priority} // 50000);
 
 	return $p1 <=> $p2 if $p1 != $p2;
 
