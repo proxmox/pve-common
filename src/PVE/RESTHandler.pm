@@ -9,7 +9,7 @@ use PVE::JSONSchema;
 use PVE::PodParser;
 use HTTP::Status qw(:constants :is status_message);
 use Text::Wrap;
-use Storable qw(dclone);
+use Clone qw(clone);
 
 my $method_registry = {};
 my $method_by_name = {};
@@ -27,7 +27,7 @@ sub api_clone_schema {
     foreach my $k (keys %$schema) {
 	my $d = $schema->{$k};
 	if ($k ne 'properties') {
-	    $res->{$k} = ref($d) ? dclone($d) : $d;
+	    $res->{$k} = ref($d) ? clone($d) : $d;
 	    next;
 	}
 	# convert indexed parameters like -net\d+ to -net[n]
@@ -40,7 +40,7 @@ sub api_clone_schema {
 		    next;
 		}
 	    }
-	    $res->{$k}->{$p} = ref($pd) ? dclone($pd) : $pd;
+	    $res->{$k}->{$p} = ref($pd) ? clone($pd) : $pd;
 	}
     }
 
@@ -105,7 +105,7 @@ sub api_dump_full {
 			$data->{$k} = api_clone_schema($d);
 		    } else {
 
-			$data->{$k} = ref($d) ? dclone($d) : $d;
+			$data->{$k} = ref($d) ? clone($d) : $d;
 		    }
 		} 
 		$res->{info}->{$info->{method}} = $data;
