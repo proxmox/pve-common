@@ -498,16 +498,16 @@ sub parse_property_string {
 
 	if ($part =~ /^([^=]+)=(.+)$/) {
 	    my ($k, $v) = ($1, $2);
-	    die "duplicate key in comma-separated list property: $k" if defined($res->{$k});
+	    die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
 	    my $schema = $format->{$k};
-	    die "invalid key in comma-separated list property: $k" if !$schema;
+	    die "invalid key in comma-separated list property: $k\n" if !$schema;
 	    if ($schema->{type} && $schema->{type} eq 'boolean') {
 		$v = 1 if $v =~ m/^(1|on|yes|true)$/i;
 		$v = 0 if $v =~ m/^(0|off|no|false)$/i;
 	    }
 	    $res->{$k} = $v;
 	} elsif ($part !~ /=/) {
-	    die "duplicate key in comma-separated list property: $default_key" if $default_key;
+	    die "duplicate key in comma-separated list property: $default_key\n" if $default_key;
 	    foreach my $key (keys %$format) {
 		if ($format->{$key}->{default_key}) {
 		    $default_key = $key;
@@ -515,18 +515,18 @@ sub parse_property_string {
 			$res->{$default_key} = $part;
 			last;
 		    }
-		    die "duplicate key in comma-separated list property: $default_key";
+		    die "duplicate key in comma-separated list property: $default_key\n";
 		}
 	    }
 	} else {
-	    die "missing key in comma-separated list property";
+	    die "missing key in comma-separated list property\n";
 	}
     }
 
     my $errors = {};
     check_object($path, $format, $res, undef, $errors);
     if (scalar(%$errors)) {
-	raise "format error", errors => $errors;
+	raise "format error\n", errors => $errors;
     }
 
     return $res;
