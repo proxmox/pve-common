@@ -940,15 +940,10 @@ sub random_ether_addr {
 
     my $rand = Digest::SHA::sha1_hex($$, rand(), $seconds, $microseconds);
 
-# clear multicast, set local id
+    # clear multicast, set local id
     vec($rand, 0, 8) = (vec($rand, 0, 8) & 0xfe) | 2;
 
-    my $mac = sprintf("%02X:" x 6, unpack("C6", $rand));
-
-# remove superfluous ":" at end
-    chop($mac);
-
-    return $mac;
+    return sprintf("%02X:%02X:%02X:%02X:%02X:%02X", unpack("C6", $rand));
 }
 
 sub shellquote {
