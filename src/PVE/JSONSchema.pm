@@ -582,11 +582,11 @@ sub print_property_string {
 	delete $required{$key};
 	next if $skipped{$key};
 
-	my $type = $format->{$key}->{type};
+	my $typeformat = $format->{$key}->{format};
 	my $value = $data->{$key};
 	$text .= $comma;
 	$comma = ',';
-	if ($type eq 'disk-size') {
+	if ($typeformat && $typeformat eq 'disk-size') {
 	    $text .= "$key=" . format_size($value);
 	} else {
 	    $text .= "$key=$value";
