@@ -500,6 +500,10 @@ sub parse_property_string {
 	    my ($k, $v) = ($1, $2);
 	    die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
 	    my $schema = $format->{$k};
+	    if (my $alias = $schema->{alias}) {
+		$k = $alias;
+		$schema = $format->{$k};
+	    }
 	    die "invalid key in comma-separated list property: $k\n" if !$schema;
 	    if ($schema->{type} && $schema->{type} eq 'boolean') {
 		$v = 1 if $v =~ m/^(1|on|yes|true)$/i;
@@ -553,7 +557,7 @@ sub print_property_string {
     my %required; # this is a set, all present keys are required regardless of value
     foreach my $key (keys %$format) {
 	$allowed{$key} = 1;
-	if (!$format->{$key}->{optional} && !$skipped{$key}) {
+	if (!$format->{$key}->{optional} && !$format->{$key}->{alias} && !$skipped{$key}) {
 	    $required{$key} = 1;
 	}
 
@@ -810,7 +814,7 @@ sub check_prop {
 
     if (!defined ($value)) {
 	return if $schema->{type} && $schema->{type} eq 'null';
-	if (!$schema->{optional}) {
+	if (!$schema->{optional} && !$schema->{alias}) {
 	    add_error($errors, $path, "property is missing and it is not optional");
 	}
 	return;
@@ -1047,6 +1051,11 @@ my $default_schema_noref = {
 	    type => "boolean",
 	    optional => 1,
 	    description => "Whether this is the default key in a comma separated list property string.",
+	},
+	alias => {
+	    type => 'string',
+	    optional => 1,
+	    description => "When a key represents the same property as another it can be an alias to it, causing the parsed datastructure to use the other key to store the current value under.",
 	},
 	default => {
 	    type => "any",

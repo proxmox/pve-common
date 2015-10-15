@@ -62,6 +62,10 @@ sub generate_typetext {
 	my ($key) = @_;
 	$typetext .= $pre;
 	my $entry = $schema->{$key};
+	if (my $alias = $entry->{alias}) {
+	    $key = $alias;
+	    $entry = $schema->{$key};
+	}
 	if (my $desc = $entry->{format_description}) {
 	    $typetext .= $entry->{default_key} ? "[$key=]" : "$key=";
 	    $typetext .= "<$desc>";
