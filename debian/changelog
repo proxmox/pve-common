@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-32) unstable; urgency=medium
+
+  * print_property_string: disk-size is a format, not a type
+
+  * Shorter implementation of random_ether_addr()
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 15 Oct 2015 12:22:14 +0200
+
 libpve-common-perl (4.0-31) unstable; urgency=medium
 
   * parse_property_string: add newline to error strings
