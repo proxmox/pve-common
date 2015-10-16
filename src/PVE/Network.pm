@@ -9,6 +9,8 @@ use File::Basename;
 use IO::Socket::IP;
 use POSIX qw(ECONNREFUSED);
 
+use Net::IP;
+
 # host network related utility functions
 
 our $ipv4_reverse_mask = [
@@ -465,6 +467,37 @@ sub tcp_ping {
 	$result = 1;
     }
     return $result;
+}
+
+sub IP_from_cidr {
+    my ($cidr, $version) = @_;
+
+    return if $cidr !~ m!^(\S+?)/(\S+)$!;
+    my ($ip, $prefix) = ($1, $2);
+
+    my $ipobj = Net::IP->new($ip, $version);
+    return if !$ipobj;
+
+    $version = $ipobj->version();
+
+    my $binmask = Net::IP::ip_get_mask($prefix, $version);
+    return if !$binmask;
+
+    my $masked_binip = $ipobj->binip() & $binmask;
+    my $masked_ip = Net::IP::ip_bintoip($masked_binip, $version);
+    return Net::IP->new("$masked_ip/$prefix");
+}
+
+sub is_ip_in_cidr {
+    my ($ip, $cidr, $version) = @_;
+
+    my $cidr_obj = IP_from_cidr($cidr, $version);
+    return undef if !$cidr_obj;
+
+    my $ip_obj = Net::IP->new($ip, $version);
+    return undef if !$ip_obj;
+
+    return $cidr_obj->overlaps($ip_obj) == $Net::IP::IP_B_IN_A_OVERLAP;
 }
 
 1;
