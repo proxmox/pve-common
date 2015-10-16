@@ -248,7 +248,7 @@ register_format('CIDRv4', \&pve_verify_cidrv4);
 sub pve_verify_cidrv4 {
     my ($cidr, $noerr) = @_;
 
-    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 < 32)) {
+    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 <= 32)) {
 	return $cidr;
     }
 
