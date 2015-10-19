@@ -1245,19 +1245,6 @@ sub __write_etc_network_interfaces {
 	}
     }
 
-    # Remove autostart from linux bridge ports
-    foreach my $iface (keys %$ifaces) {
-	my $d = $ifaces->{$iface};
-	if ($d->{type} eq 'bridge' && $d->{bridge_ports}) {
-	    foreach my $p (split (/\s+/, $d->{bridge_ports})) {
-		my $n = $ifaces->{$p};
-		die "bridge '$iface' - unable to find port '$p'\n"
-		    if !$n;
-		$n->{autostart} = 0;
-	    }
-	}
-    }
-
     # check OVS bond ports
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};

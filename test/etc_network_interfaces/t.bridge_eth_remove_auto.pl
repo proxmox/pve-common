@@ -18,7 +18,7 @@ die "autostart lost" if !$config->{ifaces}->{eth1}->{autostart};
 new_iface("vmbr0", 'bridge', [{ family => 'inet' }], bridge_ports => 'eth0');
 new_iface("vmbr1", 'OVSBridge', [{ family => 'inet' }], ovs_ports => 'eth1');
 r(w());
-die "autostart not removed for linux bridge port" if $config->{ifaces}->{eth0}->{autostart};
+die "autostart wrongly removed for linux bridge port" if !$config->{ifaces}->{eth0}->{autostart};
 die "autostart not removed for ovs bridge port" if $config->{ifaces}->{eth1}->{autostart};
 
 1;
