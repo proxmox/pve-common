@@ -311,16 +311,16 @@ sub read_proc_net_ipv6_route {
     my $fh = IO::File->new ($filename, "r");
     return $res if !$fh;
 
-    my $read_v6addr = sub { s/....(?!$)/$&:/g };
+    my $read_v6addr = sub { $_[0] =~ s/....(?!$)/$&:/gr };
 
     # ipv6_route has no header
     while (defined(my $line = <$fh>)) {
 	my ($dest, $prefix, $nexthop, $metric, $iface) = (split(/\s+/, $line))[0,1,4,5,9];
 	push @$res, {
 	    dest => &$read_v6addr($dest),
-	    prefix => $prefix,
+	    prefix => hex("$prefix"),
 	    gateway => &$read_v6addr($nexthop),
-	    metric => $metric,
+	    metric => hex("$metric"),
 	    iface => $iface
 	};
     }
