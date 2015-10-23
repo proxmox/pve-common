@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-35) unstable; urgency=medium
+
+  * read_prox_net_ipv6_route fixes
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 23 Oct 2015 12:13:55 +0200
+
 libpve-common-perl (4.0-34) unstable; urgency=medium
 
   * network: IP_from_cidr and is_ip_in_cidr helpers
