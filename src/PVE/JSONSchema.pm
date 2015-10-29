@@ -588,6 +588,7 @@ sub print_property_string {
 
 	my $typeformat = $format->{$key}->{format};
 	my $value = $data->{$key};
+	next if !defined($value);
 	$text .= $comma;
 	$comma = ',';
 	if ($typeformat && $typeformat eq 'disk-size') {
