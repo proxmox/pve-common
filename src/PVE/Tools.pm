@@ -8,6 +8,8 @@ use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED);
 use IO::Select;
 use File::Basename;
 use File::Path qw(make_path);
+use Filesys::Df (); # don't overwrite our df()
+use IO::Pipe;
 use IO::File;
 use IO::Dir;
 use IPC::Open3;
@@ -790,12 +792,9 @@ sub next_spice_port {
 # NOTE: NFS syscall can't be interrupted, so alarm does 
 # not work to provide timeouts.
 # from 'man nfs': "Only SIGKILL can interrupt a pending NFS operation"
-# So the spawn external 'df' process instead of using
-# Filesys::Df (which uses statfs syscall)
+# So fork() before using Filesys::Df
 sub df {
     my ($path, $timeout) = @_;
-
-    my $cmd = [ 'df', '-P', '-B', '1', $path];
 
     my $res = {
 	total => 0,
@@ -803,20 +802,41 @@ sub df {
 	avail => 0,
     };
 
-    my $parser = sub {
-	my $line = shift;
-	if (my ($fsid, $total, $used, $avail) = $line =~
-	    m/^(\S+.*)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+%\s.*$/) {
-	    $res = {
-		total => $total,
-		used => $used,
-		avail => $avail,
-	    };
-	}
-    };
-    eval { run_command($cmd, timeout => $timeout, outfunc => $parser); };
-    warn $@ if $@;
+    my $pipe = IO::Pipe->new();
+    my $child = fork();
+    if (!defined($child)) {
+	warn "fork failed: $!\n";
+	return $res;
+    }
 
+    if (!$child) {
+	$pipe->writer();
+	eval {
+	    my $df = Filesys::Df::df($path, 1);
+	    print {$pipe} "$df->{blocks}\n$df->{used}\n$df->{bavail}\n";
+	    $pipe->close();
+	};
+	if (my $err = $@) {
+	    warn $err;
+	    POSIX::_exit(1);
+	}
+	POSIX::_exit(0);
+    }
+
+    $pipe->reader();
+
+    my $readvalues = sub {
+	$res->{total} = int(<$pipe>);
+	$res->{used}  = int(<$pipe>);
+	$res->{avail} = int(<$pipe>);
+    };
+    eval {
+	run_with_timeout($timeout, $readvalues);
+    };
+    warn $@ if $@;
+    $pipe->close();
+    kill('KILL', $child);
+    waitpid($child, 0);
     return $res;
 }
 
