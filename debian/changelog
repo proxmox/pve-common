@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-36) unstable; urgency=medium
+
+  * Tools::df: fork and use Filesys::Df
+
+  * print_property_string: skip undefined values
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 30 Oct 2015 07:03:50 +0100
+
 libpve-common-perl (4.0-35) unstable; urgency=medium
 
   * read_prox_net_ipv6_route fixes
