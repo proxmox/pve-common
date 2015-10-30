@@ -1169,9 +1169,9 @@ sub parse_host_and_port {
     return; # nothing
 }
 
-sub unshare {
+sub unshare($) {
     my ($flags) = @_;
-    syscall 272, $flags;
+    return 0 == syscall(272, $flags);
 }
 
 1;
