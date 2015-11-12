@@ -289,18 +289,42 @@ sub read_proc_mounts {
     return PVE::Tools::file_get_contents("/proc/mounts");
 }
 
+# mounts encode spaces (\040), tabs (\011), newlines (\012), backslashes (\\ or \134)
+sub decode_mount {
+    my ($str) = @_;
+    return $str =~ s/\\(?:040|01[12]|134|\\)/"\"$&\""/geer;
+}
+
+sub parse_mounts {
+    my ($mounts) = @_;
+    my $mntent = [];
+    while ($mounts =~ /^\s*([^#].*)$/gm) {
+	# lines from the file are encoded so we can just split at spaces
+	my ($what, $dir, $fstype, $opts) = split(/[ \t]/, $1, 4);
+	my ($freq, $passno) = (0, 0);
+	# in glibc's parser frequency and pass seem to be optional
+	$freq = $1 if $opts =~ s/\s+(\d+)$//;
+	$passno = $1 if $opts =~ s/\s+(\d+)$//;
+	push @$mntent, [decode_mount($what),
+			decode_mount($dir),
+			decode_mount($fstype),
+			decode_mount($opts),
+			$freq, $passno];
+    }
+    return $mntent;
+}
+
+sub parse_proc_mounts {
+    return parse_mounts(read_proc_mounts());
+}
+
 sub is_mounted {
     my ($mountpoint) = @_;
 
     $mountpoint = Cwd::realpath($mountpoint);
 
-    my $mountdata = read_proc_mounts();
-
-    if ($mountdata =~ m/\s$mountpoint\s/) {
-	return 1;
-    } else {
-	return 0;
-    }
+    my $mounts = parse_proc_mounts();
+    return (grep { $_->[1] eq $mountpoint } @$mounts) ? 1 : 0;
 }
 
 sub read_proc_net_ipv6_route {
