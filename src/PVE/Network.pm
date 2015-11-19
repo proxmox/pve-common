@@ -174,7 +174,7 @@ my $bridge_add_interface = sub {
 	    die "unable to add vlan $tag to interface $iface\n";
 	} else {
 	    system("/sbin/bridge vlan add dev $iface vid 2-4094") == 0 ||
-	    die "unable to add vlan $tag to interface $iface\n";
+	    die "unable to add default vlan tags to interface $iface\n";
 	} 
    }
 };
