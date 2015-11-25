@@ -41,6 +41,7 @@ template_replace
 safe_print
 trim
 extract_param
+file_copy
 );
 
 my $pvelogdir = "/var/log/pve";
@@ -218,6 +219,12 @@ sub file_get_contents {
     close $fh;
 
     return $content;
+}
+
+sub file_copy {
+    my ($filename, $dst, $max, $perm) = @_;
+
+    file_set_contents ($dst, file_get_contents($filename, $max), $perm);
 }
 
 sub file_read_firstline {
