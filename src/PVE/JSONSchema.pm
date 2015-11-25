@@ -582,9 +582,9 @@ sub print_property_string {
     }
 
     foreach my $key (sort keys %$data) {
-	die "invalid key: $key" if !$allowed{$key};
 	delete $required{$key};
 	next if $skipped{$key};
+	die "invalid key: $key" if !$allowed{$key};
 
 	my $typeformat = $format->{$key}->{format};
 	my $value = $data->{$key};
