@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-39) unstable; urgency=medium
+
+  * add function file_copy
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 26 Nov 2015 08:09:04 +0100
+
 libpve-common-perl (4.0-38) unstable; urgency=medium
 
   * Network setup: avoid access to undefinded var $tag
