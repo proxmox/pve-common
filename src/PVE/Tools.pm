@@ -319,6 +319,7 @@ sub run_command {
     my $timeout;
     my $oldtimeout;
     my $pid;
+    my $exitcode;
 
     my $outfunc;
     my $errfunc;
@@ -326,6 +327,7 @@ sub run_command {
     my $input;
     my $output;
     my $afterfork;
+    my $noerr;
 
     eval {
 
@@ -348,6 +350,8 @@ sub run_command {
 		$logfunc = $param{$p};
 	    } elsif ($p eq 'afterfork') {
 		$afterfork = $param{$p};
+	    } elsif ($p eq 'noerr') {
+		$noerr = $param{$p};
 	    } else {
 		die "got unknown parameter '$p' for run_command\n";
 	    }
@@ -493,14 +497,14 @@ sub run_command {
 	    die "failed to execute\n";
 	} elsif (my $sig = ($? & 127)) {
 	    die "got signal $sig\n";
-	} elsif (my $ec = ($? >> 8)) {
-	    if (!($ec == 24 && ($cmdstr =~ m|^(\S+/)?rsync\s|))) {
+	} elsif ($exitcode = ($? >> 8)) {
+	    if (!($exitcode == 24 && ($cmdstr =~ m|^(\S+/)?rsync\s|))) {
 		if ($errmsg && $laststderr) {
 		    my $lerr = $laststderr;
 		    $laststderr = undef;
 		    die "$lerr\n";
 		}
-		die "exit code $ec\n";
+		die "exit code $exitcode\n";
 	    }
 	}
 
@@ -529,12 +533,12 @@ sub run_command {
 	if ($errmsg) {
 	    $err =~ s/^usermod:\s*// if $cmdstr =~ m|^(\S+/)?usermod\s|;
 	    die "$errmsg: $err";
-	} else {
+	} elsif(!$noerr) {
 	    die "command '$cmdstr' failed: $err";
 	}
     }
 
-    return undef;
+    return $exitcode;
 }
 
 sub split_list {
