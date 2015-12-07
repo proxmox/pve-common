@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-41) unstable; urgency=medium
+
+  * Daemon: don't clear CLOEXEC on daemon sockets
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 07 Dec 2015 11:17:21 +0100
+
 libpve-common-perl (4.0-40) unstable; urgency=medium
 
   * run_command: return exit code and add noerr option
