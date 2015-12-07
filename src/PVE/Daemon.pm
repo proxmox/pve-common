@@ -34,6 +34,7 @@ use base qw(PVE::CLIHandler);
 $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
 my $daemon_initialized = 0; # we only allow one instance
+my $daemon_sockets = [];
 
 my $close_daemon_lock = sub {
     my ($self) = @_;
@@ -500,6 +501,10 @@ sub restart_daemon {
 
     $ENV{RESTART_PVE_DAEMON} = 1;
 
+    foreach my $ds (@$daemon_sockets) {
+	$ds->fcntl(Fcntl::F_SETFD(), 0);
+    }
+
     if ($self->{max_workers}) {
 	my @workers = keys %{$self->{workers}};
 	push @workers, keys %{$self->{old_workers}};
@@ -823,6 +828,7 @@ sub create_reusable_socket {
 	$socket->fdopen($sockfd, 'w') || 
 	    die "cannot fdopen file descriptor '$sockfd' - $!\n";
 
+	$socket->fcntl(Fcntl::F_SETFD(), Fcntl::FD_CLOEXEC);
     } else {
 
 	$socket = IO::Socket::IP->new(
@@ -842,9 +848,8 @@ sub create_reusable_socket {
 	$ENV{"PVE_DAEMON_SOCKET_$port"} = $socket->fileno;
     }
 
-    # remove FD_CLOEXEC bit to reuse on exec
-    $socket->fcntl(Fcntl::F_SETFD(), 0);
-    
+    push @$daemon_sockets, $socket;
+
     return $socket;
 }
 
