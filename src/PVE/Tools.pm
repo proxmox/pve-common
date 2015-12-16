@@ -131,7 +131,7 @@ sub lock_file_full {
         }
 
         if (!flock ($lock_handles->{$$}->{$filename}, $mode|LOCK_NB)) {
-            print STDERR "trying to aquire lock...";
+            print STDERR "trying to acquire lock...";
 	    my $success;
 	    while(1) {
 		$success = flock($lock_handles->{$$}->{$filename}, $mode);
@@ -142,7 +142,7 @@ sub lock_file_full {
 	    }
             if (!$success) {
                 print STDERR " failed\n";
-                die "can't aquire lock - $!\n";
+                die "can't acquire lock '$filename' - $!\n";
             }
             print STDERR " OK\n";
         }
