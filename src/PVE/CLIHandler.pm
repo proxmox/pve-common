@@ -337,7 +337,7 @@ sub generate_bash_completions {
 # this modifies global var, but I found no better way
 COMP_WORDBREAKS=\${COMP_WORDBREAKS//:}
 
-complete -C '$exename bashcomplete' $exename
+complete -o default -C '$exename bashcomplete' $exename
 __EOD__
 }
 
