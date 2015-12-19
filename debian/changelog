@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-42) unstable; urgency=medium
+
+  * bash completion: allow fall back to default completion
+
+  * lock_file_full: output also lockname if it cannot be acquired
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 19 Dec 2015 09:06:24 +0100
+
 libpve-common-perl (4.0-41) unstable; urgency=medium
 
   * Daemon: don't clear CLOEXEC on daemon sockets
