@@ -463,16 +463,14 @@ sub usage_str {
 	}
 
 	if ($format eq 'asciidoc') {
-	    $res .= "[horizontal]\n";
-	    $res .= "`$display_name`:: `$type` ";
+	    $res .= "`$display_name` `$type` ";
 	    if (defined(my $dv = $phash->{default})) {
 		$res .= "(default=`$dv`)";
 	    }
-	    $res .= "\n+\n";
+	    $res .= "::\n\n";
 	    $res .= Text::Wrap::wrap('', '', ($descr)) . "\n";
 
 	    if (my $req = $phash->{requires}) {
-	    #if (my $req = 'test') {
 		my $tmp .= ref($req) ? join(', ', @$req) : $req;
 		$res .= "+\nNOTE: Requires option(s): `$tmp`\n";
 	    }
