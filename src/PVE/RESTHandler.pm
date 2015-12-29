@@ -414,6 +414,7 @@ sub handle {
 #   'long'     ... default (list all options)
 #   'short'    ... command line only (one line)
 #   'full'     ... also include description
+#   'asciidoc' ... generate asciidoc for man pages (like 'full')
 # $hidepw      ... hide password option (use this if you provide a read passwork callback)
 sub usage_str {
     my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $hidepw) = @_;
@@ -460,22 +461,39 @@ sub usage_str {
 	if ($hidepw && $k eq 'password') {
 	    $type = '';
 	}
-	
-	my $defaulttxt = '';
-	if (defined(my $dv = $phash->{default})) {
-	    $defaulttxt = "   (default=$dv)";
-	}
-	my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type";
-	my $indend = "             ";
 
-	$res .= Text::Wrap::wrap('', $indend, ($tmp));
-	$res .= "\n",
-	$res .= Text::Wrap::wrap($indend, $indend, ($descr)) . "\n\n";
+	if ($format eq 'asciidoc') {
+	    $res .= "[horizontal]\n";
+	    $res .= "`$display_name`:: `$type` ";
+	    if (defined(my $dv = $phash->{default})) {
+		$res .= "(default=`$dv`)";
+	    }
+	    $res .= "\n+\n";
+	    $res .= Text::Wrap::wrap('', '', ($descr)) . "\n";
 
-	if (my $req = $phash->{requires}) {
-	    my $tmp = "Requires option(s): ";
-	    $tmp .= ref($req) ? join(', ', @$req) : $req;
-	    $res .= Text::Wrap::wrap($indend, $indend, ($tmp)). "\n\n";
+	    if (my $req = $phash->{requires}) {
+	    #if (my $req = 'test') {
+		my $tmp .= ref($req) ? join(', ', @$req) : $req;
+		$res .= "+\nNOTE: Requires option(s): `$tmp`\n";
+	    }
+	    $res .= "\n";
+	} else {
+	    my $defaulttxt = '';
+	    if (defined(my $dv = $phash->{default})) {
+		$defaulttxt = "   (default=$dv)";
+	    }
+	    my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type";
+	    my $indend = "             ";
+
+	    $res .= Text::Wrap::wrap('', $indend, ($tmp));
+	    $res .= "\n",
+	    $res .= Text::Wrap::wrap($indend, $indend, ($descr)) . "\n\n";
+
+	    if (my $req = $phash->{requires}) {
+		my $tmp = "Requires option(s): ";
+		$tmp .= ref($req) ? join(', ', @$req) : $req;
+		$res .= Text::Wrap::wrap($indend, $indend, ($tmp)). "\n\n";
+	    }
 	}
 
 	return $res;
@@ -515,17 +533,26 @@ sub usage_str {
 	}
     } 
 
-    $out .= "USAGE: " if $format ne 'short';
-
-    $out .= "$prefix $args";
-
-    $out .= $opts ? " [OPTIONS]\n" : "\n";
+    if ($format eq 'asciidoc') {
+	$out .= "*${prefix}*";
+	$out .= " `$args`" if $args;
+	$out .= $opts ? " `[OPTIONS]`\n" : "\n";
+    } else {
+	$out .= "USAGE: " if $format ne 'short';
+	$out .= "$prefix $args";
+	$out .= $opts ? " [OPTIONS]\n" : "\n";
+    }
 
     return $out if $format eq 'short';
 
-    if ($info->{description} && $format eq 'full') {
-	my $desc = Text::Wrap::wrap('  ', '  ', ($info->{description}));
-	$out .= "\n$desc\n\n";
+    if ($info->{description}) {
+	if ($format eq 'asciidoc') {
+	    my $desc = Text::Wrap::wrap('', '', ($info->{description}));
+	    $out .= "\n$desc\n\n";
+	} elsif ($format eq 'full') {
+	    my $desc = Text::Wrap::wrap('  ', '  ', ($info->{description}));
+	    $out .= "\n$desc\n\n";
+	}
     }
 
     $out .= $argdescr if $argdescr;

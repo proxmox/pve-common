@@ -110,6 +110,46 @@ __PACKAGE__->register_method ({
 
     }});
 
+sub print_simple_asciidoc_synopsys {
+    my ($class, $name, $arg_param, $uri_param) = @_;
+
+    die "not initialized" if !$cli_handler_class;
+
+    my $pwcallback = $cli_handler_class->can('read_password');
+
+    my $synopsis = "*${name}* `help`\n\n";
+
+    $synopsis .= $class->usage_str($name, $name, $arg_param, $uri_param, 'asciidoc', $pwcallback);
+
+    return $synopsis;
+}
+
+sub print_asciidoc_synopsys {
+
+    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+
+    my $pwcallback = $cli_handler_class->can('read_password');
+
+    my $synopsis = "";
+
+    $synopsis .= "*${exename}* `<COMMAND> [ARGS] [OPTIONS]`\n\n";
+
+    my $oldclass;
+    foreach my $cmd (sort keys %$cmddef) {
+	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
+	my $str = $class->usage_str($name, "$exename $cmd", $arg_param,
+				    $uri_param, 'asciidoc', $pwcallback);
+	$synopsis .= "\n" if $oldclass && $oldclass ne $class;
+
+	$synopsis .= "$str\n\n";
+	$oldclass = $class;
+    }
+
+    $synopsis .= "\n";
+
+    return $synopsis;
+}
+
 sub print_simple_pod_manpage {
     my ($podfn, $class, $name, $arg_param, $uri_param) = @_;
 
@@ -386,6 +426,27 @@ sub generate_pod_manpage {
 	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
 	print_pod_manpage($podfn);
+    }
+}
+
+sub generate_asciidoc_synopsys {
+    my ($class) = @_;
+
+    $cli_handler_class = $class;
+
+    $exename = &$get_exe_name($class);
+
+    no strict 'refs';
+    my $def = ${"${class}::cmddef"};
+
+    if (ref($def) eq 'ARRAY') {
+	print_simple_asciidoc_synopsys(@$def);
+    } else {
+	$cmddef = $def;
+
+	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
+
+	print_asciidoc_synopsys();
     }
 }
 
