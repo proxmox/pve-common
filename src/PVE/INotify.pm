@@ -648,9 +648,9 @@ sub write_active_workers {
 	my $saved = $task->{saved} ? 1 : 0;
 	if ($task->{endtime}) {
 	    if ($task->{status}) {
-		$raw .= sprintf("$upid $saved %08X $task->{status}\n", $task->{endtime});
+		$raw .= sprintf("%s %s %08X %s\n", $upid, $saved, $task->{endtime}, $task->{status});
 	    } else {
-		$raw .= sprintf("$upid $saved %08X\n", $task->{endtime});
+		$raw .= sprintf("%s %s %08X\n", $upid, $saved, $task->{endtime});
 	    }
 	} else {
 	    $raw .= "$upid $saved\n";
