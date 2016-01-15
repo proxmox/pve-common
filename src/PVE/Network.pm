@@ -161,7 +161,7 @@ my $cond_create_bridge = sub {
 };
 
 my $bridge_add_interface = sub {
-    my ($bridge, $iface, $tag) = @_;
+    my ($bridge, $iface, $tag, $trunks) = @_;
 
     system("/sbin/brctl addif $bridge $iface") == 0 ||
 	die "can't add interface 'iface' to bridge '$bridge'\n";
@@ -174,16 +174,27 @@ my $bridge_add_interface = sub {
 	    die "unable to add vlan $tag to interface $iface\n";
 	} else {
 	    system("/sbin/bridge vlan add dev $iface vid 2-4094") == 0 ||
-	    die "unable to add default vlan tags to interface $iface\n";
+	    die "unable to add default vlan tags to interface $iface\n" if !$trunks;
 	} 
+
+        my @trunks_array = split /;/, $trunks;
+	foreach my $trunk (@trunks_array) { 
+	    system("/sbin/bridge vlan add dev $iface vid $trunk") == 0 ||
+	    die "unable to add vlan $trunk to interface $iface\n";
+	}
    }
 };
 
 my $ovs_bridge_add_port = sub {
-    my ($bridge, $iface, $tag, $internal) = @_;
+    my ($bridge, $iface, $tag, $internal, $trunks) = @_;
+
+    $trunks =~ s/;/,/g if $trunks;
 
     my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
     $cmd .= " tag=$tag" if $tag;
+    $cmd .= " trunks=". join(',', $trunks) if $trunks;
+    $cmd .= " vlan_mode=native-untagged" if $tag && $trunks;
+
     $cmd .= " -- set Interface $iface type=internal" if $internal;
     system($cmd) == 0 ||
 	die "can't add ovs port '$iface'\n";
@@ -238,7 +249,7 @@ sub veth_delete {
 }
 
 my $create_firewall_bridge_linux = sub {
-    my ($iface, $bridge, $tag) = @_;
+    my ($iface, $bridge, $tag, $trunks) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
@@ -250,13 +261,13 @@ my $create_firewall_bridge_linux = sub {
     veth_create($vethfw, $vethfwpeer, $bridge);
 
     &$bridge_add_interface($fwbr, $vethfw);
-    &$bridge_add_interface($bridge, $vethfwpeer, $tag);
+    &$bridge_add_interface($bridge, $vethfwpeer, $tag, $trunks);
 
     &$bridge_add_interface($fwbr, $iface);
 };
 
 my $create_firewall_bridge_ovs = sub {
-    my ($iface, $bridge, $tag) = @_;
+    my ($iface, $bridge, $tag, $trunks) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, undef, undef, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
@@ -268,7 +279,7 @@ my $create_firewall_bridge_ovs = sub {
 
     &$bridge_add_interface($fwbr, $iface);
 
-    &$ovs_bridge_add_port($bridge, $ovsintport, $tag, 1);
+    &$ovs_bridge_add_port($bridge, $ovsintport, $tag, 1, $trunks);
     &$activate_interface($ovsintport);
 
     # set the same mtu for ovs int port
@@ -300,7 +311,7 @@ my $cleanup_firewall_bridge = sub {
 };
 
 sub tap_plug {
-    my ($iface, $bridge, $tag, $firewall) = @_;
+    my ($iface, $bridge, $tag, $firewall, $trunks) = @_;
 
     #cleanup old port config from any openvswitch bridge
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
@@ -311,6 +322,7 @@ sub tap_plug {
 	my $vlan_aware = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/bridge/vlan_filtering");
 
 	if (!$vlan_aware) {
+	    die "vlan aware feature need to be enabled to use trunks" if $trunks;
 	    my $newbridge = activate_bridge_vlan($bridge, $tag);
 	    copy_bridge_config($bridge, $newbridge) if $bridge ne $newbridge;
 	    $bridge = $newbridge;
@@ -318,18 +330,18 @@ sub tap_plug {
 	}
 
 	if ($firewall) {
-	    &$create_firewall_bridge_linux($iface, $bridge, $tag);
+	    &$create_firewall_bridge_linux($iface, $bridge, $tag, $trunks);
 	} else {
-	    &$bridge_add_interface($bridge, $iface, $tag);
+	    &$bridge_add_interface($bridge, $iface, $tag, $trunks);
 	}
 
     } else {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
 
 	if ($firewall) {
-	    &$create_firewall_bridge_ovs($iface, $bridge, $tag);
+	    &$create_firewall_bridge_ovs($iface, $bridge, $tag, $trunks);
 	} else {
-	    &$ovs_bridge_add_port($bridge, $iface, $tag);
+	    &$ovs_bridge_add_port($bridge, $iface, $tag, undef, $trunks);
 	}
     }
 }
