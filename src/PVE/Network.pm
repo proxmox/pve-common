@@ -177,10 +177,12 @@ my $bridge_add_interface = sub {
 	    die "unable to add default vlan tags to interface $iface\n" if !$trunks;
 	} 
 
-        my @trunks_array = split /;/, $trunks;
-	foreach my $trunk (@trunks_array) { 
-	    system("/sbin/bridge vlan add dev $iface vid $trunk") == 0 ||
-	    die "unable to add vlan $trunk to interface $iface\n";
+	if ($trunks) {
+	    my @trunks_array = split /;/, $trunks;
+	    foreach my $trunk (@trunks_array) { 
+		system("/sbin/bridge vlan add dev $iface vid $trunk") == 0 ||
+		die "unable to add vlan $trunk to interface $iface\n";
+	    }
 	}
    }
 };
