@@ -1185,4 +1185,9 @@ sub unshare($) {
     return 0 == syscall(272, $flags);
 }
 
+sub setns($$) {
+    my ($fileno, $nstype) = @_;
+    return 0 == syscall(308, $fileno, $nstype);
+}
+
 1;
