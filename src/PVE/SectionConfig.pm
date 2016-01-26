@@ -26,6 +26,9 @@ sub register {
     my $type = $class->type();
     my $pdata = $class->private();
 
+    die "duplicate plugin registration (type = $type)"
+	if defined($pdata->{plugins}->{$type});
+
     my $plugindata = $class->plugindata();
     $pdata->{plugindata}->{$type} = $plugindata;
     $pdata->{plugins}->{$type} = $class;
