@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-46) unstable; urgency=medium
+
+  * add upid_wait method
+
+  * SectionConfig: disable duplicate plugin registration
+
+  * Tools: add setns system call
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 27 Jan 2016 16:55:45 +0100
+
 libpve-common-perl (4.0-45) unstable; urgency=medium
 
   * network: fix uninitialized value error
