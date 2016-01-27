@@ -352,4 +352,24 @@ sub read_proc_net_ipv6_route {
     return $res;
 }
 
+sub upid_wait {
+    my ($upid, $waitfunc, $sleep_intervall) = @_;
+
+    my $task = PVE::Tools::upid_decode($upid);
+
+    $sleep_intervall = $sleep_intervall ? $sleep_intervall : 1;
+
+    my $next_time = time + $sleep_intervall;
+
+    while (check_process_running($task->{pid}, $task->{pstart})) {
+
+	if (time >= $next_time && $waitfunc && ref($waitfunc) eq 'CODE'){
+	    &$waitfunc($task);
+	    $next_time = time + $sleep_intervall;
+	}
+
+	CORE::sleep(1);
+    }
+}
+
 1;
