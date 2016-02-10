@@ -785,12 +785,12 @@ my $extract_ovs_option = sub {
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
     my $proc_net_dev = IO::File->new('/proc/net/dev', 'r');
-    my $proc_net_if_inet6 = IO::File->new('/proc/net/if_inet6', 'r');
-    return __read_etc_network_interfaces($fh, $proc_net_dev, $proc_net_if_inet6);
+    my $active = PVE::Network::get_active_interfaces();
+    return __read_etc_network_interfaces($fh, $proc_net_dev, $active);
 }
 
 sub __read_etc_network_interfaces {
-    my ($fh, $proc_net_dev, $proc_net_if_inet6) = @_;
+    my ($fh, $proc_net_dev, $active_ifaces) = @_;
 
     my $config = {};
     my $ifaces = $config->{ifaces} = {};
@@ -905,7 +905,11 @@ sub __read_etc_network_interfaces {
 	}
     }
 
-
+    foreach my $ifname (@$active_ifaces) {
+	if (my $iface = $ifaces->{$ifname}) {
+	    $iface->{active} = 1;
+	}
+    }
 
     if (!$ifaces->{lo}) {
 	$ifaces->{lo}->{priority} = 1;
@@ -995,15 +999,6 @@ sub __read_etc_network_interfaces {
 	$d->{method6} = 'manual' if !$d->{method6};
 
 	$d->{families} ||= ['inet'];
-    }
-
-    if ($proc_net_if_inet6) {
-	while (defined ($line = <$proc_net_if_inet6>)) {
-	    if ($line =~ m/^[a-f0-9]{32}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+[a-f0-9]{2}\s+(\S+)$/) {
-		$ifaces->{$1}->{active} = 1 if defined($ifaces->{$1});
-	    }
-	}
-	close ($proc_net_if_inet6);
     }
 
     # OVS bridges create "allow-$BRIDGE $IFACE" lines which we need to remove
