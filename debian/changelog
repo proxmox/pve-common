@@ -4,6 +4,8 @@ libpve-common-perl (4.0-47) unstable; urgency=medium
 
   * CLIHandler: add missing use PVE::INotify
 
+  * Fix #882: active state of interfaces depends on ipv6
+
  -- Proxmox Support Team <support@proxmox.com>  Wed, 10 Feb 2016 11:13:32 +0100
 
 libpve-common-perl (4.0-46) unstable; urgency=medium
