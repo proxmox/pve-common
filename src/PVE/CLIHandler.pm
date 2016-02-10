@@ -8,6 +8,7 @@ use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::RESTHandler;
 use PVE::PodParser;
+use PVE::INotify;
 
 use base qw(PVE::RESTHandler);
 
