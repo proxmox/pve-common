@@ -126,15 +126,16 @@ sub lock_file_full {
 
     my $lock_func = sub {
         if (!$lock_handles->{$$}->{$filename}) {
-            $lock_handles->{$$}->{$filename} = new IO::File (">>$filename") ||
-                die "can't open file - $!\n";
+	    my $fh = new IO::File(">>$filename") ||
+		die "can't open file - $!\n";
+	    $lock_handles->{$$}->{$filename} = { fh => $fh, refcount => 0};
         }
 
-        if (!flock ($lock_handles->{$$}->{$filename}, $mode|LOCK_NB)) {
+        if (!flock($lock_handles->{$$}->{$filename}->{fh}, $mode|LOCK_NB)) {
             print STDERR "trying to acquire lock...";
 	    my $success;
 	    while(1) {
-		$success = flock($lock_handles->{$$}->{$filename}, $mode);
+		$success = flock($lock_handles->{$$}->{$filename}->{fh}, $mode);
 		# try again on EINTR (see bug #273)
 		if ($success || ($! != EINTR)) {
 		    last;
@@ -146,6 +147,7 @@ sub lock_file_full {
             }
             print STDERR " OK\n";
         }
+	$lock_handles->{$$}->{$filename}->{refcount}++;
     };
 
     my $res;
@@ -159,9 +161,12 @@ sub lock_file_full {
 	$err = $@;
     }
 
-    if (my $fh = $lock_handles->{$$}->{$filename}) {
-        $lock_handles->{$$}->{$filename} = undef;
-        close ($fh);
+    if (my $fh = $lock_handles->{$$}->{$filename}->{fh}) {
+	my $refcount = --$lock_handles->{$$}->{$filename}->{refcount};
+	if ($refcount <= 0) {
+	    $lock_handles->{$$}->{$filename} = undef;
+	    close ($fh);
+	}
     }
 
     if ($err) {
