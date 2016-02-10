@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-47) unstable; urgency=medium
+
+  * Implement refcounting for flocks
+
+  * CLIHandler: add missing use PVE::INotify
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 10 Feb 2016 11:13:32 +0100
+
 libpve-common-perl (4.0-46) unstable; urgency=medium
 
   * add upid_wait method
