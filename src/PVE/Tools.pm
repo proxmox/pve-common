@@ -75,6 +75,8 @@ use constant {CLONE_NEWNS   => 0x00020000,
               CLONE_NEWPID  => 0x20000000,
               CLONE_NEWNET  => 0x40000000};
 
+use constant O_PATH => 0x10000000;
+
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
 
@@ -1193,6 +1195,19 @@ sub unshare($) {
 sub setns($$) {
     my ($fileno, $nstype) = @_;
     return 0 == syscall(308, $fileno, $nstype);
+}
+
+sub syncfs($) {
+    my ($fileno) = @_;
+    return 0 == syscall(306, $fileno);
+}
+
+sub sync_mountpoint {
+    my ($path) = @_;
+    sysopen my $fd, $path, O_PATH or die "failed to open $path: $!\n";
+    my $result = syncfs(fileno($fd));
+    close($fd);
+    return $result;
 }
 
 1;
