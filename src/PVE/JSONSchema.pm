@@ -488,7 +488,10 @@ sub format_size {
 };
 
 sub parse_property_string {
-    my ($format, $data, $path) = @_;
+    my ($format, $data, $path, $additional_properties) = @_;
+
+    # In property strings we default to not allowing additional properties
+    $additional_properties = 0 if !defined($additional_properties);
 
     my $default_key;
 
@@ -528,7 +531,7 @@ sub parse_property_string {
     }
 
     my $errors = {};
-    check_object($path, $format, $res, undef, $errors);
+    check_object($path, $format, $res, $additional_properties, $errors);
     if (scalar(%$errors)) {
 	raise "format error\n", errors => $errors;
     }
