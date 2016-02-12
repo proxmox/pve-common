@@ -11,11 +11,11 @@ use POSIX qw(ECONNREFUSED);
 
 use Net::IP;
 
-require "sys/ioctl.ph";
 use Socket qw(IPPROTO_IP);
 
 use constant IFF_UP => 1;
 use constant IFNAMSIZ => 16;
+use constant SIOCGIFFLAGS => 0x8913;
 
 # host network related utility functions
 
@@ -538,7 +538,7 @@ sub get_active_interfaces {
 	next if $line !~ /^\s*([^:\s]+):/;
 	my $ifname = $1;
 	my $ifreq = pack($STRUCT_IFREQ_SIOCGIFFLAGS, $1, 0);
-	if (!defined(ioctl($sock, &SIOCGIFFLAGS, $ifreq))) {
+	if (!defined(ioctl($sock, SIOCGIFFLAGS, $ifreq))) {
 	    warn "failed to get interface flags for: $ifname\n";
 	    next;
 	}
