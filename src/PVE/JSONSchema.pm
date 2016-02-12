@@ -137,7 +137,7 @@ register_format('pve-vmid', \&pve_verify_vmid);
 sub pve_verify_vmid {
     my ($vmid, $noerr) = @_;
 
-    if ($vmid !~ m/^[1-9][0-9]+$/) {
+    if ($vmid !~ m/^[1-9][0-9]{2,8}$/) {
 	return undef if $noerr;
 	die "value does not look like a valid VM ID\n";
     }
