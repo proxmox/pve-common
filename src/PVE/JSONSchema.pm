@@ -525,6 +525,7 @@ sub parse_property_string {
 		    die "duplicate key in comma-separated list property: $default_key\n";
 		}
 	    }
+	    die "value without key, but schema does not define a default key\n" if !$default_key;
 	} else {
 	    die "missing key in comma-separated list property\n";
 	}
