@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-49) unstable; urgency=medium
+
+  * schema: error on missing keys without default keys
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Feb 2016 09:40:35 +0100
+
 libpve-common-perl (4.0-48) unstable; urgency=medium
 
   * added syncfs syscall and sync_mountpoint helper
