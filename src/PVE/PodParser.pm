@@ -120,6 +120,19 @@ sub schema_get_type_text {
     return $type;
 }
 
+sub generate_property_text {
+    my ($schema) = @_;
+    my $data = '';
+    foreach my $key (sort keys %$schema) {
+	my $d = $schema->{$key};
+	my $desc = $d->{description};
+	my $typetext = schema_get_type_text($d);
+	$desc = 'No description available' if !$desc;
+	$data .= "=item $key: $typetext\n\n$desc\n\n";
+    }
+    return $data;
+}
+
 # generta epop from JSON schema properties
 sub dump_properties {
     my ($properties) = @_;
@@ -150,6 +163,15 @@ sub dump_properties {
 	my $typetext = schema_get_type_text($d);
 	$data .= "=item $base: $typetext\n\n";
 	$data .= "$descr\n\n";
+
+	if ($d->{type} eq 'string') {
+	    my $format = $d->{format};
+	    if ($format && ref($format) eq 'HASH') {
+		$data .= "=over 1.1\n\n";
+		$data .= generate_property_text($format);
+		$data .= "=back\n\n";
+	    }
+	}
     }
 
     $data .= "=back";
