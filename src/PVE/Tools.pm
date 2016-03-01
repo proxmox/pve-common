@@ -1061,7 +1061,7 @@ sub dump_logfile {
 }
 
 sub dump_journal {
-    my ($start, $limit, $filter) = @_;
+    my ($start, $limit, $since, $until) = @_;
 
     my $lines = [];
     my $count = 0;
@@ -1079,6 +1079,9 @@ sub dump_journal {
     };
 
     my $cmd = ['journalctl', '-o', 'short', '--no-pager'];
+
+    push @$cmd, '--since', $since if $since;
+    push @$cmd, '--until', $until if $until;
     run_command($cmd, outfunc => $parser);
 
     # HACK: ExtJS store.guaranteeRange() does not like empty array
