@@ -20,7 +20,8 @@ LIB_SOURCES=			\
 	INotify.pm		\
 	Tools.pm		\
 	AbstractMigrate.pm	\
-	Exception.pm
+	Exception.pm		\
+	AbstractConfig.pm
 
 all:
 
