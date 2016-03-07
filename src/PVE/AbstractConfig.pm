@@ -221,6 +221,14 @@ sub __snapshot_freeze {
     die "abstract method - implement me\n";
 }
 
+# Code run before and after creating all the volume snapshots
+# base: noop
+sub __snapshot_create_vol_snapshots_hook {
+    my ($class, $vmid, $snap, $running, $hook) = @_;
+
+    return;
+}
+
 # Create the volume snapshots for the VM/CT.
 sub __snapshot_create_vol_snapshot {
     my ($class, $vmid, $vs, $volume, $snapname) = @_;
@@ -413,6 +421,8 @@ sub snapshot_create {
 	    $class->__snapshot_freeze($vmid, 0);
 	}
 
+	$class->__snapshot_create_vol_snapshots_hook($vmid, $snap, $running, "before");
+
 	$class->__snapshot_foreach_volume($snap, sub {
 	    my ($vs, $volume) = @_;
 
@@ -423,9 +433,11 @@ sub snapshot_create {
     my $err = $@;
 
     if ($running) {
+	$class->__snapshot_create_vol_snapshots_hook($vmid, $snap, $running, "after");
 	if ($freezefs) {
 	    $class->__snapshot_freeze($vmid, 1);
 	}
+	$class->__snapshot_create_vol_snapshots_hook($vmid, $snap, $running, "after-unfreeze");
     }
 
     if ($err) {
