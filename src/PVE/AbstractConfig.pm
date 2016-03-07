@@ -529,7 +529,7 @@ sub snapshot_delete {
 
 	return if $snapname eq 'vzdump' && $vs ne 'rootfs' && !$volume->{backup};
 	if (!$drivehash || $drivehash->{$vs}) {
-	    eval { $class->__snapshot_delete_vol_snapshot($vmid, $vs, $volume, $snapname); };
+	    eval { $class->__snapshot_delete_vol_snapshot($vmid, $vs, $volume, $snapname, $unused); };
 	    if (my $err = $@) {
 		die $err if !$force;
 		warn $err;
@@ -538,7 +538,6 @@ sub snapshot_delete {
 
 	# save changes (remove mp from snapshot)
 	$class->lock_config($vmid, $updatefn, $vs) if !$force;
-	push @$unused, $volume->{volume};
     });
 
     # now cleanup config
