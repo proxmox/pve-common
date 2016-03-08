@@ -125,6 +125,7 @@ sub generate_property_text {
     my $data = '';
     foreach my $key (sort keys %$schema) {
 	my $d = $schema->{$key};
+	next if $d->{alias};
 	my $desc = $d->{description};
 	my $typetext = schema_get_type_text($d);
 	$desc = 'No description available' if !$desc;
