@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-52) unstable; urgency=medium
+
+  * AbstractConfig: Decide whether volume is added as unused in subclass
+
+  * AbstractConfig: Introduce __snapshot_create_vol_snapshots_hook
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 08 Mar 2016 11:34:24 +0100
+
 libpve-common-perl (4.0-51) unstable; urgency=medium
 
   * Add AbstractConfig base class
