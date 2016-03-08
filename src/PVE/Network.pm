@@ -108,7 +108,7 @@ sub tap_rate_limit {
     my ($iface, $rate) = @_;
 
     my $debug = 0;
-    $rate = int($rate*1024*1024);
+    $rate = int($rate*1024*1024) if $rate;
     my $burst = 1024*1024;
 
     setup_tc_rate_limit($iface, $rate, $burst, $debug);
