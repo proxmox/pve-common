@@ -319,7 +319,7 @@ my $cleanup_firewall_bridge = sub {
 };
 
 sub tap_plug {
-    my ($iface, $bridge, $tag, $firewall, $trunks) = @_;
+    my ($iface, $bridge, $tag, $firewall, $trunks, $rate) = @_;
 
     #cleanup old port config from any openvswitch bridge
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
@@ -352,6 +352,8 @@ sub tap_plug {
 	    &$ovs_bridge_add_port($bridge, $iface, $tag, undef, $trunks);
 	}
     }
+
+    tap_rate_limit($iface, $rate);
 }
 
 sub tap_unplug {
