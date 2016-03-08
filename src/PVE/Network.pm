@@ -92,7 +92,7 @@ sub setup_tc_rate_limit {
 
     run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
     run_command("/sbin/tc filter add dev $iface parent ffff: " .
-		"protocol all prio 50 u32 match u32 0 0 " .
+		"prio 50 basic " .
 		"police rate ${rate}bps burst ${burst}b mtu 64kb " .
 		"drop flowid :1");
 
