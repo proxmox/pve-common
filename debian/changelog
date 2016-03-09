@@ -1,3 +1,11 @@
+libpve-common-perl (3.0-25) unstable; urgency=low
+
+  * network: tap_rate_limit: fix uninitialized value
+  
+  * net: tap_plug() needs to apply rate limiting
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 09 Mar 2016 12:39:04 +0100
+
 libpve-common-perl (3.0-24) unstable; urgency=low
 
   * next_migrate_port: higher port range 
