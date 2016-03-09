@@ -539,13 +539,13 @@ sub get_active_interfaces {
     while(defined(my $line = <$fh>)) {
 	next if $line !~ /^\s*([^:\s]+):/;
 	my $ifname = $1;
-	my $ifreq = pack($STRUCT_IFREQ_SIOCGIFFLAGS, $1, 0);
+	my $ifreq = pack($STRUCT_IFREQ_SIOCGIFFLAGS, $ifname, 0);
 	if (!defined(ioctl($sock, SIOCGIFFLAGS, $ifreq))) {
 	    warn "failed to get interface flags for: $ifname\n";
 	    next;
 	}
 	my ($name, $flags) = unpack($STRUCT_IFREQ_SIOCGIFFLAGS, $ifreq);
-	push @$ifaces, $1 if ($flags & IFF_UP);
+	push @$ifaces, $ifname if ($flags & IFF_UP);
     }
     close $fh;
     close $sock;
