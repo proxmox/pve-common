@@ -532,8 +532,10 @@ sub get_active_interfaces {
     open my $fh, '<', '/proc/net/dev'
 	or die "failed to open /proc/net/dev: $!\n";
     # And filter by IFF_UP flag fetched via a PF_INET6 socket ioctl:
-    socket my $sock, PF_INET6, SOCK_DGRAM, &IPPROTO_IP
-	or die "failed to open socket\n";
+    my $sock;
+    socket($sock, PF_INET6, SOCK_DGRAM, &IPPROTO_IP)
+    or socket($sock, PF_INET, SOCK_DGRAM, &IPPROTO_IP)
+    or return [];
 
     my $ifaces = [];
     while(defined(my $line = <$fh>)) {
