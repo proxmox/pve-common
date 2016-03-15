@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-54) unstable; urgency=medium
+
+  * net: don't die in get_active_interfaces() and try both address families
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 15 Mar 2016 06:45:55 +0100
+
 libpve-common-perl (4.0-53) unstable; urgency=medium
 
   * net: tap_plug() needs to apply rate limiting
