@@ -323,6 +323,8 @@ sub is_mounted {
 
     $mountpoint = Cwd::realpath($mountpoint);
 
+    return 0 if !defined($mountpoint); # path does not exist
+
     my $mounts = parse_proc_mounts();
     return (grep { $_->[1] eq $mountpoint } @$mounts) ? 1 : 0;
 }
