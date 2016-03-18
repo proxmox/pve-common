@@ -545,7 +545,7 @@ sub print_property_string {
 
     if (ref($format) ne 'HASH') {
 	my $schema = $format_list->{$format};
-	die "not a valid format: $format" if !$schema;
+	die "not a valid format: $format\n" if !$schema;
 	$format = $schema;
     }
 
@@ -568,7 +568,7 @@ sub print_property_string {
 	# Skip default keys
 	if ($format->{$key}->{default_key}) {
 	    if ($default_key) {
-		warn "multiple default keys in schema ($default_key, $key)";
+		warn "multiple default keys in schema ($default_key, $key)\n";
 	    } else {
 		$default_key = $key;
 		$skipped{$key} = 1;
@@ -588,7 +588,7 @@ sub print_property_string {
     foreach my $key (sort keys %$data) {
 	delete $required{$key};
 	next if $skipped{$key};
-	die "invalid key: $key" if !$allowed{$key};
+	die "invalid key: $key\n" if !$allowed{$key};
 
 	my $typeformat = $format->{$key}->{format};
 	my $value = $data->{$key};
@@ -604,7 +604,7 @@ sub print_property_string {
     }
 
     if (my $missing = join(',', keys %required)) {
-	die "missing properties: $missing";
+	die "missing properties: $missing\n";
     }
 
     return $text;
