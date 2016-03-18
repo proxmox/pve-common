@@ -598,6 +598,7 @@ sub print_property_string {
 	if ($typeformat && $typeformat eq 'disk-size') {
 	    $text .= "$key=" . format_size($value);
 	} else {
+	    die "illegal value with commas for $key\n" if $value =~ /,/;
 	    $text .= "$key=$value";
 	}
     }
