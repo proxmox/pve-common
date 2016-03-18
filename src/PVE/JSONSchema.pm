@@ -110,6 +110,16 @@ sub get_format {
 
 register_format('string', sub {}); # allow format => 'string-list'
 
+register_format('urlencoded', \&pve_verify_urlencoded);
+sub pve_verify_urlencoded {
+    my ($text, $noerr) = @_;
+    if ($text !~ /^[-%a-zA-Z0-9_.!~*'()]*$/) {
+	return undef if $noerr;
+	die "invalid urlencoded string: $text\n";
+    }
+    return $text;
+}
+
 register_format('pve-configid', \&pve_verify_configid);
 sub pve_verify_configid {
     my ($id, $noerr) = @_;
