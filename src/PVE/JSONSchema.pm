@@ -71,19 +71,19 @@ register_standard_option('pve-iface', {
     minLength => 2, maxLength => 20,
 });
 
-PVE::JSONSchema::register_standard_option('pve-storage-id', {
+register_standard_option('pve-storage-id', {
     description => "The storage identifier.",
     type => 'string', format => 'pve-storage-id',
 }); 
 
-PVE::JSONSchema::register_standard_option('pve-config-digest', {
+register_standard_option('pve-config-digest', {
     description => 'Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.',
     type => 'string',
     optional => 1,
     maxLength => 40, # sha1 hex digest lenght is 40
 });
 
-PVE::JSONSchema::register_standard_option('extra-args', {
+register_standard_option('extra-args', {
     description => "Extra arguments as array",
     type => 'array',
     items => { type => 'string' },
