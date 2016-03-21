@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-56) unstable; urgency=medium
+
+  * add the 'urlencoded' string format
+
+  * property strings: check for commas in values
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 21 Mar 2016 08:47:06 +0100
+
 libpve-common-perl (4.0-55) unstable; urgency=medium
 
   * add missing check for undef in is_mounted
