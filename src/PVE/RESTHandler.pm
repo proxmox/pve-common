@@ -403,6 +403,79 @@ sub handle {
     return $result;
 }
 
+# format option, display type and description
+# $k: option name
+# $display_name: for example "-$k" of "<$k>", pass undef to use "$k:"
+# $phash: json schema property hash
+# $format: 'asciidoc' or 'pod'
+my $get_property_description = sub {
+    my ($k, $display_name, $phash, $format, $hidepw) = @_;
+
+    my $res = '';
+
+    $format = 'asciidoc' if !defined($format);
+
+    my $descr = $phash->{description} || "no description available";
+
+    chomp $descr;
+
+    my $type = PVE::PodParser::schema_get_type_text($phash);
+
+    if ($hidepw && $k eq 'password') {
+	$type = '';
+    }
+
+    if ($format eq 'asciidoc') {
+
+	if (defined($display_name)) {
+	    $res .= "`$display_name` ";
+	} else {
+	    $res .= "`$k:` ";
+	}
+
+	$res .= "`$type` " if $type;
+
+	if (defined(my $dv = $phash->{default})) {
+	    $res .= "(default=`$dv`)";
+	}
+	$res .= "::\n\n";
+	$res .= Text::Wrap::wrap('', '', ($descr)) . "\n";
+
+	if (my $req = $phash->{requires}) {
+	    my $tmp .= ref($req) ? join(', ', @$req) : $req;
+	    $res .= "+\nNOTE: Requires option(s): `$tmp`\n";
+	}
+	$res .= "\n";
+
+    } elsif ($format eq 'pod') {
+
+	my $defaulttxt = '';
+	if (defined(my $dv = $phash->{default})) {
+	    $defaulttxt = "   (default=$dv)";
+	}
+
+	$display_name = "$k:" if !defined($display_name);
+
+	my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type";
+	my $indend = "             ";
+
+	$res .= Text::Wrap::wrap('', $indend, ($tmp));
+	$res .= "\n",
+	$res .= Text::Wrap::wrap($indend, $indend, ($descr)) . "\n\n";
+
+	if (my $req = $phash->{requires}) {
+	    my $tmp = "Requires option(s): ";
+	    $tmp .= ref($req) ? join(', ', @$req) : $req;
+	    $res .= Text::Wrap::wrap($indend, $indend, ($tmp)). "\n\n";
+	}
+
+    } else {
+	die "unknown format '$format'";
+    }
+
+    return $res;
+};
+
 # generate usage information for command line tools
 #
 # $name        ... the name of the method
@@ -446,62 +519,11 @@ sub usage_str {
 	}
     }
 
-    my $get_prop_descr = sub {
-	my ($k, $display_name) = @_;
- 
-	my $phash = $prop->{$k};
-
-	my $res = '';
-	
-	my $descr = $phash->{description} || "no description available";
-	chomp $descr;
-
-	my $type = PVE::PodParser::schema_get_type_text($phash);
-
-	if ($hidepw && $k eq 'password') {
-	    $type = '';
-	}
-
-	if ($format eq 'asciidoc') {
-	    $res .= "`$display_name` `$type` ";
-	    if (defined(my $dv = $phash->{default})) {
-		$res .= "(default=`$dv`)";
-	    }
-	    $res .= "::\n\n";
-	    $res .= Text::Wrap::wrap('', '', ($descr)) . "\n";
-
-	    if (my $req = $phash->{requires}) {
-		my $tmp .= ref($req) ? join(', ', @$req) : $req;
-		$res .= "+\nNOTE: Requires option(s): `$tmp`\n";
-	    }
-	    $res .= "\n";
-	} else {
-	    my $defaulttxt = '';
-	    if (defined(my $dv = $phash->{default})) {
-		$defaulttxt = "   (default=$dv)";
-	    }
-	    my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type";
-	    my $indend = "             ";
-
-	    $res .= Text::Wrap::wrap('', $indend, ($tmp));
-	    $res .= "\n",
-	    $res .= Text::Wrap::wrap($indend, $indend, ($descr)) . "\n\n";
-
-	    if (my $req = $phash->{requires}) {
-		my $tmp = "Requires option(s): ";
-		$tmp .= ref($req) ? join(', ', @$req) : $req;
-		$res .= Text::Wrap::wrap($indend, $indend, ($tmp)). "\n\n";
-	    }
-	}
-
-	return $res;
-    };
-
     my $argdescr = '';
     foreach my $k (@$arg_param) {
 	next if defined($fixed_param->{$k}); # just to be sure
 	next if !$prop->{$k}; # just to be sure
-	$argdescr .= &$get_prop_descr($k, "<$k>");
+	$argdescr .= &$get_property_description($k, "<$k>", $prop->{$k}, $format, 0);
     }
 
     my $idx_param = {}; # -vlan\d+ -scsi\d+
@@ -523,7 +545,7 @@ sub usage_str {
 	    $base = "${name}[n]";
 	}
 
-	$opts .= &$get_prop_descr($k, "-$base");
+	$opts .= &$get_property_description($k, "-$base", $prop->{$k}, $format, $hidepw);
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
@@ -558,6 +580,34 @@ sub usage_str {
     $out .= $opts if $opts;
 
     return $out;
+}
+
+# generate docs from JSON schema properties
+sub dump_properties {
+    my ($prop, $format, $filterFn) = @_;
+
+    my $raw = '';
+
+    my $idx_param = {}; # -vlan\d+ -scsi\d+
+
+    foreach my $k (sort keys %$prop) {
+	my $phash = $prop->{$k};
+
+	next if defined($filterFn) && &$filterFn($k, $phash);
+
+	my $type = $phash->{type} || 'string';
+
+	my $base = $k;
+	if ($k =~ m/^([a-z]+)(\d+)$/) {
+	    my $name = $1;
+	    next if $idx_param->{$name};
+	    $idx_param->{$name} = 1;
+	    $base = "${name}[n]";
+	}
+
+	$raw .= &$get_property_description($k, undef, $phash, $format, 0);
+    }
+    return $raw;
 }
 
 sub cli_handler {
