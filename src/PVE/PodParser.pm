@@ -134,7 +134,7 @@ sub generate_property_text {
     return $data;
 }
 
-# generta epop from JSON schema properties
+# generate pod from JSON schema properties
 sub dump_properties {
     my ($properties) = @_;
 
