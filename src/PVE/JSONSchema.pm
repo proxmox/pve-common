@@ -1028,11 +1028,10 @@ my $default_schema_noref = {
 	pattern => {
 	    type => "string",
 	    format => "regex",
-     	    description => "When the instance value is a string, this provides a regular expression that a instance string value should match in order to be valid.",
+	    description => "When the instance value is a string, this provides a regular expression that a instance string value should match in order to be valid.",
 	    optional => 1,
 	    default => ".*",
-        },
-
+	},
 	enum => {
 	    type => "array",
 	    optional => 1,
@@ -1048,21 +1047,21 @@ my $default_schema_noref = {
 	    optional => 1,
 	    description => "This provides a shorter (usually just one word) description for a property used to generate descriptions for comma separated list property strings.",
 	},
-        title => {
-     	    type => "string",
+	title => {
+	    type => "string",
 	    optional => 1,
-     	    description => "This provides the title of the property",
-        },
-        requires => {
-     	    type => [ "string", "object" ],
-	    optional => 1,
-     	    description => "indicates a required property or a schema that must be validated if this property is present",
-        },
-        format => {
+	    description => "This provides the title of the property",
+	},
+	requires => {
 	    type => [ "string", "object" ],
 	    optional => 1,
-     	    description => "This indicates what format the data is among some predefined formats which may include:\n\ndate - a string following the ISO format \naddress \nschema - a schema definition object \nperson \npage \nhtml - a string representing HTML",
-        },
+	    description => "indicates a required property or a schema that must be validated if this property is present",
+	},
+	format => {
+	    type => [ "string", "object" ],
+	    optional => 1,
+	    description => "This indicates what format the data is among some predefined formats which may include:\n\ndate - a string following the ISO format \naddress \nschema - a schema definition object \nperson \npage \nhtml - a string representing HTML",
+	},
 	default_key => {
 	    type => "boolean",
 	    optional => 1,
@@ -1078,45 +1077,45 @@ my $default_schema_noref = {
 	    optional => 1,
 	    description => "This indicates the default for the instance property."
 	},
-        completion => {
+	completion => {
 	    type => 'coderef',
 	    description => "Bash completion function. This function should return a list of possible values.",
 	    optional => 1,
-        },
-        disallow => {
-     	    type => "object",
-	    optional => 1,
-     	    description => "This attribute may take the same values as the \"type\" attribute, however if the instance matches the type or if this value is an array and the instance matches any type or schema in the array, than this instance is not valid.",
 	},
-        extends => {
-     	    type => "object",
+	disallow => {
+	    type => "object",
 	    optional => 1,
-     	    description => "This indicates the schema extends the given schema. All instances of this schema must be valid to by the extended schema also.",
+	    description => "This attribute may take the same values as the \"type\" attribute, however if the instance matches the type or if this value is an array and the instance matches any type or schema in the array, then this instance is not valid.",
+	},
+	extends => {
+	    type => "object",
+	    optional => 1,
+	    description => "This indicates the schema extends the given schema. All instances of this schema must be valid to by the extended schema also.",
 	    default => {},
-        },
-        # this is from hyper schema
-        links => {
-            type => "array",
-            description => "This defines the link relations of the instance objects",
- 	    optional => 1,
+	},
+	# this is from hyper schema
+	links => {
+	    type => "array",
+	    description => "This defines the link relations of the instance objects",
+	    optional => 1,
 	    items => {
-            	type => "object",
-            	properties => {
-            	    href => {
-            	    	type => "string",
-            	    	description => "This defines the target URL for the relation and can be parameterized using {propertyName} notation. It should be resolved as a URI-reference relative to the URI that was used to retrieve the instance document",
-            	    },
-            	    rel => {
-            	    	type => "string",
-            	    	description => "This is the name of the link relation",
-            	    	optional => 1,
-            	    	default => "full",
-            	    },
+		type => "object",
+		properties => {
+		    href => {
+			type => "string",
+			description => "This defines the target URL for the relation and can be parameterized using {propertyName} notation. It should be resolved as a URI-reference relative to the URI that was used to retrieve the instance document",
+		    },
+		    rel => {
+			type => "string",
+			description => "This is the name of the link relation",
+			optional => 1,
+			default => "full",
+		    },
 		    method => {
-            	    	type => "string",
-            	    	description => "For submission links, this defines the method that should be used to access the target resource",
-           	    	optional => 1,
-             	    	default => "GET",
+			type => "string",
+			description => "For submission links, this defines the method that should be used to access the target resource",
+			optional => 1,
+			default => "GET",
 		    },
 		},
 	    },
