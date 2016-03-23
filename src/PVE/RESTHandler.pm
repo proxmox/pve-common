@@ -407,7 +407,7 @@ sub handle {
 # $name: option name
 # $display_name: for example "-$name" of "<$name>", pass undef to use "$name:"
 # $phash: json schema property hash
-# $format: 'asciidoc' or 'pod'
+# $format: 'asciidoc', 'pod' or 'text'
 my $get_property_description = sub {
     my ($name, $display_name, $phash, $format, $hidepw) = @_;
 
@@ -439,7 +439,12 @@ my $get_property_description = sub {
 	    $res .= "(default=`$dv`)";
 	}
 	$res .= "::\n\n";
-	$res .= Text::Wrap::wrap('', '', ($descr)) . "\n";
+
+	my $wdescr = Text::Wrap::wrap('', '', ($descr));
+	chomp $wdescr;
+	$wdescr =~ s/^$/+/mg;
+
+	$res .= $wdescr . "\n";
 
 	if (my $req = $phash->{requires}) {
 	    my $tmp .= ref($req) ? join(', ', @$req) : $req;
@@ -447,7 +452,7 @@ my $get_property_description = sub {
 	}
 	$res .= "\n";
 
-    } elsif ($format eq 'pod') {
+    } elsif ($format eq 'pod' || $format eq 'text') {
 
 	my $defaulttxt = '';
 	if (defined(my $dv = $phash->{default})) {
@@ -523,7 +528,7 @@ sub usage_str {
     foreach my $k (@$arg_param) {
 	next if defined($fixed_param->{$k}); # just to be sure
 	next if !$prop->{$k}; # just to be sure
-	$argdescr .= &$get_property_description($k, "<$k>", $prop->{$k}, $format, 0);
+	$argdescr .= &$get_property_description($k, "<$k>", $prop->{$k}, 'text', 0);
     }
 
     my $idx_param = {}; # -vlan\d+ -scsi\d+
@@ -545,7 +550,7 @@ sub usage_str {
 	    $base = "${name}[n]";
 	}
 
-	$opts .= &$get_property_description($base, "-$base", $prop->{$k}, $format, $hidepw);
+	$opts .= &$get_property_description($base, "-$base", $prop->{$k}, 'text', $hidepw);
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
