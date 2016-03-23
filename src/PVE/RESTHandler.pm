@@ -404,12 +404,12 @@ sub handle {
 }
 
 # format option, display type and description
-# $k: option name
-# $display_name: for example "-$k" of "<$k>", pass undef to use "$k:"
+# $name: option name
+# $display_name: for example "-$name" of "<$name>", pass undef to use "$name:"
 # $phash: json schema property hash
 # $format: 'asciidoc' or 'pod'
 my $get_property_description = sub {
-    my ($k, $display_name, $phash, $format, $hidepw) = @_;
+    my ($name, $display_name, $phash, $format, $hidepw) = @_;
 
     my $res = '';
 
@@ -421,7 +421,7 @@ my $get_property_description = sub {
 
     my $type = PVE::PodParser::schema_get_type_text($phash);
 
-    if ($hidepw && $k eq 'password') {
+    if ($hidepw && $name eq 'password') {
 	$type = '';
     }
 
@@ -430,7 +430,7 @@ my $get_property_description = sub {
 	if (defined($display_name)) {
 	    $res .= "`$display_name` ";
 	} else {
-	    $res .= "`$k:` ";
+	    $res .= "`$name`: ";
 	}
 
 	$res .= "`$type` " if $type;
@@ -454,7 +454,7 @@ my $get_property_description = sub {
 	    $defaulttxt = "   (default=$dv)";
 	}
 
-	$display_name = "$k:" if !defined($display_name);
+	$display_name = "$name:" if !defined($display_name);
 
 	my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type";
 	my $indend = "             ";
@@ -545,7 +545,7 @@ sub usage_str {
 	    $base = "${name}[n]";
 	}
 
-	$opts .= &$get_property_description($k, "-$base", $prop->{$k}, $format, $hidepw);
+	$opts .= &$get_property_description($base, "-$base", $prop->{$k}, $format, $hidepw);
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
@@ -605,7 +605,7 @@ sub dump_properties {
 	    $base = "${name}[n]";
 	}
 
-	$raw .= &$get_property_description($k, undef, $phash, $format, 0);
+	$raw .= &$get_property_description($base, undef, $phash, $format, 0);
     }
     return $raw;
 }
