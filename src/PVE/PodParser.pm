@@ -49,8 +49,11 @@ sub generate_typetext {
     my $typetext = '';
     my (@optional, @required);
     foreach my $key (sort keys %$schema) {
-	next if !$schema->{$key}->{format_description} &&
-	        !$schema->{$key}->{typetext};
+	my $entry = $schema->{$key};
+	next if !$entry->{format_description} &&
+	        !$entry->{typetext} &&
+	        !$entry->{enum} &&
+	        $entry->{type} ne 'boolean';
 	if ($schema->{$key}->{optional}) {
 	    push @optional, $key;
 	} else {
@@ -66,11 +69,17 @@ sub generate_typetext {
 	    $key = $alias;
 	    $entry = $schema->{$key};
 	}
-	if (my $desc = $entry->{format_description}) {
+	if (!defined($entry->{typetext})) {
 	    $typetext .= $entry->{default_key} ? "[$key=]" : "$key=";
+	}
+	if (my $desc = $entry->{format_description}) {
 	    $typetext .= "<$desc>";
 	} elsif (my $text = $entry->{typetext}) {
 	    $typetext .= $text;
+	} elsif (my $enum = $entry->{enum}) {
+	    $typetext .= '<' . join('|', @$enum) . '>';
+	} elsif ($entry->{type} eq 'boolean') {
+	    $typetext .= '<1|0>';
 	} else {
 	    die "internal error: neither format_description nor typetext found";
 	}
