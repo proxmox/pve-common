@@ -136,9 +136,10 @@ sub remove_lock {
     $class->lock_config($vmid, sub {
 	my $conf = $class->load_config($vmid);
 	if (!$conf->{lock}) {
-	    die "no lock found trying to remove lock '$lock'\n";
+	    my $lockstring = defined($lock) ? "'$lock' " : "any";
+	    die "no lock found trying to remove $lockstring lock\n";
 	} elsif (defined($lock) && $conf->{lock} ne $lock) {
-	    die "found lock '$conf->{lock}' trying to remove lock '$lock'\n";
+	    die "found lock '$conf->{lock}' trying to remove '$lock' lock\n";
 	}
 	delete $conf->{lock};
 	$class->write_config($vmid, $conf);
