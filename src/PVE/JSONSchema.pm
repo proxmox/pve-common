@@ -513,6 +513,12 @@ sub parse_property_string {
 	    my ($k, $v) = ($1, $2);
 	    die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
 	    my $schema = $format->{$k};
+	    if (my $group = $schema->{group}) {
+		die "keys $res->{$group} and $k are part of the same group and cannot be used together\n"
+		    if defined($res->{$group});
+		$res->{$group} = $k;
+		$schema = $format->{$group};
+	    }
 	    if (my $alias = $schema->{alias}) {
 		$k = $alias;
 		$schema = $format->{$k};
@@ -569,14 +575,25 @@ sub print_property_string {
     my %skipped = map { $_ => 1 } @$skip;
     my %allowed;
     my %required; # this is a set, all present keys are required regardless of value
+    my %group_for_key;
     foreach my $key (keys %$format) {
 	$allowed{$key} = 1;
-	if (!$format->{$key}->{optional} && !$format->{$key}->{alias} && !$skipped{$key}) {
+	my $keyfmt = $format->{$key};
+	my $group = $keyfmt->{group};
+	if (defined($group)) {
+	    $skipped{$group} = 1;
+	    if (defined(my $grpalias = $format->{$group}->{alias})) {
+		$group_for_key{$grpalias} = $group;
+	    } else {
+		$group_for_key{$key} = $group;
+	    }
+	}
+	if (!$keyfmt->{optional} && !$keyfmt->{alias} && !defined($group) && !$skipped{$key}) {
 	    $required{$key} = 1;
 	}
 
 	# Skip default keys
-	if ($format->{$key}->{default_key}) {
+	if ($keyfmt->{default_key}) {
 	    if ($default_key) {
 		warn "multiple default keys in schema ($default_key, $key)\n";
 	    } else {
@@ -587,7 +604,7 @@ sub print_property_string {
     }
 
     my ($text, $comma);
-    if ($default_key) {
+    if ($default_key && !defined($format->{$default_key}->{alias})) {
 	$text = "$data->{$default_key}";
 	$comma = ',';
     } else {
@@ -600,9 +617,13 @@ sub print_property_string {
 	next if $skipped{$key};
 	die "invalid key: $key\n" if !$allowed{$key};
 
-	my $typeformat = $format->{$key}->{format};
+	my $keyfmt = $format->{$key};
+	my $typeformat = $keyfmt->{format};
 	my $value = $data->{$key};
 	next if !defined($value);
+	if (my $group = $group_for_key{$key}) {
+	    $key = $data->{$group};
+	}
 	$text .= $comma;
 	$comma = ',';
 	if ($typeformat && $typeformat eq 'disk-size') {
@@ -764,8 +785,31 @@ sub check_object {
 	return;
     }
 
+    my %groups;
     foreach my $k (keys %$schema) {
-	check_prop($value->{$k}, $schema->{$k}, $path ? "$path.$k" : $k, $errors);
+	if (defined(my $group = $schema->{$k}->{group})) {
+	    # When a group is aliased then the key/value pair will match the
+	    # schema, but if it's not then the group key contains the key-name
+	    # which will not match the group key's defined schema and we have
+	    # to match it against that...
+	    if (!defined($schema->{$group}->{alias})) {
+		$groups{$group} = 1;
+	    }
+	}
+    }
+    foreach my $k (keys %$schema) {
+	my $orig_key = $k;
+	my $v;
+	if ($groups{$k}) {
+	    if (defined($orig_key = $value->{$k})) {
+		$v = $value->{$orig_key};
+	    } else {
+		$orig_key = $k; # now only used for the 'path' parameter
+	    }
+	} else {
+	    $v = $value->{$k};
+	}
+	check_prop($v, $schema->{$k}, $path ? "$path.$orig_key" : $orig_key, $errors);
     }
 
     foreach my $k (keys %$value) {
@@ -830,7 +874,7 @@ sub check_prop {
 
     if (!defined ($value)) {
 	return if $schema->{type} && $schema->{type} eq 'null';
-	if (!$schema->{optional} && !$schema->{alias}) {
+	if (!$schema->{optional} && !$schema->{alias} && !$schema->{group}) {
 	    add_error($errors, $path, "property is missing and it is not optional");
 	}
 	return;
@@ -1071,6 +1115,11 @@ my $default_schema_noref = {
 	    type => 'string',
 	    optional => 1,
 	    description => "When a key represents the same property as another it can be an alias to it, causing the parsed datastructure to use the other key to store the current value under.",
+	},
+	group => {
+	    type => 'string',
+	    optional => 1,
+	    description => "If a key is part of a group then setting it will additionally set the group name in the resulting data structure to the key used to fill the group. Only one key of a group can be assigned.",
 	},
 	default => {
 	    type => "any",
