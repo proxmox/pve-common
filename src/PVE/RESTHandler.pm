@@ -408,8 +408,9 @@ sub handle {
 # $display_name: for example "-$name" of "<$name>", pass undef to use "$name:"
 # $phash: json schema property hash
 # $format: 'asciidoc', 'pod' or 'text'
+# $style: 'config', 'arg' or 'fixed'
 my $get_property_description = sub {
-    my ($name, $display_name, $phash, $format, $hidepw) = @_;
+    my ($name, $style, $phash, $format, $hidepw) = @_;
 
     my $res = '';
 
@@ -427,10 +428,14 @@ my $get_property_description = sub {
 
     if ($format eq 'asciidoc') {
 
-	if (defined($display_name)) {
-	    $res .= "`$display_name` ";
-	} else {
+	if ($style eq 'config') {
 	    $res .= "`$name`: ";
+	} elsif ($style eq 'arg') {
+	    $res .= "`-$name` ";
+	} elsif ($style eq 'fixed') {
+	    $res .= "`<$name>` ";
+	} else {
+	    die "unknown style '$style'";
 	}
 
 	$res .= "`$type` " if $type;
@@ -459,7 +464,16 @@ my $get_property_description = sub {
 	    $defaulttxt = "   (default=$dv)";
 	}
 
-	$display_name = "$name:" if !defined($display_name);
+	my $display_name;
+	if ($style eq 'config') {
+	    $display_name = "$name:";
+	} elsif ($style eq 'arg') {
+	    $display_name = "-$name";
+	} elsif ($style eq 'fixed') {
+	    $display_name = "<$name>";
+	} else {
+	    die "unknown style '$style'";
+	}
 
 	my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type";
 	my $indend = "             ";
@@ -528,7 +542,7 @@ sub usage_str {
     foreach my $k (@$arg_param) {
 	next if defined($fixed_param->{$k}); # just to be sure
 	next if !$prop->{$k}; # just to be sure
-	$argdescr .= &$get_property_description($k, "<$k>", $prop->{$k}, 'text', 0);
+	$argdescr .= &$get_property_description($k, 'fixed', $prop->{$k}, 'text', 0);
     }
 
     my $idx_param = {}; # -vlan\d+ -scsi\d+
@@ -550,7 +564,7 @@ sub usage_str {
 	    $base = "${name}[n]";
 	}
 
-	$opts .= &$get_property_description($base, "-$base", $prop->{$k}, 'text', $hidepw);
+	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, 'text', $hidepw);
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
@@ -589,10 +603,12 @@ sub usage_str {
 
 # generate docs from JSON schema properties
 sub dump_properties {
-    my ($prop, $format, $filterFn) = @_;
+    my ($prop, $format, $style, $filterFn) = @_;
 
     my $raw = '';
 
+    $style //= 'config';
+    
     my $idx_param = {}; # -vlan\d+ -scsi\d+
 
     foreach my $k (sort keys %$prop) {
@@ -610,7 +626,7 @@ sub dump_properties {
 	    $base = "${name}[n]";
 	}
 
-	$raw .= &$get_property_description($base, undef, $phash, $format, 0);
+	$raw .= &$get_property_description($base, $style, $phash, $format, 0);
     }
     return $raw;
 }
