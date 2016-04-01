@@ -4,6 +4,10 @@ libpve-common-perl (4.0-57) unstable; urgency=medium
 
   * new PVE::RESTHandler::dump_properties
 
+  * generate_typetext: handle enums and booleans automatically
+
+  * property strings: introduce key grouping feature
+
  -- Proxmox Support Team <support@proxmox.com>  Fri, 01 Apr 2016 07:15:56 +0200
 
 libpve-common-perl (4.0-56) unstable; urgency=medium
