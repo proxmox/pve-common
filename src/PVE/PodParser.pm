@@ -50,6 +50,7 @@ sub generate_typetext {
     my (@optional, @required);
     foreach my $key (sort keys %$schema) {
 	my $entry = $schema->{$key};
+	next if $entry->{alias};
 	next if !$entry->{format_description} &&
 	        !$entry->{typetext} &&
 	        !$entry->{enum} &&
