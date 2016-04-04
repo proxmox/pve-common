@@ -75,7 +75,7 @@ use constant {CLONE_NEWNS   => 0x00020000,
               CLONE_NEWPID  => 0x20000000,
               CLONE_NEWNET  => 0x40000000};
 
-use constant O_PATH => 0x10000000;
+use constant O_PATH => 0x00200000;
 
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
