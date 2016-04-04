@@ -75,7 +75,8 @@ use constant {CLONE_NEWNS   => 0x00020000,
               CLONE_NEWPID  => 0x20000000,
               CLONE_NEWNET  => 0x40000000};
 
-use constant O_PATH => 0x00200000;
+use constant {O_PATH    => 0x00200000,
+              O_TMPFILE => 0x00410000}; # This includes O_DIRECTORY
 
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
@@ -1211,6 +1212,37 @@ sub sync_mountpoint {
     my $result = syncfs(fileno($fd));
     close($fd);
     return $result;
+}
+
+sub tempfile {
+    my ($perm, %opts) = @_;
+
+    # default permissions are stricter than with file_set_contents
+    $perm = 0600 if !defined($perm);
+
+    my $dir = $opts{dir} // '/tmp';
+    my $mode = $opts{mode} // O_RDWR;
+    $mode |= O_EXCL if !$opts{allow_links};
+
+    my $fh = IO::File->new($dir, $mode | O_TMPFILE, $perm)
+	or die "failed to create tempfile: $!\n";
+    return $fh;
+}
+
+sub tempfile_contents {
+    my ($data, $perm, %opts) = @_;
+
+    my $fh = tempfile($perm, %opts);
+    eval {
+	die "unable to write to tempfile: $!\n" if !print {$fh} $data;
+	die "unable to flush to tempfile: $!\n" if !defined($fh->flush());
+    };
+    if (my $err = $@) {
+	close $fh;
+	die $err;
+    }
+
+    return ("/proc/$$/fd/".$fh->fileno, $fh);
 }
 
 1;
