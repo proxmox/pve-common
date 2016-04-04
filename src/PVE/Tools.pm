@@ -1214,6 +1214,69 @@ sub sync_mountpoint {
     return $result;
 }
 
+# support sending multi-part mail messages with a text and or a HTML part
+# mailto may be a single email string or an array of receivers
+sub sendmail {
+    my ($mailto, $subject, $text, $html, $mailfrom, $author) = @_;
+
+    $mailto = [ $mailto ] if ref($mailto) ne 'ARRAY';
+
+    my $rcvrarg = '';
+    foreach my $r (@$mailto) {
+	$rcvrarg .= " '$r'";
+    }
+    my $rcvrtxt = join (', ', @$mailto);
+
+    $mailfrom = $mailfrom || "root";
+    $author = $author || 'Proxmox VE mail notifier';
+
+    open (MAIL,"|sendmail -B 8BITMIME -f $mailfrom $rcvrarg") ||
+	die "unable to open 'sendmail' - $!";
+
+    # multipart spec see https://www.ietf.org/rfc/rfc1521.txt
+    my $boundary = "----_=_NextPart_001_".int(time).$$;
+
+    print MAIL "Content-Type: multipart/alternative;\n";
+    print MAIL "\tboundary=\"$boundary\"\n";
+    print MAIL "MIME-Version: 1.0\n";
+
+    print MAIL "FROM: $author <$mailfrom>\n";
+    print MAIL "TO: $rcvrtxt\n";
+    print MAIL "SUBJECT: $subject\n";
+    print MAIL "\n";
+    print MAIL "This is a multi-part message in MIME format.\n\n";
+    print MAIL "--$boundary\n";
+
+    if ($text) {
+	print MAIL "Content-Type: text/plain;\n";
+	print MAIL "\tcharset=\"UTF8\"\n";
+	print MAIL "Content-Transfer-Encoding: 8bit\n";
+	print MAIL "\n";
+
+	# avoid 'remove extra line breaks' issue (MS Outlook)
+	my $fill = '  ';
+	$text =~ s/^/$fill/gm;
+
+	print MAIL $text;
+
+	print MAIL "\n--$boundary\n";
+    }
+
+    if($html) {
+	print MAIL "Content-Type: text/html;\n";
+	print MAIL "\tcharset=\"UTF8\"\n";
+	print MAIL "Content-Transfer-Encoding: 8bit\n";
+	print MAIL "\n";
+
+	print MAIL $html;
+
+	print MAIL "\n--$boundary--\n";
+    }
+
+    close(MAIL);
+
+}
+
 sub tempfile {
     my ($perm, %opts) = @_;
 
