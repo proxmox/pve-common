@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-58) unstable; urgency=medium
+
+  * Tools: add sendmail
+
+  * Tools: add tempfile and tempfile_contents
+
+  * fix O_PATH value
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 05 Apr 2016 06:28:45 +0200
+
 libpve-common-perl (4.0-57) unstable; urgency=medium
 
   * fix #923: uninitalized value in remove_lock
