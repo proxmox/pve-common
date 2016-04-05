@@ -452,7 +452,7 @@ sub generate_asciidoc_synopsys {
 }
 
 my $handle_cmd  = sub {
-    my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn, $preparefunc) = @_;
+    my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn, $preparefunc, $stringfilemap) = @_;
 
     $cmddef = $def;
     $exename = $cmdname;
@@ -486,13 +486,13 @@ my $handle_cmd  = sub {
     }
 
     my $prefix = "$exename $cmd";
-    my $res = $class->cli_handler($prefix, $name, \@ARGV, $arg_param, $uri_param, $pwcallback);
+    my $res = $class->cli_handler($prefix, $name, \@ARGV, $arg_param, $uri_param, $pwcallback, $stringfilemap);
 
     &$outsub($res) if $outsub;
 };
 
 my $handle_simple_cmd = sub {
-    my ($def, $args, $pwcallback, $podfn, $preparefunc) = @_;
+    my ($def, $args, $pwcallback, $podfn, $preparefunc, $stringfilemap) = @_;
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def};
     die "no class specified" if !$class;
@@ -519,7 +519,7 @@ my $handle_simple_cmd = sub {
 
     &$preparefunc() if $preparefunc;
 
-    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $pwcallback);
+    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $pwcallback, $stringfilemap);
 
     &$outsub($res) if $outsub;
 };
@@ -553,6 +553,7 @@ sub run_cli_handler {
     my $no_init = $params{no_init};
 
     my $pwcallback = $class->can('read_password');
+    my $stringfilemap = $class->can('string_param_file_mapping');
 
     $exename = &$get_exe_name($class);
 
@@ -573,11 +574,11 @@ sub run_cli_handler {
     my $def = ${"${class}::cmddef"};
 
     if (ref($def) eq 'ARRAY') {
-	&$handle_simple_cmd($def, \@ARGV, $pwcallback, $podfn, $preparefunc);
+	&$handle_simple_cmd($def, \@ARGV, $pwcallback, $podfn, $preparefunc, $stringfilemap);
     } else {
 	$cmddef = $def;
 	my $cmd = shift @ARGV;
-	&$handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $podfn, $preparefunc);
+	&$handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $podfn, $preparefunc, $stringfilemap);
     }
 
     exit 0;

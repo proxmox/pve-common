@@ -631,14 +631,29 @@ sub dump_properties {
     return $raw;
 }
 
+my $replace_file_names_with_contents = sub {
+    my ($param, $mapping) = @_;
+
+    if ($mapping) {
+	foreach my $elem ( @$mapping ) {
+	    $param->{$elem} = PVE::Tools::file_get_contents($param->{$elem})
+		if defined($param->{$elem});
+	}
+    }
+
+    return $param;
+};
+
 sub cli_handler {
-    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $pwcallback) = @_;
+    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $pwcallback, $stringfilemap) = @_;
 
     my $info = $self->map_method_by_name($name);
 
     my $res;
     eval {
 	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $pwcallback);
+	&$replace_file_names_with_contents($param, &$stringfilemap($name))
+	    if defined($stringfilemap);
 	$res = $self->handle($info, $param);
     };
     if (my $err = $@) {
