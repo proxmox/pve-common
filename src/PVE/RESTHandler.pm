@@ -574,8 +574,9 @@ sub usage_str {
 	    $base = "${name}[n]";
 	}
 
+	my $mapping = defined($stringfilemap) ? &$stringfilemap($name) : undef;
 	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, 'text',
-					    $hidepw, &$stringfilemap($name));
+					    $hidepw, $mapping);
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
