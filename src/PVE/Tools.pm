@@ -1219,7 +1219,7 @@ sub sync_mountpoint {
 sub sendmail {
     my ($mailto, $subject, $text, $html, $mailfrom, $author) = @_;
 
-    $mailto = [ $mailto ] if ref($mailto) ne 'ARRAY';
+    $mailto = [ $mailto ] if !ref($mailto);
 
     my $rcvrarg = '';
     foreach my $r (@$mailto) {
@@ -1228,7 +1228,7 @@ sub sendmail {
     my $rcvrtxt = join (', ', @$mailto);
 
     $mailfrom = $mailfrom || "root";
-    $author = $author || 'Proxmox VE mail notifier';
+    $author = $author || 'Proxmox VE';
 
     open (MAIL,"|sendmail -B 8BITMIME -f $mailfrom $rcvrarg") ||
 	die "unable to open 'sendmail' - $!";
@@ -1247,7 +1247,7 @@ sub sendmail {
     print MAIL "This is a multi-part message in MIME format.\n\n";
     print MAIL "--$boundary\n";
 
-    if ($text) {
+    if (defined($text)) {
 	print MAIL "Content-Type: text/plain;\n";
 	print MAIL "\tcharset=\"UTF8\"\n";
 	print MAIL "Content-Transfer-Encoding: 8bit\n";
@@ -1262,7 +1262,7 @@ sub sendmail {
 	print MAIL "\n--$boundary\n";
     }
 
-    if($html) {
+    if (defined($html)) {
 	print MAIL "Content-Type: text/html;\n";
 	print MAIL "\tcharset=\"UTF8\"\n";
 	print MAIL "Content-Transfer-Encoding: 8bit\n";
@@ -1274,7 +1274,6 @@ sub sendmail {
     }
 
     close(MAIL);
-
 }
 
 sub tempfile {
