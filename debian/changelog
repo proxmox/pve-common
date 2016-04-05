@@ -1,5 +1,7 @@
 libpve-common-perl (4.0-58) unstable; urgency=medium
 
+  * Handle string parameter to file content replacement
+
   * Tools: add sendmail
 
   * Tools: add tempfile and tempfile_contents
