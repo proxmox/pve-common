@@ -1307,4 +1307,19 @@ sub tempfile_contents {
     return ("/proc/$$/fd/".$fh->fileno, $fh);
 }
 
+sub validate_ssh_public_keys {
+    my ($raw) = @_;
+    my @lines = split(/\n/, $raw);
+
+    foreach my $line (@lines) {
+	next if $line =~ m/^\s*$/;
+	eval {
+	    my ($filename, $handle) = tempfile_contents($line);
+	    run_command(["ssh-keygen", "-l", "-f", $filename],
+			outfunc => sub {}, errfunc => sub {});
+	};
+	die "SSH public key validation error\n" if $@;
+    }
+}
+
 1;
