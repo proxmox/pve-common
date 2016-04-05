@@ -410,7 +410,7 @@ sub handle {
 # $format: 'asciidoc', 'pod' or 'text'
 # $style: 'config', 'arg' or 'fixed'
 my $get_property_description = sub {
-    my ($name, $style, $phash, $format, $hidepw) = @_;
+    my ($name, $style, $phash, $format, $hidepw, $fileparams) = @_;
 
     my $res = '';
 
@@ -424,6 +424,15 @@ my $get_property_description = sub {
 
     if ($hidepw && $name eq 'password') {
 	$type = '';
+    }
+
+    if ($fileparams && $type eq 'string') {
+	foreach my $elem (@$fileparams) {
+	    if ($name eq $elem) {
+		$type = 'filepath';
+		last;
+	    }
+	}
     }
 
     if ($format eq 'asciidoc') {
@@ -508,8 +517,9 @@ my $get_property_description = sub {
 #   'full'     ... also include description
 #   'asciidoc' ... generate asciidoc for man pages (like 'full')
 # $hidepw      ... hide password option (use this if you provide a read passwork callback)
+# $stringfilemap ... mapping for string parameters to file path parameters
 sub usage_str {
-    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $hidepw) = @_;
+    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $hidepw, $stringfilemap) = @_;
 
     $format = 'long' if !$format;
 
@@ -564,7 +574,8 @@ sub usage_str {
 	    $base = "${name}[n]";
 	}
 
-	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, 'text', $hidepw);
+	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, 'text',
+					    $hidepw, &$stringfilemap($name));
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
@@ -661,7 +672,7 @@ sub cli_handler {
 
 	die $err if !$ec || $ec ne "PVE::Exception" || !$err->is_param_exc();
 	
-	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $pwcallback);
+	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $pwcallback, $stringfilemap);
 
 	die $err;
     }

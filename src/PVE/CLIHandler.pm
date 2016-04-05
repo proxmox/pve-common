@@ -98,9 +98,11 @@ __PACKAGE__->register_method ({
 	raise_param_exc({ cmd => "no such command '$cmd'"}) if !$class;
 
 	my $pwcallback = $cli_handler_class->can('read_password');
+	my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
 	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param,
-				    $verbose ? 'full' : 'short', $pwcallback);
+				    $verbose ? 'full' : 'short', $pwcallback,
+				    $stringfilemap);
 	if ($verbose) {
 	    print "$str\n";
 	} else {
@@ -117,10 +119,12 @@ sub print_simple_asciidoc_synopsys {
     die "not initialized" if !$cli_handler_class;
 
     my $pwcallback = $cli_handler_class->can('read_password');
+    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     my $synopsis = "*${name}* `help`\n\n";
 
-    $synopsis .= $class->usage_str($name, $name, $arg_param, $uri_param, 'asciidoc', $pwcallback);
+    $synopsis .= $class->usage_str($name, $name, $arg_param, $uri_param,
+				   'asciidoc', $pwcallback, $stringfilemap);
 
     return $synopsis;
 }
@@ -130,6 +134,7 @@ sub print_asciidoc_synopsys {
     die "not initialized" if !($cmddef && $exename && $cli_handler_class);
 
     my $pwcallback = $cli_handler_class->can('read_password');
+    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     my $synopsis = "";
 
@@ -139,7 +144,8 @@ sub print_asciidoc_synopsys {
     foreach my $cmd (sort keys %$cmddef) {
 	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
 	my $str = $class->usage_str($name, "$exename $cmd", $arg_param,
-				    $uri_param, 'asciidoc', $pwcallback);
+				    $uri_param, 'asciidoc', $pwcallback,
+				    $stringfilemap);
 	$synopsis .= "\n" if $oldclass && $oldclass ne $class;
 
 	$synopsis .= "$str\n\n";
@@ -157,9 +163,10 @@ sub print_simple_pod_manpage {
     die "not initialized" if !$cli_handler_class;
 
     my $pwcallback = $cli_handler_class->can('read_password');
+    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     my $synopsis = " $name help\n\n";
-    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback);
+    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback, $stringfilemap);
     $str =~ s/^USAGE://;
     $str =~ s/\n/\n /g;
     $synopsis .= $str;
@@ -176,6 +183,7 @@ sub print_pod_manpage {
     die "no pod file specified" if !$podfn;
 
     my $pwcallback = $cli_handler_class->can('read_password');
+    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     my $synopsis = "";
     
@@ -186,7 +194,8 @@ sub print_pod_manpage {
     foreach my $cmd (sorted_commands()) {
 	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
 	my $str = $class->usage_str($name, "$exename $cmd", $arg_param,
-				    $uri_param, $style, $pwcallback);
+				    $uri_param, $style, $pwcallback,
+				    $stringfilemap);
 	$str =~ s/^USAGE: //;
 
 	$synopsis .= "\n" if $oldclass && $oldclass ne $class;
@@ -207,13 +216,14 @@ sub print_usage_verbose {
     die "not initialized" if !($cmddef && $exename && $cli_handler_class);
 
     my $pwcallback = $cli_handler_class->can('read_password');
+    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     print "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n\n";
 
     foreach my $cmd (sort keys %$cmddef) {
 	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
 	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param,
-				    'full', $pwcallback);
+				    'full', $pwcallback, $stringfilemap);
 	print "$str\n\n";
     }
 }
@@ -228,6 +238,7 @@ sub print_usage_short {
     die "not initialized" if !($cmddef && $exename && $cli_handler_class);
 
     my $pwcallback = $cli_handler_class->can('read_password');
+    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     print $fd "ERROR: $msg\n" if $msg;
     print $fd "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n";
@@ -235,7 +246,7 @@ sub print_usage_short {
     my $oldclass;
     foreach my $cmd (sorted_commands()) {
 	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param, 'short', $pwcallback);
+	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param, 'short', $pwcallback, $stringfilemap);
 	print $fd "\n" if $oldclass && $oldclass ne $class;
 	print $fd "       $str";
 	$oldclass = $class;
@@ -500,7 +511,7 @@ my $handle_simple_cmd = sub {
     if (scalar(@$args) >= 1) {
 	if ($args->[0] eq 'help') {
 	    my $str = "USAGE: $name help\n";
-	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback);
+	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback, $stringfilemap);
 	    print STDERR "$str\n\n";
 	    return;
 	} elsif ($args->[0] eq 'bashcomplete') {
