@@ -407,7 +407,7 @@ sub handle {
 # $name: option name
 # $display_name: for example "-$name" of "<$name>", pass undef to use "$name:"
 # $phash: json schema property hash
-# $format: 'asciidoc', 'pod' or 'text'
+# $format: 'asciidoc', 'short', 'long' or 'full'
 # $style: 'config', 'arg' or 'fixed'
 my $get_property_description = sub {
     my ($name, $style, $phash, $format, $hidepw, $fileparams) = @_;
@@ -466,7 +466,7 @@ my $get_property_description = sub {
 	}
 	$res .= "\n";
 
-    } elsif ($format eq 'pod' || $format eq 'text') {
+    } elsif ($format eq 'short' || $format eq 'long' || $format eq 'full') {
 
 	my $defaulttxt = '';
 	if (defined(my $dv = $phash->{default})) {
@@ -512,9 +512,9 @@ my $get_property_description = sub {
 #                  on the command line (or single parameter name for lists)
 # $fixed_param ... do not generate and info about those parameters
 # $format:
-#   'long'     ... default (list all options)
-#   'short'    ... command line only (one line)
-#   'full'     ... also include description
+#   'long'     ... default (text, list all options)
+#   'short'    ... command line only (text, one line)
+#   'full'     ... text, include description
 #   'asciidoc' ... generate asciidoc for man pages (like 'full')
 # $hidepw      ... hide password option (use this if you provide a read passwork callback)
 # $stringfilemap ... mapping for string parameters to file path parameters
@@ -640,6 +640,7 @@ sub dump_properties {
 
 	$raw .= &$get_property_description($base, $style, $phash, $format, 0);
     }
+
     return $raw;
 }
 
