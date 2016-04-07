@@ -57,6 +57,7 @@ You currently need the following packages:
 libqb.git
 corosync-pve.git
 pve-common.git
+pve-docs.git
 pve-cluster.git
 lvm.git
 pve-access-control.git
