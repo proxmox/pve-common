@@ -552,7 +552,7 @@ sub usage_str {
     foreach my $k (@$arg_param) {
 	next if defined($fixed_param->{$k}); # just to be sure
 	next if !$prop->{$k}; # just to be sure
-	$argdescr .= &$get_property_description($k, 'fixed', $prop->{$k}, 'text', 0);
+	$argdescr .= &$get_property_description($k, 'fixed', $prop->{$k}, $format, 0);
     }
 
     my $idx_param = {}; # -vlan\d+ -scsi\d+
@@ -575,7 +575,7 @@ sub usage_str {
 	}
 
 	my $mapping = defined($stringfilemap) ? &$stringfilemap($name) : undef;
-	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, 'text',
+	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, $format,
 					    $hidepw, $mapping);
 
 	if (!$prop->{$k}->{optional}) {
