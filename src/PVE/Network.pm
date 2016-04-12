@@ -371,6 +371,8 @@ sub tap_unplug {
     }
     
     &$cleanup_firewall_bridge($iface);
+    #cleanup old port config from any openvswitch bridge
+    eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
 }
 
 sub copy_bridge_config {
