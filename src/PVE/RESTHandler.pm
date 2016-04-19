@@ -36,8 +36,8 @@ sub api_clone_schema {
 	    if ($p =~ m/^([a-z]+)(\d+)$/) {
 		if ($2 == 0) {
 		    $p = "$1\[n\]";
-		} else {
-		    next;
+		} elsif (defined($d->{$1.'0'})) {
+		    next; # only handle once for -xx0, but only if -xx0 exists
 		}
 	    }
 	    $res->{$k}->{$p} = ref($pd) ? clone($pd) : $pd;
