@@ -570,8 +570,10 @@ sub usage_str {
 	if ($k =~ m/^([a-z]+)(\d+)$/) {
 	    my $name = $1;
 	    next if $idx_param->{$name};
-	    $idx_param->{$name} = 1;
-	    $base = "${name}[n]";
+	    if ($2 == 0) {
+		$idx_param->{$name} = 1;
+		$base = "${name}[n]";
+	    }
 	}
 
 	my $mapping = defined($stringfilemap) ? &$stringfilemap($name) : undef;
@@ -634,8 +636,10 @@ sub dump_properties {
 	if ($k =~ m/^([a-z]+)(\d+)$/) {
 	    my $name = $1;
 	    next if $idx_param->{$name};
-	    $idx_param->{$name} = 1;
-	    $base = "${name}[n]";
+	    if ($2 == 0) {
+		$idx_param->{$name} = 1;
+		$base = "${name}[n]";
+	    }
 	}
 
 	$raw .= &$get_property_description($base, $style, $phash, $format, 0);
