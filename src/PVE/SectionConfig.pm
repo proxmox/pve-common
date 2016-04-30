@@ -184,7 +184,7 @@ sub init {
     }
 
     $propertyList->{type}->{type} = 'string';
-    $propertyList->{type}->{enum} = [keys %$plugins];
+    $propertyList->{type}->{enum} = [sort keys %$plugins];
 }
 
 sub lookup {
