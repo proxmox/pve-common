@@ -678,7 +678,7 @@ my $keymaphash =  {
 };
 
 my $kvmkeymaparray = [];
-foreach my $lc (keys %$keymaphash) {
+foreach my $lc (sort keys %$keymaphash) {
     push @$kvmkeymaparray, $keymaphash->{$lc}->[1];
 }
 
