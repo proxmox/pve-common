@@ -203,7 +203,7 @@ sub lookup_types {
 
     my $pdata = $class->private();
     
-    return [ keys %{$pdata->{plugins}} ];
+    return [ sort keys %{$pdata->{plugins}} ];
 }
 
 sub decode_value {
