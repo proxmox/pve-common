@@ -76,10 +76,11 @@ our $ipv4_mask_hash_localnet = {
 sub setup_tc_rate_limit {
     my ($iface, $rate, $burst, $debug) = @_;
 
-    system("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1");
-    system("/sbin/tc filter del dev $iface parent ffff: protocol all pref 50 u32 >/dev/null 2>&1");
-    system("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1");
-    system("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1");
+    # these are allowed / expected to fail, e.g. when there is no previous rate limit to remove
+    eval { run_command("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1"); };
+    eval { run_command("/sbin/tc filter del dev $iface parent ffff: protocol all pref 50 u32 >/dev/null 2>&1"); };
+    eval { run_command("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1"); };
+    eval { run_command("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1"); };
 
     return if !$rate;
 
