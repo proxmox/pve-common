@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-60) unstable; urgency=medium
+
+  * setup_tc_rate_limit: Use run_command instead of system
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 03 May 2016 07:05:49 +0200
+
 libpve-common-perl (4.0-59) unstable; urgency=medium
 
   * Fix #908: cleanup OVS ports in tap_unplug
