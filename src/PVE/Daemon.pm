@@ -669,7 +669,7 @@ sub register_start_command {
 	code => sub {
 	    my ($param) = @_;
 
-            if (&$init_ppid()) {
+            if (&$init_ppid() || $param->{debug}) {
                 $self->start($param->{debug});
             } else {
                 PVE::Tools::run_command(['systemctl', 'start', $self->{name}]);
