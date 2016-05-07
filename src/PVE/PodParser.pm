@@ -104,6 +104,8 @@ sub schema_get_type_text {
 
     if ($phash->{typetext}) {
 	return $phash->{typetext};
+    } elsif ($phash->{format_description}) {
+	return "<$phash->{format_description}>";
     } elsif ($phash->{enum}) {
 	return "(" . join(' | ', sort @{$phash->{enum}}) . ")";
     } elsif ($phash->{pattern}) {
