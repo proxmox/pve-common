@@ -1446,6 +1446,8 @@ my $find_schema_default_key = sub {
 		if defined($phash->{alias});
 	    die "default key '$key' with keyAlias attribute is not allowed\n"
 		if $phash->{keyAlias};
+	    die "found keyAlias without 'alias definition for '$key'\n"
+		if $phash->{keyAlias} && !$phash->{alias};
 
 	    $default_key = $key;
 	}
@@ -1464,7 +1466,7 @@ my $find_schema_default_key = sub {
 sub generate_typetext {
     my ($format) = @_;
 
-    my $default_key = &$find_schema_default_key($format);
+    my ($default_key, $keyAliasProps) = &$find_schema_default_key($format);
 
     my $res = '';
     my $add_sep = 0;
@@ -1513,24 +1515,40 @@ sub generate_typetext {
 	}
     };
 
-    if (defined($default_key)) {
-	my $phash = $format->{$default_key};
-	&$format_key_value($default_key, $phash);
-    }
+    my $done = {};
 
-    foreach my $key (sort keys %$format) {
-	next if defined($default_key) && ($key eq $default_key);
+    my $cond_add_key = sub {
+	my ($key) = @_;
+
+	return if $done->{$key}; # avoid duplicates
+
+	$done->{$key} = 1;
 
 	my $phash = $format->{$key};
 
-	next if $phash->{alias};
-	next if $phash->{group};
+	return if !$phash; # should not happen
+
+	return if $phash->{alias};
 
 	&$format_key_value($key, $phash);
 
-	if (my $keyAlias = $phash->{keyAlias}) {
-	    &$add_option_string("<$keyAlias>=<$key>", 1);
-	}
+    };
+
+    &$cond_add_key($default_key) if defined($default_key);
+
+    # add required keys first
+    foreach my $key (sort keys %$format) {
+	my $phash = $format->{$key};
+	&$cond_add_key($key) if $phash && !$phash->{optional};
+    }
+
+    # add the rest
+    foreach my $key (sort keys %$format) {
+	&$cond_add_key($key);
+    }
+
+    foreach my $keyAlias (sort keys %$keyAliasProps) {
+	&$add_option_string("<$keyAlias>=<$keyAliasProps->{$keyAlias }>", 1);
     }
 
     return $res;
@@ -1616,6 +1634,13 @@ sub print_property_string {
     # add default key first
     &$cond_add_key($default_key) if defined($default_key);
 
+    # add required keys first
+    foreach my $key (sort keys %$data) {
+	my $phash = $format->{$key};
+	&$cond_add_key($key) if $phash && !$phash->{optional};
+    }
+
+    # add the rest
     foreach my $key (sort keys %$data) {
 	&$cond_add_key($key);
     }
