@@ -1446,12 +1446,12 @@ my $find_schema_default_key = sub {
 		if defined($phash->{alias});
 	    die "default key '$key' with keyAlias attribute is not allowed\n"
 		if $phash->{keyAlias};
-	    die "found keyAlias without 'alias definition for '$key'\n"
-		if $phash->{keyAlias} && !$phash->{alias};
-
 	    $default_key = $key;
 	}
 	my $key_alias = $phash->{keyAlias};
+	die "found keyAlias without 'alias definition for '$key'\n"
+	    if $key_alias && !$phash->{alias};
+
 	if ($phash->{alias} && $key_alias) {
 	    die "inconsistent keyAlias '$key_alias' definition"
 		if defined($keyAliasProps->{$key_alias}) &&
