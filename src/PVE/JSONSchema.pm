@@ -9,6 +9,7 @@ use PVE::Tools qw(split_list $IPV6RE $IPV4RE);
 use PVE::Exception qw(raise);
 use HTTP::Status qw(:constants);
 use Net::IP qw(:PROC);
+use Data::Dumper;
 
 use base 'Exporter';
 
@@ -513,16 +514,15 @@ sub parse_property_string {
 	    my ($k, $v) = ($1, $2);
 	    die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
 	    my $schema = $format->{$k};
-	    if (my $group = $schema->{group}) {
-		die "keys $res->{$group} and $k are part of the same group and cannot be used together\n"
-		    if defined($res->{$group});
-		$res->{$group} = $k;
-		$schema = $format->{$group};
-	    }
 	    if (my $alias = $schema->{alias}) {
+		if (my $key_alias = $schema->{keyAlias}) {
+		    die "key alias '$key_alias' is already defined\n" if defined($res->{$key_alias});
+		    $res->{$key_alias} = $k;
+		}
 		$k = $alias;
 		$schema = $format->{$k};
 	    }
+
 	    die "invalid key in comma-separated list property: $k\n" if !$schema;
 	    if ($schema->{type} && $schema->{type} eq 'boolean') {
 		$v = 1 if $v =~ m/^(1|on|yes|true)$/i;
@@ -554,91 +554,6 @@ sub parse_property_string {
     }
 
     return $res;
-}
-
-sub print_property_string {
-    my ($data, $format, $skip, $path) = @_;
-
-    if (ref($format) ne 'HASH') {
-	my $schema = $format_list->{$format};
-	die "not a valid format: $format\n" if !$schema;
-	$format = $schema;
-    }
-
-    my $errors = {};
-    check_object($path, $format, $data, undef, $errors);
-    if (scalar(%$errors)) {
-	raise "format error", errors => $errors;
-    }
-
-    my $default_key;
-    my %skipped = map { $_ => 1 } @$skip;
-    my %allowed;
-    my %required; # this is a set, all present keys are required regardless of value
-    my %group_for_key;
-    foreach my $key (keys %$format) {
-	$allowed{$key} = 1;
-	my $keyfmt = $format->{$key};
-	my $group = $keyfmt->{group};
-	if (defined($group)) {
-	    $skipped{$group} = 1;
-	    if (defined(my $grpalias = $format->{$group}->{alias})) {
-		$group_for_key{$grpalias} = $group;
-	    } else {
-		$group_for_key{$key} = $group;
-	    }
-	}
-	if (!$keyfmt->{optional} && !$keyfmt->{alias} && !defined($group) && !$skipped{$key}) {
-	    $required{$key} = 1;
-	}
-
-	# Skip default keys
-	if ($keyfmt->{default_key}) {
-	    if ($default_key) {
-		warn "multiple default keys in schema ($default_key, $key)\n";
-	    } else {
-		$default_key = $key;
-		$skipped{$key} = 1;
-	    }
-	}
-    }
-
-    my ($text, $comma);
-    if ($default_key && !defined($format->{$default_key}->{alias})) {
-	$text = "$data->{$default_key}";
-	$comma = ',';
-    } else {
-	$text = '';
-	$comma = '';
-    }
-
-    foreach my $key (sort keys %$data) {
-	delete $required{$key};
-	next if $skipped{$key};
-	die "invalid key: $key\n" if !$allowed{$key};
-
-	my $keyfmt = $format->{$key};
-	my $typeformat = $keyfmt->{format};
-	my $value = $data->{$key};
-	next if !defined($value);
-	if (my $group = $group_for_key{$key}) {
-	    $key = $data->{$group};
-	}
-	$text .= $comma;
-	$comma = ',';
-	if ($typeformat && $typeformat eq 'disk-size') {
-	    $text .= "$key=" . format_size($value);
-	} else {
-	    die "illegal value with commas for $key\n" if $value =~ /,/;
-	    $text .= "$key=$value";
-	}
-    }
-
-    if (my $missing = join(',', keys %required)) {
-	die "missing properties: $missing\n";
-    }
-
-    return $text;
 }
 
 sub add_error {
@@ -785,31 +700,8 @@ sub check_object {
 	return;
     }
 
-    my %groups;
     foreach my $k (keys %$schema) {
-	if (defined(my $group = $schema->{$k}->{group})) {
-	    # When a group is aliased then the key/value pair will match the
-	    # schema, but if it's not then the group key contains the key-name
-	    # which will not match the group key's defined schema and we have
-	    # to match it against that...
-	    if (!defined($schema->{$group}->{alias})) {
-		$groups{$group} = 1;
-	    }
-	}
-    }
-    foreach my $k (keys %$schema) {
-	my $orig_key = $k;
-	my $v;
-	if ($groups{$k}) {
-	    if (defined($orig_key = $value->{$k})) {
-		$v = $value->{$orig_key};
-	    } else {
-		$orig_key = $k; # now only used for the 'path' parameter
-	    }
-	} else {
-	    $v = $value->{$k};
-	}
-	check_prop($v, $schema->{$k}, $path ? "$path.$orig_key" : $orig_key, $errors);
+	check_prop($value->{$k}, $schema->{$k}, $path ? "$path.$k" : $k, $errors);
     }
 
     foreach my $k (keys %$value) {
@@ -1116,10 +1008,11 @@ my $default_schema_noref = {
 	    optional => 1,
 	    description => "When a key represents the same property as another it can be an alias to it, causing the parsed datastructure to use the other key to store the current value under.",
 	},
-	group => {
+	keyAlias => {
 	    type => 'string',
 	    optional => 1,
-	    description => "If a key is part of a group then setting it will additionally set the group name in the resulting data structure to the key used to fill the group. Only one key of a group can be assigned.",
+	    description => "Allows to store the current 'key' as value of another property. Only valid if used together with 'alias'.",
+	    requires => 'alias',
 	},
 	default => {
 	    type => "any",
@@ -1534,6 +1427,233 @@ sub dump_config {
     }
 
     return $data;
+}
+
+# helpers used to generate our manual pages
+
+my $find_schema_default_key = sub {
+    my ($format) = @_;
+
+    my $default_key;
+    my $keyAliasProps = {};
+
+    foreach my $key (keys %$format) {
+	my $phash = $format->{$key};
+	if ($phash->{default_key}) {
+	    die "multiple default keys in schema ($default_key, $key)\n"
+		if defined($default_key);
+	    die "default key '$key' is an alias - this is not allowed\n"
+		if defined($phash->{alias});
+	    die "default key '$key' with keyAlias attribute is not allowed\n"
+		if $phash->{keyAlias};
+
+	    $default_key = $key;
+	}
+	my $key_alias = $phash->{keyAlias};
+	if ($phash->{alias} && $key_alias) {
+	    die "inconsistent keyAlias '$key_alias' definition"
+		if defined($keyAliasProps->{$key_alias}) &&
+		$keyAliasProps->{$key_alias} ne $phash->{alias};
+	    $keyAliasProps->{$key_alias} = $phash->{alias};
+	}
+    }
+
+    return wantarray ? ($default_key, $keyAliasProps) : $default_key;
+};
+
+sub generate_typetext {
+    my ($format) = @_;
+
+    my $default_key = &$find_schema_default_key($format);
+
+    my $res = '';
+    my $add_sep = 0;
+
+    my $add_option_string = sub {
+	my ($text, $optional) = @_;
+
+	if ($add_sep) {
+	    $text = ",$text";
+	    $res .= ' ';
+	}
+	$text = "[$text]" if $optional;
+	$res .= $text;
+	$add_sep = 1;
+    };
+
+    my $format_key_value = sub {
+	my ($key, $phash) = @_;
+
+	die "internal error" if defined($phash->{alias});
+
+	my $keytext = $key;
+
+	my $typetext = '';
+
+	if (my $desc = $phash->{format_description}) {
+	    $typetext .= "<$desc>";
+	} elsif (my $text = $phash->{typetext}) {
+	    $typetext .= $text;
+	} elsif (my $enum = $phash->{enum}) {
+	    $typetext .= '<' . join('|', @$enum) . '>';
+	} elsif ($phash->{type} eq 'boolean') {
+	    $typetext .= '<1|0>';
+	} elsif ($phash->{type} eq 'integer') {
+	    $typetext .= '<integer>';
+	} elsif ($phash->{type} eq 'number') {
+	    $typetext .= '<number>';
+	} else {
+	    die "internal error: neither format_description nor typetext found for option '$key'";
+	}
+
+	if (defined($default_key) && ($default_key eq $key)) {
+	    &$add_option_string("[$keytext=]$typetext", $phash->{optional});
+	} else {
+	    &$add_option_string("$keytext=$typetext", $phash->{optional});
+	}
+    };
+
+    if (defined($default_key)) {
+	my $phash = $format->{$default_key};
+	&$format_key_value($default_key, $phash);
+    }
+
+    foreach my $key (sort keys %$format) {
+	next if defined($default_key) && ($key eq $default_key);
+
+	my $phash = $format->{$key};
+
+	next if $phash->{alias};
+	next if $phash->{group};
+
+	&$format_key_value($key, $phash);
+
+	if (my $keyAlias = $phash->{keyAlias}) {
+	    &$add_option_string("<$keyAlias>=<$key>", 1);
+	}
+    }
+
+    return $res;
+}
+
+sub print_property_string {
+    my ($data, $format, $skip, $path) = @_;
+
+    if (ref($format) ne 'HASH') {
+	my $schema = get_format($format);
+	die "not a valid format: $format\n" if !$schema;
+	$format = $schema;
+    }
+
+    my $errors = {};
+    check_object($path, $format, $data, undef, $errors);
+    if (scalar(%$errors)) {
+	raise "format error", errors => $errors;
+    }
+
+    my ($default_key, $keyAliasProps) = &$find_schema_default_key($format);
+
+    my $res = '';
+    my $add_sep = 0;
+
+    my $add_option_string = sub {
+	my ($text) = @_;
+
+	$res .= ',' if $add_sep;
+	$res .= $text;
+	$add_sep = 1;
+    };
+
+    my $format_value = sub {
+	my ($key, $value, $format) = @_;
+
+	if (defined($format) && ($format eq 'disk-size')) {
+	    return format_size($value);
+	} else {
+	    die "illegal value with commas for $key\n" if $value =~ /,/;
+	    return $value;
+	}
+    };
+
+    my $done = {};
+
+    my $cond_add_key = sub {
+	my ($key) = @_;
+
+	return if $done->{$key}; # avoid duplicates
+
+	$done->{$key} = 1;
+
+	my $value = $data->{$key};
+
+	return if !defined($value);
+
+	my $phash = $format->{$key};
+
+	# try to combine values if we have key aliases
+	if (my $combine = $keyAliasProps->{$key}) {
+	    if (defined(my $combine_value = $data->{$combine})) {
+		my $combine_format = $format->{$combine}->{format};
+		my $value_str = &$format_value($key, $value, $phash->{format});
+		my $combine_str = &$format_value($combine, $combine_value, $combine_format);
+		&$add_option_string("${value_str}=${combine_str}");
+		$done->{$combine} = 1;
+		return;
+	    }
+	}
+
+	if ($phash && $phash->{alias}) {
+	    $phash = $format->{$phash->{alias}};
+	}
+
+	die "invalid key '$key'\n" if !$phash;
+	die "internal error" if defined($phash->{alias});
+
+	my $value_str = &$format_value($key, $value, $phash->{format});
+	&$add_option_string("$key=${value_str}");
+    };
+
+    # add default key first
+    &$cond_add_key($default_key) if defined($default_key);
+
+    foreach my $key (sort keys %$data) {
+	&$cond_add_key($key);
+    }
+
+    return $res;
+}
+
+sub schema_get_type_text {
+    my ($phash) = @_;
+
+    if ($phash->{typetext}) {
+	return $phash->{typetext};
+    } elsif ($phash->{format_description}) {
+	return "<$phash->{format_description}>";
+    } elsif ($phash->{enum}) {
+	return "(" . join(' | ', sort @{$phash->{enum}}) . ")";
+    } elsif ($phash->{pattern}) {
+	return $phash->{pattern};
+    } elsif ($phash->{type} eq 'integer' || $phash->{type} eq 'number') {
+	if (defined($phash->{minimum}) && defined($phash->{maximum})) {
+	    return "$phash->{type} ($phash->{minimum} - $phash->{maximum})";
+	} elsif (defined($phash->{minimum})) {
+	    return "$phash->{type} ($phash->{minimum} - N)";
+	} elsif (defined($phash->{maximum})) {
+	    return "$phash->{type} (-N - $phash->{maximum})";
+	}
+    } elsif ($phash->{type} eq 'string') {
+	if (my $format = $phash->{format}) {
+	    $format = get_format($format) if ref($format) ne 'HASH';
+	    if (ref($format) eq 'HASH') {
+		return generate_typetext($format);
+	    }
+	}
+    }
+
+    my $type = $phash->{type} || 'string';
+
+    return $type;
 }
 
 1;

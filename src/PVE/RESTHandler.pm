@@ -6,7 +6,6 @@ use warnings;
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::JSONSchema;
-use PVE::PodParser;
 use HTTP::Status qw(:constants :is status_message);
 use Text::Wrap;
 use Clone qw(clone);
@@ -421,7 +420,7 @@ my $get_property_description = sub {
 
     chomp $descr;
 
-    my $type = PVE::PodParser::schema_get_type_text($phash);
+    my $type = PVE::JSONSchema::schema_get_type_text($phash);
 
     if ($hidepw && $name eq 'password') {
 	$type = '';

@@ -7,7 +7,6 @@ use Data::Dumper;
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::RESTHandler;
-use PVE::PodParser;
 use PVE::INotify;
 
 use base qw(PVE::RESTHandler);
@@ -155,60 +154,6 @@ sub print_asciidoc_synopsys {
     $synopsis .= "\n";
 
     return $synopsis;
-}
-
-sub print_simple_pod_manpage {
-    my ($podfn, $class, $name, $arg_param, $uri_param) = @_;
-
-    die "not initialized" if !$cli_handler_class;
-
-    my $pwcallback = $cli_handler_class->can('read_password');
-    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
-
-    my $synopsis = " $name help\n\n";
-    my $str = $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback, $stringfilemap);
-    $str =~ s/^USAGE://;
-    $str =~ s/\n/\n /g;
-    $synopsis .= $str;
-
-    my $parser = PVE::PodParser->new();
-    $parser->{include}->{synopsis} = $synopsis;
-    $parser->parse_from_file($podfn);
-}
-
-sub print_pod_manpage {
-    my ($podfn) = @_;
-
-    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
-    die "no pod file specified" if !$podfn;
-
-    my $pwcallback = $cli_handler_class->can('read_password');
-    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
-
-    my $synopsis = "";
-    
-    $synopsis .= " $exename <COMMAND> [ARGS] [OPTIONS]\n\n";
-
-    my $style = 'full'; # or should we use 'short'?
-    my $oldclass;
-    foreach my $cmd (sorted_commands()) {
-	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param,
-				    $uri_param, $style, $pwcallback,
-				    $stringfilemap);
-	$str =~ s/^USAGE: //;
-
-	$synopsis .= "\n" if $oldclass && $oldclass ne $class;
-	$str =~ s/\n/\n /g;
-	$synopsis .= " $str\n\n";
-	$oldclass = $class;
-    }
-
-    $synopsis .= "\n";
-
-    my $parser = PVE::PodParser->new();
-    $parser->{include}->{synopsis} = $synopsis;
-    $parser->parse_from_file($podfn);
 }
 
 sub print_usage_verbose {
@@ -416,31 +361,6 @@ sub find_cli_class_source {
     return $filename;
 }
 
-sub generate_pod_manpage {
-    my ($class, $podfn) = @_;
-
-    $cli_handler_class = $class;
-
-    $exename = &$get_exe_name($class);
-
-    $podfn = find_cli_class_source($exename) if !defined($podfn);
-
-    die "unable to find source for class '$class'" if !$podfn;
-
-    no strict 'refs';
-    my $def = ${"${class}::cmddef"};
-
-    if (ref($def) eq 'ARRAY') {
-	print_simple_pod_manpage($podfn, @$def);
-    } else {
-	$cmddef = $def;
-
-	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
-
-	print_pod_manpage($podfn);
-    }
-}
-
 sub generate_asciidoc_synopsys {
     my ($class) = @_;
 
@@ -463,7 +383,7 @@ sub generate_asciidoc_synopsys {
 }
 
 my $handle_cmd  = sub {
-    my ($def, $cmdname, $cmd, $args, $pwcallback, $podfn, $preparefunc, $stringfilemap) = @_;
+    my ($def, $cmdname, $cmd, $args, $pwcallback, $preparefunc, $stringfilemap) = @_;
 
     $cmddef = $def;
     $exename = $cmdname;
@@ -475,10 +395,6 @@ my $handle_cmd  = sub {
 	exit (-1);
     } elsif ($cmd eq 'verifyapi') {
 	PVE::RESTHandler::validate_method_schemas();
-	return;
-    } elsif ($cmd eq 'printmanpod') {
-	$podfn = find_cli_class_source($exename) if !defined($podfn);
-	print_pod_manpage($podfn);
 	return;
     } elsif ($cmd eq 'bashcomplete') {
 	&$print_bash_completion($cmddef, 0, @$args);
@@ -503,7 +419,7 @@ my $handle_cmd  = sub {
 };
 
 my $handle_simple_cmd = sub {
-    my ($def, $args, $pwcallback, $podfn, $preparefunc, $stringfilemap) = @_;
+    my ($def, $args, $pwcallback, $preparefunc, $stringfilemap) = @_;
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def};
     die "no class specified" if !$class;
@@ -521,10 +437,6 @@ my $handle_simple_cmd = sub {
 	} elsif ($args->[0] eq 'verifyapi') {
 	    PVE::RESTHandler::validate_method_schemas();
 	    return;
-	} elsif ($args->[0] eq 'printmanpod') {
-	    $podfn = find_cli_class_source($name) if !defined($podfn);
-	    print_simple_pod_manpage($podfn, @$def);
-	    return;
 	}
     }
 
@@ -538,11 +450,7 @@ my $handle_simple_cmd = sub {
 sub run_cli {
     my ($class, $pwcallback, $podfn, $preparefunc) = @_;
 
-    # Note: "depreciated function run_cli - use run_cli_handler instead";
-    
-    die "password callback is no longer supported" if $pwcallback;
-
-    run_cli_handler($class, podfn => $podfn, prepare => $preparefunc);
+    die "depreciated function run_cli - use run_cli_handler instead";
 }
 
 sub run_cli_handler {
@@ -553,13 +461,11 @@ sub run_cli_handler {
     $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
     foreach my $key (keys %params) {
-	next if $key eq 'podfn';
 	next if $key eq 'prepare';
 	next if $key eq 'no_init'; # used by lxc hooks
 	die "unknown parameter '$key'";
     }
 
-    my $podfn = $params{podfn};
     my $preparefunc = $params{prepare};
     my $no_init = $params{no_init};
 
@@ -585,11 +491,11 @@ sub run_cli_handler {
     my $def = ${"${class}::cmddef"};
 
     if (ref($def) eq 'ARRAY') {
-	&$handle_simple_cmd($def, \@ARGV, $pwcallback, $podfn, $preparefunc, $stringfilemap);
+	&$handle_simple_cmd($def, \@ARGV, $pwcallback, $preparefunc, $stringfilemap);
     } else {
 	$cmddef = $def;
 	my $cmd = shift @ARGV;
-	&$handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $podfn, $preparefunc, $stringfilemap);
+	&$handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $preparefunc, $stringfilemap);
     }
 
     exit 0;

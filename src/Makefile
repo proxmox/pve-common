@@ -11,7 +11,6 @@ LIB_SOURCES=			\
 	SectionConfig.pm	\
 	Network.pm		\
 	ProcFSTools.pm		\
-	PodParser.pm		\
 	CLIHandler.pm		\
 	RESTHandler.pm		\
 	JSONSchema.pm		\
