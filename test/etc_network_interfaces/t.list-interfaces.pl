@@ -1,5 +1,3 @@
-no warnings 'experimental::smartmatch';
-
 # Assuming eth0..3 and eth100
 # eth0 is part of vmbr0, eth100 is part of the OVS bridge vmbr1
 # vmbr0 has ipv4 and ipv6, OVS only ipv4
@@ -99,9 +97,11 @@ $ck->('eth100', type => 'OVSPort');
 $ck->('eth100', ovs_type => 'OVSPort');
 $ck->('eth100', ovs_bridge => 'vmbr1');
 
-my $f100 = $ifaces->{vmbr0}->{families};
-die "invalid families defined for vmbr0: @$f100\n" unless [sort(@$f100)] ~~ ['inet', 'inet6'];
+my @f100 = sort @{$ifaces->{vmbr0}->{families}};
 
+die "invalid families defined for vmbr0"
+    if (scalar(@f100) != 2) || ($f100[0] ne 'inet') || ($f100[1] ne 'inet6');
+ 
 # idempotency
 r(w());
 expect load('2');
