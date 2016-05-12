@@ -1593,7 +1593,7 @@ sub print_property_string {
 	}
     };
 
-    my $done = {};
+    my $done = { map { $_ => 1 } @$skip };
 
     my $cond_add_key = sub {
 	my ($key) = @_;
