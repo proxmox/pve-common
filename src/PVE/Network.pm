@@ -440,7 +440,7 @@ sub activate_bridge_vlan {
 
     my @ifaces = ();
     my $dir = "/sys/class/net/$bridge/brif";
-    PVE::Tools::dir_glob_foreach($dir, '((eth|bond)\d+(\.\d+)?)', sub {
+    PVE::Tools::dir_glob_foreach($dir, '(((eth|bond)\d+|en[^.]+)(\.\d+)?)', sub {
         push @ifaces, $_[0];
     });
 
