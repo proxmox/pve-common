@@ -340,7 +340,7 @@ sub register_file {
 sub register_regex {
     my ($dir, $regex, $parser, $writer, $update, %options) = @_;
 
-    die "can't register regex after initify_init" if $inotify;
+    die "can't register regex after inotify_init" if $inotify;
 
     my $uid = "$dir/$regex";
     die "regular expression '$uid' already added :ERROR" if defined ($ccacheregex->{$uid});
