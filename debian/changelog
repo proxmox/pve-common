@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-63) unstable; urgency=medium
+
+  * show warning when using VLAN 1 on a VLAN aware bridge
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 18 May 2016 11:23:27 +0200
+
 libpve-common-perl (4.0-62) unstable; urgency=medium
 
   * re-enable run_cli, which is still in use
