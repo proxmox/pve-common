@@ -179,6 +179,8 @@ my $bridge_add_interface = sub {
 	if ($tag) {
 	    system("/sbin/bridge vlan add dev $iface vid $tag pvid untagged") == 0 ||
 	    die "unable to add vlan $tag to interface $iface\n";
+
+	    warn "Caution: Setting VLAN ID 1 on a VLAN aware bridge may be dangerous\n" if $tag == 1;
 	} else {
 	    system("/sbin/bridge vlan add dev $iface vid 2-4094") == 0 ||
 	    die "unable to add default vlan tags to interface $iface\n" if !$trunks;
