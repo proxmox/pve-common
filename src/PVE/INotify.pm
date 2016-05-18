@@ -665,7 +665,7 @@ register_file('active', "/var/log/pve/tasks/active",
 	      \&write_active_workers);
 
 
-my $bond_modes = { 'balance-rr' => 0,
+our $bond_modes = { 'balance-rr' => 0,
 		   'active-backup' => 1,
 		   'balance-xor' => 2,
 		   'broadcast' => 3,
