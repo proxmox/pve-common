@@ -1601,7 +1601,7 @@ sub print_property_string {
     my $done = { map { $_ => 1 } @$skip };
 
     my $cond_add_key = sub {
-	my ($key) = @_;
+	my ($key, $isdefault) = @_;
 
 	return if $done->{$key}; # avoid duplicates
 
@@ -1633,11 +1633,15 @@ sub print_property_string {
 	die "internal error" if defined($phash->{alias});
 
 	my $value_str = &$format_value($key, $value, $phash->{format});
-	&$add_option_string("$key=${value_str}");
+	if ($isdefault) {
+	    &$add_option_string($value_str);
+	} else {
+	    &$add_option_string("$key=${value_str}");
+	}
     };
 
     # add default key first
-    &$cond_add_key($default_key) if defined($default_key);
+    &$cond_add_key($default_key, 1) if defined($default_key);
 
     # add required keys first
     foreach my $key (sort keys %$data) {
