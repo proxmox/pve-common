@@ -978,6 +978,11 @@ my $default_schema_noref = {
 	    optional => 1,
 	    description => "This provides a description of the purpose the instance property. The value can be a string or it can be an object with properties corresponding to various different instance languages (with an optional default property indicating the default description).",
 	},
+	verbose_description => {
+	    type => "string",
+	    optional => 1,
+	    description => "This provides a more verbose description.",
+	},
 	format_description => {
 	    type => "string",
 	    optional => 1,
@@ -1651,6 +1656,8 @@ sub print_property_string {
 sub schema_get_type_text {
     my ($phash) = @_;
 
+    my $type = $phash->{type} || 'string';
+
     if ($phash->{typetext}) {
 	return $phash->{typetext};
     } elsif ($phash->{format_description}) {
@@ -1659,15 +1666,15 @@ sub schema_get_type_text {
 	return "(" . join(' | ', sort @{$phash->{enum}}) . ")";
     } elsif ($phash->{pattern}) {
 	return $phash->{pattern};
-    } elsif ($phash->{type} eq 'integer' || $phash->{type} eq 'number') {
+    } elsif ($type eq 'integer' || $type eq 'number') {
 	if (defined($phash->{minimum}) && defined($phash->{maximum})) {
-	    return "$phash->{type} ($phash->{minimum} - $phash->{maximum})";
+	    return "$type ($phash->{minimum} - $phash->{maximum})";
 	} elsif (defined($phash->{minimum})) {
-	    return "$phash->{type} ($phash->{minimum} - N)";
+	    return "$type ($phash->{minimum} - N)";
 	} elsif (defined($phash->{maximum})) {
-	    return "$phash->{type} (-N - $phash->{maximum})";
+	    return "$type (-N - $phash->{maximum})";
 	}
-    } elsif ($phash->{type} eq 'string') {
+    } elsif ($type eq 'string') {
 	if (my $format = $phash->{format}) {
 	    $format = get_format($format) if ref($format) ne 'HASH';
 	    if (ref($format) eq 'HASH') {
@@ -1675,8 +1682,6 @@ sub schema_get_type_text {
 	    }
 	}
     }
-
-    my $type = $phash->{type} || 'string';
 
     return $type;
 }

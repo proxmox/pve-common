@@ -418,6 +418,11 @@ my $get_property_description = sub {
 
     my $descr = $phash->{description} || "no description available";
 
+    if ($phash->{verbose_description} &&
+	($style eq 'config' || $style eq 'config-sub')) {
+	$descr = $phash->{verbose_description};
+    }
+
     chomp $descr;
 
     my $type = PVE::JSONSchema::schema_get_type_text($phash);
@@ -439,6 +444,8 @@ my $get_property_description = sub {
 
 	if ($style eq 'config') {
 	    $res .= "`$name`: ";
+	} elsif ($style eq 'config-sub') {
+	    $res .= "`$name`=";
 	} elsif ($style eq 'arg') {
 	    $res .= "`-$name` ";
 	} elsif ($style eq 'fixed') {
@@ -452,9 +459,14 @@ my $get_property_description = sub {
 	if (defined(my $dv = $phash->{default})) {
 	    $res .= "(default=`$dv`)";
 	}
-	$res .= "::\n\n";
 
-	my $wdescr = Text::Wrap::wrap('', '', ($descr));
+	if ($style eq 'config-sub') {
+	    $res .= ";;\n\n";
+	} else {
+	    $res .= "::\n\n";
+	}
+
+	my $wdescr = $descr;
 	chomp $wdescr;
 	$wdescr =~ s/^$/+/mg;
 
@@ -629,8 +641,7 @@ sub dump_properties {
 	my $phash = $prop->{$k};
 
 	next if defined($filterFn) && &$filterFn($k, $phash);
-
-	my $type = $phash->{type} || 'string';
+	next if $phash->{alias};
 
 	my $base = $k;
 	if ($k =~ m/^([a-z]+)(\d+)$/) {
@@ -643,6 +654,20 @@ sub dump_properties {
 	}
 
 	$raw .= &$get_property_description($base, $style, $phash, $format, 0);
+
+	next if $style ne 'config';
+
+	my $prop_fmt = $phash->{format};
+	next if !$prop_fmt;
+
+	if (ref($prop_fmt) ne 'HASH') {
+	    $prop_fmt = PVE::JSONSchema::get_format($prop_fmt);
+	}
+
+	next if !(ref($prop_fmt) && (ref($prop_fmt) eq 'HASH'));
+
+	$raw .= dump_properties($prop_fmt, $format, 'config-sub')
+	
     }
 
     return $raw;
