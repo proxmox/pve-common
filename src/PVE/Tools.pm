@@ -314,7 +314,7 @@ sub run_command {
 		$cmdstr .= $pipe .  join(' ', map { ref($_) ? $$_ : shellquote($_) } @$command);
 		$pipe = ' | ';
 	    }
-	    $cmd = [ '/bin/bash', '-c', "set -o pipefail && $cmdstr" ];
+	    $cmd = [ '/bin/bash', '-c', "$cmdstr" ];
 	} else {
 	    $cmdstr = cmd2string($cmd);
 	}
