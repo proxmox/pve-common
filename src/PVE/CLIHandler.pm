@@ -468,11 +468,13 @@ sub run_cli_handler {
     foreach my $key (keys %params) {
 	next if $key eq 'prepare';
 	next if $key eq 'no_init'; # used by lxc hooks
+	next if $key eq 'no_rpcenv';
 	die "unknown parameter '$key'";
     }
 
     my $preparefunc = $params{prepare};
     my $no_init = $params{no_init};
+    my $no_rpcenv = $params{no_rpcenv};
 
     my $pwcallback = $class->can('read_password');
     my $stringfilemap = $class->can('string_param_file_mapping');
@@ -486,10 +488,12 @@ sub run_cli_handler {
 
 	PVE::INotify::inotify_init() if !$no_init;
 
+	if (!$no_rpcenv) {
 	my $rpcenv = PVE::RPCEnvironment->init('cli');
-	$rpcenv->init_request() if !$no_init;
-	$rpcenv->set_language($ENV{LANG});
-	$rpcenv->set_user('root@pam');
+	    $rpcenv->init_request() if !$no_init;
+	    $rpcenv->set_language($ENV{LANG});
+	    $rpcenv->set_user('root@pam');
+	}
     }
 
     no strict 'refs';
