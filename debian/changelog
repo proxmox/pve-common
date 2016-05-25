@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-65) unstable; urgency=medium
+
+  * run_cli_handler: add no_rpcenv parameter
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 25 May 2016 11:33:52 +0200
+
 libpve-common-perl (4.0-64) unstable; urgency=medium
 
   * print_property_string: don't print the default key's name
