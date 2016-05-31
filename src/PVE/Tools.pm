@@ -43,6 +43,8 @@ safe_print
 trim
 extract_param
 file_copy
+O_PATH
+O_TMPFILE
 );
 
 my $pvelogdir = "/var/log/pve";
