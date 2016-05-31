@@ -12,6 +12,7 @@ use Filesys::Df (); # don't overwrite our df()
 use IO::Pipe;
 use IO::File;
 use IO::Dir;
+use IO::Handle;
 use IPC::Open3;
 use Fcntl qw(:DEFAULT :flock);
 use base 'Exporter';
@@ -1320,6 +1321,26 @@ sub validate_ssh_public_keys {
 	};
 	die "SSH public key validation error\n" if $@;
     }
+}
+
+sub openat($$$;$) {
+    my ($dirfd, $pathname, $flags, $mode) = @_;
+    my $fd = syscall(257, $dirfd, $pathname, $flags, $mode//0);
+    return undef if $fd < 0;
+    # sysopen() doesn't deal with numeric file descriptors apparently
+    # so we need to convert to a mode string for IO::Handle->new_from_fd
+    my $flagstr = ($flags & O_RDWR) ? 'rw' : ($flags & O_WRONLY) ? 'w' : 'r';
+    my $handle = IO::Handle->new_from_fd($fd, $flagstr);
+    return $handle if $handle;
+    my $err = $!; # save error before closing the raw fd
+    syscall(3, $fd); # close
+    $! = $err;
+    return undef;
+}
+
+sub mkdirat($$$) {
+    my ($dirfd, $name, $mode) = @_;
+    return syscall(258, $dirfd, $name, $mode) == 0;
 }
 
 1;
