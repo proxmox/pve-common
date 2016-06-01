@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-66) unstable; urgency=medium
+
+  * added: openat, mkdirat
+
+  * Allow O_PATH and O_TMPFILE to be exported
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 01 Jun 2016 11:31:59 +0200
+
 libpve-common-perl (4.0-65) unstable; urgency=medium
 
   * run_cli_handler: add no_rpcenv parameter
