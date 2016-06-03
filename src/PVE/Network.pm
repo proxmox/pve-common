@@ -11,12 +11,6 @@ use POSIX qw(ECONNREFUSED);
 
 use Net::IP;
 
-use Socket qw(IPPROTO_IP);
-
-use constant IFF_UP => 1;
-use constant IFNAMSIZ => 16;
-use constant SIOCGIFFLAGS => 0x8913;
-
 # host network related utility functions
 
 our $ipv4_reverse_mask = [
@@ -535,38 +529,6 @@ sub is_ip_in_cidr {
     return undef if !$ip_obj;
 
     return $cidr_obj->overlaps($ip_obj) == $Net::IP::IP_B_IN_A_OVERLAP;
-}
-
-# struct ifreq { // FOR SIOCGIFFLAGS:
-#   char ifrn_name[IFNAMSIZ]
-#   short ifru_flags
-# };
-my $STRUCT_IFREQ_SIOCGIFFLAGS = 'Z' . IFNAMSIZ . 's1';
-sub get_active_interfaces {
-    # Use the interface name list from /proc/net/dev
-    open my $fh, '<', '/proc/net/dev'
-	or die "failed to open /proc/net/dev: $!\n";
-    # And filter by IFF_UP flag fetched via a PF_INET6 socket ioctl:
-    my $sock;
-    socket($sock, PF_INET6, SOCK_DGRAM, &IPPROTO_IP)
-    or socket($sock, PF_INET, SOCK_DGRAM, &IPPROTO_IP)
-    or return [];
-
-    my $ifaces = [];
-    while(defined(my $line = <$fh>)) {
-	next if $line !~ /^\s*([^:\s]+):/;
-	my $ifname = $1;
-	my $ifreq = pack($STRUCT_IFREQ_SIOCGIFFLAGS, $ifname, 0);
-	if (!defined(ioctl($sock, SIOCGIFFLAGS, $ifreq))) {
-	    warn "failed to get interface flags for: $ifname\n";
-	    next;
-	}
-	my ($name, $flags) = unpack($STRUCT_IFREQ_SIOCGIFFLAGS, $ifreq);
-	push @$ifaces, $ifname if ($flags & IFF_UP);
-    }
-    close $fh;
-    close $sock;
-    return $ifaces;
 }
 
 1;

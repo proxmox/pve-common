@@ -8,6 +8,12 @@ use IO::File;
 use PVE::Tools;
 use Cwd qw();
 
+use Socket qw(PF_INET PF_INET6 SOCK_DGRAM IPPROTO_IP);
+
+use constant IFF_UP => 1;
+use constant IFNAMSIZ => 16;
+use constant SIOCGIFFLAGS => 0x8913;
+
 my $clock_ticks = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
 my $cpuinfo;
@@ -372,6 +378,38 @@ sub upid_wait {
 
 	CORE::sleep(1);
     }
+}
+
+# struct ifreq { // FOR SIOCGIFFLAGS:
+#   char ifrn_name[IFNAMSIZ]
+#   short ifru_flags
+# };
+my $STRUCT_IFREQ_SIOCGIFFLAGS = 'Z' . IFNAMSIZ . 's1';
+sub get_active_network_interfaces {
+    # Use the interface name list from /proc/net/dev
+    open my $fh, '<', '/proc/net/dev'
+	or die "failed to open /proc/net/dev: $!\n";
+    # And filter by IFF_UP flag fetched via a PF_INET6 socket ioctl:
+    my $sock;
+    socket($sock, PF_INET6, SOCK_DGRAM, &IPPROTO_IP)
+    or socket($sock, PF_INET, SOCK_DGRAM, &IPPROTO_IP)
+    or return [];
+
+    my $ifaces = [];
+    while(defined(my $line = <$fh>)) {
+	next if $line !~ /^\s*([^:\s]+):/;
+	my $ifname = $1;
+	my $ifreq = pack($STRUCT_IFREQ_SIOCGIFFLAGS, $ifname, 0);
+	if (!defined(ioctl($sock, SIOCGIFFLAGS, $ifreq))) {
+	    warn "failed to get interface flags for: $ifname\n";
+	    next;
+	}
+	my ($name, $flags) = unpack($STRUCT_IFREQ_SIOCGIFFLAGS, $ifreq);
+	push @$ifaces, $ifname if ($flags & IFF_UP);
+    }
+    close $fh;
+    close $sock;
+    return $ifaces;
 }
 
 1;

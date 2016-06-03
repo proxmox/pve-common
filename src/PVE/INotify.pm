@@ -14,6 +14,7 @@ use Fcntl qw(:DEFAULT :flock);
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise_param_exc);
 use PVE::Tools;
+use PVE::ProcFSTools;
 use Storable qw(dclone);            
 use Linux::Inotify2;
 use base 'Exporter';
@@ -785,7 +786,7 @@ my $extract_ovs_option = sub {
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
     my $proc_net_dev = IO::File->new('/proc/net/dev', 'r');
-    my $active = PVE::Network::get_active_interfaces();
+    my $active = PVE::ProcFSTools::get_active_network_interfaces();
     return __read_etc_network_interfaces($fh, $proc_net_dev, $active);
 }
 
