@@ -1,3 +1,15 @@
+libpve-common-perl (4.0-67) unstable; urgency=medium
+
+  * added: enter_systemd_scope
+
+  * move Network::get_active_interfaces to ProcFSTools
+
+  * add netmasks starting from /8 to local netmask list
+
+  * Consider /31 and /32 valid subnet masks
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 03 Jun 2016 11:27:13 +0200
+
 libpve-common-perl (4.0-66) unstable; urgency=medium
 
   * added: openat, mkdirat
