@@ -7,6 +7,6 @@ Standards-Version: 3.8.4
 
 Package: libpve-common-perl
 Architecture: all
-Depends: ${perl:Depends} ${misc:Depends}, libclone-perl, libdevel-cycle-perl, libwww-perl, libjson-perl, liblinux-inotify2-perl, libio-stringy-perl, liburi-perl, libstring-shellquote-perl, libnet-ip-perl, libfilesys-df-perl
+Depends: ${perl:Depends} ${misc:Depends}, libclone-perl, libdevel-cycle-perl, libwww-perl, libjson-perl, liblinux-inotify2-perl, libio-stringy-perl, liburi-perl, libstring-shellquote-perl, libnet-ip-perl, libfilesys-df-perl, libnet-dbus-perl
 Description: Proxmox VE base library
  This package contains the base library used by other Proxmox VE components.
