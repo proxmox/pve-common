@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-68) unstable; urgency=medium
+
+  * catch malformed mailto/mailfrom in sendmail
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 09 Jun 2016 17:56:26 +0200
+
 libpve-common-perl (4.0-67) unstable; urgency=medium
 
   * added: enter_systemd_scope
