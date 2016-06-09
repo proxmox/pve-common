@@ -1224,19 +1224,24 @@ sub sync_mountpoint {
 # mailto may be a single email string or an array of receivers
 sub sendmail {
     my ($mailto, $subject, $text, $html, $mailfrom, $author) = @_;
+    my $mail_re = qr/[^-a-zA-Z0-9+._@]/;
 
     $mailto = [ $mailto ] if !ref($mailto);
 
-    my $rcvrarg = '';
-    foreach my $r (@$mailto) {
-	$rcvrarg .= " '$r'";
+    foreach (@$mailto) {
+	die "illegal character in mailto address\n"
+	    if ($_ =~ $mail_re);
     }
+
     my $rcvrtxt = join (', ', @$mailto);
 
     $mailfrom = $mailfrom || "root";
+    die "illegal character in mailfrom address\n"
+	if $mailfrom =~ $mail_re;
+
     $author = $author || 'Proxmox VE';
 
-    open (MAIL,"|sendmail -B 8BITMIME -f $mailfrom $rcvrarg") ||
+    open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom, @$mailto) ||
 	die "unable to open 'sendmail' - $!";
 
     # multipart spec see https://www.ietf.org/rfc/rfc1521.txt
