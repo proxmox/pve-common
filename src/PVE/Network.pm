@@ -2,7 +2,7 @@ package PVE::Network;
 
 use strict;
 use warnings;
-use PVE::Tools qw(run_command);
+use PVE::Tools qw(run_command lock_file);
 use PVE::ProcFSTools;
 use PVE::INotify;
 use File::Basename;
@@ -454,23 +454,24 @@ sub activate_bridge_vlan {
 
     die "no physical interface on bridge '$bridge'\n" if scalar(@ifaces) == 0;
 
-    # add bridgevlan if it doesn't already exist
-    if (! -d "/sys/class/net/$bridgevlan") {
-        system("/sbin/brctl addbr $bridgevlan") == 0 ||
-            die "can't add bridge $bridgevlan\n";
-    }
+    lock_network(sub {
+	# add bridgevlan if it doesn't already exist
+	if (! -d "/sys/class/net/$bridgevlan") {
+	    system("/sbin/brctl addbr $bridgevlan") == 0 ||
+		die "can't add bridge $bridgevlan\n";
+	}
 
-    # for each physical interface (eth or bridge) bind them to bridge vlan
-    foreach my $iface (@ifaces) {
-        activate_bridge_vlan_slave($bridgevlan, $iface, $tag);
-    }
+	# for each physical interface (eth or bridge) bind them to bridge vlan
+	foreach my $iface (@ifaces) {
+	    activate_bridge_vlan_slave($bridgevlan, $iface, $tag);
+	}
 
-    #fixme: set other bridge flags
+	#fixme: set other bridge flags
 
-    # be sure to have the bridge up
-    system("/sbin/ip link set $bridgevlan up") == 0 ||
-        die "can't up bridge $bridgevlan\n";
-   
+	# be sure to have the bridge up
+	system("/sbin/ip link set $bridgevlan up") == 0 ||
+	    die "can't up bridge $bridgevlan\n";
+    });
     return $bridgevlan;
 }
 
@@ -531,6 +532,13 @@ sub is_ip_in_cidr {
     return undef if !$ip_obj;
 
     return $cidr_obj->overlaps($ip_obj) == $Net::IP::IP_B_IN_A_OVERLAP;
+}
+
+sub lock_network {
+    my ($code, @param) = @_;
+    my $res = lock_file('/var/lock/pve-network.lck', 10, $code, @param);
+    die $@ if $@;
+    return $res;
 }
 
 1;
