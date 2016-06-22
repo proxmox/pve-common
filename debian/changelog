@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-70) unstable; urgency=medium
+
+  * Fix #132: hold a lock while setting up vlan bridges
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 22 Jun 2016 11:21:16 +0200
+
 libpve-common-perl (4.0-69) unstable; urgency=medium
 
   * vlan fixups: remove existing vlan ids
