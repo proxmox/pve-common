@@ -286,6 +286,13 @@ sub __snapshot_rollback_vm_start {
     die "abstract method - implement me\n";
 }
 
+# Get list of volume IDs which are referenced in $conf, but not in $snap.
+sub __snapshot_rollback_get_unused {
+    my ($class, $conf, $snap) = @_;
+
+    die "abstract method - implement me\n";
+}
+
 # Iterate over all configured volumes, calling $func for each key/value pair.
 sub __snapshot_foreach_volume {
     my ($class, $conf, $func) = @_;
@@ -603,6 +610,12 @@ sub snapshot_rollback {
 	my $forcemachine;
 
 	if (!$prepare) {
+	    my $unused = $class->__snapshot_rollback_get_unused($conf, $snap);
+
+	    foreach my $volid (@$unused) {
+		$class->add_unused_volume($conf, $volid);
+	    }
+
 	    my $has_machine_config = defined($conf->{machine});
 
 	    # copy snapshot config to current config
