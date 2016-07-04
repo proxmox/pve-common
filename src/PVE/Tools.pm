@@ -851,9 +851,9 @@ sub df {
     $pipe->reader();
 
     my $readvalues = sub {
-	$res->{total} = int(<$pipe>);
-	$res->{used}  = int(<$pipe>);
-	$res->{avail} = int(<$pipe>);
+	$res->{total} = int((<$pipe> =~ /^(\d*)$/)[0]);
+	$res->{used}  = int((<$pipe> =~ /^(\d*)$/)[0]);
+	$res->{avail} = int((<$pipe> =~ /^(\d*)$/)[0]);
     };
     eval {
 	run_with_timeout($timeout, $readvalues);
