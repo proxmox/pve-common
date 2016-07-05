@@ -983,7 +983,7 @@ sub random_ether_addr {
 
     my ($seconds, $microseconds) = gettimeofday;
 
-    my $rand = Digest::SHA::sha1_hex($$, rand(), $seconds, $microseconds);
+    my $rand = Digest::SHA::sha1($$, rand(), $seconds, $microseconds);
 
     # clear multicast, set local id
     vec($rand, 0, 8) = (vec($rand, 0, 8) & 0xfe) | 2;
