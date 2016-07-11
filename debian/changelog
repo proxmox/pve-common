@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-71) unstable; urgency=medium
+
+  * fix mac address generation limitation
+
+  * fix #1046: add non-snapshotted disks as unused
+
+  * df: untaint the result
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 11 Jul 2016 11:29:42 +0200
+
 libpve-common-perl (4.0-70) unstable; urgency=medium
 
   * Fix #132: hold a lock while setting up vlan bridges
