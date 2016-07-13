@@ -980,6 +980,7 @@ sub decode_utf8_parameters {
 }
 
 sub random_ether_addr {
+    my ($prefix) = @_;
 
     my ($seconds, $microseconds) = gettimeofday;
 
@@ -988,7 +989,11 @@ sub random_ether_addr {
     # clear multicast, set local id
     vec($rand, 0, 8) = (vec($rand, 0, 8) & 0xfe) | 2;
 
-    return sprintf("%02X:%02X:%02X:%02X:%02X:%02X", unpack("C6", $rand));
+    my $addr = sprintf("%02X:%02X:%02X:%02X:%02X:%02X", unpack("C6", $rand));
+    if (defined($prefix)) {
+	$addr = uc($prefix) . substr($addr, length($prefix));
+    }
+    return $addr;
 }
 
 sub shellquote {
