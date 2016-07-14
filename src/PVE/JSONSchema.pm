@@ -645,6 +645,9 @@ sub check_type {
 		return undef;
 	    }
 	    return 1;
+	} elsif ($type eq 'string' && $vt eq 'Regexp') {
+	    # qr// regexes can be used as strings and make sense for format=regex
+	    return 1;
 	} else {
 	    if ($vt) {
 		add_error($errors, $path, "type check ('$type') failed - got $vt");
