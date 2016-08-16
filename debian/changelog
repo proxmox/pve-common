@@ -1,3 +1,12 @@
+libpve-common-perl (3.0-27) unstable; urgency=low
+
+  * harden file_set_contents against symlinks attacks (thanks to
+  RACK911Labs.com for the hint)
+
+  * backport file_copy from PVE 4
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 16 Aug 2016 16:53:36 +0200
+
 libpve-common-perl (3.0-26) unstable; urgency=low
 
   * Fix #908: cleanup OVS ports in tap_unplug
