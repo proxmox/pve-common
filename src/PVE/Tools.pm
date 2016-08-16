@@ -2,7 +2,7 @@ package PVE::Tools;
 
 use strict;
 use warnings;
-use POSIX qw(EINTR);
+use POSIX qw(EINTR EEXIST);
 use IO::Socket::IP;
 use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED);
 use IO::Select;
@@ -203,7 +203,13 @@ sub file_set_contents {
     my $tmpname = "$filename.tmp.$$";
 
     eval {
-	my $fh = IO::File->new($tmpname, O_WRONLY|O_CREAT, $perm);
+	my ($fh, $tries) = (undef, 0);
+	while (!$fh && $tries++ < 3) {
+	    $fh = IO::File->new($tmpname, O_WRONLY|O_CREAT|O_EXCL, $perm);
+	    if (!$fh && $! == EEXIST) {
+		unlink($tmpname) or die "unable to delete old temp file: $!\n";
+	    }
+	}
 	die "unable to open file '$tmpname' - $!\n" if !$fh;
 	die "unable to write '$tmpname' - $!\n" unless print $fh $data;
 	die "closing file '$tmpname' failed - $!\n" unless close $fh;
