@@ -1,3 +1,16 @@
+libpve-common-perl (4.0-72) unstable; urgency=medium
+
+  * allow Regexp objects for strings in the schema
+
+  * tools: optional prefix for random_ether_addr
+
+  * harden file_set_contents against symlinks attacks (thanks to
+    RACK911Labs.com for the hint)
+
+  * backport file_copy from PVE 4
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 16 Aug 2016 16:53:36 +0200
+
 libpve-common-perl (4.0-71) unstable; urgency=medium
 
   * fix mac address generation limitation
