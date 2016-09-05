@@ -1676,12 +1676,14 @@ sub schema_get_type_text {
     } elsif ($phash->{pattern}) {
 	return $phash->{pattern};
     } elsif ($type eq 'integer' || $type eq 'number') {
+	# NOTE: always access values as number (avoid converion to string)
 	if (defined($phash->{minimum}) && defined($phash->{maximum})) {
-	    return "$type ($phash->{minimum} - $phash->{maximum})";
+	    return "$type (" . ($phash->{minimum} + 0) . "-" .
+		($phash->{maximum} + 0) . ")";
 	} elsif (defined($phash->{minimum})) {
-	    return "$type ($phash->{minimum} - N)";
+	    return "$type (" . ($phash->{minimum} + 0) . "- N)";
 	} elsif (defined($phash->{maximum})) {
-	    return "$type (-N - $phash->{maximum})";
+	    return "$type (-N - " . ($phash->{maximum} + 0) . ")";
 	}
     } elsif ($type eq 'string') {
 	if (my $format = $phash->{format}) {
