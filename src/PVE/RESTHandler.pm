@@ -40,7 +40,16 @@ sub api_clone_schema {
 		    next; # only handle once for -xx0, but only if -xx0 exists
 		}
 	    }
-	    $res->{$k}->{$p} = ref($pd) ? clone($pd) : $pd;
+	    my $tmp = ref($pd) ? clone($pd) : $pd;
+	    # NOTE: add typetext property for more complex types, to
+	    # make the web api viewer code simpler
+	    if (!(defined($tmp->{enum}) || defined($tmp->{pattern}))) {
+		my $typetext = PVE::JSONSchema::schema_get_type_text($tmp);
+		if ($tmp->{type} && ($tmp->{type} ne $typetext)) {
+		    $tmp->{typetext} = $typetext;
+		}
+	    }
+	    $res->{$k}->{$p} = $tmp;
 	}
     }
 
