@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-73) unstable; urgency=medium
+
+  * schema_get_type_text: always access values as number
+
+  * add typetext property for more complex types
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 16 Sep 2016 08:48:18 +0200
+
 libpve-common-perl (4.0-72) unstable; urgency=medium
 
   * allow Regexp objects for strings in the schema
