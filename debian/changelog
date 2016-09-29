@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-74) unstable; urgency=medium
+
+  * Network: add disable_ipv6 and use it
+
+  * fix doc generator (do not convert efidisk0 to efidisk[N])
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 29 Sep 2016 12:46:23 +0200
+
 libpve-common-perl (4.0-73) unstable; urgency=medium
 
   * schema_get_type_text: always access values as number
