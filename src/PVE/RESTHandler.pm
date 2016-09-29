@@ -34,7 +34,7 @@ sub api_clone_schema {
 	    my $pd = $d->{$p};
 	    if ($p =~ m/^([a-z]+)(\d+)$/) {
 		my ($name, $idx) = ($1, $2);
-		if ($idx == 0) {
+		if ($idx == 0 && defined($d->{"${name}1"})) {
 		    $p = "${name}[n]";
 		} elsif (defined($d->{"${name}0"})) {
 		    next; # only handle once for -xx0, but only if -xx0 exists
@@ -591,7 +591,7 @@ sub usage_str {
 	if ($k =~ m/^([a-z]+)(\d+)$/) {
 	    my ($name, $idx) = ($1, $2);
 	    next if $idx_param->{$name};
-	    if ($idx == 0) {
+	    if ($idx == 0 && defined($prop->{"${name}1"})) {
 		$idx_param->{$name} = 1;
 		$base = "${name}[n]";
 	    }
@@ -656,7 +656,7 @@ sub dump_properties {
 	if ($k =~ m/^([a-z]+)(\d+)$/) {
 	    my ($name, $idx) = ($1, $2);
 	    next if $idx_param->{$name};
-	    if ($idx == 0) {
+	    if ($idx == 0 && defined($prop->{"${name}1"})) {
 		$idx_param->{$name} = 1;
 		$base = "${name}[n]";
 	    }
