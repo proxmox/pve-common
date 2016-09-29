@@ -171,9 +171,20 @@ my $cond_create_bridge = sub {
     }
 };
 
+sub disable_ipv6 {
+    my ($iface) = @_;
+    return if !-d '/proc/sys/net/ipv6'; # ipv6 might be completely disabled
+    my $file = "/proc/sys/net/ipv6/conf/$iface/disable_ipv6";
+    open(my $fh, '>', $file) or die "failed to open $file for writing: $!\n";
+    print {$fh} "1\n" or die "failed to disable link-local ipv6 for $iface\n";
+    close($fh);
+}
+
 my $bridge_add_interface = sub {
     my ($bridge, $iface, $tag, $trunks) = @_;
 
+    # drop link local address (it can't be used when on a bridge anyway)
+    disable_ipv6($iface);
     system("/sbin/brctl addif $bridge $iface") == 0 ||
 	die "can't add interface 'iface' to bridge '$bridge'\n";
 
@@ -215,6 +226,7 @@ my $ovs_bridge_add_port = sub {
     $cmd .= " -- set Interface $iface type=internal" if $internal;
     system($cmd) == 0 ||
 	die "can't add ovs port '$iface'\n";
+    disable_ipv6($iface);
 };
 
 my $activate_interface = sub {
@@ -232,6 +244,7 @@ sub tap_create {
     my $bridgemtu = &$read_bridge_mtu($bridge);
 
     eval { 
+	disable_ipv6($iface);
 	PVE::Tools::run_command("/sbin/ifconfig $iface 0.0.0.0 promisc up mtu $bridgemtu");
     };
     die "interface activation failed\n" if $@;
@@ -252,6 +265,8 @@ sub veth_create {
     }
 
     # up vethpair
+    disable_ipv6($veth);
+    disable_ipv6($vethpeer);
     &$activate_interface($veth);
     &$activate_interface($vethpeer);
 }
@@ -272,6 +287,7 @@ my $create_firewall_bridge_linux = sub {
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
 
     &$cond_create_bridge($fwbr);
+    disable_ipv6($fwbr);
     &$activate_interface($fwbr);
 
     copy_bridge_config($bridge, $fwbr);
@@ -292,6 +308,7 @@ my $create_firewall_bridge_ovs = sub {
     my $bridgemtu = &$read_bridge_mtu($bridge);
 
     &$cond_create_bridge($fwbr);
+    disable_ipv6($fwbr);
     &$activate_interface($fwbr);
 
     &$bridge_add_interface($fwbr, $iface);
@@ -410,9 +427,12 @@ sub activate_bridge_vlan_slave {
 	
     # create vlan on $iface is not already exist
     if (! -d "/sys/class/net/$ifacevlan") {
-	system("/sbin/ip link add link $iface name ${iface}.${tag} type vlan id $tag") == 0 ||
+	system("/sbin/ip link add link $iface name $ifacevlan type vlan id $tag") == 0 ||
 	    die "can't add vlan tag $tag to interface $iface\n";
     }
+
+    # remove ipv6 link-local address before activation
+    disable_ipv6($ifacevlan);
 
     # be sure to have the $ifacevlan up
     &$activate_interface($ifacevlan);
@@ -468,9 +488,10 @@ sub activate_bridge_vlan {
 
 	#fixme: set other bridge flags
 
+	# remove ipv6 link-local address before activation
+	disable_ipv6($bridgevlan);
 	# be sure to have the bridge up
-	system("/sbin/ip link set $bridgevlan up") == 0 ||
-	    die "can't up bridge $bridgevlan\n";
+	&$activate_interface($bridgevlan);
     });
     return $bridgevlan;
 }
