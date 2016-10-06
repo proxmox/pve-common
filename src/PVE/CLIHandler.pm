@@ -112,7 +112,7 @@ __PACKAGE__->register_method ({
 
     }});
 
-sub print_simple_asciidoc_synopsys {
+sub print_simple_asciidoc_synopsis {
     my ($class, $name, $arg_param, $uri_param) = @_;
 
     die "not initialized" if !$cli_handler_class;
@@ -128,7 +128,7 @@ sub print_simple_asciidoc_synopsys {
     return $synopsis;
 }
 
-sub print_asciidoc_synopsys {
+sub print_asciidoc_synopsis {
 
     die "not initialized" if !($cmddef && $exename && $cli_handler_class);
 
@@ -363,6 +363,11 @@ sub find_cli_class_source {
 
 sub generate_asciidoc_synopsys {
     my ($class) = @_;
+    $class->generate_asciidoc_synopsis();
+};
+
+sub generate_asciidoc_synopsis {
+    my ($class) = @_;
 
     $cli_handler_class = $class;
 
@@ -372,13 +377,13 @@ sub generate_asciidoc_synopsys {
     my $def = ${"${class}::cmddef"};
 
     if (ref($def) eq 'ARRAY') {
-	print_simple_asciidoc_synopsys(@$def);
+	print_simple_asciidoc_synopsis(@$def);
     } else {
 	$cmddef = $def;
 
 	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
-	print_asciidoc_synopsys();
+	print_asciidoc_synopsis();
     }
 }
 
