@@ -400,7 +400,8 @@ my $format_config_line = sub {
 	if ($key =~ m/[\n\r]/) || ($value =~ m/[\n\r]/);
 
     if ($ct eq 'boolean') {
-	return $value ? "\t$key\n" : '';
+	return "\t$key " . ($value ? 1 : 0) . "\n"
+	    if defined($value);
     } else {
 	return "\t$key $value\n" if "$value" ne '';
     }
