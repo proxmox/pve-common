@@ -14,16 +14,16 @@
 
 5. run: apt-get update
 6. run: apt-get dist-upgrade
-7. run: apt-get install proxmox-ve-3.10.0
+7. run: apt-get install proxmox-ve
 
 You should now have a working Proxmox VE installation.
 
 = Install build prerequisites for development environment =
 
-apt-get -y install build-essential git-core debhelper autotools-dev \
-autogen dh-autoreconf dkms doxygen check pkg-config groff quilt dpatch \
-automake autoconf libtool lintian libdevel-cycle-perl libjson-perl \
-libcommon-sense-perl liblinux-inotify2-perl libio-stringy-perl \
+apt-get -y install build-essential git-core git-email debhelper \
+autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
+groff quilt dpatch automake autoconf libtool lintian libdevel-cycle-perl \
+libjson-perl libcommon-sense-perl liblinux-inotify2-perl libio-stringy-perl \
 libstring-shellquote-perl dh-systemd rpm2cpio libsqlite3-dev sqlite3 \
 libglib2.0-dev librrd-dev librrds-perl rrdcached libdigest-hmac-perl \
 libxml-parser-perl gdb libcrypt-openssl-random-perl \
