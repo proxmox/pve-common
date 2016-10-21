@@ -801,7 +801,7 @@ sub __read_etc_network_interfaces {
 
     if ($proc_net_dev) {
 	while (defined ($line = <$proc_net_dev>)) {
-	    if ($line =~ m/^\s*(eth\d+|en[^:.]+):.*/) {
+	    if ($line =~ m/^\s*(eth\d+|en[^:.]+|ib\d+):.*/) {
 		$ifaces->{$1}->{exists} = 1;
 	    }
 	}
@@ -974,7 +974,7 @@ sub __read_etc_network_interfaces {
 		$ifaces->{$1}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
-	} elsif ($iface =~ m/^(?:eth\d+|en[^:.]+)$/) {
+	} elsif ($iface =~ m/^(?:eth\d+|en[^:.]+|ib\d+)$/) {
 	    if (!$d->{ovs_type}) {
 		$d->{type} = 'eth';
 	    } elsif ($d->{ovs_type} eq 'OVSPort') {
