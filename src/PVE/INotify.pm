@@ -1201,7 +1201,7 @@ sub __write_etc_network_interfaces {
 	    $d->{type} eq 'OVSBond') {
 	    my $brname = $used_ports->{$iface};
 	    if (!$brname || !$ifaces->{$brname}) { 
-		if ($iface =~ /^(?:eth|en)/) {
+		if ($iface =~ /^(?:eth|en|ib)/) {
 		    $ifaces->{$iface} = { type => 'eth',
 					  exists => 1,
 					  method => 'manual',
@@ -1290,7 +1290,7 @@ NETWORKDOC
 	my $pri;
 	if ($iface eq 'lo') {
 	    $pri = $if_type_hash->{loopback};
-	} elsif ($iface =~ m/^(?:eth\d+|en[^:.]+)$/) {
+	} elsif ($iface =~ m/^(?:eth\d+|ib\d+|en[^:.]+)$/) {
 	    $pri = $if_type_hash->{eth} + $child;
 	} elsif ($iface =~ m/^bond\d+$/) {
 	    $pri = $if_type_hash->{bond} + $child;
