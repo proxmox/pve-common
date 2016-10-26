@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-77) unstable; urgency=medium
+
+  * new class PVE::CpuSet: Simply class to handle cpu sets
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 26 Oct 2016 11:16:07 +0200
+
 libpve-common-perl (4.0-76) unstable; urgency=medium
 
   * SectionConfig: always write out explicitly set booleans
