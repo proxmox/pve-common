@@ -7,6 +7,7 @@ MAN1DIR=${MANDIR}/man1/
 PERLDIR=${PREFIX}/share/perl5
 
 LIB_SOURCES=			\
+	CpuSet.pm		\
 	Daemon.pm		\
 	SectionConfig.pm	\
 	Network.pm		\
