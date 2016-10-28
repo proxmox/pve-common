@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-79) unstable; urgency=medium
+
+  * CpuSet: read $MAX_CPUID from /proc/cpuinfo
+
+  * CpuSet: new max_cpuid() method (replaces static class var)
+
+  * add get_local_ip_from_cidr
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 28 Oct 2016 17:45:04 +0200
+
 libpve-common-perl (4.0-78) unstable; urgency=medium
 
   * CpuSet: add helper to format/print cpu sets
