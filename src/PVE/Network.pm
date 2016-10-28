@@ -555,6 +555,27 @@ sub is_ip_in_cidr {
     return $cidr_obj->overlaps($ip_obj) == $Net::IP::IP_B_IN_A_OVERLAP;
 }
 
+
+sub get_local_ip_from_cidr {
+    my ($cidr) = @_;
+
+    my $cmd = ['/sbin/ip', 'address', 'show', 'to', $cidr, 'up'];
+
+    my $IPs = [];
+
+    my $code = sub {
+	my $line = shift;
+
+	if ($line =~ m!^\s*inet(?:6)?\s+($PVE::Tools::IPRE)/\d+!) {
+	    push @$IPs, $1;
+	}
+    };
+
+    PVE::Tools::run_command($cmd, outfunc => $code);
+
+    return $IPs;
+}
+
 sub lock_network {
     my ($code, @param) = @_;
     my $res = lock_file('/var/lock/pve-network.lck', 10, $code, @param);
