@@ -136,4 +136,35 @@ sub is_equal {
     return 1;
 }
 
+sub short_string {
+    my ($self) = @_;
+
+    my @members = $self->members();
+
+    my $res = '';
+    my ($last, $next);
+    foreach my $cpu (@members) {
+	if (!defined($last)) {
+	    $last = $next = $cpu;
+	} elsif (($next + 1) == $cpu) {
+	    $next = $cpu;
+	} else {
+	    $res .= ',' if length($res);
+	    $res .= "$last-$next";
+	    $last = $next = undef;
+	}
+    }
+
+    if (defined($last)) {
+	$res .= ',' if length($res);
+	if ($last != $next) {
+	    $res .= "$last-$next";
+	} else {
+	    $res .= "$last";
+	}
+    }
+
+    return $res;
+}
+
 1;
