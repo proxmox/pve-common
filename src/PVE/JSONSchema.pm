@@ -720,7 +720,7 @@ sub check_object {
 		    check_prop($value, $requires, $path, $errors);
 		} elsif (!defined($value->{$requires})) {
 		    add_error($errors, $path ? "$path.$requires" : $requires, 
-			      "missing property - '$newpath' requiers this property");
+			      "missing property - '$newpath' requires this property");
 		}
 	    }
 
