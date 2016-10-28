@@ -3,8 +3,20 @@ package PVE::CpuSet;
 use strict;
 use warnings;
 use PVE::Tools;
+use PVE::ProcFSTools;
 
-our $MAX_CPUID = 256; # should be enough for the next years
+my $MAX_CPUID;
+
+sub max_cpuid {
+
+    return $MAX_CPUID if defined($MAX_CPUID);
+
+    my $cpuinfo = PVE::ProcFSTools::read_cpuinfo();
+
+    $MAX_CPUID = $cpuinfo->{cpus} || 1;
+
+    return $MAX_CPUID;
+}
 
 sub new {
     my ($this) = @_;
@@ -12,7 +24,9 @@ sub new {
     my $class = ref($this) || $this;
 
     my $self = bless { members => {} }, $class;
-
+    
+    max_cpuid() if !defined($MAX_CPUID); # initialize $MAX_CPUID
+    
     return $self;
 }
 
