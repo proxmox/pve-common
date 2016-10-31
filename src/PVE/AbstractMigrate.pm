@@ -82,6 +82,28 @@ sub cmd_logerr {
     return &$run_command_quiet_full($self, $cmd, 1, %param);
 }
 
+sub get_remote_migration_ip {
+    my ($self) = @_;
+
+    my $ip;
+
+    my $cmd = [@{$self->{rem_ssh}}, 'pvecm', 'mtunnel', '--get_migration_ip'];
+
+    push @$cmd, '--migration_network', $self->{opts}->{migration_network}
+      if defined($self->{opts}->{migration_network});
+
+    PVE::Tools::run_command($cmd, outfunc => sub {
+	my $line = shift;
+
+	# use non-restrictive regex for ip, its already checked by the remote side
+	if ($line =~ m/^ip: '(\S+)'$/) {
+	   $ip = $1;
+	}
+    });
+
+    return $ip;
+}
+
 my $eval_int = sub {
     my ($self, $func, @param) = @_;
 
@@ -145,6 +167,26 @@ sub migrate {
 	$self->{running} = 0;
 	&$eval_int($self, sub { $self->{running} = $self->prepare($self->{vmid}); });
 	die $@ if $@;
+
+	# get dedicated migration address from remote node, if set.
+	# as a side effect this checks also if the other node can be accessed
+	# through ssh and that it has quorum
+	my $remote_migration_ip = $self->get_remote_migration_ip();
+
+	if (defined($remote_migration_ip)) {
+	    $nodeip = $remote_migration_ip;
+	    $self->{nodeip} = $remote_migration_ip;
+	    $self->{rem_ssh} = [ @ssh_cmd, "root\@$nodeip" ];
+
+	    $self->log('info', "use dedicated network address for sending " .
+	               "migration traffic ($self->{nodeip})");
+
+	    # test if we can connect to new IP
+	    my $cmd = [ @{$self->{rem_ssh}}, '/bin/true' ];
+	    eval { $self->cmd_quiet($cmd); };
+	    die "Can't connect to destination address ($self->{nodeip}) using " .
+	        "public key authentication\n" if $@;
+	}
 
 	&$eval_int($self, sub { $self->phase1($self->{vmid}); });
 	my $err = $@;
