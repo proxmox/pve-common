@@ -1310,6 +1310,7 @@ sub tempfile {
 
     my $fh = IO::File->new($dir, $mode | O_TMPFILE, $perm);
     if (!$fh && $! == EOPNOTSUPP) {
+	$dir = '/tmp' if !defined($opts{dir});
 	$dir .= "/.tmpfile.$$";
 	$fh = IO::File->new($dir, $mode | O_CREAT | O_EXCL, $perm);
 	unlink($dir) if $fh;
