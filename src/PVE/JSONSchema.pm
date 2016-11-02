@@ -506,6 +506,17 @@ sub parse_property_string {
     # In property strings we default to not allowing additional properties
     $additional_properties = 0 if !defined($additional_properties);
 
+    # Support named formats here, too:
+    if (!ref($format)) {
+	if (my $desc = $format_list->{$format}) {
+	    $format = $desc;
+	} else {
+	    die "unknown format: $format\n";
+	}
+    } elsif (ref($format) ne 'HASH') {
+	die "unexpected format value of type ".ref($format)."\n";
+    }
+
     my $default_key;
 
     my $res = {};
