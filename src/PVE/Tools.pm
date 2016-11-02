@@ -1304,7 +1304,7 @@ sub tempfile {
     # default permissions are stricter than with file_set_contents
     $perm = 0600 if !defined($perm);
 
-    my $dir = $opts{dir} // '/tmp';
+    my $dir = $opts{dir} // '/run';
     my $mode = $opts{mode} // O_RDWR;
     $mode |= O_EXCL if !$opts{allow_links};
 
