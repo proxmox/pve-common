@@ -2,7 +2,7 @@ package PVE::Tools;
 
 use strict;
 use warnings;
-use POSIX qw(EINTR EEXIST);
+use POSIX qw(EINTR EEXIST EOPNOTSUPP);
 use IO::Socket::IP;
 use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED);
 use IO::Select;
@@ -1308,8 +1308,13 @@ sub tempfile {
     my $mode = $opts{mode} // O_RDWR;
     $mode |= O_EXCL if !$opts{allow_links};
 
-    my $fh = IO::File->new($dir, $mode | O_TMPFILE, $perm)
-	or die "failed to create tempfile: $!\n";
+    my $fh = IO::File->new($dir, $mode | O_TMPFILE, $perm);
+    if (!$fh && $! == EOPNOTSUPP) {
+	$dir .= "/.tmpfile.$$";
+	$fh = IO::File->new($dir, $mode | O_CREAT | O_EXCL, $perm);
+	unlink($dir) if $fh;
+    }
+    die "failed to create tempfile: $!\n" if !$fh;
     return $fh;
 }
 
