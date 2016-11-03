@@ -95,8 +95,7 @@ sub get_remote_migration_ip {
     PVE::Tools::run_command($cmd, outfunc => sub {
 	my $line = shift;
 
-	# use non-restrictive regex for ip, its already checked by the remote side
-	if ($line =~ m/^ip: '(\S+)'$/) {
+	if ($line =~ m/^ip: '($PVE::Tools::IPRE)'$/) {
 	   $ip = $1;
 	}
     });
