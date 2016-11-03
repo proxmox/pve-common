@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-80) unstable; urgency=medium
+
+  * use the pvecm mtunnel command to get remote migration ip
+
+  * Fix #1188: tempfile: use /run by default
+
+  * JSONSchema: allow named formats in parse_property_string
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 03 Nov 2016 09:45:31 +0100
+
 libpve-common-perl (4.0-79) unstable; urgency=medium
 
   * CpuSet: read $MAX_CPUID from /proc/cpuinfo
