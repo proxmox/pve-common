@@ -1485,7 +1485,7 @@ my $find_schema_default_key = sub {
 };
 
 sub generate_typetext {
-    my ($format) = @_;
+    my ($format, $list_enums) = @_;
 
     my ($default_key, $keyAliasProps) = &$find_schema_default_key($format);
 
@@ -1518,7 +1518,11 @@ sub generate_typetext {
 	} elsif (my $text = $phash->{typetext}) {
 	    $typetext .= $text;
 	} elsif (my $enum = $phash->{enum}) {
-	    $typetext .= '<' . join('|', @$enum) . '>';
+	    if ($list_enums || (scalar(@$enum) <= 3)) {
+		$typetext .= '<' . join('|', @$enum) . '>';
+	    } else {
+		$typetext .= '<enum>';
+	    }
 	} elsif ($phash->{type} eq 'boolean') {
 	    $typetext .= '<1|0>';
 	} elsif ($phash->{type} eq 'integer') {
@@ -1674,7 +1678,7 @@ sub print_property_string {
 }
 
 sub schema_get_type_text {
-    my ($phash) = @_;
+    my ($phash, $style) = @_;
 
     my $type = $phash->{type} || 'string';
 
@@ -1700,7 +1704,9 @@ sub schema_get_type_text {
 	if (my $format = $phash->{format}) {
 	    $format = get_format($format) if ref($format) ne 'HASH';
 	    if (ref($format) eq 'HASH') {
-		return generate_typetext($format);
+		my $list_enums = 0;
+		$list_enums = 1 if $style && $style eq 'config-sub';
+		return generate_typetext($format, $list_enums);
 	    }
 	}
     }

@@ -417,7 +417,7 @@ sub handle {
 # $display_name: for example "-$name" of "<$name>", pass undef to use "$name:"
 # $phash: json schema property hash
 # $format: 'asciidoc', 'short', 'long' or 'full'
-# $style: 'config', 'arg' or 'fixed'
+# $style: 'config', 'config-sub', 'arg' or 'fixed'
 my $get_property_description = sub {
     my ($name, $style, $phash, $format, $hidepw, $fileparams) = @_;
 
@@ -434,7 +434,7 @@ my $get_property_description = sub {
 
     chomp $descr;
 
-    my $type = PVE::JSONSchema::schema_get_type_text($phash);
+    my $type = PVE::JSONSchema::schema_get_type_text($phash, $style);
 
     if ($hidepw && $name eq 'password') {
 	$type = '';
@@ -458,7 +458,7 @@ my $get_property_description = sub {
 	} elsif ($style eq 'arg') {
 	    $res .= "`-$name` ";
 	} elsif ($style eq 'fixed') {
-	    $res .= "`<$name>` ";
+	    $res .= "`<$name>`: ";
 	} else {
 	    die "unknown style '$style'";
 	}
