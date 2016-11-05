@@ -443,7 +443,7 @@ my $get_property_description = sub {
     if ($fileparams && $type eq 'string') {
 	foreach my $elem (@$fileparams) {
 	    if ($name eq $elem) {
-		$type = 'filepath';
+		$type = '<filepath>';
 		last;
 	    }
 	}
@@ -466,7 +466,7 @@ my $get_property_description = sub {
 	$res .= "`$type` " if $type;
 
 	if (defined(my $dv = $phash->{default})) {
-	    $res .= "(default=`$dv`)";
+	    $res .= "('default =' `$dv`)";
 	}
 
 	if ($style eq 'config-sub') {
