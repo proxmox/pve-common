@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-81) unstable; urgency=medium
+
+  * use better regex for remote ip check
+
+  * schema_get_type_text: do not always expand enums
+
+  * schema_get_type_text: render generic types as <type>
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 22 Nov 2016 11:50:30 +0100
+
 libpve-common-perl (4.0-80) unstable; urgency=medium
 
   * use the pvecm mtunnel command to get remote migration ip
