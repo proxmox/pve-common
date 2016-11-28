@@ -234,7 +234,7 @@ sub file_get_contents {
     my $fh = IO::File->new($filename, "r") ||
 	die "can't open '$filename' - $!\n";
 
-    my $content = safe_read_from($fh, $max);
+    my $content = safe_read_from($fh, $max, 0, $filename);
 
     close $fh;
 
@@ -259,22 +259,24 @@ sub file_read_firstline {
 }
 
 sub safe_read_from {
-    my ($fh, $max, $oneline) = @_;
+    my ($fh, $max, $oneline, $filename) = @_;
 
     $max = 32768 if !$max;
+
+    my $subject = defined($filename) ? "file '$filename'" : 'input';
 
     my $br = 0;
     my $input = '';
     my $count;
     while ($count = sysread($fh, $input, 8192, $br)) {
 	$br += $count;
-	die "input too long - aborting\n" if $br > $max;
+	die "$subject too long - aborting\n" if $br > $max;
 	if ($oneline && $input =~ m/^(.*)\n/) {
 	    $input = $1;
 	    last;
 	}
     } 
-    die "unable to read input - $!\n" if !defined($count);
+    die "unable to read $subject - $!\n" if !defined($count);
 
     return $input;
 }
