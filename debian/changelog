@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-83) unstable; urgency=medium
+
+  * safe_read_from: add filename parameter to improve error messages
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 28 Nov 2016 07:45:43 +0100
+
 libpve-common-perl (4.0-82) unstable; urgency=medium
 
   * cpuset: fix short_string
