@@ -292,7 +292,7 @@ sub read_proc_net_route {
 }
 
 sub read_proc_mounts {
-    return PVE::Tools::file_get_contents("/proc/mounts");
+    return PVE::Tools::file_get_contents("/proc/mounts", 128*1024);
 }
 
 # mounts encode spaces (\040), tabs (\011), newlines (\012), backslashes (\\ or \134)
