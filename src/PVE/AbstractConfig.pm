@@ -468,6 +468,9 @@ sub snapshot_delete {
     my $snap;
     my $unused = [];
 
+    $class->set_lock($vmid, 'snapshot-delete')
+	if (!$drivehash); # doesn't already have a 'snapshot' lock
+
     my $unlink_parent = sub {
 	my ($confref, $new_parent) = @_;
 
@@ -486,7 +489,6 @@ sub snapshot_delete {
 	my $conf = $class->load_config($vmid);
 
 	if (!$drivehash) {
-	    $class->check_lock($conf);
 	    die "you can't delete a snapshot if vm is a template\n"
 		if $class->is_template($conf);
 	}
@@ -512,7 +514,7 @@ sub snapshot_delete {
 	    $snap->{snapstate} = 'delete';
 	} else {
 	    delete $conf->{snapshots}->{$snapname};
-	    delete $conf->{lock} if $drivehash;
+	    delete $conf->{lock};
 	    foreach my $volid (@$unused) {
 		$class->add_unused_volume($conf, $volid);
 	    }
