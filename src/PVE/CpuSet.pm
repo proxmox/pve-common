@@ -82,7 +82,7 @@ sub write_to_cgroup {
 
     open(my $fh, '>', $filename) || die "failed to open '$filename' - $!\n";
     PVE::Tools::safe_print($filename, $fh, "$value\n");
-    close($fh);
+    close($fh) || die "failed to close '$filename' - $!\n";
 }
 
 sub insert {
