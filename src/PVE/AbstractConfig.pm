@@ -239,7 +239,7 @@ sub __snapshot_create_vol_snapshot {
 
 # Remove a drive from the snapshot config.
 sub __snapshot_delete_remove_drive {
-    my ($class, $snap, $remove_drive) = @_;
+    my ($class, $snap, $drive) = @_;
 
     die "abstract method - implement me\n";
 }
@@ -483,54 +483,39 @@ sub snapshot_delete {
 	}
     };
 
-    my $updatefn =  sub {
-	my ($remove_drive) = @_;
+    my $remove_drive = sub {
+	my ($drive) = @_;
 
 	my $conf = $class->load_config($vmid);
-
-	if (!$drivehash) {
-	    die "you can't delete a snapshot if vm is a template\n"
-		if $class->is_template($conf);
-	}
-
 	$snap = $conf->{snapshots}->{$snapname};
-
 	die "snapshot '$snapname' does not exist\n" if !defined($snap);
 
-	# remove parent refs
-	if (!$prepare) {
-	    &$unlink_parent($conf, $snap->{parent});
-	    foreach my $sn (keys %{$conf->{snapshots}}) {
-		next if $sn eq $snapname;
-		&$unlink_parent($conf->{snapshots}->{$sn}, $snap->{parent});
-	    }
-	}
-
-	if ($remove_drive) {
-	    $class->__snapshot_delete_remove_drive($snap, $remove_drive);
-	}
-
-	if ($prepare) {
-	    $snap->{snapstate} = 'delete';
-	} else {
-	    delete $conf->{snapshots}->{$snapname};
-	    delete $conf->{lock};
-	    foreach my $volid (@$unused) {
-		$class->add_unused_volume($conf, $volid);
-	    }
-	}
+	$class->__snapshot_delete_remove_drive($snap, $drive);
 
 	$class->write_config($vmid, $conf);
     };
 
-    $class->lock_config($vmid, $updatefn);
+    #prepare
+    $class->lock_config($vmid, sub {
+	my $conf = $class->load_config($vmid);
+
+	die "you can't delete a snapshot if vm is a template\n"
+	    if $class->is_template($conf);
+
+	$snap = $conf->{snapshots}->{$snapname};
+	die "snapshot '$snapname' does not exist\n" if !defined($snap);
+
+	$snap->{snapstate} = 'delete';
+
+	$class->write_config($vmid, $conf);
+    });
 
     # now remove vmstate file
     if ($snap->{vmstate}) {
 	$class->__snapshot_delete_vmstate_file($snap, $force);
 
 	# save changes (remove vmstate from snapshot)
-	$class->lock_config($vmid, $updatefn, 'vmstate') if !$force;
+	$class->lock_config($vmid, $remove_drive, 'vmstate') if !$force;
     };
 
     # now remove all volume snapshots
@@ -546,13 +531,32 @@ sub snapshot_delete {
 	    }
 	}
 
-	# save changes (remove mp from snapshot)
-	$class->lock_config($vmid, $updatefn, $vs) if !$force;
+	# save changes (remove drive from snapshot)
+	$class->lock_config($vmid, $remove_drive, $vs) if !$force;
     });
 
     # now cleanup config
-    $prepare = 0;
-    $class->lock_config($vmid, $updatefn);
+    $class->lock_config($vmid, sub {
+	my $conf = $class->load_config($vmid);
+	$snap = $conf->{snapshots}->{$snapname};
+	die "snapshot '$snapname' does not exist\n" if !defined($snap);
+
+	# remove parent refs
+	&$unlink_parent($conf, $snap->{parent});
+	foreach my $sn (keys %{$conf->{snapshots}}) {
+	    next if $sn eq $snapname;
+	    &$unlink_parent($conf->{snapshots}->{$sn}, $snap->{parent});
+	}
+
+
+	delete $conf->{snapshots}->{$snapname};
+	delete $conf->{lock};
+	foreach my $volid (@$unused) {
+	    $class->add_unused_volume($conf, $volid);
+	}
+
+	$class->write_config($vmid, $conf);
+    });
 }
 
 # Rolls back to a given snapshot.
