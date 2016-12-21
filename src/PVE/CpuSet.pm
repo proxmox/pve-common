@@ -164,7 +164,11 @@ sub short_string {
 	    $next = $cpu;
 	} else {
 	    $res .= ',' if length($res);
-	    $res .= "$last-$next";
+	    if ($last != $next) {
+		$res .= "$last-$next";
+	    } else {
+		$res .= "$last";
+	    }
 	    $last = $next = $cpu;
 	}
     }
