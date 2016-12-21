@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-84) unstable; urgency=medium
+
+  * CpuSet short_string - avoid ranges like 0-0, 1-1, 2-2, ...
+
+  * CpuSet write_to_cgroup: catch errors from close()
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 21 Dec 2016 11:53:02 +0100
+
 libpve-common-perl (4.0-83) unstable; urgency=medium
 
   * safe_read_from: add filename parameter to improve error messages
