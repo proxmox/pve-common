@@ -506,10 +506,6 @@ sub run_cli_handler {
 
     initlog($exename);
 
-    if ($class !~ m/^PVE::Service::/) {
-	die "please run as root\n" if $> != 0;
-    }
-
     no strict 'refs';
     my $def = ${"${class}::cmddef"};
 
