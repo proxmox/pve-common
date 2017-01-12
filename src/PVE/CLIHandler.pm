@@ -387,6 +387,13 @@ sub generate_asciidoc_synopsis {
     }
 }
 
+# overwrite this if you want to run/setup things early
+sub setup_environment {
+    my ($class) = @_;
+
+    # do nothing by default
+}
+
 my $handle_cmd  = sub {
     my ($def, $cmdname, $cmd, $args, $pwcallback, $preparefunc, $stringfilemap) = @_;
 
@@ -395,13 +402,20 @@ my $handle_cmd  = sub {
 
     $cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
-    if (!$cmd) { 
+    # call verifyapi before setup_environment(), because we do not want to
+    # execute any real code in this case
+
+    if (!$cmd) {
 	print_usage_short (\*STDERR, "no command specified");
 	exit (-1);
     } elsif ($cmd eq 'verifyapi') {
 	PVE::RESTHandler::validate_method_schemas();
 	return;
-    } elsif ($cmd eq 'bashcomplete') {
+    }
+
+    $cli_handler_class->setup_environment();
+
+    if ($cmd eq 'bashcomplete') {
 	&$print_bash_completion($cmddef, 0, @$args);
 	return;
     }
@@ -435,12 +449,18 @@ my $handle_simple_cmd = sub {
 	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback, $stringfilemap);
 	    print STDERR "$str\n\n";
 	    return;
-	} elsif ($args->[0] eq 'bashcomplete') {
-	    shift @$args;
-	    &$print_bash_completion({ $name => $def }, $name, @$args);
-	    return;
 	} elsif ($args->[0] eq 'verifyapi') {
 	    PVE::RESTHandler::validate_method_schemas();
+	    return;
+	}
+    }
+
+    $cli_handler_class->setup_environment();
+
+    if (scalar(@$args) >= 1) {
+	if ($args->[0] eq 'bashcomplete') {
+	    shift @$args;
+	    &$print_bash_completion({ $name => $def }, $name, @$args);
 	    return;
 	}
     }
