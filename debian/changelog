@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-86) unstable; urgency=medium
+
+  * CLIHandler.pm: remove calls to PVE::RPCEnvironment
+
+  * CLIHandler.pm: add setup_environment hook
+
+  * CLIHandler.pm: remove run as root restriction
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 13 Jan 2017 11:22:18 +0100
+
 libpve-common-perl (4.0-85) unstable; urgency=medium
 
   * set 'snapshot-delete' lock when deleting snapshot
