@@ -1190,11 +1190,6 @@ my $method_schema = {
 	    description => "JSON Schema for parameters.",
 	    optional => 1,
 	},
-        formatter => {
-	    type => 'object',
-	    description => "Used to store page formatter information (set by PVE::RESTHandler->register_page_formatter).",
-	    optional => 1,
-        },
 	returns => {
 	    type => 'object',
 	    description => "JSON Schema for return value.",
