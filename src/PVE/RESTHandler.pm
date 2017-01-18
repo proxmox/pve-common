@@ -249,31 +249,6 @@ sub register_method {
     push @{$method_registry->{$self}}, $info;
 }
 
-sub register_page_formatter {
-    my ($self, %config) = @_;
-
-    my $format = $config{format} ||
-	die "missing format";
-
-    my $path = $config{path} ||
-	die "missing path";
-
-    my $method = $config{method} ||
-	die "missing method";
-	
-    my $code = $config{code} ||
-	die "missing formatter code";
-    
-    my $uri_param = {};
-    my ($handler, $info) = $self->find_handler($method, $path, $uri_param);
-    die "unabe to find handler for '$method: $path'" if !($handler && $info);
-
-    die "duplicate formatter for '$method: $path'" 
-	if $info->{formatter} && $info->{formatter}->{$format};
-
-    $info->{formatter}->{$format} = $code;
-}
-
 sub DESTROY {}; # avoid problems with autoload
 
 sub AUTOLOAD {
