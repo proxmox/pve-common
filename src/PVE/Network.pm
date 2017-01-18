@@ -277,7 +277,7 @@ sub veth_delete {
     if (-d "/sys/class/net/$veth") {
 	run_command("/sbin/ip link delete dev $veth", outfunc => sub {}, errfunc => sub {});
     }
-
+    eval { tap_unplug($veth) };
 }
 
 my $create_firewall_bridge_linux = sub {
