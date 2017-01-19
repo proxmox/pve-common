@@ -1,3 +1,13 @@
+libpve-common-perl (4.0-87) unstable; urgency=medium
+
+  * RESTHandler.pm: remove register_page_formatter (no longer required)
+
+  * JSONSchema: remove formatter option
+
+  * PVE::RESTEnvironment: new base class for PVE::RPCEnvironment
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 19 Jan 2017 09:09:15 +0100
+
 libpve-common-perl (4.0-86) unstable; urgency=medium
 
   * CLIHandler.pm: remove calls to PVE::RPCEnvironment
