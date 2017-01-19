@@ -6,7 +6,6 @@ use warnings;
 use Crypt::OpenSSL::Random;
 use Crypt::OpenSSL::RSA;
 use MIME::Base64;
-use MIME::Base32; #libmime-base32-perl
 use Digest::SHA;
 use Time::HiRes qw(gettimeofday);
 
