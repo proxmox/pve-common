@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-88) unstable; urgency=medium
+
+  * PVE::Ticket - new helper class to create auth tickets
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 19 Jan 2017 12:53:08 +0100
+
 libpve-common-perl (4.0-87) unstable; urgency=medium
 
   * RESTHandler.pm: remove register_page_formatter (no longer required)
