@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use lib '../../src';
+use lib '.';
 use strict;
 use warnings;
 
