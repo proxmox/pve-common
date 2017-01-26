@@ -358,7 +358,7 @@ my $kill_process_group = sub {
 };
 
 sub check_worker {
-    my ($upid, $killit) = @_;
+    my ($self, $upid, $killit) = @_;
 
     my $task = PVE::Tools::upid_decode($upid);
 
