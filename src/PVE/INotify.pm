@@ -1054,6 +1054,7 @@ sub __interface_to_string {
 	# not printing out options
     } elsif ($d->{type} eq 'bridge') {
 
+	$d->{bridge_ports} =~ s/([;,\s])+/ /g;
 	my $ports = $d->{bridge_ports} || 'none';
 	$raw .= "\tbridge_ports $ports\n";
 	$done->{bridge_ports} = 1;
@@ -1073,6 +1074,7 @@ sub __interface_to_string {
     
     } elsif ($d->{type} eq 'bond') {
 
+	$d->{slaves} =~ s/([;,\s])+/ /g;
 	my $slaves = $d->{slaves} || 'none';
 	$raw .= "\tslaves $slaves\n";
 	$done->{slaves} = 1;
