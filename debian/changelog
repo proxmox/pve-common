@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-90) unstable; urgency=medium
+
+  * RESTEnvironment: let check_worker take a $self
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 27 Jan 2017 10:57:13 +0100
+
 libpve-common-perl (4.0-89) unstable; urgency=medium
 
   * fix #1232: cleanup bridges on veth_delete
