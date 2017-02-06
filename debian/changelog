@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-91) unstable; urgency=medium
+
+  * Fix interface writer for bridge_ports and slaves.
+
+  * ensure correct upgrade path
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 6 Feb 2017 14:45:20 +0100
+
 libpve-common-perl (4.0-90) unstable; urgency=medium
 
   * RESTEnvironment: let check_worker take a $self
