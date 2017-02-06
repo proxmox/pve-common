@@ -245,7 +245,7 @@ sub tap_create {
 
     eval { 
 	disable_ipv6($iface);
-	PVE::Tools::run_command("/sbin/ifconfig $iface 0.0.0.0 promisc up mtu $bridgemtu");
+	PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $iface, 'up', 'promisc', 'on', 'mtu', $bridgemtu]);
     };
     die "interface activation failed\n" if $@;
 }
@@ -317,7 +317,7 @@ my $create_firewall_bridge_ovs = sub {
     &$activate_interface($ovsintport);
 
     # set the same mtu for ovs int port
-    PVE::Tools::run_command("/sbin/ifconfig $ovsintport mtu $bridgemtu");
+    PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $ovsintport, 'mtu', $bridgemtu]);
     
     &$bridge_add_interface($fwbr, $ovsintport);
 };
