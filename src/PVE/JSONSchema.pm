@@ -84,6 +84,12 @@ register_standard_option('pve-config-digest', {
     maxLength => 40, # sha1 hex digest lenght is 40
 });
 
+register_standard_option('skiplock', {
+    description => "Ignore locks - only root is allowed to use this option.",
+    type => 'boolean',
+    optional => 1,
+});
+
 register_standard_option('extra-args', {
     description => "Extra arguments as array",
     type => 'array',
