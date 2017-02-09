@@ -1,3 +1,11 @@
+libpve-common-perl (4.0-92) unstable; urgency=medium
+
+  * stop using ifconfig from net-tools
+
+  * schema updates
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 09 Feb 2017 11:39:13 +0100
+
 libpve-common-perl (4.0-91) unstable; urgency=medium
 
   * Fix interface writer for bridge_ports and slaves.
