@@ -166,7 +166,7 @@ __PACKAGE__->register_method ({
 	type => 'string',
     },
     code => sub {
-	my ($conn, $resp, $param) = @_;
+	my ($param) = @_;
 
 	return $param->{text};
     }
