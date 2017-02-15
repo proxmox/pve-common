@@ -32,10 +32,10 @@ no warnings 'portable'; # Support for 64-bit ints required
 our @EXPORT_OK = qw(
 $IPV6RE
 $IPV4RE
-lock_file 
+lock_file
 lock_file_full
-run_command 
-file_set_contents 
+run_command
+file_set_contents
 file_get_contents
 file_read_firstline
 dir_glob_regex
@@ -224,7 +224,7 @@ sub file_set_contents {
     if (!rename($tmpname, $filename)) {
 	my $msg = "close (rename) atomic file '$filename' failed: $!\n";
 	unlink $tmpname;
-	die $msg;	
+	die $msg;
     }
 }
 
@@ -275,7 +275,7 @@ sub safe_read_from {
 	    $input = $1;
 	    last;
 	}
-    } 
+    }
     die "unable to read $subject - $!\n" if !defined($count);
 
     return $input;
@@ -389,7 +389,7 @@ sub run_command {
 			print STDERR "$laststderr\n" if $laststderr;
 		    }
 		}
-		$laststderr = shift; 
+		$laststderr = shift;
 	    };
 	}
 
@@ -398,8 +398,8 @@ sub run_command {
 	my $error  = IO::File->new();
 
 	# try to avoid locale related issues/warnings
-	my $lang = $param{lang} || 'C'; 
- 
+	my $lang = $param{lang} || 'C';
+
 	my $orig_pid = $$;
 
 	eval {
@@ -425,8 +425,8 @@ sub run_command {
 	# catch exec errors
 	if ($orig_pid != $$) {
 	    warn "ERROR: $err";
-	    POSIX::_exit (1); 
-	    kill ('KILL', $$); 
+	    POSIX::_exit (1);
+	    kill ('KILL', $$);
 	}
 
 	die $err if $err;
@@ -514,7 +514,7 @@ sub run_command {
 	&$logfunc($errlog) if $logfunc && $errlog;
 
 	waitpid ($pid, 0);
-  
+
 	if ($? == -1) {
 	    die "failed to execute\n";
 	} elsif (my $sig = ($? & 127)) {
@@ -567,7 +567,7 @@ sub split_list {
     my $listtxt = shift || '';
 
     return split (/\0/, $listtxt) if $listtxt =~ m/\0/;
-    
+
     $listtxt =~ s/[,;]/ /g;
     $listtxt =~ s/^\s+//;
 
@@ -583,7 +583,7 @@ sub trim {
 
     $txt =~ s/^\s+//;
     $txt =~ s/\s+$//;
-    
+
     return $txt;
 }
 
@@ -592,7 +592,7 @@ sub template_replace {
     my ($tmpl, $data) = @_;
 
     return $tmpl if !$tmpl;
- 
+
     my $res = '';
     while ($tmpl =~ m/([^{]+)?({([^}]+)})?/g) {
 	$res .= $1 if $1;
@@ -659,7 +659,7 @@ sub debmirrors {
 my $keymaphash =  {
     'dk'     => ['Danish', 'da', 'qwerty/dk-latin1.kmap.gz', 'dk', 'nodeadkeys'],
     'de'     => ['German', 'de', 'qwertz/de-latin1-nodeadkeys.kmap.gz', 'de', 'nodeadkeys' ],
-    'de-ch'  => ['Swiss-German', 'de-ch', 'qwertz/sg-latin1.kmap.gz',  'ch', 'de_nodeadkeys' ], 
+    'de-ch'  => ['Swiss-German', 'de-ch', 'qwertz/sg-latin1.kmap.gz',  'ch', 'de_nodeadkeys' ],
     'en-gb'  => ['United Kingdom', 'en-gb', 'qwerty/uk.kmap.gz' , 'gb', undef],
     'en-us'  => ['U.S. English', 'en-us', 'qwerty/us-latin1.kmap.gz',  'us', undef ],
     'es'     => ['Spanish', 'es', 'qwerty/es.kmap.gz', 'es', 'nodeadkeys'],
@@ -680,7 +680,7 @@ my $keymaphash =  {
     'mk'     => ['Macedonian', 'mk', 'qwerty/mk.kmap.gz', 'mk', 'nodeadkeys'],
     'nl'     => ['Dutch', 'nl', 'qwerty/nl.kmap.gz', 'nl', undef],
     #'nl-be'  => ['Belgium-Dutch', 'nl-be', ?, ?, ?],
-    'no'   => ['Norwegian', 'no', 'qwerty/no-latin1.kmap.gz', 'no', 'nodeadkeys'], 
+    'no'   => ['Norwegian', 'no', 'qwerty/no-latin1.kmap.gz', 'no', 'nodeadkeys'],
     'pl'     => ['Polish', 'pl', 'qwerty/pl.kmap.gz', 'pl', undef],
     'pt'     => ['Portuguese', 'pt', 'qwerty/pt-latin1.kmap.gz', 'pt', 'nodeadkeys'],
     'pt-br'  => ['Brazil-Portuguese', 'pt-br', 'qwerty/br-latin1.kmap.gz', 'br', 'nodeadkeys'],
@@ -764,11 +764,11 @@ sub next_unused_port {
 		    my ($port, $timestamp) = ($1, $2);
 		    if (($timestamp + $expiretime) > $ctime) {
 			$ports->{$port} = $timestamp; # not expired
-		    }		
+		    }
 		}
 	    }
 	}
-    
+
 	my $newport;
 
 	for (my $p = $range_start; $p < $range_end; $p++) {
@@ -788,12 +788,12 @@ sub next_unused_port {
 		last;
 	    }
 	}
- 
+
 	my $data = "";
 	foreach my $p (keys %$ports) {
 	    $data .= "$p $ports->{$p}\n";
 	}
-    
+
 	file_set_contents($filename, $data);
 
 	return $newport;
@@ -801,7 +801,7 @@ sub next_unused_port {
 
     my $p = lock_file($filename, 10, $code);
     die $@ if $@;
-   
+
     die "unable to find free port (${range_start}-${range_end})\n" if !$p;
 
     return $p;
@@ -822,7 +822,7 @@ sub next_spice_port {
     return next_unused_port(61000, 61099, $family);
 }
 
-# NOTE: NFS syscall can't be interrupted, so alarm does 
+# NOTE: NFS syscall can't be interrupted, so alarm does
 # not work to provide timeouts.
 # from 'man nfs': "Only SIGKILL can interrupt a pending NFS operation"
 # So fork() before using Filesys::Df
@@ -875,7 +875,7 @@ sub df {
 
 # UPID helper
 # We use this to uniquely identify a process.
-# An 'Unique Process ID' has the following format: 
+# An 'Unique Process ID' has the following format:
 # "UPID:$node:$pid:$pstart:$startime:$dtype:$id:$user"
 
 sub upid_encode {
@@ -883,8 +883,8 @@ sub upid_encode {
 
     # Note: pstart can be > 32bit if uptime > 497 days, so this can result in
     # more that 8 characters for pstart
-    return sprintf("UPID:%s:%08X:%08X:%08X:%s:%s:%s:", $d->{node}, $d->{pid}, 
-		   $d->{pstart}, $d->{starttime}, $d->{type}, $d->{id}, 
+    return sprintf("UPID:%s:%08X:%08X:%08X:%s:%s:%s:", $d->{node}, $d->{pid},
+		   $d->{pstart}, $d->{starttime}, $d->{type}, $d->{id},
 		   $d->{user});
 }
 
@@ -919,7 +919,7 @@ sub upid_decode {
 sub upid_open {
     my ($upid) = @_;
 
-    my ($task, $filename) = upid_decode($upid); 
+    my ($task, $filename) = upid_decode($upid);
 
     my $dirname = dirname($filename);
     make_path($dirname);
@@ -928,7 +928,7 @@ sub upid_open {
 	die "getpwnam failed";
 
     my $perm = 0640;
- 
+
     my $outfh = IO::File->new ($filename, O_WRONLY|O_CREAT|O_EXCL, $perm) ||
 	die "unable to create output file '$filename' - $!\n";
     chown $wwwid, -1, $outfh;
@@ -962,7 +962,7 @@ sub upid_read_status {
     return "unable to read tail (got $br bytes)";
 }
 
-# useful functions to store comments in config files 
+# useful functions to store comments in config files
 sub encode_text {
     my ($text) = @_;
 
@@ -1037,7 +1037,7 @@ sub dump_logfile {
     my $count = 0;
 
     my $fh = IO::File->new($filename, "r");
-    if (!$fh) { 
+    if (!$fh) {
 	$count++;
 	push @$lines, { n => $count, t => "unable to open file - $!"};
 	return ($count, $lines);
@@ -1085,7 +1085,7 @@ sub dump_journal {
 
     my $lines = [];
     my $count = 0;
-    
+
     $start = 0 if !$start;
     $limit = 50 if !$limit;
 
@@ -1119,8 +1119,8 @@ sub dir_glob_regex {
 
     my $dh = IO::Dir->new ($dir);
     return wantarray ? () : undef if !$dh;
-  
-    while (defined(my $tmp = $dh->read)) { 
+
+    while (defined(my $tmp = $dh->read)) {
 	if (my @res = $tmp =~ m/^($regex)$/) {
 	    $dh->close;
 	    return wantarray ? @res : $tmp;
@@ -1141,7 +1141,7 @@ sub dir_glob_foreach {
 		&$func (@res);
 	    }
 	}
-    } 
+    }
 }
 
 sub assert_if_modified {
