@@ -799,7 +799,7 @@ sub next_unused_port {
 	return $newport;
     };
 
-    my $p = lock_file($filename, 10, $code);
+    my $p = lock_file('/var/lock/pve-ports.lck', 10, $code);
     die $@ if $@;
 
     die "unable to find free port (${range_start}-${range_end})\n" if !$p;
