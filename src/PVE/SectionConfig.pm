@@ -104,7 +104,7 @@ sub createSchema {
 }
 
 sub updateSchema {
-    my ($class) = @_;
+    my ($class, $single_class) = @_;
 
     my $pdata = $class->private();
     my $propertyList = $pdata->{propertyList};
@@ -112,8 +112,15 @@ sub updateSchema {
 
     my $props = {};
 
+    my $filter_type = $class->type() if $single_class;
+
     foreach my $p (keys %$propertyList) {
 	next if $p eq 'type';
+
+	my $copts = $class->options();
+
+	next if defined($filter_type) && !defined($copts->{$p});
+
 	if (!$propertyList->{$p}->{optional}) {
 	    $props->{$p} = $propertyList->{$p};
 	    next;
@@ -121,7 +128,6 @@ sub updateSchema {
 
 	my $modifyable = 0;
 
-	my $copts = $class->options();
 	$modifyable = 1 if defined($copts->{$p}) && !$copts->{$p}->{fixed};
 
 	foreach my $t (keys %$plugins) {
