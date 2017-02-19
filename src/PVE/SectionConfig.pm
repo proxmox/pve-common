@@ -453,7 +453,8 @@ sub write_config {
 
 	my $done_hash = { comment => 1, disable => 1};
 
-	foreach my $k (keys %$opts) {
+	my @option_keys = sort keys %$opts;
+	foreach my $k (@option_keys) {
 	    next if $opts->{$k}->{optional};
 	    $done_hash->{$k} = 1;
 	    my $v = $scfg->{$k};
@@ -463,7 +464,7 @@ sub write_config {
 	    $data .= &$format_config_line($propertyList->{$k}, $k, $v);
 	}
 
-	foreach my $k (keys %$opts) {
+	foreach my $k (@option_keys) {
 	    next if defined($done_hash->{$k});
 	    my $v = $scfg->{$k};
 	    next if !defined($v);
