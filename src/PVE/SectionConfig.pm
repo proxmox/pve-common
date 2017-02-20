@@ -51,7 +51,7 @@ sub plugindata {
 }   
 
 sub createSchema {
-    my ($class) = @_;
+    my ($class, $skip_type) = @_;
 
     my $pdata = $class->private();
     my $propertyList = $pdata->{propertyList};
@@ -71,6 +71,8 @@ sub createSchema {
     };
 
     foreach my $p (keys %$propertyList) {
+	next if $skip_type && $p eq 'type';
+
 	if (!$propertyList->{$p}->{optional}) {
 	    $props->{$p} = $propertyList->{$p};
 	    next;
