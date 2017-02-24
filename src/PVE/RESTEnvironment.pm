@@ -687,7 +687,9 @@ sub check_api2_permissions {
 sub init_request {
     my ($self, %params) = @_;
 
-    # implement in subclass
+    $self->{result_attributes} = {}
+
+    # if you nedd more, implement in subclass
 }
 
 1;
