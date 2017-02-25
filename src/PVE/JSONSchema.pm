@@ -678,7 +678,7 @@ sub check_type {
 			return 1;
 		    #} elsif ($value =~ m/^(0|false|no|off)$/i) {
 		    } elsif ($value eq '0') {
-			return 0;
+			return 1; # return success (not value)
 		    } else {
 			add_error($errors, $path, "type check ('$type') failed - got '$value'");
 			return undef;
