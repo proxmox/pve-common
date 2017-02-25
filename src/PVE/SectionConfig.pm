@@ -259,6 +259,10 @@ sub check_value {
 	}
     }
 
+    if ($ct eq 'boolean' || $ct eq 'integer' || $ct eq 'number') {
+	return $value + 0; # convert to number
+    }
+
     return $value;
 }
 
