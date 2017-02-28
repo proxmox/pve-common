@@ -350,6 +350,7 @@ sub run_command {
     my $output;
     my $afterfork;
     my $noerr;
+    my $keeplocale;
 
     eval {
 
@@ -374,6 +375,8 @@ sub run_command {
 		$afterfork = $param{$p};
 	    } elsif ($p eq 'noerr') {
 		$noerr = $param{$p};
+	    } elsif ($p eq 'keeplocale') {
+		$keeplocale = $param{$p};
 	    } else {
 		die "got unknown parameter '$p' for run_command\n";
 	    }
@@ -397,13 +400,10 @@ sub run_command {
 	my $writer = $input && $input =~ m/^<&/ ? $input : IO::File->new();
 	my $error  = IO::File->new();
 
-	# try to avoid locale related issues/warnings
-	my $lang = $param{lang} || 'C';
-
 	my $orig_pid = $$;
 
 	eval {
-	    local $ENV{LC_ALL} = $lang;
+	    local $ENV{LC_ALL} = 'C' if !$keeplocale;
 
 	    # suppress LVM warnings like: "File descriptor 3 left open";
 	    local $ENV{LVM_SUPPRESS_FD_WARNINGS} = "1";
