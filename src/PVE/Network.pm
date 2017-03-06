@@ -166,8 +166,9 @@ my $cond_create_bridge = sub {
     my ($bridge) = @_;
 
     if (! -d "/sys/class/net/$bridge") {
-        system("/sbin/brctl addbr $bridge") == 0 ||
-            die "can't add bridge '$bridge'\n";
+	system("/sbin/brctl addbr $bridge") == 0 ||
+	    die "can't add bridge '$bridge'\n";
+	disable_ipv6($bridge);
     }
 };
 
@@ -287,7 +288,6 @@ my $create_firewall_bridge_linux = sub {
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
 
     &$cond_create_bridge($fwbr);
-    disable_ipv6($fwbr);
     &$activate_interface($fwbr);
 
     copy_bridge_config($bridge, $fwbr);
@@ -308,7 +308,6 @@ my $create_firewall_bridge_ovs = sub {
     my $bridgemtu = &$read_bridge_mtu($bridge);
 
     &$cond_create_bridge($fwbr);
-    disable_ipv6($fwbr);
     &$activate_interface($fwbr);
 
     &$bridge_add_interface($fwbr, $iface);
@@ -429,10 +428,10 @@ sub activate_bridge_vlan_slave {
     if (! -d "/sys/class/net/$ifacevlan") {
 	system("/sbin/ip link add link $iface name $ifacevlan type vlan id $tag") == 0 ||
 	    die "can't add vlan tag $tag to interface $iface\n";
-    }
 
-    # remove ipv6 link-local address before activation
-    disable_ipv6($ifacevlan);
+	# remove ipv6 link-local address before activation
+	disable_ipv6($ifacevlan);
+    }
 
     # be sure to have the $ifacevlan up
     &$activate_interface($ifacevlan);
