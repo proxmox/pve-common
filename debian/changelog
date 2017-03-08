@@ -1,3 +1,23 @@
+libpve-common-perl (4.0-93) unstable; urgency=medium
+
+  * SectionConfig::check_value: return bool/numbers as numeric value
+
+  * JSONSchema::check_type: return success (not value)
+
+  * RESTEnvironment->init_request: reset result_attributes
+
+  * SectionConfig: add new parameter $skip_type to createSchema()
+
+  * SectionConfig:write_config: sort options by key name
+
+  * SectionConfig: allow to get class specific updateSchema()
+
+  * (maybe) fixes #1229: fix port reservation
+
+  * Fix example to latest RestHandler
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 08 Mar 2017 06:17:44 +0100
+
 libpve-common-perl (4.0-92) unstable; urgency=medium
 
   * stop using ifconfig from net-tools
