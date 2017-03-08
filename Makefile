@@ -1,5 +1,5 @@
-VERSION=4.0
-PKGREL=93
+VERSION=5.0
+PKGREL=1
 
 PACKAGE=libpve-common-perl
 
@@ -45,5 +45,5 @@ check:
 
 .PHONY: upload
 upload: ${DEB}
-	tar cf - ${DEB}|ssh repoman@repo.proxmox.com -- upload --product pve --dist jessie
+	tar cf - ${DEB}|ssh repoman@repo.proxmox.com -- upload --product pve --dist stretch
 
