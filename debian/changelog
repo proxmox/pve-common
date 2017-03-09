@@ -1,3 +1,9 @@
+libpve-common-perl (4.0-94) unstable; urgency=medium
+
+  * add keeplocale parameter to run_command
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 09 Mar 2017 09:27:46 +0100
+
 libpve-common-perl (4.0-93) unstable; urgency=medium
 
   * SectionConfig::check_value: return bool/numbers as numeric value
