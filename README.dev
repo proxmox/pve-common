@@ -63,6 +63,7 @@ pve-cluster.git
 pve-access-control.git
 pve-storage.git
 pve-guest-common.git
+pve-firewall.git
 pve-qemu-kvm.git
 qemu-server.git
 vncterm.git
@@ -78,7 +79,6 @@ pve-manager.git
 #gfs2-utils.git
 ksm-control-daemon.git
 pve-container.git
-pve-firewall.git
 pve-kernel.git
 
 Most packages can be installed with 'make dinstall' command.
