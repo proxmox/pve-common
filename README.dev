@@ -60,7 +60,6 @@ libpve-http-server-perl.git
 libpve-apiclient-perl.git
 pve-docs.git
 pve-cluster.git
-lvm.git
 pve-access-control.git
 pve-storage.git
 pve-guest-common.git
