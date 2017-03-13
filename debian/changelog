@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-2) unstable; urgency=medium
+
+  * Add keeplocale parameter required by some API commands
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 13 Mar 2017 15:02:41 +0100
+
 libpve-common-perl (5.0-1) unstable; urgency=medium
 
   * bump version for Debian Stretch
