@@ -35,14 +35,14 @@ pve-libspice-server-dev libusbredirparser-dev glusterfs-common \
 libusb-1.0-0-dev librbd-dev libpopt-dev iproute bridge-utils numactl \
 glusterfs-common ceph-common python-ceph libgoogle-perftools4 \
 libfile-chdir-perl lvm2 glusterfs-client liblockfile-simple-perl \
-libsystemd-daemon-dev libreadline-gplv2-dev libio-multiplex-perl \
+libsystemd-dev libreadline-gplv2-dev libio-multiplex-perl \
 libnetfilter-log-dev libipset3 ipset socat libsasl2-dev libogg-dev \
 python-pyparsing libfilesys-df-perl libcrypt-ssleay-perl \
 libfile-readbackwards-perl libanyevent-perl libanyevent-http-perl \
 unzip liblocale-po-perl vlan ifenslave-2.6 libfile-sync-perl cstream \
 lzop dtach apt-transport-https hdparm gdisk parted ttf-dejavu-core \
-liblzma-dev dosfstools mtools libxen-dev libfuse-dev libcorosync-pve-dev \
-libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor libcgmanager-dev \
+liblzma-dev dosfstools mtools libxen-dev libfuse-dev corosync-dev \
+libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
 graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
 libudev-dev
 
@@ -54,8 +54,6 @@ Download and install the following git modules in order from top to bottom:
 
 You currently need the following packages:
 
-libqb.git
-corosync-pve.git
 pve-common.git
 pve-docs.git
 pve-cluster.git
@@ -72,7 +70,7 @@ spiceterm.git
 #resource-agents-pve.git
 pve-manager.git
 #pve-kernel-3.10.0.git
-libiscsi.git
+#libiscsi.git
 #gfs2-utils.git
 ksm-control-daemon.git
 pve-container.git
