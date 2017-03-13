@@ -63,6 +63,7 @@ pve-cluster.git
 lvm.git
 pve-access-control.git
 pve-storage.git
+pve-guest-common.git
 pve-qemu-kvm.git
 qemu-server.git
 vncterm.git
@@ -71,6 +72,7 @@ spiceterm.git
 #vzctl.git
 #fence-agents-pve.git
 #resource-agents-pve.git
+extjs.git
 pve-manager.git
 #pve-kernel-3.10.0.git
 #libiscsi.git
