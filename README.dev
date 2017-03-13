@@ -45,7 +45,8 @@ liblzma-dev dosfstools mtools libxen-dev libfuse-dev corosync-dev \
 libcpg-dev libquorum-dev libcmap-dev libuuid-perl \
 libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
 graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
-libudev-dev asciidoc-dblatex source-highlight inkscape
+libudev-dev asciidoc-dblatex source-highlight inkscape \
+libiscsi-dev libiscsi7
 
 = Compile PVE packages from Source =
 
