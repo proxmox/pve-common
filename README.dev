@@ -44,7 +44,7 @@ lzop dtach apt-transport-https hdparm gdisk parted ttf-dejavu-core \
 liblzma-dev dosfstools mtools libxen-dev libfuse-dev corosync-dev \
 libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
 graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
-libudev-dev
+libudev-dev asciidoc-dblatex source-highlight inkscape
 
 = Compile PVE packages from Source =
 
@@ -55,6 +55,8 @@ Download and install the following git modules in order from top to bottom:
 You currently need the following packages:
 
 pve-common.git
+libpve-http-server-perl.git
+libpve-apiclient-perl.git
 pve-docs.git
 pve-cluster.git
 lvm.git
