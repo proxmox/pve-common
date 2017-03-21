@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-3) unstable; urgency=medium
+
+  * Notify.pm: use Clone::clone instead of Storable::dclone
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 21 Mar 2017 12:07:07 +0100
+
 libpve-common-perl (5.0-2) unstable; urgency=medium
 
   * Add keeplocale parameter required by some API commands
