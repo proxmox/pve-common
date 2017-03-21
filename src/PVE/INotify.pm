@@ -15,7 +15,7 @@ use PVE::SafeSyslog;
 use PVE::Exception qw(raise_param_exc);
 use PVE::Tools;
 use PVE::ProcFSTools;
-use Storable qw(dclone);            
+use Clone qw(clone);
 use Linux::Inotify2;
 use base 'Exporter';
 use JSON; 
@@ -247,7 +247,7 @@ sub read_file {
 
 	my $ret;
 	if (!$noclone && ref ($ccinfo->{data})) {
-	    $ret->{data} = dclone ($ccinfo->{data});
+	    $ret->{data} = clone ($ccinfo->{data});
 	} else {
 	    $ret->{data} = $ccinfo->{data};
 	}
@@ -269,7 +269,7 @@ sub read_file {
     }
 
     # we cache data with references, so we always need to
-    # dclone this data. Else the original data may get
+    # clone this data. Else the original data may get
     # modified.
     $ccinfo->{data} = $res;
 
@@ -278,7 +278,7 @@ sub read_file {
 
     my $ret;
     if (!$noclone && ref ($ccinfo->{data})) {
-	$ret->{data} = dclone ($ccinfo->{data});
+	$ret->{data} = clone ($ccinfo->{data});
     } else {
 	$ret->{data} = $ccinfo->{data};
     }
