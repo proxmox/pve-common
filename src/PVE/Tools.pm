@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use POSIX qw(EINTR EEXIST EOPNOTSUPP);
 use IO::Socket::IP;
-use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED);
+use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED AI_CANONNAME SOCK_DGRAM);
 use IO::Select;
 use File::Basename;
 use File::Path qw(make_path);
@@ -1212,6 +1212,24 @@ sub get_host_address_family {
     my ($hostname, $socktype) = @_;
     my @res = getaddrinfo_all($hostname, socktype => $socktype);
     return $res[0]->{family};
+}
+
+# get the fully qualified domain name of a host
+# same logic as hostname(1): The FQDN is the name getaddrinfo(3) returns,
+# given a nodename as a parameter
+sub get_fqdn {
+    my ($nodename) = @_;
+
+    my $hints = {
+	flags => AI_CANONNAME,
+	socktype => SOCK_DGRAM
+    };
+
+    my ($err, @addrs) = Socket::getaddrinfo($nodename, undef, $hints);
+
+    die "getaddrinfo: $err" if $err;
+
+    return $addrs[0]->{canonname};
 }
 
 # Parses any sane kind of host, or host+port pair:
