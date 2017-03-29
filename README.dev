@@ -20,7 +20,7 @@ You should now have a working Proxmox VE installation.
 
 = Install build prerequisites for development environment =
 
-apt-get -y install build-essential git-core git-email debhelper \
+apt-get install build-essential git-core git-email debhelper \
 autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
 groff quilt dpatch automake autoconf libtool lintian libdevel-cycle-perl \
 libjson-perl libcommon-sense-perl liblinux-inotify2-perl libio-stringy-perl \
