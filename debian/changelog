@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-4) unstable; urgency=medium
+
+  * OTP.pm: new class with OTP helpers
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Mar 2017 17:40:11 +0200
+
 libpve-common-perl (5.0-3) unstable; urgency=medium
 
   * Notify.pm: use Clone::clone instead of Storable::dclone
