@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-5) unstable; urgency=medium
+
+  * PVE::Tools::encrypt_pw() - new helper
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Mar 2017 17:50:44 +0200
+
 libpve-common-perl (5.0-4) unstable; urgency=medium
 
   * OTP.pm: new class with OTP helpers
