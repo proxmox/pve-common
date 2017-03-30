@@ -1443,4 +1443,18 @@ sub enter_systemd_scope {
     die "systemd job never completed\n" if !$done;
 }
 
+my $salt_starter = time();
+
+sub encrypt_pw {
+    my ($pw) = @_;
+
+    $salt_starter++;
+    my $salt = substr(Digest::SHA::sha1_base64(time() + $salt_starter + $$), 0, 8);
+
+    # crypt does not want '+' in salt (see 'man crypt')
+    $salt =~ s/\+/X/g;
+
+    return crypt(encode("utf8", $pw), "\$5\$$salt\$");
+}
+
 1;
