@@ -1081,7 +1081,7 @@ sub dump_logfile {
 }
 
 sub dump_journal {
-    my ($start, $limit, $since, $until) = @_;
+    my ($start, $limit, $since, $until, $service) = @_;
 
     my $lines = [];
     my $count = 0;
@@ -1100,6 +1100,7 @@ sub dump_journal {
 
     my $cmd = ['journalctl', '-o', 'short', '--no-pager'];
 
+    push @$cmd, '--unit', $service if $service;
     push @$cmd, '--since', $since if $since;
     push @$cmd, '--until', $until if $until;
     run_command($cmd, outfunc => $parser);
