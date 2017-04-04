@@ -34,7 +34,7 @@ deb ${DEB}:
 
 .PHONY: clean
 clean: 	
-	rm -rf *~ *.deb *.changes build ${PACKAGE}-*.tar.gz
+	rm -rf *~ *.deb *.changes build ${PACKAGE}-*.tar.gz *.buildinfo
 
 .PHONY: distclean
 distclean: clean
