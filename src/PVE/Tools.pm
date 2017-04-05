@@ -341,7 +341,7 @@ sub run_command {
     my $timeout;
     my $oldtimeout;
     my $pid;
-    my $exitcode;
+    my $exitcode = -1;
 
     my $outfunc;
     my $errfunc;
