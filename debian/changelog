@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-9) unstable; urgency=medium
+
+  * PVE::RESTEnvironment::get_user - add $noerr parameter
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 29 Apr 2017 08:28:11 +0200
+
 libpve-common-perl (5.0-8) unstable; urgency=medium
 
   * remove wrong (and superfluous) range check in cpusets
