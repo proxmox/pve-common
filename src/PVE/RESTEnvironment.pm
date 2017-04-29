@@ -210,11 +210,11 @@ sub set_user {
 }
 
 sub get_user {
-    my ($self) = @_;
+    my ($self, $noerr) = @_;
 
-    die "user name not set\n" if !$self->{user};
+    return $self->{user} if defined($self->{user}) || $noerr;
 
-    return $self->{user};
+    die "user name not set\n";
 }
 
 sub is_worker {
