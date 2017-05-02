@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use Storable; # for dclone
 use Getopt::Long;
+use Encode::Locale;
+use Encode;
 use Devel::Cycle -quiet; # todo: remove?
 use PVE::Tools qw(split_list $IPV6RE $IPV4RE);
 use PVE::Exception qw(raise);
@@ -1349,7 +1351,9 @@ sub get_options {
 	}
     }
 
-    $opts = PVE::Tools::decode_utf8_parameters($opts);
+    foreach my $p (keys %$opts) {
+	$opts->{$p} = decode('locale', $opts->{$p});
+    }
 
     foreach my $p (keys %$opts) {
 	if (my $pd = $schema->{properties}->{$p}) {
