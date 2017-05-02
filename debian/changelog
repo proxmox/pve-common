@@ -1,3 +1,11 @@
+libpve-common-perl (5.0-10) unstable; urgency=medium
+
+  * mark decode_utf8_parameters() as depreciated
+
+  * use Encode::Locale to encode parameters read from console(getopt)
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 02 May 2017 11:52:19 +0200
+
 libpve-common-perl (5.0-9) unstable; urgency=medium
 
   * PVE::RESTEnvironment::get_user - add $noerr parameter
