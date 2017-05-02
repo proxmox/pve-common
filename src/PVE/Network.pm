@@ -7,6 +7,7 @@ use PVE::ProcFSTools;
 use PVE::INotify;
 use File::Basename;
 use IO::Socket::IP;
+use Socket qw(NI_NUMERICHOST NI_NUMERICSERV);
 use POSIX qw(ECONNREFUSED);
 
 use Net::IP;
@@ -574,6 +575,37 @@ sub get_local_ip_from_cidr {
     PVE::Tools::run_command($cmd, outfunc => $code);
 
     return $IPs;
+}
+
+sub addr_to_ip {
+    my ($addr) = @_;
+    my ($err, $host, $port) = Socket::getnameinfo($addr, NI_NUMERICHOST | NI_NUMERICSERV);
+    die "failed to get numerical host address: $err\n" if $err;
+    return ($host, $port) if wantarray;
+    return $host;
+}
+
+sub get_ip_from_hostname {
+    my ($hostname, $noerr) = @_;
+
+    my ($family, $ip);
+
+    eval {
+	my @res = PVE::Tools::getaddrinfo_all($hostname);
+	$family = $res[0]->{family};
+	$ip = addr_to_ip($res[0]->{addr})
+    };
+    if ($@) {
+	die "hostname lookup failed:\n$@" if !$noerr;
+	return undef;
+    }
+
+    if ($ip =~ m/^127\.|^::1$/) {
+	die "hostname lookup failed - got local IP address ($hostname = $ip)\n" if !$noerr;
+	return undef;
+    }
+
+    return wantarray ? ($ip, $family) : $ip;
 }
 
 sub lock_network {
