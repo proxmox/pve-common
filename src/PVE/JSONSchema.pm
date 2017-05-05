@@ -1351,8 +1351,21 @@ sub get_options {
 	}
     }
 
+    # decode after Getopt as we are not sure how well it handles unicode
     foreach my $p (keys %$opts) {
-	$opts->{$p} = decode('locale', $opts->{$p});
+	if (!ref($opts->{$p})) {
+	    $opts->{$p} = decode('locale', $opts->{$p});
+	} elsif (ref($opts->{$p}) eq 'ARRAY') {
+	    my $tmp = [];
+	    foreach my $v (@{$opts->{$p}}) {
+		push @$tmp, decode('locale', $v);
+	    }
+	    $opts->{$p} = $tmp;
+	} elsif (ref($opts->{$p}) eq 'SCALAR') {
+	    $opts->{$p} = decode('locale', $$opts->{$p});
+	} else {
+	    raise("decoding options failed, unknown reference\n", code => HTTP_BAD_REQUEST);
+	}
     }
 
     foreach my $p (keys %$opts) {
