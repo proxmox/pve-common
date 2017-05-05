@@ -1,3 +1,11 @@
+libpve-common-perl (5.0-11) unstable; urgency=medium
+
+  * fix decoding of array and hash CLI parameters
+
+  * add network hostname -> IP helpers
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 5 May 2017 12:39:00 +0200
+
 libpve-common-perl (5.0-10) unstable; urgency=medium
 
   * mark decode_utf8_parameters() as depreciated
