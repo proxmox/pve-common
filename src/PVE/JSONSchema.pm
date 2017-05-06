@@ -431,6 +431,37 @@ PVE::JSONSchema::register_standard_option('pve-startup-order', {
     typetext => '[[order=]\d+] [,up=\d+] [,down=\d+] ',
 });
 
+my $replicate_fmt = {
+    target => {
+	default_key => 1,
+	description => "Storage replication target node.",
+	type => 'string', format => 'pve-node',
+	format_description => "node",
+    },
+    rate => {
+	description => "Rate limit in mbps (megabytes per second) as floating point number.",
+	type => 'number',
+	minimum => 1,
+	optional => 1,
+    },
+    interval => {
+	description => "Storage replication sync interval in minutes. If set to zero replication is disabled.",
+	type => 'integer',
+	minimum => 0,
+	maximum => 1440,
+	default => 15,
+	optional => 1,
+    },
+};
+
+PVE::JSONSchema::register_format('pve-replicate', $replicate_fmt);
+
+PVE::JSONSchema::register_standard_option('pve-replicate', {
+    description => "Storage replication settings.",
+    type => 'string', format => 'pve-replicate',
+    optional => 1,
+});
+
 sub check_format {
     my ($format, $value, $path) = @_;
 
