@@ -279,7 +279,7 @@ sub parse_section_header {
 }
 
 sub format_section_header {
-    my ($class, $type, $sectionId) = @_;
+    my ($class, $type, $sectionId, $scfg, $done_hash) = @_;
 
     return "$type: $sectionId\n";
 }
@@ -448,19 +448,23 @@ sub write_config {
 
 	die "unknown section type '$type'\n" if !$opts;
 
-	my $data = $class->format_section_header($type, $sectionId);
-	if ($scfg->{comment}) {
+	my $done_hash = {};
+
+	my $data = $class->format_section_header($type, $sectionId, $scfg, $done_hash);
+	if ($scfg->{comment} && !$done_hash->{comment}) {
 	    my $k = 'comment';
 	    my $v = $class->encode_value($type, $k, $scfg->{$k});
 	    $data .= &$format_config_line($propertyList->{$k}, $k, $v);
 	}
 
-	$data .= "\tdisable\n" if $scfg->{disable};
+	$data .= "\tdisable\n" if $scfg->{disable} && !$done_hash->{disable};
 
-	my $done_hash = { comment => 1, disable => 1};
+	$done_hash->{comment} = 1;
+	$done_hash->{disable} = 1;
 
 	my @option_keys = sort keys %$opts;
 	foreach my $k (@option_keys) {
+	    next if defined($done_hash->{$k});
 	    next if $opts->{$k}->{optional};
 	    $done_hash->{$k} = 1;
 	    my $v = $scfg->{$k};
