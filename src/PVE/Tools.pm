@@ -26,6 +26,7 @@ use Net::DBus qw(dbus_uint32 dbus_uint64);
 use Net::DBus::Callback;
 use Net::DBus::Reactor;
 use Scalar::Util 'weaken';
+use PVE::Syscall;
 
 # avoid warning when parsing long hex values with hex()
 no warnings 'portable'; # Support for 64-bit ints required
@@ -1248,17 +1249,17 @@ sub parse_host_and_port {
 
 sub unshare($) {
     my ($flags) = @_;
-    return 0 == syscall(272, $flags);
+    return 0 == syscall(PVE::Syscall::unshare, $flags);
 }
 
 sub setns($$) {
     my ($fileno, $nstype) = @_;
-    return 0 == syscall(308, $fileno, $nstype);
+    return 0 == syscall(PVE::Syscall::setns, $fileno, $nstype);
 }
 
 sub syncfs($) {
     my ($fileno) = @_;
-    return 0 == syscall(306, $fileno);
+    return 0 == syscall(PVE::Syscall::syncfs, $fileno);
 }
 
 sub sync_mountpoint {
@@ -1390,7 +1391,7 @@ sub validate_ssh_public_keys {
 
 sub openat($$$;$) {
     my ($dirfd, $pathname, $flags, $mode) = @_;
-    my $fd = syscall(257, $dirfd, $pathname, $flags, $mode//0);
+    my $fd = syscall(PVE::Syscall::openat, $dirfd, $pathname, $flags, $mode//0);
     return undef if $fd < 0;
     # sysopen() doesn't deal with numeric file descriptors apparently
     # so we need to convert to a mode string for IO::Handle->new_from_fd
@@ -1398,14 +1399,14 @@ sub openat($$$;$) {
     my $handle = IO::Handle->new_from_fd($fd, $flagstr);
     return $handle if $handle;
     my $err = $!; # save error before closing the raw fd
-    syscall(3, $fd); # close
+    syscall(PVE::Syscall::close, $fd); # close
     $! = $err;
     return undef;
 }
 
 sub mkdirat($$$) {
     my ($dirfd, $name, $mode) = @_;
-    return syscall(258, $dirfd, $name, $mode) == 0;
+    return syscall(PVE::Syscall::mkdirat, $dirfd, $name, $mode) == 0;
 }
 
 # NOTE: This calls the dbus main loop and must not be used when another dbus
