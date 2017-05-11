@@ -25,6 +25,7 @@ use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
 use Net::DBus qw(dbus_uint32 dbus_uint64);
 use Net::DBus::Callback;
 use Net::DBus::Reactor;
+use Scalar::Util 'weaken';
 
 # avoid warning when parsing long hex values with hex()
 no warnings 'portable'; # Support for 64-bit ints required
@@ -122,7 +123,12 @@ sub run_with_timeout {
 }
 
 # flock: we use one file handle per process, so lock file
-# can be called multiple times and succeeds for the same process.
+# can be nested multiple times and succeeds for the same process.
+#
+# Since this is the only way we lock now and we don't have the old
+# 'lock(); code(); unlock();' pattern anymore we do not actually need to
+# count how deep we're nesting. Therefore this hash now stores a weak reference
+# to a boolean telling us whether we already have a lock.
 
 my $lock_handles =  {};
 
@@ -133,58 +139,67 @@ sub lock_file_full {
 
     my $mode = $shared ? LOCK_SH : LOCK_EX;
 
-    my $lock_func = sub {
-        if (!$lock_handles->{$$}->{$filename}) {
-	    my $fh = new IO::File(">>$filename") ||
-		die "can't open file - $!\n";
-	    $lock_handles->{$$}->{$filename} = { fh => $fh, refcount => 0};
-        }
+    my $lockhash = ($lock_handles->{$$} //= {});
 
-        if (!flock($lock_handles->{$$}->{$filename}->{fh}, $mode|LOCK_NB)) {
-            print STDERR "trying to acquire lock...";
+    # Returns a locked file handle.
+    my $get_locked_file = sub {
+	my $fh = IO::File->new(">>$filename")
+	    or die "can't open file - $!\n";
+
+	if (!flock($fh, $mode|LOCK_NB)) {
+	    print STDERR "trying to acquire lock...";
 	    my $success;
 	    while(1) {
-		$success = flock($lock_handles->{$$}->{$filename}->{fh}, $mode);
+		$success = flock($fh, $mode);
 		# try again on EINTR (see bug #273)
 		if ($success || ($! != EINTR)) {
 		    last;
 		}
 	    }
-            if (!$success) {
-                print STDERR " failed\n";
-                die "can't acquire lock '$filename' - $!\n";
-            }
-            print STDERR " OK\n";
-        }
-	$lock_handles->{$$}->{$filename}->{refcount}++;
+	    if (!$success) {
+		print STDERR " failed\n";
+		die "can't acquire lock '$filename' - $!\n";
+	    }
+	    print STDERR " OK\n";
+	}
+
+	return $fh;
     };
 
     my $res;
-
-    eval { run_with_timeout($timeout, $lock_func); };
-    my $err = $@;
-    if ($err) {
-	$err = "can't lock file '$filename' - $err";
-    } else {
-	eval { $res = &$code(@param) };
-	$err = $@;
-    }
-
-    if (my $fh = $lock_handles->{$$}->{$filename}->{fh}) {
-	my $refcount = --$lock_handles->{$$}->{$filename}->{refcount};
-	if ($refcount <= 0) {
-	    $lock_handles->{$$}->{$filename} = undef;
-	    close ($fh);
+    my $checkptr = $lockhash->{$filename};
+    my $check = 0; # This must not go out of scope before running the code.
+    my $local_fh; # This must stay local
+    if (!$checkptr || !$$checkptr) {
+	# We cannot create a weak reference in a single atomic step, so we first
+	# create a false-value, then create a reference to it, then weaken it,
+	# and after successfully locking the file we change the boolean value.
+	#
+	# The reason for this is that if an outer SIGALRM throws an exception
+	# between creating the reference and weakening it, a subsequent call to
+	# lock_file_full() will see a leftover full reference to a valid
+	# variable. This variable must be 0 in order for said call to attempt to
+	# lock the file anew.
+	#
+	# An externally triggered exception elsewhere in the code will cause the
+	# weak reference to become 'undef', and since the file handle is only
+	# stored in the local scope in $local_fh, the file will be closed by
+	# perl's cleanup routines as well.
+	#
+	# This still assumes that an IO::File handle can properly deal with such
+	# exceptions thrown during its own destruction, but that's up to perls
+	# guts now.
+	$lockhash->{$filename} = \$check;
+	weaken $lockhash->{$filename};
+	$local_fh = eval { run_with_timeout($timeout, $get_locked_file) };
+	if ($@) {
+	    $@ = "can't lock file '$filename' - $@";
+	    return undef;
 	}
+	$check = 1;
     }
-
-    if ($err) {
-        $@ = $err;
-        return undef;
-    }
-
-    $@ = undef;
-
+    $res = eval { &$code(@param); };
+    return undef if $@;
     return $res;
 }
 
