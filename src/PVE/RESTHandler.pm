@@ -415,7 +415,7 @@ my $get_property_description = sub {
 	$type = '';
     }
 
-    if ($fileparams && $type eq 'string') {
+    if ($fileparams && $phash->{type} eq 'string') {
 	foreach my $elem (@$fileparams) {
 	    if ($name eq $elem) {
 		$type = '<filepath>';
