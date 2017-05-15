@@ -409,16 +409,16 @@ my $get_property_description = sub {
 
     chomp $descr;
 
-    my $type = PVE::JSONSchema::schema_get_type_text($phash, $style);
+    my $type_text = PVE::JSONSchema::schema_get_type_text($phash, $style);
 
     if ($hidepw && $name eq 'password') {
-	$type = '';
+	$type_text = '';
     }
 
     if ($fileparams && $phash->{type} eq 'string') {
 	foreach my $elem (@$fileparams) {
 	    if ($name eq $elem) {
-		$type = '<filepath>';
+		$type_text = '<filepath>';
 		last;
 	    }
 	}
@@ -438,7 +438,7 @@ my $get_property_description = sub {
 	    die "unknown style '$style'";
 	}
 
-	$res .= "`$type` " if $type;
+	$res .= "`$type_text` " if $type_text;
 
 	if (defined(my $dv = $phash->{default})) {
 	    $res .= "('default =' `$dv`)";
@@ -480,7 +480,7 @@ my $get_property_description = sub {
 	    die "unknown style '$style'";
 	}
 
-	my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type";
+	my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type_text";
 	my $indend = "             ";
 
 	$res .= Text::Wrap::wrap('', $indend, ($tmp));
@@ -558,7 +558,7 @@ sub usage_str {
 	next if $arg_hash->{$k};
 	next if defined($fixed_param->{$k});
 
-	my $type = $prop->{$k}->{type} || 'string';
+	my $type_text = $prop->{$k}->{type} || 'string';
 
 	next if $hidepw && ($k eq 'password') && !$prop->{$k}->{optional};
 
@@ -578,7 +578,7 @@ sub usage_str {
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
-	    $args .= "-$base <$type>"
+	    $args .= "-$base <$type_text>"
 	}
     } 
 
