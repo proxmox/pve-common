@@ -7,6 +7,7 @@ all:
 check:
 	for d in $(SUBDIRS); do $(MAKE) -C $$d check; done
 	./lock_file.pl
+	./calendar_event_test.pl
 
 install: check
 distclean: clean
