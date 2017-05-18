@@ -106,7 +106,7 @@ sub has {
 sub members {
     my ($self) = @_;
 
-    return sort keys %{$self->{members}};
+    return sort { $a <=> $b } keys %{$self->{members}};
 }    
 
 sub size {
