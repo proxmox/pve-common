@@ -1,3 +1,17 @@
+libpve-common-perl (5.0-12) unstable; urgency=medium
+
+  * fix #1388: cpuset: sort members numerically
+
+  * CalendarEvent.pm: implement parser/utils for systemd like calender exents
+
+  * Tools: make file-locking aware of external exception sources
+
+  * SectionConfig.pm: pass section data to format_section_header
+
+  * JSONSchema.pm: register new standard option pve-replicate
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 18 May 2017 15:43:30 +0200
+
 libpve-common-perl (5.0-11) unstable; urgency=medium
 
   * fix decoding of array and hash CLI parameters
