@@ -14,6 +14,8 @@ use Net::IP;
 
 # host network related utility functions
 
+our $PHYSICAL_NIC_RE = qr/(?:eth\d+|en[^:.]+|ib\d+)/;
+
 our $ipv4_reverse_mask = [
     '0.0.0.0',
     '128.0.0.0',

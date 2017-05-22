@@ -13,6 +13,7 @@ use File::Basename;
 use Fcntl qw(:DEFAULT :flock);
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise_param_exc);
+use PVE::Network;
 use PVE::Tools;
 use PVE::ProcFSTools;
 use Clone qw(clone);
@@ -801,7 +802,7 @@ sub __read_etc_network_interfaces {
 
     if ($proc_net_dev) {
 	while (defined ($line = <$proc_net_dev>)) {
-	    if ($line =~ m/^\s*(eth\d+|en[^:.]+|ib\d+):.*/) {
+	    if ($line =~ m/^\s*($PVE::Network::PHYSICAL_NIC_RE):.*/) {
 		$ifaces->{$1}->{exists} = 1;
 	    }
 	}
@@ -974,7 +975,7 @@ sub __read_etc_network_interfaces {
 		$ifaces->{$1}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
-	} elsif ($iface =~ m/^(?:eth\d+|en[^:.]+|ib\d+)$/) {
+	} elsif ($iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
 	    if (!$d->{ovs_type}) {
 		$d->{type} = 'eth';
 	    } elsif ($d->{ovs_type} eq 'OVSPort') {
@@ -1203,7 +1204,7 @@ sub __write_etc_network_interfaces {
 	    $d->{type} eq 'OVSBond') {
 	    my $brname = $used_ports->{$iface};
 	    if (!$brname || !$ifaces->{$brname}) { 
-		if ($iface =~ /^(?:eth|en|ib)/) {
+		if ($iface =~ /^$PVE::Network::PHYSICAL_NIC_RE/) {
 		    $ifaces->{$iface} = { type => 'eth',
 					  exists => 1,
 					  method => 'manual',
@@ -1292,7 +1293,7 @@ NETWORKDOC
 	my $pri;
 	if ($iface eq 'lo') {
 	    $pri = $if_type_hash->{loopback};
-	} elsif ($iface =~ m/^(?:eth\d+|ib\d+|en[^:.]+)$/) {
+	} elsif ($iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
 	    $pri = $if_type_hash->{eth} + $child;
 	} elsif ($iface =~ m/^bond\d+$/) {
 	    $pri = $if_type_hash->{bond} + $child;
