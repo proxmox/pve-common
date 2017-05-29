@@ -23,6 +23,7 @@ LIB_SOURCES=			\
 	AtomicFile.pm		\
 	INotify.pm		\
 	Tools.pm		\
+	Syscall.pm		\
 	Exception.pm
 
 all:
