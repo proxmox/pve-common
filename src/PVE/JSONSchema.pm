@@ -1153,6 +1153,11 @@ my $method_schema = {
 	    description => "A parameter name. If specified, all calls to this method are proxied to the host contained in that parameter.",
 	    optional => 1,
 	},
+	proxyto_callback => {
+	    type =>  'coderef',
+	    description => "A function which is called to resolve the proxyto attribute. The default implementaion returns the value of the 'proxyto' parameter.",
+	    optional => 1,
+	},
         permissions => {
 	    type => 'object',
 	    description => "Required access permissions. By default only 'root' is allowed to access this method.",
