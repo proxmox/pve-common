@@ -137,13 +137,13 @@ sub parse_calendar_event {
     if ($matchall_hours) {
 	$h = '*';
     } else {
-	$h = [ sort keys %$hours_hash ];
+	$h = [ sort { $a <=> $b } keys %$hours_hash ];
     }
 
     if ($matchall_minutes) {
 	$m = '*';
     } else {
-	$m = [ sort keys %$minutes_hash ];
+	$m = [ sort { $a <=> $b } keys %$minutes_hash ];
     }
 
     return { h => $h, m => $m, dow => [ sort keys %$dow_hash ]};
