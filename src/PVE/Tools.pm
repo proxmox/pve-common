@@ -4,7 +4,8 @@ use strict;
 use warnings;
 use POSIX qw(EINTR EEXIST EOPNOTSUPP);
 use IO::Socket::IP;
-use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED AI_CANONNAME SOCK_DGRAM);
+use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED AI_CANONNAME SOCK_DGRAM
+	      IPPROTO_TCP);
 use IO::Select;
 use File::Basename;
 use File::Path qw(make_path);
@@ -788,7 +789,7 @@ sub next_unused_port {
 	my %sockargs = (Listen => 5,
 			ReuseAddr => 1,
 			Family    => $family,
-			Proto     => 0,
+			Proto     => IPPROTO_TCP,
 			GetAddrInfoFlags => 0);
 	$sockargs{LocalAddr} = $address if defined($address);
 
