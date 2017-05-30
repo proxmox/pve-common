@@ -758,7 +758,7 @@ sub wait_for_vnc_port {
 }
 
 sub next_unused_port {
-    my ($range_start, $range_end, $family) = @_;
+    my ($range_start, $range_end, $family, $address) = @_;
 
     # We use a file to register allocated ports.
     # Those registrations expires after $expiretime.
@@ -786,16 +786,18 @@ sub next_unused_port {
 	}
 
 	my $newport;
+	my %sockargs = (Listen => 5,
+			ReuseAddr => 1,
+			Family    => $family,
+			Proto     => 0,
+			GetAddrInfoFlags => 0);
+	$sockargs{LocalAddr} = $address if defined($address);
 
 	for (my $p = $range_start; $p < $range_end; $p++) {
 	    next if $ports->{$p}; # reserved
 
-	    my $sock = IO::Socket::IP->new(Listen => 5,
-					   LocalPort => $p,
-					   ReuseAddr => 1,
-					   Family    => $family,
-					   Proto     => 0,
-					   GetAddrInfoFlags => 0);
+	    $sockargs{LocalPort} = $p;
+	    my $sock = IO::Socket::IP->new(%sockargs);
 
 	    if ($sock) {
 		close($sock);
@@ -824,18 +826,18 @@ sub next_unused_port {
 }
 
 sub next_migrate_port {
-    my ($family) = @_;
-    return next_unused_port(60000, 60050, $family);
+    my ($family, $address) = @_;
+    return next_unused_port(60000, 60050, $family, $address);
 }
 
 sub next_vnc_port {
-    my ($family) = @_;
-    return next_unused_port(5900, 6000, $family);
+    my ($family, $address) = @_;
+    return next_unused_port(5900, 6000, $family, $address);
 }
 
 sub next_spice_port {
-    my ($family) = @_;
-    return next_unused_port(61000, 61099, $family);
+    my ($family, $address) = @_;
+    return next_unused_port(61000, 61099, $family, $address);
 }
 
 # NOTE: NFS syscall can't be interrupted, so alarm does
