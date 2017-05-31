@@ -595,12 +595,12 @@ sub get_ip_from_hostname {
 	$ip = addr_to_ip($res[0]->{addr})
     };
     if ($@) {
-	die "hostname lookup failed:\n$@" if !$noerr;
+	die "hostname lookup '$hostname' failed - $@" if !$noerr;
 	return undef;
     }
 
     if ($ip =~ m/^127\.|^::1$/) {
-	die "hostname lookup failed - got local IP address ($hostname = $ip)\n" if !$noerr;
+	die "hostname lookup '$hostname' failed - got local IP address '$ip'\n" if !$noerr;
 	return undef;
     }
 
