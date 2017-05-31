@@ -1,3 +1,19 @@
+libpve-common-perl (5.0-13) unstable; urgency=medium
+
+  *  calendarevent: change sorting of hours and minutes to numeric
+
+  * tools: next_unused_port: use IPPROTO_TCP explicitly
+
+  * tools: unused ports: optional address parameter
+
+  * PVE::JSONSchema - add proxyto_callback property
+
+  * Revert "JSONSchema.pm: register new standard option pve-replicate
+
+  * swap raw syscall numbers with syscall.ph for easier porting
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 31 May 2017 09:06:35 +0200
+
 libpve-common-perl (5.0-12) unstable; urgency=medium
 
   * fix #1388: cpuset: sort members numerically
