@@ -132,7 +132,19 @@ my $tests = [
 	[20*60*60, 20*60*60 + 30*60],
 	[22*60*60 + 30*60, 44*60*60]
      ]
-    ]
+    ],
+    [
+     '61',
+     { error => "value '61' out of range" },
+    ],
+    [
+     '*/61',
+     { error => "repetition '61' out of range" },
+    ],
+    [
+     '0..80',
+     { error => "range end '80' out of range" },
+    ],
 ];
 
 foreach my $test (@$tests) {

@@ -55,6 +55,7 @@ sub parse_calendar_event {
 		    $$matchall_ref = 1;
 		} else {
 		    $start = int($start);
+		    die "value '$start' out of range\n" if $start >= $max;
 		    $res_hash->{$start} = 1;
 		}
 	    }
