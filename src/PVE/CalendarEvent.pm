@@ -27,7 +27,7 @@ sub pve_verify_calendar_event {
     eval { parse_calendar_event($text); };
     if (my $err = $@) {
 	return undef if $noerr;
-	die "invalid calendar event '$text'\n";
+	die "invalid calendar event '$text' - $err\n";
     }
     return $text;
 }
