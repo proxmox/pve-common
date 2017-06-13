@@ -145,6 +145,18 @@ my $tests = [
      '0..80',
      { error => "range end '80' out of range" },
     ],
+    [
+     ' mon 0 0 0',
+     { error => "unable to parse calendar event - unused parts" },
+    ],
+    [
+     '',
+     { error => "unable to parse calendar event - event is empty" },
+    ],
+    [
+     ' mon 0 0',
+     { error => "unable to parse calendar event - unused parts" },
+    ],
 ];
 
 foreach my $test (@$tests) {

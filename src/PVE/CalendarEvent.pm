@@ -5,6 +5,7 @@ use warnings;
 use Data::Dumper;
 use Time::Local;
 use PVE::JSONSchema;
+use PVE::Tools qw(trim);
 
 # Note: This class implements a parser/utils for systemd like calender exents
 # Date specification is currently not implemented
@@ -35,6 +36,12 @@ sub pve_verify_calendar_event {
 # returns a $calspec hash which can be passed to compute_next_event()
 sub parse_calendar_event {
     my ($event) = @_;
+
+    $event = trim($event);
+
+    if ($event eq '') {
+	die "unable to parse calendar event - event is empty\n";
+    }
 
     my $parse_single_timespec = sub {
 	my ($p, $max, $matchall_ref, $res_hash) = @_;
