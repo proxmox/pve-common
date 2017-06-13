@@ -128,8 +128,12 @@ sub parse_calendar_event {
 
     if ($time_spec =~ m/^($chars+):($chars+)$/) {
 	my ($p1, $p2) = ($1, $2);
-	$parse_single_timespec->($p1, 24, \$matchall_hours, $hours_hash);
-	$parse_single_timespec->($p2, 60, \$matchall_minutes, $minutes_hash);
+	foreach my $p (split(',', $p1)) {
+	    $parse_single_timespec->($p, 24, \$matchall_hours, $hours_hash);
+	}
+	foreach my $p (split(',', $p2)) {
+	    $parse_single_timespec->($p, 60, \$matchall_minutes, $minutes_hash);
+	}
     } elsif ($time_spec =~ m/^($chars)+$/) { # minutes only
 	$matchall_hours = 1;
 	foreach my $p (split(',', $time_spec)) {
