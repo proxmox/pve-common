@@ -1,6 +1,20 @@
+libpve-common-perl (5.0-14) unstable; urgency=medium
+
+  * calendarevent: add the parsing error message to the format
+
+  * calendarevent: add ability to have multiple timespecs for hours and minutes
+
+  * calendarevent: trim event and check if empty
+
+  * calendarevent: check range for start also without repetition
+
+  * add and use physical NIC regexp
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 22 Jun 2017 08:25:57 +0200
+
 libpve-common-perl (5.0-13) unstable; urgency=medium
 
-  *  calendarevent: change sorting of hours and minutes to numeric
+  * calendarevent: change sorting of hours and minutes to numeric
 
   * tools: next_unused_port: use IPPROTO_TCP explicitly
 
