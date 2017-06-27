@@ -739,18 +739,16 @@ sub wait_for_vnc_port {
     my $starttime = [gettimeofday];
     my $elapsed;
 
+    my $found;
     while (($elapsed = tv_interval($starttime)) < $timeout) {
-	if (my $fh = IO::File->new ("/proc/net/tcp", "r")) {
-	    while (defined (my $line = <$fh>)) {
-		if ($line =~ m/^\s*\d+:\s+([0-9A-Fa-f]{8}):([0-9A-Fa-f]{4})\s/) {
-		    if ($port == hex($2)) {
-			close($fh);
-			return 1;
-		    }
-		}
+	# -Htln = don't print header, tcp, listening sockets only, numeric ports
+	run_command(['/bin/ss', '-Htln', "sport = :$port"], outfunc => sub {
+	    my $line = shift;
+	    if ($line =~ m/^LISTEN\s+\d+\s+\d+\s+\S+:(\d+)\s/) {
+		$found = 1 if ($port == $1);
 	    }
-	    close($fh);
-	}
+	});
+	return 1 if $found;
 	$sleeptime += 100000 if  $sleeptime < 1000000;
 	usleep($sleeptime);
     }
