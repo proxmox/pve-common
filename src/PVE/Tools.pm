@@ -839,6 +839,72 @@ sub next_spice_port {
     return next_unused_port(61000, 61099, $family, $address);
 }
 
+# sigkill after $timeout  a $sub running in a fork if it can't write a pipe
+# the $sub has to return a single scalar
+sub run_fork_with_timeout {
+    my ($timeout, $sub) = @_;
+
+    my $res;
+    my $error;
+    my $pipe_out = IO::Pipe->new();
+    my $pipe_err = IO::Pipe->new();
+
+    # disable pending alarms, save their remaining time
+    my $prev_alarm = alarm 0;
+
+    # trap before forking to avoid leaving a zombie if the parent get killed
+    my $sig_received;
+    local $SIG{INT} = $SIG{TERM} = $SIG{QUIT} = $SIG{HUP} = $SIG{PIPE} = sub {
+	$sig_received++;
+    };
+
+    my $child = fork();
+    if (!defined($child)) {
+	die "fork failed: $!\n";
+	return $res;
+    }
+
+    if (!$child) {
+	$pipe_out->writer();
+	$pipe_err->writer();
+
+	eval {
+	    $res = $sub->();
+	    print {$pipe_out} "$res";
+	    $pipe_out->flush();
+	};
+	if (my $err = $@) {
+	    print {$pipe_err} "$err";
+	    $pipe_err->flush();
+	    POSIX::_exit(1);
+	}
+	POSIX::_exit(0);
+    }
+
+    $pipe_out->reader();
+    $pipe_err->reader();
+
+    my $readvalues = sub {
+	local $/ = undef;
+	$res = <$pipe_out>;
+	$error = <$pipe_err>;
+    };
+    eval {
+	run_with_timeout($timeout, $readvalues);
+    };
+    warn $@ if $@;
+    $pipe_out->close();
+    $pipe_err->close();
+    kill('KILL', $child);
+    waitpid($child, 0);
+
+    alarm $prev_alarm;
+    die "interrupted by unexpected signal\n" if $sig_received;
+
+    die $error if $error;
+    return $res;
+}
+
 # NOTE: NFS syscall can't be interrupted, so alarm does
 # not work to provide timeouts.
 # from 'man nfs': "Only SIGKILL can interrupt a pending NFS operation"
