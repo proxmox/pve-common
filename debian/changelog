@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-16) unstable; urgency=medium
+
+  * add helper to time-out hard blocking operations (eg. on stale NFS moutns)
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 30 Jun 2017 09:18:04 +0200
+
 libpve-common-perl (5.0-15) unstable; urgency=medium
 
   * use more reliable checks in wait_for_vnc_port
