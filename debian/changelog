@@ -1,3 +1,21 @@
+libpve-common-perl (4.0-96) unstable; urgency=medium
+
+  * Fix #1388: cpuset: sort members numerically
+
+  * tools: next_unused_port: use IPPROTO_TCP explicitly
+
+  * tools: unused ports: optional address parameter
+
+  * Add utility subroutine to get the fully qualified domain name of a host
+
+  * Tools: make file-locking aware of external exception sources
+
+  * net: only disable ipv6 on actual creation
+
+  * INotify.pm: use Clone::clone instead of Storable::dclone
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 14 Jul 2017 13:25:10 +0200
+
 libpve-common-perl (4.0-95) unstable; urgency=medium
 
   * Network: add helpers to resolve hostnames to IPs
