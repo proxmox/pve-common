@@ -60,8 +60,7 @@ my $log_task_result = sub {
 	$msg = $task->{status};
     }
 
-    $rest_env->log_cluster_msg($pri, $user, "end task $upid $msg")
-	if $rest_env;
+    $rest_env->log_cluster_msg($pri, $user, "end task $upid $msg");
 };
 
 my $worker_reaper = sub {
