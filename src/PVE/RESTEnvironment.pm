@@ -47,7 +47,8 @@ my $log_task_result = sub {
     }
 
     my $tlist = $rest_env->active_workers($upid);
-    $rest_env->broadcast_tasklist($tlist);
+    eval { $rest_env->broadcast_tasklist($tlist); };
+    syslog('err', $@) if $@;
 
     my $task;
     foreach my $t (@$tlist) {
@@ -558,7 +559,8 @@ sub fork_worker {
     $self->log_cluster_msg('info', $user, "starting task $upid");
 
     my $tlist = $self->active_workers($upid, $sync);
-    $self->broadcast_tasklist($tlist);
+    eval { $self->broadcast_tasklist($tlist); };
+    syslog('err', $@) if $@;
 
     my $res = 0;
 
