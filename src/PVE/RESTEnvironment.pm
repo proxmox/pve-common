@@ -318,7 +318,6 @@ sub active_workers  {
 	# we try to reduce the amount of data
 	# list all running tasks and task and a few others
 	# try to limit to 25 tasks
-	my $ctime = time();
 	my $max = 25 - scalar(@$tlist);
         foreach my $task (@ta) {
 	    last if $max <= 0;
