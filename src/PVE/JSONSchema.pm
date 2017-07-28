@@ -508,6 +508,13 @@ sub format_size {
     return "${tb}T";
 };
 
+sub parse_boolean {
+    my ($bool) = @_;
+    return 1 if $bool =~ m/^(1|on|yes|true)$/i;
+    return 0 if $bool =~ m/^(0|off|no|false)$/i;
+    return undef;
+}
+
 sub parse_property_string {
     my ($format, $data, $path, $additional_properties) = @_;
 
@@ -546,8 +553,7 @@ sub parse_property_string {
 
 	    die "invalid key in comma-separated list property: $k\n" if !$schema;
 	    if ($schema->{type} && $schema->{type} eq 'boolean') {
-		$v = 1 if $v =~ m/^(1|on|yes|true)$/i;
-		$v = 0 if $v =~ m/^(0|off|no|false)$/i;
+		$v = parse_boolean($v) // $v;
 	    }
 	    $res->{$k} = $v;
 	} elsif ($part !~ /=/) {
@@ -1378,10 +1384,8 @@ sub get_options {
 	    if ($pd->{type} eq 'boolean') {
 		if ($opts->{$p} eq '') {
 		    $opts->{$p} = 1;
-		} elsif ($opts->{$p} =~ m/^(1|true|yes|on)$/i) {
-		    $opts->{$p} = 1;
-		} elsif ($opts->{$p} =~ m/^(0|false|no|off)$/i) {
-		    $opts->{$p} = 0;
+		} elsif (defined(my $bool = parse_boolean($opts->{$p}))) {
+		    $opts->{$p} = $bool;
 		} else {
 		    raise("unable to parse boolean option\n", code => HTTP_BAD_REQUEST);
 		}
@@ -1434,8 +1438,7 @@ sub parse_config {
 	    if ($schema->{properties}->{$key} && 
 		$schema->{properties}->{$key}->{type} eq 'boolean') {
 
-		$value = 1 if $value =~ m/^(1|on|yes|true)$/i; 
-	        $value = 0 if $value =~ m/^(0|off|no|false)$/i; 
+		$value = parse_boolean($value) // $value;
 	    }
 	    $cfg->{$key} = $value;
 	} else {
