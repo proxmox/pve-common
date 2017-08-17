@@ -580,6 +580,64 @@ sub run_command {
     return $exitcode;
 }
 
+# Run a command with a tcp socket as standard input.
+sub pipe_socket_to_command  {
+    my ($cmd, $ip, $port) = @_;
+
+    my $params = {
+	Listen => 1,
+	ReuseAddr => 1,
+	Proto => &Socket::IPPROTO_TCP,
+	GetAddrInfoFlags => 0,
+	LocalAddr => $ip,
+	LocalPort => $port,
+    };
+    my $socket = IO::Socket::IP->new(%$params) or die "failed to open socket: $!\n";
+
+    print "$ip\n$port\n"; # tell remote where to connect
+    *STDOUT->flush();
+
+    alarm 0;
+    local $SIG{ALRM} = sub { die "timed out waiting for client\n" };
+    alarm 30;
+    my $client = $socket->accept; # Wait for a client
+    alarm 0;
+    close($socket);
+
+    # We want that the command talks over the TCP socket and takes
+    # ownership of it, so that when it closes it the connection is
+    # terminated, so we need to be able to close the socket. So we
+    # can't really use PVE::Tools::run_command().
+    my $pid = fork() // die "fork failed: $!\n";
+    if (!$pid) {
+	POSIX::dup2(fileno($client), 0);
+	POSIX::dup2(fileno($client), 1);
+	close($client);
+	exec {$cmd->[0]} @$cmd or do {
+	    warn "exec failed: $!\n";
+	    POSIX::_exit(1);
+	};
+    }
+
+    close($client);
+    if (waitpid($pid, 0) != $pid) {
+	kill(15 => $pid); # if we got interrupted terminate the child
+	my $count = 0;
+	while (waitpid($pid, POSIX::WNOHANG) != $pid) {
+	    usleep(100000);
+	    $count++;
+	    kill(9 => $pid), last if $count > 300; # 30 second timeout
+	}
+    }
+    if (my $sig = ($? & 127)) {
+	die "got signal $sig\n";
+    } elsif (my $exitcode = ($? >> 8)) {
+	die "exit code $exitcode\n";
+    }
+
+    return undef;
+}
+
 sub split_list {
     my $listtxt = shift || '';
 
