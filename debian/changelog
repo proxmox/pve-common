@@ -1,6 +1,18 @@
+libpve-common-perl (5.0-17) unstable; urgency=medium
+
+  * api: fix rendering of filepath/string parameters
+
+  * tools: add pipe_socket_to_command
+
+  * JSONSchema: add parse_boolean helper
+
+  * restenv: catch broadcast_tasklist errors gracefully
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 6 Sep 2017 09:34:43 +0200
+
 libpve-common-perl (5.0-16) unstable; urgency=medium
 
-  * add helper to time-out hard blocking operations (eg. on stale NFS moutns)
+  * add helper to time-out hard blocking operations (eg. on stale NFS mounts)
 
  -- Proxmox Support Team <support@proxmox.com>  Fri, 30 Jun 2017 09:18:04 +0200
 
