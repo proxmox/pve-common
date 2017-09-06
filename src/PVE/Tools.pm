@@ -910,11 +910,9 @@ sub run_fork_with_timeout {
     # disable pending alarms, save their remaining time
     my $prev_alarm = alarm 0;
 
-    # trap before forking to avoid leaving a zombie if the parent get killed
+    # avoid leaving a zombie if the parent gets interrupted
     my $sig_received;
-    local $SIG{INT} = $SIG{TERM} = $SIG{QUIT} = $SIG{HUP} = $SIG{PIPE} = sub {
-	$sig_received++;
-    };
+    local $SIG{INT} = sub { $sig_received++; };
 
     my $child = fork();
     if (!defined($child)) {
