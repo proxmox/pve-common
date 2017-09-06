@@ -431,7 +431,7 @@ my $get_property_description = sub {
 	} elsif ($style eq 'config-sub') {
 	    $res .= "`$name`=";
 	} elsif ($style eq 'arg') {
-	    $res .= "`-$name` ";
+	    $res .= "`--$name` ";
 	} elsif ($style eq 'fixed') {
 	    $res .= "`<$name>`: ";
 	} else {
@@ -578,7 +578,7 @@ sub usage_str {
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
-	    $args .= "-$base <$type_text>"
+	    $args .= "--$base <$type_text>"
 	}
     } 
 
