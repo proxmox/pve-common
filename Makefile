@@ -29,7 +29,7 @@ deb ${DEB}:
 	rsync -a src/ build
 	rsync -a debian/ build/debian
 	echo "git clone git://git.proxmox.com/git/pve-common.git\\ngit checkout ${GITVERSION}" > build/debian/SOURCE
-	cd build; dpkg-buildpackage -rfakeroot -b -us -uc
+	cd build; dpkg-buildpackage -b -us -uc
 	lintian ${DEB}
 
 .PHONY: clean
