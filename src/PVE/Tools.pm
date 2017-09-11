@@ -864,7 +864,8 @@ sub df {
 	$pipe->writer();
 	eval {
 	    my $df = Filesys::Df::df($path, 1);
-	    print {$pipe} "$df->{blocks}\n$df->{used}\n$df->{bavail}\n";
+	    print {$pipe} "$df->{blocks}\n$df->{used}\n$df->{bavail}\n"
+		if defined($df);
 	    $pipe->close();
 	};
 	if (my $err = $@) {
@@ -877,9 +878,9 @@ sub df {
     $pipe->reader();
 
     my $readvalues = sub {
-	$res->{total} = int((<$pipe> =~ /^(\d*)$/)[0]);
-	$res->{used}  = int((<$pipe> =~ /^(\d*)$/)[0]);
-	$res->{avail} = int((<$pipe> =~ /^(\d*)$/)[0]);
+	$res->{total} = int(((<$pipe> // 0) =~ /^(\d*)$/)[0]);
+	$res->{used}  = int(((<$pipe> // 0) =~ /^(\d*)$/)[0]);
+	$res->{avail} = int(((<$pipe> // 0) =~ /^(\d*)$/)[0]);
     };
     eval {
 	run_with_timeout($timeout, $readvalues);
