@@ -1617,4 +1617,37 @@ sub encrypt_pw {
     return crypt(encode("utf8", $pw), "\$5\$$salt\$");
 }
 
+# intended usage: convert_size($val, "kb" => "gb")
+# on reduction (converting to a bigger unit) we round up by default if
+# information got lost. E.g. `convert_size(1023, "b" => "kb")` returns 1
+# use $no_round_up to switch this off, above example would then return 0
+sub convert_size {
+    my ($value, $from, $to, $no_round_up) = @_;
+
+    my $units = {
+	b  => 0,
+	kb => 1,
+	mb => 2,
+	gb => 3,
+	tb => 4,
+	pb => 5,
+    };
+
+    $from = lc($from); $to = lc($to);
+    die "unknown 'from' and/or 'to' units ($from => $to)"
+	if !(defined($units->{$from}) && defined($units->{$to}));
+
+    my $shift_amount = $units->{$from} - $units->{$to};
+
+    if ($shift_amount > 0) {
+	$value <<= ($shift_amount * 10);
+    } elsif ($shift_amount < 0) {
+	my $remainder = ($value & (1 << abs($shift_amount)*10) - 1);
+	$value >>= abs($shift_amount) * 10;
+	$value++ if $remainder && !$no_round_up;
+    }
+
+    return $value;
+}
+
 1;
