@@ -20,6 +20,7 @@ use base 'Exporter';
 use URI::Escape;
 use Encode;
 use Digest::SHA;
+use JSON;
 use Text::ParseWords;
 use String::ShellQuote;
 use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
@@ -905,7 +906,6 @@ sub run_fork_with_timeout {
     my $res;
     my $error;
     my $pipe_out = IO::Pipe->new();
-    my $pipe_err = IO::Pipe->new();
 
     # disable pending alarms, save their remaining time
     my $prev_alarm = alarm 0;
@@ -922,35 +922,33 @@ sub run_fork_with_timeout {
 
     if (!$child) {
 	$pipe_out->writer();
-	$pipe_err->writer();
 
 	eval {
 	    $res = $sub->();
-	    print {$pipe_out} "$res";
+	    print {$pipe_out} encode_json({ result => $res });
 	    $pipe_out->flush();
 	};
 	if (my $err = $@) {
-	    print {$pipe_err} "$err";
-	    $pipe_err->flush();
+	    print {$pipe_out} encode_json({ error => $err });
+	    $pipe_out->flush();
 	    POSIX::_exit(1);
 	}
 	POSIX::_exit(0);
     }
 
     $pipe_out->reader();
-    $pipe_err->reader();
 
     my $readvalues = sub {
 	local $/ = undef;
-	$res = <$pipe_out>;
-	$error = <$pipe_err>;
+	my $child_res = decode_json(scalar<$pipe_out>);
+	$res = $child_res->{result};
+	$error = $child_res->{error};
     };
     eval {
 	run_with_timeout($timeout, $readvalues);
     };
     warn $@ if $@;
     $pipe_out->close();
-    $pipe_err->close();
     kill('KILL', $child);
     waitpid($child, 0);
 
