@@ -1,3 +1,14 @@
+libpve-common-perl (5.0-18) unstable; urgency=medium
+
+  * use double hyphens for command options in the documentation
+
+  * fix an issue with signal handlers being replaced leading to services not
+    shutting down properly
+
+  * tools: add `convert_size` for generic byte conversion
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 12 Sep 2017 13:40:53 +0200
+
 libpve-common-perl (5.0-17) unstable; urgency=medium
 
   * api: fix rendering of filepath/string parameters
