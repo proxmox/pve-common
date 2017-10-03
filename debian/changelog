@@ -1,3 +1,13 @@
+libpve-common-perl (5.0-19) unstable; urgency=medium
+
+  * PVE::Subscription - new class to simplify subscription management
+
+  * ProcFSTools:read_proc_mounts: increase read size
+
+  * tools: df: handle a failing df
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 03 Oct 2017 11:34:44 +0200
+
 libpve-common-perl (5.0-18) unstable; urgency=medium
 
   * use double hyphens for command options in the documentation
