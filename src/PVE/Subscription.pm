@@ -171,13 +171,12 @@ sub read_subscription {
 	    my $age = time() -  $localinfo->{checktime};
 
 	    my $maxage = ($localkeydays + $allowcheckfaildays)*60*60*24;
-	    if ($localinfo->{status} eq 'Active' && $age > $maxage) {
-		$localinfo->{status} = 'Invalid';
-		$localinfo->{message} = "subscription info too old";
-	    }
+	    die "subscription info too old\n"
+		if ($localinfo->{status} eq 'Active') && ($age > $maxage);
 	};
 	if (my $err = $@) {
-	    warn $err;
+	    chomp $err;
+	    $info->{message} = $err;
 	} else {
 	    $info = $localinfo;
 	}
