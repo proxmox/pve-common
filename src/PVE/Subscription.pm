@@ -154,7 +154,7 @@ sub read_subscription {
 	$data .= $line;
     }
 
-    if ($csum && $data) {
+    if ($key && $csum && $data) {
 
 	chomp $csum;
 
