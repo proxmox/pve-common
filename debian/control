@@ -2,12 +2,32 @@ Source: libpve-common-perl
 Section: perl
 Priority: extra
 Maintainer: Proxmox Support Team <support@proxmox.com>
-Build-Depends: debhelper (>= 7.0.50~), libjson-perl, liblinux-inotify2-perl, libfilesys-df-perl, libstring-shellquote-perl
+Build-Depends: debhelper (>= 7.0.50~),
+               libfilesys-df-perl,
+               libjson-perl,
+               liblinux-inotify2-perl,
+               libstring-shellquote-perl,
 Standards-Version: 3.8.4
 
 Package: libpve-common-perl
 Architecture: all
-Depends: ${perl:Depends} ${misc:Depends}, libclone-perl, libdevel-cycle-perl, libwww-perl, libjson-perl, liblinux-inotify2-perl, libio-stringy-perl, liburi-perl, libstring-shellquote-perl, libnet-ip-perl, libfilesys-df-perl, libnet-dbus-perl, libcrypt-openssl-rsa-perl, libcrypt-openssl-random-perl, libmime-base32-perl
-Breaks: qemu-server (<< 4.0-109), pve-container (<< 1.0-93)
+Depends: libclone-perl,
+         libcrypt-openssl-random-perl,
+         libcrypt-openssl-rsa-perl,
+         libdevel-cycle-perl,
+         libfilesys-df-perl,
+         libio-stringy-perl,
+         libjson-perl,
+         liblinux-inotify2-perl,
+         libmime-base32-perl,
+         libnet-dbus-perl,
+         libnet-ip-perl,
+         libstring-shellquote-perl,
+         liburi-perl,
+         libwww-perl,
+         ${misc:Depends},
+         ${perl:Depends},
+Breaks: pve-container (<< 1.0-93),
+        qemu-server (<< 4.0-109),
 Description: Proxmox VE base library
  This package contains the base library used by other Proxmox VE components.
