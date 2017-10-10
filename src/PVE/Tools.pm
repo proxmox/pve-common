@@ -945,7 +945,11 @@ sub run_fork_with_timeout {
 	$error = $child_res->{error};
     };
     eval {
-	run_with_timeout($timeout, $readvalues);
+	if (defined($timeout)) {
+	    run_with_timeout($timeout, $readvalues);
+	} else {
+	    $readvalues->();
+	}
     };
     warn $@ if $@;
     $pipe_out->close();
@@ -957,6 +961,11 @@ sub run_fork_with_timeout {
 
     die $error if $error;
     return $res;
+}
+
+sub run_fork {
+    my ($code) = @_;
+    return run_fork_with_timeout(undef, $code);
 }
 
 # NOTE: NFS syscall can't be interrupted, so alarm does
