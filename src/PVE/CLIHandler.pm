@@ -448,17 +448,6 @@ my $handle_simple_cmd = sub {
     &$outsub($res) if $outsub;
 };
 
-sub run_cli {
-    my ($class, $pwcallback, $podfn, $preparefunc) = @_;
-
-    # Note: "depreciated function run_cli - use run_cli_handler instead";
-    # silently ignore $podfn , which is no longer supported.
-
-    die "password callback is no longer supported" if $pwcallback;
-
-    run_cli_handler($class, prepare => $preparefunc);
-}
-
 sub run_cli_handler {
     my ($class, %params) = @_;
 
