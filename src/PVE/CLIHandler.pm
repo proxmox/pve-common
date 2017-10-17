@@ -48,12 +48,12 @@ my $complete_command_names = sub {
 };
 
 __PACKAGE__->register_method ({
-    name => 'help', 
+    name => 'help',
     path => 'help',
     method => 'GET',
     description => "Get help about specified command.",
     parameters => {
-    	additionalProperties => 0,
+	additionalProperties => 0,
 	properties => {
 	    cmd => {
 		description => "Command name",
@@ -69,7 +69,7 @@ __PACKAGE__->register_method ({
 	},
     },
     returns => { type => 'null' },
-    
+
     code => sub {
 	my ($param) = @_;
 
@@ -83,7 +83,7 @@ __PACKAGE__->register_method ({
 	if (!$cmd) {
 	    if ($verbose) {
 		print_usage_verbose();
-	    } else {		
+	    } else {
 		print_usage_short(\*STDOUT);
 	    }
 	    return undef;
@@ -310,7 +310,7 @@ sub verify_api {
 
 my $get_exe_name = sub {
     my ($class) = @_;
-    
+
     my $name = $class;
     $name =~ s/^.*:://;
     $name =~ s/_/-/g;
