@@ -2,7 +2,6 @@ package PVE::CLIHandler;
 
 use strict;
 use warnings;
-use Data::Dumper;
 
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
@@ -336,29 +335,6 @@ COMP_WORDBREAKS=\${COMP_WORDBREAKS//:}
 
 complete -o default -C '$exename bashcomplete' $exename
 __EOD__
-}
-
-sub find_cli_class_source {
-    my ($name) = @_;
-
-    my $filename;
-
-    $name =~ s/-/_/g;
-
-    my $cpath = "PVE/CLI/${name}.pm";
-    my $spath = "PVE/Service/${name}.pm";
-    foreach my $p (@INC) {
-	foreach my $s (($cpath, $spath)) {
-	    my $testfn = "$p/$s";
-	    if (-f $testfn) {
-		$filename = $testfn;
-		last;
-	    }
-	}
-	last if defined($filename);
-    }
-
-    return $filename;
 }
 
 sub generate_asciidoc_synopsys {
