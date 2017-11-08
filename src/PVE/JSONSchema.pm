@@ -1154,6 +1154,11 @@ my $method_schema = {
 	    description => "Method needs special privileges - only pvedaemon can execute it",            
 	    optional => 1,
         },
+        download => {
+            type => 'boolean',
+	    description => "Method downloads the file content (filename is the return value of the method).",
+	    optional => 1,
+        },
 	proxyto => {
 	    type =>  'string',
 	    description => "A parameter name. If specified, all calls to this method are proxied to the host contained in that parameter.",
