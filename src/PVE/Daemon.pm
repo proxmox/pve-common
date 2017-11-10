@@ -192,15 +192,10 @@ my $terminate_server = sub {
 
     $self->{terminate} = 1; # set flag to avoid worker restart
 
-    if (!$self->{max_workers}) {
-	eval { $self->shutdown(); };
-	warn $@ if $@;
-	return;
-    }
-
     eval { $self->shutdown(); };
     warn $@ if $@;
 
+    return if !$self->{max_workers}; # if we have no workers we're done here
 
     # if configured, leave children running on HUP
     return if $allow_open_children && $self->{leave_children_open_on_reload};
