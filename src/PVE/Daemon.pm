@@ -184,6 +184,13 @@ my $start_workers = sub {
     }
 };
 
+my $terminate_old_workers = sub {
+    my ($self) = @_;
+
+    # if list is empty kill sends no signal, so no checks needed
+    kill 15, keys %{$self->{old_workers}};
+};
+
 my $terminate_server = sub {
     my ($self, $allow_open_children) = @_;
 
@@ -198,20 +205,12 @@ my $terminate_server = sub {
     eval { $self->shutdown(); };
     warn $@ if $@;
 
-    # we have workers - send TERM signal
-
-    foreach my $cpid (keys %{$self->{workers}}) {
-	kill(15, $cpid); # TERM childs
-    }
 
     # if configured, leave children running on HUP
-    return if $allow_open_children &&
-	$self->{leave_children_open_on_reload};
+    return if $allow_open_children && $self->{leave_children_open_on_reload};
 
-    # else, send TERM to old workers
-    foreach my $cpid (keys %{$self->{old_workers}}) {
-	kill(15, $cpid); # TERM childs
-    }
+    # else send TERM to all (old and current) child workers
+    kill 15, keys %{$self->@{'workers','old_workers'}};
 
     # nicely shutdown childs (give them max 10 seconds to shut down)
     my $previous_alarm = alarm(10);
@@ -395,13 +394,11 @@ my $server_run = sub {
 		&$old_sig_chld(@_) if $old_sig_chld;
 	    };
 
-	    # catch worker finished during restart phase 
-	    &$finish_workers($self);
-
 	    # now loop forever (until we receive terminate signal)
 	    for (;;) { 
 		&$start_workers($self);
 		sleep(5);
+		&$terminate_old_workers($self);
 		&$finish_workers($self);
 		last if $self->{terminate};
 	    }
