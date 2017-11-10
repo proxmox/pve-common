@@ -150,7 +150,7 @@ sub lock_file_full {
 	    or die "can't open file - $!\n";
 
 	if (!flock($fh, $mode|LOCK_NB)) {
-	    print STDERR "trying to acquire lock...";
+	    print STDERR "trying to acquire lock...\n";
 	    my $success;
 	    while(1) {
 		$success = flock($fh, $mode);
