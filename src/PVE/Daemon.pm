@@ -490,7 +490,7 @@ sub restart_daemon {
     }
 
     if ($self->{max_workers}) {
-	my @workers = keys %{$self->{workers}}, keys %{$self->{old_workers}};
+	my @workers = (keys %{$self->{workers}}, keys %{$self->{old_workers}});
 	$ENV{PVE_DAEMON_WORKER_PIDS} = join(':', @workers);
     }
 
