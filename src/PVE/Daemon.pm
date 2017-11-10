@@ -146,11 +146,7 @@ my $start_workers = sub {
 
     return if $self->{terminate};
 
-    my $count = 0;
-    foreach my $cpid (keys %{$self->{workers}}) {
-	$count++;
-    }
-
+    my $count = scalar keys %{$self->{workers}};
     my $need = $self->{max_workers} - $count;
 
     return if $need <= 0;
@@ -289,11 +285,7 @@ sub setup {
 
     if ($restart && $self->{max_workers}) {
 	if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
-	    foreach my $pid (split(':', $wpids)) {
-		if ($pid =~ m/^(\d+)$/) {
-		    $self->{old_workers}->{$1} = 1;
-		}
-	    }
+	    $self->{old_workers}->{$_} = 1 foreach (split(':', $wpids));
 	}
     }
 
@@ -503,8 +495,7 @@ sub restart_daemon {
     }
 
     if ($self->{max_workers}) {
-	my @workers = keys %{$self->{workers}};
-	push @workers, keys %{$self->{old_workers}};
+	my @workers = keys %{$self->{workers}}, keys %{$self->{old_workers}};
 	$ENV{PVE_DAEMON_WORKER_PIDS} = join(':', @workers);
     }
 
