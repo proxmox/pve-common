@@ -159,4 +159,3 @@ sub forktest1($) {
 }
 forktest1(0);
 forktest1(1);
-print "Ok\n"; # Line-terminate the 'trying to acquire lock' message(s)
