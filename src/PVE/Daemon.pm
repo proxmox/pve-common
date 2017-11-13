@@ -280,7 +280,12 @@ sub setup {
 
     if ($restart && $self->{max_workers}) {
 	if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
-	    $self->{old_workers}->{$_} = 1 foreach (split(':', $wpids));
+	    foreach my $pid (split(':', $wpids)) {
+		# check & untaint
+		if ($pid =~ m/^(\d+)$/) {
+		    $self->{old_workers}->{$1} = 1;
+		}
+	    }
 	}
     }
 
