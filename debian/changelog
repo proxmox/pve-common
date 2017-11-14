@@ -1,3 +1,15 @@
+libpve-common-perl (5.0-21) unstable; urgency=medium
+
+  * daemon: refactor and cleanup
+
+  * daemon: don't send SIGTERM before restart on leave_children_open_on_reload
+
+  * lock_file_full: add missing trailing newline
+
+  * JSONSchema.pm - add a 'download' attribute
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 14 Nov 2017 08:01:25 +0100
+
 libpve-common-perl (5.0-20) unstable; urgency=medium
 
   * tools: add run_fork
