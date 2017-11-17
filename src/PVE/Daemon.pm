@@ -201,7 +201,7 @@ my $terminate_server = sub {
     return if $allow_open_children && $self->{leave_children_open_on_reload};
 
     # else send TERM to all (old and current) child workers
-    kill 15, keys %{$self->@{'workers','old_workers'}};
+    kill 15, (keys %{$self->{workers}}, keys %{$self->{old_workers}});
 
     # nicely shutdown childs (give them max 10 seconds to shut down)
     my $previous_alarm = alarm(10);
