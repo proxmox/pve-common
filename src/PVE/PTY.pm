@@ -165,6 +165,66 @@ sub tcsetsize($$$) {
 	or die "failed to set window size: $!\n";
 }
 
+sub read_password(;$$) {
+    my ($query, $infd, $outfd) = @_;
+
+    my $password = '';
+
+    $infd //= \*STDIN;
+
+    if (!-t $infd) { # Not a terminal? Then just get a line...
+	local $/ = "\n";
+	$password = <$infd>;
+	die "EOF while reading password\n" if !defined $password;
+	chomp $password; # Chop off the newline
+	return $password;
+    }
+
+    $outfd //= \*STDOUT;
+
+    # Raw read loop:
+    my $old_termios;
+    $old_termios = tcgetattr($infd);
+    my $raw_termios = {%$old_termios};
+    cfmakeraw($raw_termios);
+    tcsetattr($infd, $raw_termios);
+    eval {
+	my $echo = undef;
+	my ($ch, $got);
+	syswrite($outfd, $query, length($query));
+	while (($got = sysread($infd, $ch, 1))) {
+	    my ($ord) = unpack('C', $ch);
+	    if ($ord == 0xD) {
+		# newline, we're done
+		syswrite($outfd, "\r\n", 2);
+		last;
+	    } elsif ($ord == 0x7f) {
+		# backspace - if it's the first key disable
+		# asterisks
+		$echo //= 0;
+		if (length($password)) {
+		    chop $password;
+		    syswrite($outfd, "\b \b", 3);
+		}
+	    } elsif ($ord == 0x09) {
+		# TAB disables the asterisk-echo
+		$echo = 0;
+	    } else {
+		# other character, append to password, if it's
+		# the first character enable asterisks echo
+		$echo //= 1;
+		$password .= $ch;
+		syswrite($outfd, '*', 1) if $echo;
+	    }
+	}
+	die "read error: $!\n" if !defined($got);
+    };
+    my $err = $@;
+    tcsetattr($infd, $old_termios);
+    die $err if $err;
+    return $password;
+}
+
 # Class functions
 
 sub new {
