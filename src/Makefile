@@ -6,26 +6,27 @@ DOCDIR=${PREFIX}/share/doc
 MAN1DIR=${MANDIR}/man1/
 PERLDIR=${PREFIX}/share/perl5
 
-LIB_SOURCES=			\
-	Subscription.pm		\
-	CalendarEvent.pm	\
-	OTP.pm			\
-	Ticket.pm		\
-	RESTEnvironment.pm	\
-	CpuSet.pm		\
-	Daemon.pm		\
-	SectionConfig.pm	\
-	Network.pm		\
-	ProcFSTools.pm		\
-	CLIHandler.pm		\
-	RESTHandler.pm		\
-	JSONSchema.pm		\
-	SafeSyslog.pm		\
-	AtomicFile.pm		\
-	INotify.pm		\
-	Tools.pm		\
-	Syscall.pm		\
-	Exception.pm
+LIB_SOURCES = \
+	AtomicFile.pm \
+	CLIHandler.pm \
+	CalendarEvent.pm \
+	CpuSet.pm \
+	Daemon.pm \
+	Exception.pm \
+	INotify.pm \
+	JSONSchema.pm \
+	Network.pm \
+	OTP.pm \
+	PTY.pm \
+	ProcFSTools.pm \
+	RESTEnvironment.pm \
+	RESTHandler.pm \
+	SafeSyslog.pm \
+	SectionConfig.pm \
+	Subscription.pm \
+	Syscall.pm \
+	Ticket.pm \
+	Tools.pm
 
 all:
 
