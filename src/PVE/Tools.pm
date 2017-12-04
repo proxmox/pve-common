@@ -812,7 +812,7 @@ sub wait_for_vnc_port {
 	usleep($sleeptime);
     }
 
-    return undef;
+    die "Timeout while waiting for port '$port' to get ready!\n";
 }
 
 sub next_unused_port {
