@@ -791,17 +791,20 @@ sub extract_param {
 
 # Note: we use this to wait until vncterm/spiceterm is ready
 sub wait_for_vnc_port {
-    my ($port, $timeout) = @_;
+    my ($port, $family, $timeout) = @_;
 
     $timeout = 5 if !$timeout;
     my $sleeptime = 0;
     my $starttime = [gettimeofday];
     my $elapsed;
 
+    my $cmd = ['/bin/ss', '-Htln', "sport = :$port"];
+    push @$cmd, $family == AF_INET6 ? '-6' : '-4' if defined($family);
+
     my $found;
     while (($elapsed = tv_interval($starttime)) < $timeout) {
 	# -Htln = don't print header, tcp, listening sockets only, numeric ports
-	run_command(['/bin/ss', '-Htln', "sport = :$port"], outfunc => sub {
+	run_command($cmd, outfunc => sub {
 	    my $line = shift;
 	    if ($line =~ m/^LISTEN\s+\d+\s+\d+\s+\S+:(\d+)\s/) {
 		$found = 1 if ($port == $1);
