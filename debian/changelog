@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-23) unstable; urgency=medium
+
+  * added pty handling modules for upcoming pve-xtermjs package
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 04 Dec 2017 10:14:24 +0100
+
 libpve-common-perl (5.0-22) unstable; urgency=medium
 
   * daemon: fix termination of busy workers on reload
