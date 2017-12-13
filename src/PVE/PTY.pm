@@ -194,10 +194,13 @@ sub read_password(;$$) {
 	syswrite($outfd, $query, length($query));
 	while (($got = sysread($infd, $ch, 1))) {
 	    my ($ord) = unpack('C', $ch);
-	    if ($ord == 0xD) {
+	    last if $ord == 4; # ^D / EOF
+	    if ($ord == 0xA || $ord == 0xD) {
 		# newline, we're done
 		syswrite($outfd, "\r\n", 2);
 		last;
+	    } elsif ($ord == 3) { # ^C
+		die "password input aborted\n";
 	    } elsif ($ord == 0x7f) {
 		# backspace - if it's the first key disable
 		# asterisks
