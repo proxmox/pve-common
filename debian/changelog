@@ -1,3 +1,12 @@
+libpve-common-perl (5.0-25) unstable; urgency=medium
+
+  * fix issue where 0.5MB converted to GB becomes 0
+
+  * fix issue which caused the web GUI to not show a new login window when the
+    ticket becomes invalid (eg. timed out)
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 15 Dec 2017 13:25:41 +0100
+
 libpve-common-perl (5.0-24) unstable; urgency=medium
 
   * let password queries be cancelled via Ctrl+C again

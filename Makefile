@@ -1,5 +1,5 @@
 VERSION=5.0
-PKGREL=24
+PKGREL=25
 
 PACKAGE=libpve-common-perl
 
