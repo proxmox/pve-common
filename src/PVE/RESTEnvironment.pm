@@ -373,6 +373,78 @@ sub check_worker {
     return 1;
 }
 
+# acts almost as tee: writes an output both to STDOUT and a task log,
+# we differ as we're worker aware and look also at the childs control pipe,
+# so we know if the function could be executed successfully or not.
+my $tee_worker = sub {
+    my ($childfd, $ctrlfd, $taskfh, $cpid) = @_;
+
+    eval {
+	my $int_count = 0;
+	local $SIG{INT} = local $SIG{QUIT} = local $SIG{TERM} = sub {
+	    # always send signal to all pgrp members
+	    my $kpid = -$cpid;
+	    if ($int_count < 3) {
+		kill(15, $kpid); # send TERM signal
+	    } else {
+		kill(9, $kpid); # send KILL signal
+	    }
+	    $int_count++;
+	};
+	local $SIG{PIPE} = sub { die "broken pipe\n"; };
+
+	my $select = new IO::Select;
+	my $fh = IO::Handle->new_from_fd($childfd, 'r');
+	$select->add($fh);
+
+	my $readbuf = '';
+	my $count;
+	while ($select->count) {
+	    my @handles = $select->can_read(1);
+	    if (scalar(@handles)) {
+		my $count = sysread ($handles[0], $readbuf, 4096);
+		if (!defined ($count)) {
+		    my $err = $!;
+		    die "sync pipe read error: $err\n";
+		}
+		last if $count == 0; # eof
+
+		print $readbuf;
+		select->flush();
+
+		print $taskfh $readbuf;
+		$taskfh->flush();
+	    } else {
+		# some commands daemonize without closing stdout
+		last if !PVE::ProcFSTools::check_process_running($cpid);
+	    }
+	}
+
+	# get status (error or OK)
+	POSIX::read($ctrlfd, $readbuf, 4096);
+	if ($readbuf =~ m/^TASK OK\n?$/) {
+	    # skip printing to stdout
+	    print $taskfh $readbuf;
+	} elsif ($readbuf =~ m/^TASK ERROR: (.*)\n?$/) {
+	    print STDERR "$1\n";
+	    print $taskfh "\n$readbuf"; # ensure start on new line for webUI
+	} else {
+	    die "got unexpected control message: $readbuf\n";
+	}
+	$taskfh->flush();
+    };
+    my $err = $@;
+
+    POSIX::close($childfd);
+    POSIX::close($ctrlfd);
+
+    if ($err) {
+	$err =~ s/\n/ /mg;
+	print STDERR "$err\n";
+	print $taskfh "TASK ERROR: $err\n";
+    }
+};
+
 # start long running workers
 # STDIN is redirected to /dev/null
 # STDOUT,STDERR are redirected to the filename returned by upid_decode
@@ -570,70 +642,8 @@ sub fork_worker {
     my $res = 0;
 
     if ($sync) {
-	my $count;
-	my $int_count = 0;
-	eval {
-	    local $SIG{INT} = local $SIG{QUIT} = local $SIG{TERM} = sub {
-		# always send signal to all pgrp members
-		my $kpid = -$cpid;
-		if ($int_count < 3) {
-		    kill(15, $kpid); # send TERM signal
-		} else {
-		    kill(9, $kpid); # send KILL signal
-		}
-		$int_count++;
-	    };
-	    local $SIG{PIPE} = sub { die "broken pipe\n"; };
 
-	    my $select = new IO::Select;
-	    my $fh = IO::Handle->new_from_fd($psync[0], 'r');
-	    $select->add($fh);
-
-	    while ($select->count) {
-		my @handles = $select->can_read(1);
-		if (scalar(@handles)) {
-		    my $count = sysread ($handles[0], $readbuf, 4096);
-		    if (!defined ($count)) {
-			my $err = $!;
-			die "sync pipe read error: $err\n";
-		    }
-		    last if $count == 0; # eof
-
-		    print $readbuf;
-		    select->flush();
-
-		    print $outfh $readbuf;
-		    $outfh->flush();
-		} else {
-		    # some commands daemonize without closing stdout
-		    last if !PVE::ProcFSTools::check_process_running($cpid);
-		}
-	    }
-
-	    # get status (error or OK)
-	    POSIX::read($ctrlfd[0], $readbuf, 4096);
-	    if ($readbuf =~ m/^TASK OK\n?$/) {
-		print $outfh $readbuf;
-	    } elsif ($readbuf =~ m/^TASK ERROR: (.*)\n?$/) {
-		print STDERR "$1\n";
-		print $outfh "\n$readbuf";
-	    } else {
-		die "got unexpected control message: $readbuf\n";
-	    }
-	    $outfh->flush();
-	};
-	my $err = $@;
-
-	POSIX::close($psync[0]);
-	POSIX::close($ctrlfd[0]);
-
-	if ($err) {
-	    $err =~ s/\n/ /mg;
-	    print STDERR "$err\n";
-	    if ($outfh) {
-		print $outfh "TASK ERROR: $err\n";
-	    }
-	}
+	$tee_worker->($psync[0], $ctrlfd[0], $outfh, $cpid);
 
 	&$kill_process_group($cpid, $pstart); # make sure it gets killed
 
