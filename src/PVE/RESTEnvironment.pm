@@ -396,6 +396,7 @@ sub fork_worker {
 
     my @psync = POSIX::pipe();
     my @csync = POSIX::pipe();
+    my @ctrlfd = POSIX::pipe() if $sync;
 
     my $node = $self->{nodename};
 
@@ -427,9 +428,11 @@ sub fork_worker {
 	POSIX::setsid();
 
 	POSIX::close ($psync[0]);
+	POSIX::close ($ctrlfd[0]) if $sync;
 	POSIX::close ($csync[1]);
 
 	$outfh = $sync ? $psync[1] : undef;
+	my $resfh = $sync ? $ctrlfd[1] : undef;
 
 	eval {
 	    PVE::INotify::inotify_close();
@@ -450,6 +453,7 @@ sub fork_worker {
 		    if !open(STDIN, "</dev/null");
 
 		$outfh = PVE::Tools::upid_open($upid);
+		$resfh = $outfh;
 	    }
 
 
@@ -499,10 +503,14 @@ sub fork_worker {
 	    chomp $err;
 	    $err =~ s/\n/ /mg;
 	    syslog('err', $err);
-	    print STDERR "TASK ERROR: $err\n";
+	    my $msg = "TASK ERROR: $err\n";
+	    POSIX::write($resfh, $msg, length($msg));
+	    POSIX::close($resfh) if $sync;
 	    POSIX::_exit(-1);
 	} else {
-	    print STDERR "TASK OK\n";
+	    my $msg = "TASK OK\n";
+	    POSIX::write($resfh, $msg, length($msg));
+	    POSIX::close($resfh) if $sync;
 	    POSIX::_exit(0);
 	}
 	kill(-9, $$);
@@ -511,6 +519,7 @@ sub fork_worker {
     # parent
 
     POSIX::close ($psync[1]);
+    POSIX::close ($ctrlfd[1]) if $sync;
     POSIX::close ($csync[0]);
 
     my $readbuf = '';
@@ -562,7 +571,6 @@ sub fork_worker {
 
     if ($sync) {
 	my $count;
-	my $outbuf = '';
 	my $int_count = 0;
 	eval {
 	    local $SIG{INT} = local $SIG{QUIT} = local $SIG{TERM} = sub {
@@ -591,38 +599,33 @@ sub fork_worker {
 		    }
 		    last if $count == 0; # eof
 
-		    $outbuf .= $readbuf;
-		    while ($outbuf =~ s/^(([^\010\r\n]*)(\r|\n|(\010)+|\r\n))//s) {
-			my $line = $1;
-			my $data = $2;
-			if ($data =~ m/^TASK OK$/) {
-			    # skip
-			} elsif ($data =~ m/^TASK ERROR: (.+)$/) {
-			    print STDERR "$1\n";
-			} else {
-			    print $line;
-			}
-			if ($outfh) {
-			    print $outfh $line;
-			    $outfh->flush();
-			}
-		    }
+		    print $readbuf;
+		    select->flush();
+
+		    print $outfh $readbuf;
+		    $outfh->flush();
 		} else {
 		    # some commands daemonize without closing stdout
 		    last if !PVE::ProcFSTools::check_process_running($cpid);
 		}
 	    }
+
+	    # get status (error or OK)
+	    POSIX::read($ctrlfd[0], $readbuf, 4096);
+	    if ($readbuf =~ m/^TASK OK\n?$/) {
+		print $outfh $readbuf;
+	    } elsif ($readbuf =~ m/^TASK ERROR: (.*)\n?$/) {
+		print STDERR "$1\n";
+		print $outfh "\n$readbuf";
+	    } else {
+		die "got unexpected control message: $readbuf\n";
+	    }
+	    $outfh->flush();
 	};
 	my $err = $@;
 
 	POSIX::close($psync[0]);
-
-	if ($outbuf) { # just to be sure
-	    print $outbuf;
-	    if ($outfh) {
-		print $outfh $outbuf;
-	    }
-	}
+	POSIX::close($ctrlfd[0]);
 
 	if ($err) {
 	    $err =~ s/\n/ /mg;
