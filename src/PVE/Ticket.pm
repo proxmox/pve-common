@@ -9,9 +9,11 @@ use MIME::Base64;
 use Digest::SHA;
 use Time::HiRes qw(gettimeofday);
 
-use PVE::Exception qw(raise_perm_exc);
+use PVE::Exception qw(raise);
 
 Crypt::OpenSSL::RSA->import_random_seed();
+
+use constant HTTP_UNAUTHORIZED => 401;
 
 sub assemble_csrf_prevention_token {
     my ($secret, $username) = @_;
@@ -38,7 +40,8 @@ sub verify_csrf_prevention_token {
 	    ($age < $max_age);
     }
 
-    raise_perm_exc("Permission denied - invalid csrf token") if !$noerr;
+    raise("Permission denied - invalid csrf token\n", code => HTTP_UNAUTHORIZED)
+	if !$noerr;
 
     return undef;
 }
@@ -90,7 +93,8 @@ sub verify_rsa_ticket {
 	}
     }
 
-    raise_perm_exc("permission denied - invalid $prefix ticket") if !$noerr;
+    raise("permission denied - invalid $prefix ticket\n", code => HTTP_UNAUTHORIZED)
+	if !$noerr;
 
     return undef;
 }
