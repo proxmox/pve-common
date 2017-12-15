@@ -482,12 +482,8 @@ sub fork_worker {
 	}
 
 	# sync with parent (signal that we are ready)
-	if ($sync) {
-	    print "$upid\n";
-	} else {
-	    POSIX::write($psync[1], $upid, length ($upid));
-	    POSIX::close($psync[1]);
-	}
+	POSIX::write($psync[1], $upid, length ($upid));
+	POSIX::close($psync[1]) if !$sync; # don't need output pipe if async
 
 	my $readbuf = '';
 	# sync with parent (wait until parent is ready)
