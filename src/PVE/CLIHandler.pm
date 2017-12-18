@@ -14,6 +14,12 @@ my $cmddef;
 my $exename;
 my $cli_handler_class;
 
+my $assert_initialized = sub {
+    my @caller = caller;
+    die "$caller[0]:$caller[2] - not initialized\n"
+	if !($cmddef && $exename && $cli_handler_class);
+};
+
 my $expand_command_name = sub {
     my ($def, $cmd) = @_;
 
@@ -73,7 +79,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+	$assert_initialized->();
 
 	my $cmd = $param->{cmd};
 
@@ -114,7 +120,7 @@ __PACKAGE__->register_method ({
 sub print_simple_asciidoc_synopsis {
     my ($class, $name, $arg_param, $uri_param) = @_;
 
-    die "not initialized" if !$cli_handler_class;
+    $assert_initialized->();
 
     my $pwcallback = $cli_handler_class->can('read_password');
     my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
@@ -129,7 +135,7 @@ sub print_simple_asciidoc_synopsis {
 
 sub print_asciidoc_synopsis {
 
-    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+    $assert_initialized->();
 
     my $pwcallback = $cli_handler_class->can('read_password');
     my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
@@ -157,7 +163,7 @@ sub print_asciidoc_synopsis {
 
 sub print_usage_verbose {
 
-    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+    $assert_initialized->();
 
     my $pwcallback = $cli_handler_class->can('read_password');
     my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
@@ -179,7 +185,7 @@ sub sorted_commands {
 sub print_usage_short {
     my ($fd, $msg) = @_;
 
-    die "not initialized" if !($cmddef && $exename && $cli_handler_class);
+    $assert_initialized->();
 
     my $pwcallback = $cli_handler_class->can('read_password');
     my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
