@@ -24,33 +24,14 @@ my $expand_command_name = sub {
     my ($def, $cmd) = @_;
 
     if (!$def->{$cmd}) {
-	my $expanded;
-	for my $k (keys(%$def)) {
-	    if ($k =~ m/^$cmd/) {
-		if ($expanded) {
-		    $expanded = undef; # more than one match
-		    last;
-		} else {
-		    $expanded = $k;
-		}
-	    }
-	}
-	$cmd = $expanded if $expanded;
+	my @expanded = grep { /^\Q$cmd\E/ } keys %$def;
+	return $expanded[0] if scalar(@expanded) == 1; # enforce exact match
     }
     return $cmd;
 };
 
 my $complete_command_names = sub {
-    my $res = [];
-
-    return if ref($cmddef) ne 'HASH';
-
-    foreach my $cmd (keys %$cmddef) {
-	next if $cmd eq 'help';
-	push @$res, $cmd;
-    }
-
-    return $res;
+    return [ sort keys %$cmddef ];
 };
 
 __PACKAGE__->register_method ({
