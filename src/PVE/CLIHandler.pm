@@ -20,6 +20,12 @@ my $assert_initialized = sub {
 	if !($cmddef && $exename && $cli_handler_class);
 };
 
+my $abort = sub {
+    my ($reason, $cmd) = @_;
+    print_usage_short (\*STDERR, $reason, $cmd);
+    exit (-1);
+};
+
 my $expand_command_name = sub {
     my ($def, $cmd) = @_;
 
@@ -361,14 +367,13 @@ my $handle_cmd  = sub {
 
     $cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
-    # call verifyapi before setup_environment(), because we do not want to
-    # execute any real code in this case
 
     my $cmd = shift @$args;
-    if (!$cmd) {
-	print_usage_short (\*STDERR, "no command specified");
-	exit (-1);
-    } elsif ($cmd eq 'verifyapi') {
+    $abort->("no command specified") if !$cmd;
+
+    # call verifyapi before setup_environment(), don't execute any real code in
+    # this case
+    if ($cmd eq 'verifyapi') {
 	PVE::RESTHandler::validate_method_schemas();
 	return;
     }
@@ -385,11 +390,7 @@ my $handle_cmd  = sub {
     $cmd = &$expand_command_name($cmddef, $cmd);
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$cmddef->{$cmd} || []};
-
-    if (!$class) {
-	print_usage_short (\*STDERR, "unknown command '$cmd'");
-	exit (-1);
-    }
+    $abort->("unknown command '$cmd'") if !$class;
 
     my $prefix = "$exename $cmd";
     my $res = $class->cli_handler($prefix, $name, \@ARGV, $arg_param, $uri_param, $pwcallback, $stringfilemap);
