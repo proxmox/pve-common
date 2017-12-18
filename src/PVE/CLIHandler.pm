@@ -198,7 +198,7 @@ sub print_usage_short {
 }
 
 my $print_bash_completion = sub {
-    my ($cmddef, $simple_cmd, $bash_command, $cur, $prev) = @_;
+    my ($simple_cmd, $bash_command, $cur, $prev) = @_;
 
     my $debug = 0;
 
@@ -351,12 +351,11 @@ sub generate_asciidoc_synopsis {
 
     no strict 'refs';
     my $def = ${"${class}::cmddef"};
+    $cmddef = $def;
 
     if (ref($def) eq 'ARRAY') {
 	print_simple_asciidoc_synopsis(@$def);
     } else {
-	$cmddef = $def;
-
 	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
 	print_asciidoc_synopsis();
@@ -371,16 +370,14 @@ sub setup_environment {
 }
 
 my $handle_cmd  = sub {
-    my ($def, $cmdname, $cmd, $args, $pwcallback, $preparefunc, $stringfilemap) = @_;
-
-    $cmddef = $def;
-    $exename = $cmdname;
+    my ($args, $pwcallback, $preparefunc, $stringfilemap) = @_;
 
     $cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
     # call verifyapi before setup_environment(), because we do not want to
     # execute any real code in this case
 
+    my $cmd = shift @$args;
     if (!$cmd) {
 	print_usage_short (\*STDERR, "no command specified");
 	exit (-1);
@@ -392,7 +389,7 @@ my $handle_cmd  = sub {
     $cli_handler_class->setup_environment();
 
     if ($cmd eq 'bashcomplete') {
-	&$print_bash_completion($cmddef, 0, @$args);
+	&$print_bash_completion(undef, @$args);
 	return;
     }
 
@@ -414,9 +411,9 @@ my $handle_cmd  = sub {
 };
 
 my $handle_simple_cmd = sub {
-    my ($def, $args, $pwcallback, $preparefunc, $stringfilemap) = @_;
+    my ($args, $pwcallback, $preparefunc, $stringfilemap) = @_;
 
-    my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def};
+    my ($class, $name, $arg_param, $uri_param, $outsub) = @{$cmddef};
     die "no class specified" if !$class;
 
     if (scalar(@$args) >= 1) {
@@ -436,7 +433,7 @@ my $handle_simple_cmd = sub {
     if (scalar(@$args) >= 1) {
 	if ($args->[0] eq 'bashcomplete') {
 	    shift @$args;
-	    &$print_bash_completion({ $name => $def }, $name, @$args);
+	    &$print_bash_completion($name, @$args);
 	    return;
 	}
     }
@@ -472,14 +469,12 @@ sub run_cli_handler {
     initlog($exename);
 
     no strict 'refs';
-    my $def = ${"${class}::cmddef"};
+    $cmddef = ${"${class}::cmddef"};
 
-    if (ref($def) eq 'ARRAY') {
-	&$handle_simple_cmd($def, \@ARGV, $pwcallback, $preparefunc, $stringfilemap);
+    if (ref($cmddef) eq 'ARRAY') {
+	&$handle_simple_cmd(\@ARGV, $pwcallback, $preparefunc, $stringfilemap);
     } else {
-	$cmddef = $def;
-	my $cmd = shift @ARGV;
-	&$handle_cmd($cmddef, $exename, $cmd, \@ARGV, $pwcallback, $preparefunc, $stringfilemap);
+	&$handle_cmd(\@ARGV, $pwcallback, $preparefunc, $stringfilemap);
     }
 
     exit 0;
