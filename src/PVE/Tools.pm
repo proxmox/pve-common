@@ -981,49 +981,16 @@ sub run_fork {
 sub df {
     my ($path, $timeout) = @_;
 
-    my $res = {
-	total => 0,
-	used => 0,
-	avail => 0,
-    };
+    my $df = sub { return Filesys::Df::df($path, 1) };
 
-    my $pipe = IO::Pipe->new();
-    my $child = fork();
-    if (!defined($child)) {
-	warn "fork failed: $!\n";
-	return $res;
-    }
-
-    if (!$child) {
-	$pipe->writer();
-	eval {
-	    my $df = Filesys::Df::df($path, 1);
-	    print {$pipe} "$df->{blocks}\n$df->{used}\n$df->{bavail}\n"
-		if defined($df);
-	    $pipe->close();
-	};
-	if (my $err = $@) {
-	    warn $err;
-	    POSIX::_exit(1);
-	}
-	POSIX::_exit(0);
-    }
-
-    $pipe->reader();
-
-    my $readvalues = sub {
-	$res->{total} = int(((<$pipe> // 0) =~ /^(\d*)$/)[0]);
-	$res->{used}  = int(((<$pipe> // 0) =~ /^(\d*)$/)[0]);
-	$res->{avail} = int(((<$pipe> // 0) =~ /^(\d*)$/)[0]);
-    };
-    eval {
-	run_with_timeout($timeout, $readvalues);
-    };
+    my $res = eval { run_fork_with_timeout($timeout, $df) } // {};
     warn $@ if $@;
-    $pipe->close();
-    kill('KILL', $child);
-    waitpid($child, 0);
-    return $res;
+
+    return {
+	total => $res->{blocks} // 0,
+	used => $res->{used} // 0,
+	avail => $res->{bavail} // 0,
+    };
 }
 
 # UPID helper
