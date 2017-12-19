@@ -369,6 +369,7 @@ sub run_command {
     my $afterfork;
     my $noerr;
     my $keeplocale;
+    my $quiet;
 
     eval {
 
@@ -395,6 +396,8 @@ sub run_command {
 		$noerr = $param{$p};
 	    } elsif ($p eq 'keeplocale') {
 		$keeplocale = $param{$p};
+	    } elsif ($p eq 'quiet') {
+		$quiet = $param{$p};
 	    } else {
 		die "got unknown parameter '$p' for run_command\n";
 	    }
@@ -497,7 +500,7 @@ sub run_command {
 			    waitpid ($pid, 0);
 			    die $err;
 			}
-		    } else {
+		    } elsif (!$quiet) {
 			print $buf;
 			*STDOUT->flush();
 		    }
@@ -517,7 +520,7 @@ sub run_command {
 			    waitpid ($pid, 0);
 			    die $err;
 			}
-		    } else {
+		    } elsif (!$quiet) {
 			print STDERR $buf;
 			*STDERR->flush();
 		    }
