@@ -525,7 +525,7 @@ sub fork_worker {
 		    if !open(STDIN, "</dev/null");
 
 		$outfh = PVE::Tools::upid_open($upid);
-		$resfh = $outfh;
+		$resfh = fileno($outfh);
 	    }
 
 
