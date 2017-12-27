@@ -561,15 +561,17 @@ sub fork_worker {
 	POSIX::write($psync[1], $upid, length ($upid));
 	POSIX::close($psync[1]) if !$sync; # don't need output pipe if async
 
-	my $readbuf = '';
-	# sync with parent (wait until parent is ready)
-	POSIX::read($csync[0], $readbuf, 4096);
-	die "parent setup error\n" if $readbuf ne 'OK';
+	eval {
+	    my $readbuf = '';
+	    # sync with parent (wait until parent is ready)
+	    POSIX::read($csync[0], $readbuf, 4096);
+	    die "parent setup error\n" if $readbuf ne 'OK';
 
-	if ($self->{type} eq 'ha') {
-	    print "task started by HA resource agent\n";
-	}
-	eval { &$function($upid); };
+	    if ($self->{type} eq 'ha') {
+		print "task started by HA resource agent\n";
+	    }
+	    &$function($upid);
+	};
 	my $err = $@;
 	if ($err) {
 	    chomp $err;
