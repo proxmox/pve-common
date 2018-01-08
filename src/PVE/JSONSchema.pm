@@ -99,6 +99,12 @@ register_standard_option('extra-args', {
     optional => 1
 });
 
+register_standard_option('fingerprint-sha256', {
+    description => "Certificate SHA 256 fingerprint.",
+    type => 'string',
+    pattern => '([A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}',
+});
+
 my $format_list = {};
 
 sub register_format {
