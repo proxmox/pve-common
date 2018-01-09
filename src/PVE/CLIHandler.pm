@@ -36,9 +36,53 @@ my $expand_command_name = sub {
     return $cmd;
 };
 
-my $complete_command_names = sub {
-    return [ sort keys %$cmddef ];
+my $get_commands = sub {
+    my $def = shift // die "no command definition passed!";
+    return [ grep { !(ref($def->{$_}) eq 'HASH' && defined($def->{$_}->{alias})) } sort keys %$def ];
 };
+
+my $complete_command_names = sub { $get_commands->($cmddef) };
+
+# traverses the command definition using the $argv array, resolving one level
+# of aliases.
+# Returns the matching (sub) command and its definition, and argument array for
+# this (sub) command and a hash where we marked which (sub) commands got
+# expanded (e.g. st => status) while traversing
+sub resolve_cmd {
+    my ($argv, $is_alias) = @_;
+
+    my ($def, $cmd) = ($cmddef, $argv);
+
+    if (ref($argv) eq 'ARRAY') {
+	my $expanded = {};
+	my $last_arg_id = scalar(@$argv) - 1;
+
+	for my $i (0..$last_arg_id) {
+	    $cmd = $expand_command_name->($def, $argv->[$i]);
+	    $expanded->{$argv->[$i]} = $cmd if $cmd ne $argv->[$i];
+	    last if !defined($def->{$cmd});
+	    $def = $def->{$cmd};
+
+	    if (ref($def) eq 'ARRAY') {
+		# could expand to a real command, rest of $argv are its arguments
+		my $cmd_args = [ @$argv[$i+1..$last_arg_id] ];
+		return ($cmd, $def, $cmd_args, $expanded);
+	    }
+
+	    if (defined($def->{alias})) {
+		die "alias loop detected for '$cmd'" if $is_alias; # avoids cycles
+		# replace aliased (sub)command with the expanded aliased command
+		splice @$argv, $i, 1, split(/ +/, $def->{alias});
+		return resolve_cmd($argv, 1);
+	    }
+	}
+	# got either a special command (bashcomplete, verifyapi) or an unknown
+	# cmd, just return first entry as cmd and the rest of $argv as cmd_arg
+	my $cmd_args = [ @$argv[1..$last_arg_id] ];
+	return ($argv->[0], $def, $cmd_args, $expanded);
+    }
+    return ($cmd, $def);
+}
 
 sub generate_usage_str {
     my ($format, $cmd, $indent, $separator, $sortfunc) = @_;
@@ -53,8 +97,7 @@ sub generate_usage_str {
     my $can_read_pass = $cli_handler_class->can('read_password');
     my $can_str_param_fmap = $cli_handler_class->can('string_param_file_mapping');
 
-    my $def = $cmddef;
-    $def = $def->{$cmd} if $cmd && ref($def) eq 'HASH' && $def->{$cmd};
+    my ($subcmd, $def) = resolve_cmd($cmd);
 
     my $generate;
     $generate = sub {
@@ -74,6 +117,19 @@ sub generate_usage_str {
 		                              $fixed_param, $format,
 		                              $can_read_pass, $can_str_param_fmap);
 		    $oldclass = $class;
+
+		} elsif (defined($def->{$cmd}->{alias}) && ($format eq 'asciidoc')) {
+
+		    $str .= "*$prefix $cmd*\n\nAn alias for '$exename $def->{$cmd}->{alias}'.\n\n";
+
+		} else {
+		    next if $def->{$cmd}->{alias};
+
+		    my $substr = $generate->($indent, $separator, $def->{$cmd}, "$prefix $cmd");
+		    if ($substr) {
+			$substr .= $separator if $substr !~ /\Q$separator\E{2}/;
+			$str .= $substr;
+		    }
 		}
 
 	    }
@@ -88,7 +144,10 @@ sub generate_usage_str {
 	return $str;
     };
 
-    return $generate->($indent, $separator, $def, $exename);
+    my $cmdstr = $exename;
+    $cmdstr .= ' ' . join(' ', @$cmd) if defined($cmd);
+
+    return $generate->($indent, $separator, $def, $cmdstr);
 }
 
 __PACKAGE__->register_method ({
@@ -185,21 +244,24 @@ sub print_usage_verbose {
 }
 
 sub print_usage_short {
-    my ($fd, $msg) = @_;
+    my ($fd, $msg, $cmd) = @_;
 
     $assert_initialized->();
 
     print $fd "ERROR: $msg\n" if $msg;
     print $fd "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n";
 
-    print {$fd} generate_usage_str('short', undef, ' ' x 7, "\n", sub {
+    print {$fd} generate_usage_str('short', $cmd, ' ' x 7, "\n", sub {
 	my ($h) = @_;
 	return sort {
 	    if (ref($h->{$a}) eq 'ARRAY' && ref($h->{$b}) eq 'ARRAY') {
 		# $a and $b are both real commands order them by their class
 		return $h->{$a}->[0] cmp $h->{$b}->[0] || $a cmp $b;
+	    } elsif (ref($h->{$a}) eq 'ARRAY' xor ref($h->{$b}) eq 'ARRAY') {
+		# real command and subcommand mixed, put sub commands first
+		return ref($h->{$b}) eq 'ARRAY' ? -1 : 1;
 	    } else {
-		# both are from the same class
+		# both are either from the same class or subcommands
 		return $a cmp $b;
 	    }
 	} keys %$h;
@@ -228,13 +290,17 @@ my $print_bash_completion = sub {
 
     my ($cmd, $def) = ($simple_cmd, $cmddef);
     if (!$simple_cmd) {
-	if (!scalar(@$args)) {
-	    &$print_result(keys %$def);
+	($cmd, $def, $args, my $expaned) = resolve_cmd($args);
+
+	if (ref($def) eq 'HASH') {
+	    &$print_result(@{$get_commands->($def)});
 	    return;
 	}
-	$cmd = $args->[0];
+	if (my $expanded_cmd = $expaned->{$cur}) {
+	    print "$expanded_cmd\n";
+	    return;
+	}
     }
-    $def = $def->{$cmd};
     return if !$def;
 
     my $pos = scalar(@$args) - 1;
@@ -374,8 +440,9 @@ my $handle_cmd  = sub {
 
     $cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
+    my $cmd_str = join(' ', @$args);
+    my ($cmd, $def, $cmd_args) = resolve_cmd($args);
 
-    my $cmd = shift @$args;
     $abort->("no command specified") if !$cmd;
 
     # call verifyapi before setup_environment(), don't execute any real code in
@@ -388,19 +455,20 @@ my $handle_cmd  = sub {
     $cli_handler_class->setup_environment();
 
     if ($cmd eq 'bashcomplete') {
-	&$print_bash_completion(undef, @$args);
+	&$print_bash_completion(undef, @$cmd_args);
 	return;
     }
 
+    # checked special commands, if def is still a hash we got an incomplete sub command
+    $abort->("incomplete command '$exename $cmd_str'") if ref($def) eq 'HASH';
+
     &$preparefunc() if $preparefunc;
 
-    $cmd = &$expand_command_name($cmddef, $cmd);
-
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$cmddef->{$cmd} || []};
-    $abort->("unknown command '$cmd'") if !$class;
+    $abort->("unknown command '$cmd_str'") if !$class;
 
-    my $prefix = "$exename $cmd";
-    my $res = $class->cli_handler($prefix, $name, \@ARGV, $arg_param, $uri_param, $pwcallback, $stringfilemap);
+    my $prefix = "$exename $cmd_str";
+    my $res = $class->cli_handler($prefix, $name, $cmd_args, $arg_param, $uri_param, $pwcallback, $stringfilemap);
 
     &$outsub($res) if $outsub;
 };
