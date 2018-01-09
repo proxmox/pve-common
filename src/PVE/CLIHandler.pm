@@ -158,12 +158,10 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    cmd => {
-		description => "Command name",
-		type => 'string',
-		optional => 1,
+	    'extra-args' => PVE::JSONSchema::get_standard_option('extra-args', {
+		description => 'Shows help for a specific command',
 		completion => $complete_command_names,
-	    },
+	    }),
 	    verbose => {
 		description => "Verbose output format.",
 		type => 'boolean',
@@ -178,9 +176,9 @@ __PACKAGE__->register_method ({
 
 	$assert_initialized->();
 
-	my $cmd = $param->{cmd};
+	my $cmd = $param->{'extra-args'};
 
-	my $verbose = defined($cmd) && $cmd; 
+	my $verbose = defined($cmd) && $cmd;
 	$verbose = $param->{verbose} if defined($param->{verbose});
 
 	if (!$cmd) {
@@ -438,7 +436,7 @@ sub setup_environment {
 my $handle_cmd  = sub {
     my ($args, $pwcallback, $preparefunc, $stringfilemap) = @_;
 
-    $cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
+    $cmddef->{help} = [ __PACKAGE__, 'help', ['extra-args'] ];
 
     my $cmd_str = join(' ', @$args);
     my ($cmd, $def, $cmd_args) = resolve_cmd($args);
