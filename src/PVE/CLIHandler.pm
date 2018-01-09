@@ -40,6 +40,57 @@ my $complete_command_names = sub {
     return [ sort keys %$cmddef ];
 };
 
+sub generate_usage_str {
+    my ($format, $cmd, $indent, $separator, $sortfunc) = @_;
+
+    $assert_initialized->();
+    die 'format required' if !$format;
+
+    $sortfunc //= sub { sort keys %{$_[0]} };
+    $separator //= '';
+    $indent //= '';
+
+    my $can_read_pass = $cli_handler_class->can('read_password');
+    my $can_str_param_fmap = $cli_handler_class->can('string_param_file_mapping');
+
+    my $def = $cmddef;
+    $def = $def->{$cmd} if $cmd && ref($def) eq 'HASH' && $def->{$cmd};
+
+    my $generate;
+    $generate = sub {
+	my ($indent, $separator, $def, $prefix) = @_;
+
+	my $str = '';
+	if (ref($def) eq 'HASH') {
+	    my $oldclass = undef;
+	    foreach my $cmd (&$sortfunc($def)) {
+
+		if (ref($def->{$cmd}) eq 'ARRAY') {
+		    my ($class, $name, $arg_param, $fixed_param) = @{$def->{$cmd}};
+
+		    $str .= $separator if $oldclass && $oldclass ne $class;
+		    $str .= $indent;
+		    $str .= $class->usage_str($name, "$prefix $cmd", $arg_param,
+		                              $fixed_param, $format,
+		                              $can_read_pass, $can_str_param_fmap);
+		    $oldclass = $class;
+		}
+
+	    }
+	} else {
+	    my ($class, $name, $arg_param, $fixed_param) = @$def;
+	    $abort->("unknown command '$cmd'") if !$class;
+
+	    $str .= $indent;
+	    $str .= $class->usage_str($name, $prefix, $arg_param, $fixed_param, $format,
+	                              $can_read_pass, $can_str_param_fmap);
+	}
+	return $str;
+    };
+
+    return $generate->($indent, $separator, $def, $exename);
+}
+
 __PACKAGE__->register_method ({
     name => 'help',
     path => 'help',
@@ -82,18 +133,14 @@ __PACKAGE__->register_method ({
 	    return undef;
 	}
 
-	$cmd = &$expand_command_name($cmddef, $cmd);
+	my $str;
+	if ($verbose) {
+	    $str = generate_usage_str('full', $cmd, '');
+	} else {
+	    $str = generate_usage_str('short', $cmd, ' ' x 7);
+	}
+	$str =~ s/^\s+//;
 
-	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd} || []};
-
-	raise_param_exc({ cmd => "no such command '$cmd'"}) if !$class;
-
-	my $pwcallback = $cli_handler_class->can('read_password');
-	my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
-
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param,
-				    $verbose ? 'full' : 'short', $pwcallback,
-				    $stringfilemap);
 	if ($verbose) {
 	    print "$str\n";
 	} else {
@@ -105,43 +152,22 @@ __PACKAGE__->register_method ({
     }});
 
 sub print_simple_asciidoc_synopsis {
-    my ($class, $name, $arg_param, $uri_param) = @_;
-
     $assert_initialized->();
 
-    my $pwcallback = $cli_handler_class->can('read_password');
-    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
-
-    my $synopsis = "*${name}* `help`\n\n";
-
-    $synopsis .= $class->usage_str($name, $name, $arg_param, $uri_param,
-				   'asciidoc', $pwcallback, $stringfilemap);
+    my $synopsis = "*${exename}* `help`\n\n";
+    $synopsis .= generate_usage_str('asciidoc');
 
     return $synopsis;
 }
 
 sub print_asciidoc_synopsis {
-
     $assert_initialized->();
-
-    my $pwcallback = $cli_handler_class->can('read_password');
-    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     my $synopsis = "";
 
     $synopsis .= "*${exename}* `<COMMAND> [ARGS] [OPTIONS]`\n\n";
 
-    my $oldclass;
-    foreach my $cmd (sort keys %$cmddef) {
-	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param,
-				    $uri_param, 'asciidoc', $pwcallback,
-				    $stringfilemap);
-	$synopsis .= "\n" if $oldclass && $oldclass ne $class;
-
-	$synopsis .= "$str\n\n";
-	$oldclass = $class;
-    }
+    $synopsis .= generate_usage_str('asciidoc');
 
     $synopsis .= "\n";
 
@@ -149,24 +175,13 @@ sub print_asciidoc_synopsis {
 }
 
 sub print_usage_verbose {
-
     $assert_initialized->();
-
-    my $pwcallback = $cli_handler_class->can('read_password');
-    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
 
     print "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n\n";
 
-    foreach my $cmd (sort keys %$cmddef) {
-	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param,
-				    'full', $pwcallback, $stringfilemap);
-	print "$str\n\n";
-    }
-}
+    my $str = generate_usage_str('full');
 
-sub sorted_commands {   
-    return sort { ($cmddef->{$a}->[0] cmp $cmddef->{$b}->[0]) || ($a cmp $b)} keys %$cmddef;
+    print "$str\n";
 }
 
 sub print_usage_short {
@@ -174,20 +189,21 @@ sub print_usage_short {
 
     $assert_initialized->();
 
-    my $pwcallback = $cli_handler_class->can('read_password');
-    my $stringfilemap = $cli_handler_class->can('string_param_file_mapping');
-
     print $fd "ERROR: $msg\n" if $msg;
     print $fd "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n";
 
-    my $oldclass;
-    foreach my $cmd (sorted_commands()) {
-	my ($class, $name, $arg_param, $uri_param) = @{$cmddef->{$cmd}};
-	my $str = $class->usage_str($name, "$exename $cmd", $arg_param, $uri_param, 'short', $pwcallback, $stringfilemap);
-	print $fd "\n" if $oldclass && $oldclass ne $class;
-	print $fd "       $str";
-	$oldclass = $class;
-    }
+    print {$fd} generate_usage_str('short', undef, ' ' x 7, "\n", sub {
+	my ($h) = @_;
+	return sort {
+	    if (ref($h->{$a}) eq 'ARRAY' && ref($h->{$b}) eq 'ARRAY') {
+		# $a and $b are both real commands order them by their class
+		return $h->{$a}->[0] cmp $h->{$b}->[0] || $a cmp $b;
+	    } else {
+		# both are from the same class
+		return $a cmp $b;
+	    }
+	} keys %$h;
+    });
 }
 
 my $print_bash_completion = sub {
@@ -338,7 +354,7 @@ sub generate_asciidoc_synopsis {
     $cmddef = $def;
 
     if (ref($def) eq 'ARRAY') {
-	print_simple_asciidoc_synopsis(@$def);
+	print_simple_asciidoc_synopsis();
     } else {
 	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
 
@@ -398,7 +414,7 @@ my $handle_simple_cmd = sub {
     if (scalar(@$args) >= 1) {
 	if ($args->[0] eq 'help') {
 	    my $str = "USAGE: $name help\n";
-	    $str .= $class->usage_str($name, $name, $arg_param, $uri_param, 'long', $pwcallback, $stringfilemap);
+	    $str .= generate_usage_str('long');
 	    print STDERR "$str\n\n";
 	    return;
 	} elsif ($args->[0] eq 'verifyapi') {
