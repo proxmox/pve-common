@@ -10,6 +10,29 @@ use PVE::INotify;
 
 use base qw(PVE::RESTHandler);
 
+# $cmddef defines which (sub)commands are available in a specific CLI class.
+# A real command is always an array consisting of its class, name, array of
+# position fixed (required) parameters and hash of predefined parameters when
+# mapping a CLI command t o an API call. Optionally an output method can be
+# passed at the end, e.g., for formatting or transformation purpose.
+#
+# [class, name, fixed_params, API_pre-set params, output_sub ]
+#
+# In case of so called 'simple commands', the $cmddef can be also just an
+# array.
+#
+# Examples:
+# $cmddef = {
+#     command => [ 'PVE::API2::Class', 'command', [ 'arg1', 'arg2' ], { node => $nodename } ],
+#     do => {
+#         this => [ 'PVE::API2::OtherClass', 'method', [ 'arg1' ], undef, sub {
+#             my ($res) = @_;
+#             print "$res\n";
+#         }],
+#         that => [ 'PVE::API2::OtherClass', 'subroutine' [] ],
+#     },
+#     dothat => { alias => 'do that' },
+# }
 my $cmddef;
 my $exename;
 my $cli_handler_class;
