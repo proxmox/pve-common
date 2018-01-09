@@ -203,34 +203,28 @@ my $print_bash_completion = sub {
     print STDERR "\nCMDLINE: $ENV{COMP_LINE}\n" if $debug;
 
     my $args = PVE::Tools::split_args($cmdline);
-    my $pos = scalar(@$args) - 2;
-    $pos += 1 if $cmdline =~ m/\s+$/;
-
-    print STDERR "CMDLINE:$pos:$cmdline\n" if $debug;
-
-    return if $pos < 0;
-
+    shift @$args; # no need for program name
     my $print_result = sub {
 	foreach my $p (@_) {
 	    print "$p\n" if $p =~ m/^$cur/;
 	}
     };
 
-    my $cmd;
-    if ($simple_cmd) {
-	$cmd = $simple_cmd;
-    } else {
-	if ($pos == 0) {
-	    &$print_result(keys %$cmddef);
+    my ($cmd, $def) = ($simple_cmd, $cmddef);
+    if (!$simple_cmd) {
+	if (!scalar(@$args)) {
+	    &$print_result(keys %$def);
 	    return;
 	}
-	$cmd = $args->[1];
+	$cmd = $args->[0];
     }
-
-    my $def = $cmddef->{$cmd};
+    $def = $def->{$cmd};
     return if !$def;
 
-    print STDERR "CMDLINE1:$pos:$cmdline\n" if $debug;
+    my $pos = scalar(@$args) - 1;
+    $pos += 1 if $cmdline =~ m/\s+$/;
+    print STDERR "pos: $pos\n" if $debug;
+    return if $pos < 0;
 
     my $skip_param = {};
 
@@ -243,12 +237,9 @@ my $print_bash_completion = sub {
     map { $skip_param->{$_} = 1; } @$arg_param;
     map { $skip_param->{$_} = 1; } keys %$uri_param;
 
-    my $fpcount = scalar(@$arg_param);
-
     my $info = $class->map_method_by_name($name);
 
-    my $schema = $info->{parameters};
-    my $prop = $schema->{properties};
+    my $prop = $info->{parameters}->{properties};
 
     my $print_parameter_completion = sub {
 	my ($pname) = @_;
@@ -267,9 +258,9 @@ my $print_bash_completion = sub {
     };
 
     # positional arguments
-    $pos += 1 if $simple_cmd;
-    if ($fpcount && $pos <= $fpcount) {
-	my $pname = $arg_param->[$pos -1];
+    $pos++ if $simple_cmd;
+    if ($pos < scalar(@$arg_param)) {
+	my $pname = $arg_param->[$pos];
 	&$print_parameter_completion($pname);
 	return;
     }
