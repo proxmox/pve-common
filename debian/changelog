@@ -1,3 +1,13 @@
+libpve-common-perl (5.0-26) unstable; urgency=medium
+
+  * support sub command structures for command line utilities
+
+  * JSONSchema: add fingerprint-sha256 standard option
+
+  * fix 'failed to read tail' error message on background tasks
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Jan 2018 09:27:50 +0100
+
 libpve-common-perl (5.0-25) unstable; urgency=medium
 
   * fix issue where 0.5MB converted to GB becomes 0
