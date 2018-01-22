@@ -485,7 +485,7 @@ my $handle_cmd  = sub {
 
     &$preparefunc() if $preparefunc;
 
-    my ($class, $name, $arg_param, $uri_param, $outsub) = @{$cmddef->{$cmd} || []};
+    my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def || []};
     $abort->("unknown command '$cmd_str'") if !$class;
 
     my $prefix = "$exename $cmd_str";
