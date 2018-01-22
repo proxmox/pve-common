@@ -1,10 +1,14 @@
+libpve-common-perl (5.0-27) unstable; urgency=medium
+
+  * minor code updates for better reusability
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 22 Jan 2018 15:03:12 +0100
+
 libpve-common-perl (5.0-26) unstable; urgency=medium
 
   * support sub command structures for command line utilities
 
   * JSONSchema: add fingerprint-sha256 standard option
-
-  * fix 'failed to read tail' error message on background tasks
 
  -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Jan 2018 09:27:50 +0100
 
