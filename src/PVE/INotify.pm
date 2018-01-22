@@ -240,11 +240,11 @@ sub read_file {
 
     # file unchanged?
     if (!$ccinfo->{nocache} &&
-	$inotify && $versions->{$filename} &&
+	$inotify && $cver &&
 	defined ($ccinfo->{data}) &&
 	defined ($ccinfo->{version}) &&
 	($ccinfo->{readonce} ||
-	 ($ccinfo->{version} == $versions->{$filename}))) {
+	 ($ccinfo->{version} == $cver))) {
 
 	my $ret;
 	if (!$noclone && ref ($ccinfo->{data})) {
