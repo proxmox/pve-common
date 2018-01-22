@@ -199,6 +199,16 @@ sub discard_changes {
     return read_file ($filename, $full);
 }
 
+sub poll_changes {
+    my ($filename) = @_;
+
+    poll() if $inotify; # read new inotify events
+
+    $versions->{$filename} = 0 if !defined ($versions->{$filename});
+
+    return $versions->{$filename};
+}
+
 sub read_file {
     my ($fileid, $full) = @_;
 
@@ -211,11 +221,7 @@ sub read_file {
     my $fd;
     my $shadow;
 
-    poll() if $inotify; # read new inotify events
-
-    $versions->{$filename} = 0 if !defined ($versions->{$filename});
-
-    my $cver = $versions->{$filename};
+    my $cver = poll_changes($filename);
 
     if (my $copy = $shadowfiles->{$filename}) {
 	if ($fd = IO::File->new ($copy, "r")) {
