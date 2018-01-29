@@ -102,7 +102,7 @@ sub setup_tc_rate_limit {
     run_command("/sbin/tc filter add dev $iface parent ffff: " .
 		"prio 50 basic " .
 		"police rate ${rate}bps burst ${burst}b mtu 64kb " .
-		"drop flowid :1");
+		"drop");
 
     if ($debug) {
 	print "DEBUG tc settings\n";
