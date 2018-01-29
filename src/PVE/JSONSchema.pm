@@ -263,7 +263,7 @@ register_format('CIDRv6', \&pve_verify_cidrv6);
 sub pve_verify_cidrv6 {
     my ($cidr, $noerr) = @_;
 
-    if ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 <= 120)) {
+    if ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))$! && ($1 > 7) && ($1 <= 128)) {
 	return $cidr;
     }
 
