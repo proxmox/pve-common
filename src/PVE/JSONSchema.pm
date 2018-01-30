@@ -406,6 +406,42 @@ sub pve_verify_startup_order {
     die "unable to parse startup options\n";
 }
 
+my %bwlimit_opt = (
+    optional => 1,
+    type => 'number', minimum => '0',
+    format_description => 'LIMIT',
+);
+
+my $bwlimit_format = {
+	default => {
+	    %bwlimit_opt,
+	    description => 'default bandwidth limit in MiB/s',
+	},
+	restore => {
+	    %bwlimit_opt,
+	    description => 'bandwidth limit in MiB/s for restoring guests from backups',
+	},
+	migration => {
+	    %bwlimit_opt,
+	    description => 'bandwidth limit in MiB/s for migrating guests',
+	},
+	clone => {
+	    %bwlimit_opt,
+	    description => 'bandwidth limit in MiB/s for cloning disks',
+	},
+	move => {
+	    %bwlimit_opt,
+	    description => 'bandwidth limit in MiB/s for moving disks',
+	},
+};
+register_format('bwlimit', $bwlimit_format);
+register_standard_option('bwlimit', {
+    description => "Set bandwidth/io limits various operations.",
+    optional => 1,
+    type => 'string',
+    format => $bwlimit_format,
+});
+
 sub pve_parse_startup_order {
     my ($value) = @_;
 
