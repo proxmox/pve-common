@@ -165,12 +165,41 @@ my $compute_fwbr_names = sub {
     return ($fwbr, $vethfw, $vethfwpeer, $ovsintport);
 };
 
+sub iface_delete($) {
+    my ($iface) = @_;
+    run_command(['/sbin/ip', 'link', 'delete', 'dev', $iface], noerr => 1)
+	== 0 or die "failed to delete interface '$iface'\n";
+}
+
+sub iface_create($$@) {
+    my ($iface, $type, @args) = @_;
+    run_command(['/sbin/ip', 'link', 'add', $iface, 'type', $type, @args], noerr => 1)
+	== 0 or die "failed to create interface '$iface'\n";
+}
+
+sub iface_set($@) {
+    my ($iface, @opts) = @_;
+    run_command(['/sbin/ip', 'link', 'set', $iface, @opts], noerr => 1)
+	== 0 or die "failed to set interface options for '$iface' (".join(' ', @opts).")\n";
+}
+
+# helper for nicer error messages:
+sub iface_set_master($$) {
+    my ($iface, $master) = @_;
+    if (defined($master)) {
+	eval { iface_set($iface, 'master', $master) };
+	die "can't enslave '$iface' to '$master'\n" if $@;
+    } else {
+	eval { iface_set($iface, 'nomaster') };
+	die "can't unenslave '$iface'\n" if $@;
+    }
+}
+
 my $cond_create_bridge = sub {
     my ($bridge) = @_;
 
     if (! -d "/sys/class/net/$bridge") {
-	system("/sbin/brctl addbr $bridge") == 0 ||
-	    die "can't add bridge '$bridge'\n";
+	iface_create($bridge, 'bridge');
 	disable_ipv6($bridge);
     }
 };
@@ -189,8 +218,7 @@ my $bridge_add_interface = sub {
 
     # drop link local address (it can't be used when on a bridge anyway)
     disable_ipv6($iface);
-    system("/sbin/brctl addif $bridge $iface") == 0 ||
-	die "can't add interface 'iface' to bridge '$bridge'\n";
+    iface_set_master($iface, $bridge);
 
    my $vlan_aware = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/bridge/vlan_filtering");
 
@@ -279,7 +307,7 @@ sub veth_delete {
     my ($veth) = @_;
 
     if (-d "/sys/class/net/$veth") {
-	run_command("/sbin/ip link delete dev $veth", outfunc => sub {}, errfunc => sub {});
+	iface_delete($veth);
     }
     eval { tap_unplug($veth) };
 }
@@ -341,8 +369,7 @@ my $cleanup_firewall_bridge = sub {
 
     # cleanup fwbr bridge
     if (-d "/sys/class/net/$fwbr") {
-	run_command("/sbin/ip link set dev $fwbr down", outfunc => sub {}, errfunc => sub {});
-	run_command("/sbin/brctl delbr $fwbr", outfunc => sub {}, errfunc => sub {});
+	iface_delete($fwbr);
     }
 };
 
@@ -393,9 +420,7 @@ sub tap_unplug {
 	#avoid insecure dependency;
 	($bridge) = $bridge =~ /(\S+)/;
 
-	system("/sbin/brctl delif $bridge $iface") == 0 ||
-	    die "can't del interface '$iface' from bridge '$bridge'\n";
-
+	iface_set_master($iface, undef);
     }
     
     &$cleanup_firewall_bridge($iface);
@@ -479,8 +504,7 @@ sub activate_bridge_vlan {
     lock_network(sub {
 	# add bridgevlan if it doesn't already exist
 	if (! -d "/sys/class/net/$bridgevlan") {
-	    system("/sbin/brctl addbr $bridgevlan") == 0 ||
-		die "can't add bridge $bridgevlan\n";
+	    iface_create($bridgevlan, 'bridge');
 	}
 
 	# for each physical interface (eth or bridge) bind them to bridge vlan
