@@ -1,3 +1,15 @@
+libpve-common-perl (5.0-28) unstable; urgency=medium
+
+  * net: replace brctl with iproute2 calls
+
+  * schema: add bwlimit standard option and format
+
+  * schema: allow ipv6 prefix lengths up to 128
+
+  * net: remove flowid in traffic limit commands
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 19 Feb 2018 11:41:12 +0100
+
 libpve-common-perl (5.0-27) unstable; urgency=medium
 
   * minor code updates for better reusability
