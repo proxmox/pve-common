@@ -177,9 +177,13 @@ sub compute_next_event {
 
 	if ($utc) {
 	    (undef, $min, $hour, $mday, $mon, $year, $wday) = gmtime($last);
+	    # gmtime and timegm interpret two-digit years differently
+	    $year += 1900;
 	    $startofday = timegm(0, 0, 0, $mday, $mon, $year);
 	} else {
 	    (undef, $min, $hour, $mday, $mon, $year, $wday) = localtime($last);
+	    # localtime and timelocal interpret two-digit years differently
+	    $year += 1900;
 	    $startofday = timelocal(0, 0, 0, $mday, $mon, $year);
 	}
 
