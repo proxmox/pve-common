@@ -117,7 +117,7 @@ sub generate_usage_str {
     $separator //= '';
     $indent //= '';
 
-    my $can_read_pass = $cli_handler_class->can('read_password');
+    my $read_password_func = $cli_handler_class->can('read_password');
     my $param_mapping_func = $cli_handler_class->can('string_param_file_mapping');
 
     my ($subcmd, $def) = resolve_cmd($cmd);
@@ -138,7 +138,7 @@ sub generate_usage_str {
 		    $str .= $indent;
 		    $str .= $class->usage_str($name, "$prefix $cmd", $arg_param,
 		                              $fixed_param, $format,
-		                              $can_read_pass, $param_mapping_func);
+		                              $read_password_func, $param_mapping_func);
 		    $oldclass = $class;
 
 		} elsif (defined($def->{$cmd}->{alias}) && ($format eq 'asciidoc')) {
@@ -162,7 +162,7 @@ sub generate_usage_str {
 
 	    $str .= $indent;
 	    $str .= $class->usage_str($name, $prefix, $arg_param, $fixed_param, $format,
-	                              $can_read_pass, $param_mapping_func);
+	                              $read_password_func, $param_mapping_func);
 	}
 	return $str;
     };
