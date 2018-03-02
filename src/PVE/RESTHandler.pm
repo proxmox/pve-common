@@ -699,13 +699,13 @@ my $replace_file_names_with_contents = sub {
 };
 
 sub cli_handler {
-    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $pwcallback, $param_mapping_func) = @_;
+    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $read_password_func, $param_mapping_func) = @_;
 
     my $info = $self->map_method_by_name($name);
 
     my $res;
     eval {
-	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $pwcallback);
+	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $read_password_func);
 
 	if (defined($param_mapping_func)) {
 	    my $param_mapping_hash = $compute_param_mapping_hash->(&$param_mapping_func($name));
@@ -719,7 +719,7 @@ sub cli_handler {
 
 	die $err if !$ec || $ec ne "PVE::Exception" || !$err->is_param_exc();
 	
-	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $pwcallback, $param_mapping_func);
+	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $read_password_func, $param_mapping_func);
 
 	die $err;
     }
