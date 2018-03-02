@@ -118,7 +118,8 @@ sub generate_usage_str {
     $indent //= '';
 
     my $read_password_func = $cli_handler_class->can('read_password');
-    my $param_mapping_func = $cli_handler_class->can('string_param_file_mapping');
+    my $param_mapping_func = $cli_handler_class->can('param_mapping') ||
+	$cli_handler_class->can('string_param_file_mapping');
 
     my ($subcmd, $def) = resolve_cmd($cmd);
 
@@ -546,7 +547,8 @@ sub run_cli_handler {
     my $preparefunc = $params{prepare};
 
     my $read_password_func = $class->can('read_password');
-    my $param_mapping_func = $class->can('string_param_file_mapping');
+    my $param_mapping_func = $cli_handler_class->can('param_mapping') ||
+	$class->can('string_param_file_mapping');
 
     $exename = &$get_exe_name($class);
 
