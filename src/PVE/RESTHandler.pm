@@ -541,9 +541,9 @@ my $compute_param_mapping_hash = sub {
 #   'full'     ... text, include description
 #   'asciidoc' ... generate asciidoc for man pages (like 'full')
 # $hidepw      ... hide password option (use this if you provide a read passwork callback)
-# $stringfilemap ... mapping for string parameters to file path parameters
+# $param_mapping_func ... mapping for string parameters to file path parameters
 sub usage_str {
-    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $hidepw, $stringfilemap) = @_;
+    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $hidepw, $param_mapping_func) = @_;
 
     $format = 'long' if !$format;
 
@@ -600,8 +600,8 @@ sub usage_str {
 	    }
 	}
 
-	my $param_mapping_hash = $compute_param_mapping_hash->(&$stringfilemap($name))
-	    if $stringfilemap;
+	my $param_mapping_hash = $compute_param_mapping_hash->(&$param_mapping_func($name))
+	    if $param_mapping_func;
 
 	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, $format,
 					    $hidepw, $param_mapping_hash->{$k});
@@ -699,7 +699,7 @@ my $replace_file_names_with_contents = sub {
 };
 
 sub cli_handler {
-    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $pwcallback, $stringfilemap) = @_;
+    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $pwcallback, $param_mapping_func) = @_;
 
     my $info = $self->map_method_by_name($name);
 
@@ -707,8 +707,8 @@ sub cli_handler {
     eval {
 	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $pwcallback);
 
-	if (defined($stringfilemap)) {
-	    my $param_mapping_hash = $compute_param_mapping_hash->(&$stringfilemap($name));
+	if (defined($param_mapping_func)) {
+	    my $param_mapping_hash = $compute_param_mapping_hash->(&$param_mapping_func($name));
 	    &$replace_file_names_with_contents($param, $param_mapping_hash);
 	}
 
@@ -719,7 +719,7 @@ sub cli_handler {
 
 	die $err if !$ec || $ec ne "PVE::Exception" || !$err->is_param_exc();
 	
-	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $pwcallback, $stringfilemap);
+	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $pwcallback, $param_mapping_func);
 
 	die $err;
     }

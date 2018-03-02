@@ -457,7 +457,7 @@ sub setup_environment {
 }
 
 my $handle_cmd  = sub {
-    my ($args, $pwcallback, $preparefunc, $stringfilemap) = @_;
+    my ($args, $pwcallback, $preparefunc, $param_mapping_func) = @_;
 
     $cmddef->{help} = [ __PACKAGE__, 'help', ['extra-args'] ];
 
@@ -489,13 +489,13 @@ my $handle_cmd  = sub {
     $abort->("unknown command '$cmd_str'") if !$class;
 
     my $prefix = "$exename $cmd_str";
-    my $res = $class->cli_handler($prefix, $name, $cmd_args, $arg_param, $uri_param, $pwcallback, $stringfilemap);
+    my $res = $class->cli_handler($prefix, $name, $cmd_args, $arg_param, $uri_param, $pwcallback, $param_mapping_func);
 
     &$outsub($res) if $outsub;
 };
 
 my $handle_simple_cmd = sub {
-    my ($args, $pwcallback, $preparefunc, $stringfilemap) = @_;
+    my ($args, $pwcallback, $preparefunc, $param_mapping_func) = @_;
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$cmddef};
     die "no class specified" if !$class;
@@ -524,7 +524,7 @@ my $handle_simple_cmd = sub {
 
     &$preparefunc() if $preparefunc;
 
-    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $pwcallback, $stringfilemap);
+    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $pwcallback, $param_mapping_func);
 
     &$outsub($res) if $outsub;
 };
@@ -546,7 +546,7 @@ sub run_cli_handler {
     my $preparefunc = $params{prepare};
 
     my $pwcallback = $class->can('read_password');
-    my $stringfilemap = $class->can('string_param_file_mapping');
+    my $param_mapping_func = $class->can('string_param_file_mapping');
 
     $exename = &$get_exe_name($class);
 
@@ -556,9 +556,9 @@ sub run_cli_handler {
     $cmddef = ${"${class}::cmddef"};
 
     if (ref($cmddef) eq 'ARRAY') {
-	&$handle_simple_cmd(\@ARGV, $pwcallback, $preparefunc, $stringfilemap);
+	&$handle_simple_cmd(\@ARGV, $pwcallback, $preparefunc, $param_mapping_func);
     } else {
-	&$handle_cmd(\@ARGV, $pwcallback, $preparefunc, $stringfilemap);
+	&$handle_cmd(\@ARGV, $pwcallback, $preparefunc, $param_mapping_func);
     }
 
     exit 0;
