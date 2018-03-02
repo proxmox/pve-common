@@ -6,6 +6,7 @@ use warnings;
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::JSONSchema;
+use PVE::Tools;
 use HTTP::Status qw(:constants :is status_message);
 use Text::Wrap;
 use Clone qw(clone);
@@ -393,8 +394,9 @@ sub handle {
 # $phash: json schema property hash
 # $format: 'asciidoc', 'short', 'long' or 'full'
 # $style: 'config', 'config-sub', 'arg' or 'fixed'
+# $mapdef: parameter mapping ({ desc => XXX, func => sub {...} })
 my $get_property_description = sub {
-    my ($name, $style, $phash, $format, $hidepw, $fileparams) = @_;
+    my ($name, $style, $phash, $format, $hidepw, $mapdef) = @_;
 
     my $res = '';
 
@@ -415,13 +417,8 @@ my $get_property_description = sub {
 	$type_text = '';
     }
 
-    if ($fileparams && $phash->{type} eq 'string') {
-	foreach my $elem (@$fileparams) {
-	    if ($name eq $elem) {
-		$type_text = '<filepath>';
-		last;
-	    }
-	}
+    if ($mapdef && $phash->{type} eq 'string') {
+	$type_text = $mapdef->{desc};
     }
 
     if ($format eq 'asciidoc') {
@@ -500,6 +497,37 @@ my $get_property_description = sub {
     return $res;
 };
 
+# translate parameter mapping definition
+# $mapping_array is a array which can contain:
+#   strings ... in that case we assume it is a parameter name, and
+#      we want to load that parameter from a file
+#   [ param_name, func, desc] ... allows you to specify a arbitrary
+#      mapping func for any param
+#
+# Returns: a hash indexed by parameter_name,
+# i.e.  { param_name => { func => .., desc => ... } }
+my $compute_param_mapping_hash = sub {
+    my ($mapping_array) = @_;
+
+    my $res = {};
+
+    return $res if !defined($mapping_array);
+
+    foreach my $item (@$mapping_array) {
+	my ($name, $func, $desc);
+	if (ref($item) eq 'ARRAY') {
+	    ($name, $func, $desc) = @$item;
+	} else {
+	    $name = $item;
+	    $func = sub { return PVE::Tools::file_get_contents($_[0]) };
+	}
+	$desc //= '<filepath>';
+	$res->{$name} = { desc => $desc, func => $func };
+    }
+
+    return $res;
+};
+
 # generate usage information for command line tools
 #
 # $name        ... the name of the method
@@ -572,9 +600,11 @@ sub usage_str {
 	    }
 	}
 
-	my $mapping = defined($stringfilemap) ? &$stringfilemap($name) : undef;
+	my $param_mapping_hash = $compute_param_mapping_hash->(&$stringfilemap($name))
+	    if $stringfilemap;
+
 	$opts .= &$get_property_description($base, 'arg', $prop->{$k}, $format,
-					    $hidepw, $mapping);
+					    $hidepw, $param_mapping_hash->{$k});
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
@@ -658,13 +688,11 @@ sub dump_properties {
 }
 
 my $replace_file_names_with_contents = sub {
-    my ($param, $mapping) = @_;
+    my ($param, $param_mapping_hash) = @_;
 
-    if ($mapping) {
-	foreach my $elem ( @$mapping ) {
-	    $param->{$elem} = PVE::Tools::file_get_contents($param->{$elem})
-		if defined($param->{$elem});
-	}
+    while (my ($k, $d) = each %$param_mapping_hash) {
+	$param->{$k} = $d->{func}->($param->{$k})
+	    if defined($param->{$k});
     }
 
     return $param;
@@ -678,8 +706,12 @@ sub cli_handler {
     my $res;
     eval {
 	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $pwcallback);
-	&$replace_file_names_with_contents($param, &$stringfilemap($name))
-	    if defined($stringfilemap);
+
+	if (defined($stringfilemap)) {
+	    my $param_mapping_hash = $compute_param_mapping_hash->(&$stringfilemap($name));
+	    &$replace_file_names_with_contents($param, $param_mapping_hash);
+	}
+
 	$res = $self->handle($info, $param);
     };
     if (my $err = $@) {
