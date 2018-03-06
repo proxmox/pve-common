@@ -75,6 +75,7 @@ sub resolve_cmd {
     my ($argv, $is_alias) = @_;
 
     my ($def, $cmd) = ($cmddef, $argv);
+    my $cmdstr = $exename;
 
     if (ref($argv) eq 'ARRAY') {
 	my $expanded = {};
@@ -82,6 +83,7 @@ sub resolve_cmd {
 
 	for my $i (0..$last_arg_id) {
 	    $cmd = $expand_command_name->($def, $argv->[$i]);
+	    $cmdstr .= " $cmd";
 	    $expanded->{$argv->[$i]} = $cmd if $cmd ne $argv->[$i];
 	    last if !defined($def->{$cmd});
 	    $def = $def->{$cmd};
@@ -89,7 +91,7 @@ sub resolve_cmd {
 	    if (ref($def) eq 'ARRAY') {
 		# could expand to a real command, rest of $argv are its arguments
 		my $cmd_args = [ @$argv[$i+1..$last_arg_id] ];
-		return ($cmd, $def, $cmd_args, $expanded);
+		return ($cmd, $def, $cmd_args, $expanded, $cmdstr);
 	    }
 
 	    if (defined($def->{alias})) {
@@ -102,9 +104,9 @@ sub resolve_cmd {
 	# got either a special command (bashcomplete, verifyapi) or an unknown
 	# cmd, just return first entry as cmd and the rest of $argv as cmd_arg
 	my $cmd_args = [ @$argv[1..$last_arg_id] ];
-	return ($argv->[0], $def, $cmd_args, $expanded);
+	return ($argv->[0], $def, $cmd_args, $expanded, $cmdstr);
     }
-    return ($cmd, $def);
+    return ($cmd, $def, undef, undef, $cmdstr);
 }
 
 sub generate_usage_str {
@@ -121,7 +123,7 @@ sub generate_usage_str {
     my $param_mapping_func = $cli_handler_class->can('param_mapping') ||
 	$cli_handler_class->can('string_param_file_mapping');
 
-    my ($subcmd, $def) = resolve_cmd($cmd);
+    my ($subcmd, $def, undef, undef, $cmdstr) = resolve_cmd($cmd);
 
     my $generate;
     $generate = sub {
@@ -167,9 +169,6 @@ sub generate_usage_str {
 	}
 	return $str;
     };
-
-    my $cmdstr = $exename;
-    $cmdstr .= ' ' . join(' ', @$cmd) if defined($cmd);
 
     return $generate->($indent, $separator, $def, $cmdstr);
 }
@@ -462,8 +461,7 @@ my $handle_cmd  = sub {
 
     $cmddef->{help} = [ __PACKAGE__, 'help', ['extra-args'] ];
 
-    my $cmd_str = join(' ', @$args);
-    my ($cmd, $def, $cmd_args) = resolve_cmd($args);
+    my ($cmd, $def, $cmd_args, undef, $cmd_str) = resolve_cmd($args);
 
     $abort->("no command specified") if !$cmd;
 
@@ -482,15 +480,14 @@ my $handle_cmd  = sub {
     }
 
     # checked special commands, if def is still a hash we got an incomplete sub command
-    $abort->("incomplete command '$exename $cmd_str'") if ref($def) eq 'HASH';
+    $abort->("incomplete command '$cmd_str'") if ref($def) eq 'HASH';
 
     &$preparefunc() if $preparefunc;
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def || []};
     $abort->("unknown command '$cmd_str'") if !$class;
 
-    my $prefix = "$exename $cmd_str";
-    my $res = $class->cli_handler($prefix, $name, $cmd_args, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
+    my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
 
     &$outsub($res) if $outsub;
 };
