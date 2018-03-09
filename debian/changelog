@@ -1,3 +1,13 @@
+libpve-common-perl (5.0-29) unstable; urgency=medium
+
+  * CLIHandler: fix command usage string generation
+
+  * fix #1682: handle relative years absolutely
+
+  * introduce compute_param_mapping_hash helper
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 09 Mar 2018 08:56:03 +0100
+
 libpve-common-perl (5.0-28) unstable; urgency=medium
 
   * net: replace brctl with iproute2 calls
