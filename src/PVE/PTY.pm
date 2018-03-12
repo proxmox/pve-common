@@ -165,7 +165,7 @@ sub tcsetsize($$$) {
 	or die "failed to set window size: $!\n";
 }
 
-sub read_password(;$$) {
+sub read_password($;$$) {
     my ($query, $infd, $outfd) = @_;
 
     my $password = '';
