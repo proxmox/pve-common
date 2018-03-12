@@ -1333,7 +1333,7 @@ sub method_get_child_link {
 # a way to parse command line parameters, using a 
 # schema to configure Getopt::Long
 sub get_options {
-    my ($schema, $args, $arg_param, $fixed_param, $pwcallback) = @_;
+    my ($schema, $args, $arg_param, $fixed_param, $pwcallback, $param_mapping_hash) = @_;
 
     if (!$schema || !$schema->{properties}) {
 	raise("too many arguments\n", code => HTTP_BAD_REQUEST)
@@ -1349,13 +1349,20 @@ sub get_options {
 	$list_param = $arg_param;
     }
 
+    my @interactive = ();
     my @getopt = ();
     foreach my $prop (keys %{$schema->{properties}}) {
 	my $pd = $schema->{properties}->{$prop};
 	next if $list_param && $prop eq $list_param;
 	next if defined($fixed_param->{$prop});
 
-	if ($prop eq 'password' && $pwcallback) {
+	my $mapping = $param_mapping_hash->{$prop};
+	if ($mapping && $mapping->{interactive}) {
+	    # interactive parameters such as passwords: make the argument
+	    # optional and call the mapping function afterwards.
+	    push @getopt, "$prop:s";
+	    push @interactive, [$prop, $mapping->{func}];
+	} elsif ($prop eq 'password' && $pwcallback) {
 	    # we do not accept plain password on input line, instead
 	    # we turn this into a boolean option and ask for password below
 	    # using $pwcallback() (for security reasons).
@@ -1406,6 +1413,15 @@ sub get_options {
 	    if ($opts->{password} || !$pd->{optional}) {
 		$opts->{password} = &$pwcallback(); 
 	    }
+	}
+    }
+
+    foreach my $entry (@interactive) {
+	my ($opt, $func) = @$entry;
+	my $pd = $schema->{properties}->{$opt};
+	my $value = $opts->{$opt};
+	if (defined($value) || !$pd->{optional}) {
+	    $opts->{$opt} = $func->($value);
 	}
     }
 

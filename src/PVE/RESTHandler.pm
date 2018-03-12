@@ -514,15 +514,15 @@ my $compute_param_mapping_hash = sub {
     return $res if !defined($mapping_array);
 
     foreach my $item (@$mapping_array) {
-	my ($name, $func, $desc);
+	my ($name, $func, $desc, $interactive);
 	if (ref($item) eq 'ARRAY') {
-	    ($name, $func, $desc) = @$item;
+	    ($name, $func, $desc, $interactive) = @$item;
 	} else {
 	    $name = $item;
 	    $func = sub { return PVE::Tools::file_get_contents($_[0]) };
 	}
 	$desc //= '<filepath>';
-	$res->{$name} = { desc => $desc, func => $func };
+	$res->{$name} = { desc => $desc, func => $func, interactive => $interactive };
     }
 
     return $res;
@@ -691,6 +691,7 @@ my $replace_file_names_with_contents = sub {
     my ($param, $param_mapping_hash) = @_;
 
     while (my ($k, $d) = each %$param_mapping_hash) {
+	next if $d->{interactive}; # handled by the JSONSchema's get_options code
 	$param->{$k} = $d->{func}->($param->{$k})
 	    if defined($param->{$k});
     }
@@ -705,10 +706,10 @@ sub cli_handler {
 
     my $res;
     eval {
-	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $read_password_func);
+	my $param_mapping_hash = $compute_param_mapping_hash->($param_mapping_func->($name)) if $param_mapping_func;
+	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $read_password_func, $param_mapping_hash);
 
-	if (defined($param_mapping_func)) {
-	    my $param_mapping_hash = $compute_param_mapping_hash->(&$param_mapping_func($name));
+	if (defined($param_mapping_hash)) {
 	    &$replace_file_names_with_contents($param, $param_mapping_hash);
 	}
 
