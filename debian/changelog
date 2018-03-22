@@ -1,3 +1,11 @@
+libpve-common-perl (5.0-30) unstable; urgency=medium
+
+  * pty: fix read_password prototype
+
+  * cli: more generic interactive parameter definition
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 22 Mar 2018 09:08:08 +0100
+
 libpve-common-perl (5.0-29) unstable; urgency=medium
 
   * CLIHandler: fix command usage string generation
