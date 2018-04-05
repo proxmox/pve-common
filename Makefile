@@ -45,5 +45,5 @@ check:
 
 .PHONY: upload
 upload: ${DEB}
-	tar cf - ${DEB}|ssh repoman@repo.proxmox.com -- upload --product pve,pmg --dist stretch
+	tar cf - ${DEB}|ssh -X repoman@repo.proxmox.com -- upload --product pve,pmg --dist stretch
 
