@@ -7,6 +7,9 @@ MAN1DIR=${MANDIR}/man1/
 PERLDIR=${PREFIX}/share/perl5
 
 LIB_SOURCES = \
+	ACME.pm \
+	ACME/Challenge.pm \
+	ACME/StandAlone.pm \
 	AtomicFile.pm \
 	Certificate.pm \
 	CLIHandler.pm \
@@ -34,6 +37,7 @@ all:
 .PHONY: install
 install:
 	install -d -m 0755 ${DESTDIR}${PERLDIR}/PVE
+	install -d -m 0755 ${DESTDIR}${PERLDIR}/PVE/ACME
 	for i in ${LIB_SOURCES}; do install -D -m 0644 PVE/$$i ${DESTDIR}${PERLDIR}/PVE/$$i; done
 
 
