@@ -8,6 +8,7 @@ PERLDIR=${PREFIX}/share/perl5
 
 LIB_SOURCES = \
 	AtomicFile.pm \
+	Certificate.pm \
 	CLIHandler.pm \
 	CalendarEvent.pm \
 	CpuSet.pm \
