@@ -1,9 +1,9 @@
 = Setup PVE Development Environment =
 
-1. Install Debian 'jessie'
+1. Install Debian 'stretch'
 2. Configure pvetest repository in apt sources.list
 
- deb http://download.proxmox.com/debian jessie pvetest
+ deb http://download.proxmox.com/debian stretch pvetest
 
 3. Add our repository key with apt-key:
 
