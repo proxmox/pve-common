@@ -20,7 +20,7 @@ You should now have a working Proxmox VE installation.
 
 = Install build prerequisites for development environment =
 
-apt-get install build-essential git-core git-email debhelper \
+apt-get install build-essential git git-email debhelper \
 autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
 groff quilt dpatch automake autoconf libtool lintian libdevel-cycle-perl \
 libjson-perl libcommon-sense-perl liblinux-inotify2-perl libio-stringy-perl \
@@ -45,8 +45,7 @@ liblzma-dev dosfstools mtools libxen-dev libfuse-dev corosync-dev \
 libcpg-dev libquorum-dev libcmap-dev libuuid-perl \
 libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
 graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
-libudev-dev asciidoc-dblatex source-highlight inkscape \
-libiscsi-dev libiscsi7
+libudev-dev asciidoc-dblatex source-highlight libiscsi-dev libiscsi7
 
 = Compile PVE packages from Source =
 
