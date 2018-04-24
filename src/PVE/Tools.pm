@@ -986,10 +986,14 @@ sub df {
     my $res = eval { run_fork_with_timeout($timeout, $df) } // {};
     warn $@ if $@;
 
+    # untaint the values
+    my ($blocks, $used, $bavail) = map { defined($_) ? (/^(\d+)$/) : 0 }
+	$res->@{qw(blocks used bavail)};
+
     return {
-	total => $res->{blocks} // 0,
-	used => $res->{used} // 0,
-	avail => $res->{bavail} // 0,
+	total => $blocks,
+	used => $used,
+	avail => $bavail,
     };
 }
 
