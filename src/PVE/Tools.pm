@@ -997,6 +997,26 @@ sub df {
     };
 }
 
+sub du {
+    my ($path, $timeout) = @_;
+
+    my $size;
+
+    $timeout //= 10;
+
+    my $parser = sub {
+	my $line = shift;
+
+	if ($line =~ m/^(\d+)\s+total$/) {
+	    $size = $1;
+	}
+    };
+
+    run_command(['du', '-scb', $path], outfunc => $parser, timeout => $timeout);
+
+    return $size;
+}
+
 # UPID helper
 # We use this to uniquely identify a process.
 # An 'Unique Process ID' has the following format:
