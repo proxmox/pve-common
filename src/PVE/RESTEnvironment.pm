@@ -270,7 +270,7 @@ sub active_workers  {
 	}
 
 
-	@ta = sort { $b->{starttime} cmp $a->{starttime} } @ta;
+	@ta = sort { $b->{starttime} <=> $a->{starttime} } @ta;
 
 	my $save = defined($new_upid);
 
