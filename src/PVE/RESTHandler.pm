@@ -139,6 +139,39 @@ sub api_dump_cleanup_tree {
 
 }
 
+# api_dump_remove_refs: prepare API tree for use with to_json($tree)
+sub api_dump_remove_refs {
+    my ($tree) = @_;
+
+    my $class = ref($tree);
+    return $tree if !$class;
+
+    if ($class eq 'ARRAY') {
+	my $res = [];
+	foreach my $el (@$tree) {
+	    push @$res, api_dump_remove_refs($el);
+	}
+	return $res;
+    } elsif ($class eq 'HASH') {
+	my $res = {};
+	foreach my $k (keys %$tree) {
+	    if (my $itemclass = ref($tree->{$k})) {
+		if ($itemclass eq 'CODE') {
+		    next if $k eq 'completion';
+		}
+		$res->{$k} = api_dump_remove_refs($tree->{$k});
+	    } else {
+		$res->{$k} = $tree->{$k};
+	    }
+	}
+	return $res;
+    } elsif ($class eq 'Regexp') {
+	return "$tree"; # return string representation
+    } else {
+	die "unknown class '$class'\n";
+    }
+}
+
 sub api_dump {
     my ($class, $prefix) = @_;
 
