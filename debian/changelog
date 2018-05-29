@@ -1,3 +1,11 @@
+libpve-common-perl (5.0-32) unstable; urgency=medium
+
+  * fix #1766: compare task start time numerically
+
+  * add helper to dump API with resolved references
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 29 May 2018 07:33:47 +0200
+
 libpve-common-perl (5.0-31) unstable; urgency=medium
 
   * add ACME library and challenge plugins
