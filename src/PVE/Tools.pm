@@ -904,6 +904,13 @@ sub next_spice_port {
     return next_unused_port(61000, 61099, $family, $address);
 }
 
+sub must_stringify {
+	my ($value) = @_;
+	eval { $value = "$value" };
+	return "error turning value into a string: $@" if $@;
+	return $value;
+}
+
 # sigkill after $timeout  a $sub running in a fork if it can't write a pipe
 # the $sub has to return a single scalar
 sub run_fork_with_timeout {
@@ -935,7 +942,7 @@ sub run_fork_with_timeout {
 	    $pipe_out->flush();
 	};
 	if (my $err = $@) {
-	    print {$pipe_out} encode_json({ error => $err });
+	    print {$pipe_out} encode_json({ error => must_stringify($err) });
 	    $pipe_out->flush();
 	    POSIX::_exit(1);
 	}
