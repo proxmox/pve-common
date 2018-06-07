@@ -52,11 +52,12 @@ my $abort = sub {
 my $expand_command_name = sub {
     my ($def, $cmd) = @_;
 
-    if (!$def->{$cmd}) {
-	my @expanded = grep { /^\Q$cmd\E/ } keys %$def;
-	return $expanded[0] if scalar(@expanded) == 1; # enforce exact match
-    }
-    return $cmd;
+    return $cmd if exists $def->{$cmd}; # command is already complete
+
+    my @expanded = grep { /^\Q$cmd\E/ } keys %$def;
+    return $expanded[0] if scalar(@expanded) == 1; # enforce exact match
+
+    return undef;
 };
 
 my $get_commands = sub {
@@ -78,20 +79,27 @@ sub resolve_cmd {
     my $cmdstr = $exename;
 
     if (ref($argv) eq 'ARRAY') {
-	my $expanded = {};
+	my $expanded_last_arg;
 	my $last_arg_id = scalar(@$argv) - 1;
 
 	for my $i (0..$last_arg_id) {
 	    $cmd = $expand_command_name->($def, $argv->[$i]);
+	    if (defined($cmd)) {
+		# If the argument was expanded (or was already complete) and it
+		# is the final argument, tell our caller about it:
+		$expanded_last_arg = $cmd if $i == $last_arg_id;
+	    } else {
+		# Otherwise continue with the unexpanded version of it.
+		$cmd = $argv->[$i]; 
+	    }
 	    $cmdstr .= " $cmd";
-	    $expanded->{$argv->[$i]} = $cmd if $cmd ne $argv->[$i];
 	    last if !defined($def->{$cmd});
 	    $def = $def->{$cmd};
 
 	    if (ref($def) eq 'ARRAY') {
 		# could expand to a real command, rest of $argv are its arguments
 		my $cmd_args = [ @$argv[$i+1..$last_arg_id] ];
-		return ($cmd, $def, $cmd_args, $expanded, $cmdstr);
+		return ($cmd, $def, $cmd_args, $expanded_last_arg, $cmdstr);
 	    }
 
 	    if (defined($def->{alias})) {
@@ -104,7 +112,7 @@ sub resolve_cmd {
 	# got either a special command (bashcomplete, verifyapi) or an unknown
 	# cmd, just return first entry as cmd and the rest of $argv as cmd_arg
 	my $cmd_args = [ @$argv[1..$last_arg_id] ];
-	return ($argv->[0], $def, $cmd_args, $expanded, $cmdstr);
+	return ($argv->[0], $def, $cmd_args, $expanded_last_arg, $cmdstr);
     }
     return ($cmd, $def, undef, undef, $cmdstr);
 }
@@ -313,12 +321,13 @@ my $print_bash_completion = sub {
     if (!$simple_cmd) {
 	($cmd, $def, $args, my $expanded) = resolve_cmd($args);
 
-	if (ref($def) eq 'HASH') {
-	    &$print_result(@{$get_commands->($def)});
+	if (defined($expanded) && $prev ne $expanded) {
+	    print "$expanded\n";
 	    return;
 	}
-	if (my $expanded_cmd = $expanded->{$cur}) {
-	    print "$expanded_cmd\n";
+
+	if (ref($def) eq 'HASH') {
+	    &$print_result(@{$get_commands->($def)});
 	    return;
 	}
     }
