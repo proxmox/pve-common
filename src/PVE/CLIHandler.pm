@@ -311,13 +311,13 @@ my $print_bash_completion = sub {
 
     my ($cmd, $def) = ($simple_cmd, $cmddef);
     if (!$simple_cmd) {
-	($cmd, $def, $args, my $expaned) = resolve_cmd($args);
+	($cmd, $def, $args, my $expanded) = resolve_cmd($args);
 
 	if (ref($def) eq 'HASH') {
 	    &$print_result(@{$get_commands->($def)});
 	    return;
 	}
-	if (my $expanded_cmd = $expaned->{$cur}) {
+	if (my $expanded_cmd = $expanded->{$cur}) {
 	    print "$expanded_cmd\n";
 	    return;
 	}
