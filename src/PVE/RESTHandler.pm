@@ -58,7 +58,7 @@ sub api_clone_schema {
 }
 
 sub api_dump_full {
-    my ($tree, $index, $class, $prefix) = @_;
+    my ($tree, $index, $class, $prefix, $raw_dump) = @_;
 
     $prefix = '' if !$prefix;
 
@@ -70,7 +70,7 @@ sub api_dump_full {
 	$path =~ s/\/+$//;
 
 	if ($info->{subclass}) {
-	    api_dump_full($tree, $index, $info->{subclass}, $path);
+	    api_dump_full($tree, $index, $info->{subclass}, $path, $raw_dump);
 	} else {
 	    next if !$path;
 
@@ -110,12 +110,15 @@ sub api_dump_full {
 			$k eq "path";
 
 		    my $d = $info->{$k};
-		    
-		    if ($k eq 'parameters') {
-			$data->{$k} = api_clone_schema($d);
-		    } else {
 
-			$data->{$k} = ref($d) ? clone($d) : $d;
+		    if ($raw_dump) {
+			$data->{$k} = $d;
+		    } else {
+			if ($k eq 'parameters') {
+			    $data->{$k} = api_clone_schema($d);
+			} else {
+			    $data->{$k} = ref($d) ? clone($d) : $d;
+			}
 		    }
 		} 
 		$res->{info}->{$info->{method}} = $data;
@@ -173,12 +176,12 @@ sub api_dump_remove_refs {
 }
 
 sub api_dump {
-    my ($class, $prefix) = @_;
+    my ($class, $prefix, $raw_dump) = @_;
 
     my $tree = [];
 
     my $index = {};
-    api_dump_full($tree, $index, $class);
+    api_dump_full($tree, $index, $class, $prefix, $raw_dump);
     api_dump_cleanup_tree($tree);
     return $tree;
 };
