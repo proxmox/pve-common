@@ -228,6 +228,13 @@ sub read_password($;$$) {
     return $password;
 }
 
+sub get_confirmed_password {
+    my $pw1 = read_password('Enter new password: ');
+    my $pw2 = read_password('Retype new password: ');
+    die "passwords do not match\n" if $pw1 ne $pw2;
+    return $pw1;
+}
+
 # Class functions
 
 sub new {
