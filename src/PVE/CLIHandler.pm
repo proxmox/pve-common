@@ -370,7 +370,6 @@ my $print_bash_completion = sub {
     };
 
     # positional arguments
-    $pos++ if $simple_cmd;
     if ($pos < scalar(@$arg_param)) {
 	my $pname = $arg_param->[$pos];
 	&$print_parameter_completion($pname);
