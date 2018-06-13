@@ -491,7 +491,7 @@ my $handle_cmd  = sub {
     }
 
     # checked special commands, if def is still a hash we got an incomplete sub command
-    $abort->("incomplete command '$cmd_str'") if ref($def) eq 'HASH';
+    $abort->("incomplete command '$cmd_str'", $args) if ref($def) eq 'HASH';
 
     &$preparefunc() if $preparefunc;
 
