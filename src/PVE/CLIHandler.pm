@@ -93,8 +93,8 @@ sub resolve_cmd {
 		$cmd = $argv->[$i]; 
 	    }
 	    $cmdstr .= " $cmd";
-	    last if !defined($def->{$cmd});
 	    $def = $def->{$cmd};
+	    last if !defined($def);
 
 	    if (ref($def) eq 'ARRAY') {
 		# could expand to a real command, rest of $argv are its arguments
@@ -132,6 +132,7 @@ sub generate_usage_str {
 	$cli_handler_class->can('string_param_file_mapping');
 
     my ($subcmd, $def, undef, undef, $cmdstr) = resolve_cmd($cmd);
+    die "no such command '$cmd->[0]'\n" if !defined($def) && ref($cmd) eq 'ARRAY';
 
     my $generate;
     $generate = sub {
