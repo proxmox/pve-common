@@ -54,7 +54,9 @@ my $expand_command_name = sub {
 
     return $cmd if exists $def->{$cmd}; # command is already complete
 
-    my @expanded = grep { /^\Q$cmd\E/ } keys %$def;
+    my $is_alias = sub { ref($_[0]) eq 'HASH' && $_[0]->{alias} };
+    my @expanded = grep { /^\Q$cmd\E/ && !$is_alias->($def->{$_}) } keys %$def;
+
     return $expanded[0] if scalar(@expanded) == 1; # enforce exact match
 
     return undef;
