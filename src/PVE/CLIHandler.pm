@@ -316,7 +316,7 @@ my $print_bash_completion = sub {
     shift @$args; # no need for program name
     my $print_result = sub {
 	foreach my $p (@_) {
-	    print "$p\n" if $p =~ m/^$cur/;
+	    print "$p\n" if $p =~ m/^\Q$cur\E/;
 	}
     };
 
