@@ -242,7 +242,7 @@ sub jws {
 sub __get_result {
     my ($resp, $code, $plain) = @_;
 
-    die "expected code '$code', received '".$resp->code."'"
+    die "expected code '$code', received '".$resp->code."'\n"
 	if $resp->code != $code;
 
     return $plain ? $resp->decoded_content : fromjs($resp->decoded_content);
@@ -370,7 +370,7 @@ sub new_order {
     my ($order_url, $order);
     eval {
 	$order_url = $r->header('Location')
-	    or die "did not receive an order URL";
+	    or die "did not receive an order URL\n";
 	$order = __get_result($r, 201)
     };
     $self->fatal("POST to '$url' failed - $@", $r) if $@;
@@ -471,7 +471,7 @@ sub revoke_certificate {
     # TODO: set use_jwk if revoking with certificate key
     my $r = $self->do(POST => $url, $req);
     eval {
-	die "unexpected code $r->code" if $r->code != 200;
+	die "unexpected code $r->code\n" if $r->code != 200;
     };
     $self->fatal("POST to '$url' failed - $@", $r) if $@;
 }
@@ -501,7 +501,7 @@ sub do {
 
     my $headers = HTTP::Headers->new();
     $headers->header('Content-Type' => 'application/jose+json');
-    my $content = $self->jws($use_jwk, $data, $url) if defined($data);
+    my $content = defined($data) ? $self->jws($use_jwk, $data, $url) : undef;
     my $request;
     if (defined($content)) {
 	$content = tojs($content);
@@ -515,7 +515,7 @@ sub do {
 	if ($res->code == 400 && $res->decoded_content) {
 	    my $parsed_content = fromjs($res->decoded_content);
 	    if ($parsed_content->{type} eq 'urn:ietf:params:acme:error:badNonce') {
-		warn("bad Nonce, retrying");
+		warn("bad Nonce, retrying\n");
 		$self->{nonce} = $res->header('Replay-Nonce');
 		return $self->do($method, $url, $data, $use_jwk);
 	    }
