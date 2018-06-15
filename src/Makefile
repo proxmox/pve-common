@@ -29,7 +29,7 @@ LIB_SOURCES = \
 	SectionConfig.pm \
 	Subscription.pm \
 	Syscall.pm \
-	SystemD.pm \
+	Systemd.pm \
 	Ticket.pm \
 	Tools.pm
 

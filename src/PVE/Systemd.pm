@@ -1,4 +1,4 @@
-package PVE::SystemD;
+package PVE::Systemd;
 
 use strict;
 use warnings;
