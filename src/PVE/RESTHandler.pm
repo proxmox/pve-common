@@ -553,6 +553,10 @@ my $compute_param_mapping_hash = sub {
 	my ($name, $func, $desc, $interactive);
 	if (ref($item) eq 'ARRAY') {
 	    ($name, $func, $desc, $interactive) = @$item;
+	} elsif (ref($item) eq 'HASH') {
+	    # just use the hash
+	    $res->{$item->{name}} = $item;
+	    next;
 	} else {
 	    $name = $item;
 	    $func = sub { return PVE::Tools::file_get_contents($_[0]) };
