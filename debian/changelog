@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-34) unstable; urgency=medium
+
+  * split out systemd specific code to own perl module
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 15 Jun 2018 12:05:54 +0200
+
 libpve-common-perl (5.0-33) unstable; urgency=medium
 
   * only show subcommand specific usage if command incomplete
