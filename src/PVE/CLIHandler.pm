@@ -69,6 +69,24 @@ my $get_commands = sub {
 
 my $complete_command_names = sub { $get_commands->($cmddef) };
 
+my $standard_mappings = { };
+
+sub get_standard_mapping {
+    my ($name, $base) = @_;
+
+    my $std =  $standard_mappings->{$name};
+    die "no such standard mapping '$name'\n" if !$std;
+
+    my $res = $base || {};
+
+    foreach my $opt (keys %$std) {
+	next if defined($res->{$opt});
+	$res->{$opt} = $std->{$opt};
+    }
+
+    return $res;
+}
+
 # traverses the command definition using the $argv array, resolving one level
 # of aliases.
 # Returns the matching (sub) command and its definition, and argument array for
