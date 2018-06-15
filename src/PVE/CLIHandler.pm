@@ -6,6 +6,7 @@ use warnings;
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::RESTHandler;
+use PVE::PTY;
 use PVE::INotify;
 
 use base qw(PVE::RESTHandler);
@@ -69,7 +70,18 @@ my $get_commands = sub {
 
 my $complete_command_names = sub { $get_commands->($cmddef) };
 
-my $standard_mappings = { };
+my $standard_mappings = {
+    'pve-password' => {
+	name => 'password',
+	desc => '<password>',
+	interactive => 1,
+	func => sub {
+	    my ($value) = @_;
+	    return $value if $value;
+	    return PVE::PTY::get_confirmed_password();
+	},
+    },
+};
 
 sub get_standard_mapping {
     my ($name, $base) = @_;
