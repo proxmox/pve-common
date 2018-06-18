@@ -458,6 +458,26 @@ sub print_entry {
     }
 }
 
+# used to print the result of an API-listing - expects the API to return an array
+# and to have the results key of the API call defined.
+sub print_api_list {
+    my ($props_to_print, $data, $returninfo) = @_;
+    my $formatopts;
+    my $returnprops = $returninfo->{items}->{properties};
+    foreach my $prop ( @$props_to_print ) {
+	my $propinfo = $returnprops->{$prop};
+	my $colopts = {
+	    key => $prop,
+	    title => $propinfo->{title},
+	    default => $propinfo->{default},
+	    cutoff => $propinfo->{print_width} // $propinfo->{maxLength},
+	};
+	push @$formatopts, $colopts;
+    }
+
+    print_text_table($formatopts, $data);
+}
+
 sub verify_api {
     my ($class) = @_;
 
@@ -559,7 +579,10 @@ my $handle_cmd  = sub {
 
     my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
 
-    &$outsub($res) if $outsub;
+    if (defined $outsub) {
+	my $returninfo = $class->map_method_by_name($name)->{returns};
+	$outsub->($res, $returninfo);
+    }
 };
 
 my $handle_simple_cmd = sub {
@@ -594,7 +617,10 @@ my $handle_simple_cmd = sub {
 
     my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
 
-    &$outsub($res) if $outsub;
+    if (defined $outsub) {
+	my $returninfo = $class->map_method_by_name($name)->{returns};
+	$outsub->($res, $returninfo);
+    }
 };
 
 sub run_cli_handler {
