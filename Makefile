@@ -6,6 +6,8 @@ PACKAGE=libpve-common-perl
 ARCH=all
 GITVERSION:=$(shell git rev-parse HEAD)
 
+BUILDDIR ?= build
+
 DEB=${PACKAGE}_${VERSION}-${PKGREL}_${ARCH}.deb
 
 all: ${DEB}
@@ -18,16 +20,16 @@ dinstall: deb
 .PHONY: deb
 deb ${DEB}:
 	$(MAKE) -C test check
-	rm -rf build
-	rsync -a src/ build
-	rsync -a debian/ build/debian
-	echo "git clone git://git.proxmox.com/git/pve-common.git\\ngit checkout ${GITVERSION}" > build/debian/SOURCE
-	cd build; dpkg-buildpackage -b -us -uc
+	rm -rf ${BUILDDIR}
+	rsync -a src/ ${BUILDDIR}
+	rsync -a debian/ ${BUILDDIR}/debian
+	echo "git clone git://git.proxmox.com/git/pve-common.git\\ngit checkout ${GITVERSION}" > ${BUILDDIR}/debian/SOURCE
+	cd ${BUILDDIR}; dpkg-buildpackage -b -us -uc
 	lintian ${DEB}
 
 .PHONY: clean
 clean: 	
-	rm -rf *~ *.deb *.changes build ${PACKAGE}-*.tar.gz *.buildinfo
+	rm -rf *~ *.deb *.changes ${BUILDDIR} ${PACKAGE}-*.tar.gz *.buildinfo
 
 .PHONY: distclean
 distclean: clean
