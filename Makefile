@@ -18,8 +18,7 @@ dinstall: deb
 
 
 .PHONY: deb
-deb ${DEB}:
-	$(MAKE) -C test check
+deb ${DEB}: check
 	rm -rf ${BUILDDIR}
 	rsync -a src/ ${BUILDDIR}
 	rsync -a debian/ ${BUILDDIR}/debian
