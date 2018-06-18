@@ -401,11 +401,12 @@ my $print_bash_completion = sub {
 
 # prints a formatted table with a title row.
 # $formatopts is an array of hashes, with the following keys:
-# 'key' - the key in the data-objects to use for this column
-# 'title' - the title to print above the column, defaults to 'key' - always gets printed in full
-# 'cutoff' - the maximal length of the data, overlong values will be truncated
-# 'default' - an optional default value for the column
-# the last column always gets printed in full
+# 'key' - key of $data element to print
+# 'title' - column title, defaults to 'key' - won't get cutoff
+# 'cutoff' - maximal (print) length of this column values, if set
+#            the last column will never be cutoff
+# 'default' - optional default value for the column
+# formatopts element order defines column order (left to right)
 sub print_text_table {
     my ($formatopts, $data) = @_;
     my ($formatstring, @keys, @titles, %cutoffs, %defaults, $last_col);
@@ -458,7 +459,7 @@ sub print_entry {
     }
 }
 
-# used to print the result of an API-listing - expects the API to return an array
+# prints the result of an API GET call returning an array
 # and to have the results key of the API call defined.
 sub print_api_list {
     my ($props_to_print, $data, $returninfo) = @_;
