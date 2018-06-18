@@ -27,12 +27,10 @@ deb ${DEB}:
 	cd ${BUILDDIR}; dpkg-buildpackage -b -us -uc
 	lintian ${DEB}
 
-.PHONY: clean
-clean: 	
-	rm -rf *~ *.deb *.changes ${BUILDDIR} ${PACKAGE}-*.tar.gz *.buildinfo
-
-.PHONY: distclean
+.PHONY: clean distclean
 distclean: clean
+clean:
+	rm -rf *~ *.deb *.changes ${BUILDDIR} *.buildinfo
 
 .PHONY: check
 check:
