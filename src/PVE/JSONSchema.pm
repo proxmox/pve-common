@@ -1139,6 +1139,11 @@ my $default_schema_noref = {
 		},
 	    },
 	},
+	print_width => {
+	    type => "integer",
+	    description => "For CLI context, this defines the maximal width to print before truncating",
+	    optional => 1,
+	},
     }	
 };
 
