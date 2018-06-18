@@ -466,6 +466,8 @@ sub print_entry {
 sub print_api_list {
     my ($props_to_print, $data, $returninfo) = @_;
 
+    die "can only print array result" if $returninfo->{type} ne 'array';
+
     my $returnprops = $returninfo->{items}->{properties};
 
     my $formatopts = [];
