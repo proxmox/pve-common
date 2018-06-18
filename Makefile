@@ -3,13 +3,6 @@ PKGREL=34
 
 PACKAGE=libpve-common-perl
 
-PREFIX=/usr
-BINDIR=${PREFIX}/bin
-MANDIR=${PREFIX}/share/man
-DOCDIR=${PREFIX}/share/doc
-MAN1DIR=${MANDIR}/man1/
-PERLDIR=${PREFIX}/share/perl5
-
 ARCH=all
 GITVERSION:=$(shell git rev-parse HEAD)
 
