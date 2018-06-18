@@ -409,18 +409,19 @@ my $print_bash_completion = sub {
 # formatopts element order defines column order (left to right)
 sub print_text_table {
     my ($formatopts, $data) = @_;
-    my ($formatstring, @keys, @titles, %cutoffs, %defaults, $last_col);
 
-    $last_col = $formatopts->[$#{$formatopts}];
+    my ($formatstring, @keys, @titles, %cutoffs, %defaults);
+    my $last_col = $formatopts->[$#{$formatopts}];
+
     foreach my $col ( @$formatopts ) {
-	my ($key, $title, $cutoff, $default) = @$col{ qw(key title cutoff default)};
+	my ($key, $title, $cutoff, $default) = @$col{qw(key title cutoff default)};
 	$title //= $key;
 
 	push @keys, $key;
 	push @titles, $title;
 	$defaults{$key} = $default;
 
-	#calculate maximal print width and cutoff
+	# calculate maximal print width and cutoff
 	my $titlelen = length($title);
 
 	my $longest = $titlelen;
@@ -442,16 +443,17 @@ sub print_text_table {
 
     printf $formatstring, @titles;
 
-    foreach my $entry (sort { $a->{$keys[0]} cmp $b->{$keys[0]} } @$data){
+    foreach my $entry (sort { $a->{$keys[0]} cmp $b->{$keys[0]} } @$data) {
         printf $formatstring, map { substr(($entry->{$_} // $defaults{$_}), 0 , $cutoffs{$_}) } @keys;
     }
 }
 
 sub print_entry {
     my $entry = shift;
+
     #TODO: handle objects/hashes as well
     foreach my $item (sort keys %$entry) {
-	if (ref($entry->{$item}) eq 'ARRAY'){
+	if (ref($entry->{$item}) eq 'ARRAY') {
 	    printf "%s: [ %s ]\n", $item, join(", ", @{$entry->{$item}});
 	} else {
 	    printf "%s: %s\n", $item, $entry->{$item};
@@ -463,8 +465,10 @@ sub print_entry {
 # and to have the results key of the API call defined.
 sub print_api_list {
     my ($props_to_print, $data, $returninfo) = @_;
-    my $formatopts;
+
     my $returnprops = $returninfo->{items}->{properties};
+
+    my $formatopts = [];
     foreach my $prop ( @$props_to_print ) {
 	my $propinfo = $returnprops->{$prop};
 	my $colopts = {
