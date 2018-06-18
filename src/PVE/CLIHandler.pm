@@ -399,6 +399,65 @@ my $print_bash_completion = sub {
     &$print_result(@option_list);
 };
 
+# prints a formatted table with a title row.
+# $formatopts is an array of hashes, with the following keys:
+# 'key' - the key in the data-objects to use for this column
+# 'title' - the title to print above the column, defaults to 'key' - always gets printed in full
+# 'cutoff' - the maximal length of the data, overlong values will be truncated
+# 'default' - an optional default value for the column
+# the last column always gets printed in full
+sub print_text_table {
+    my ($formatopts, $data) = @_;
+    my ($formatstring, @keys, @titles, %cutoffs, %defaults, $last_col);
+
+    $last_col = $formatopts->[$#{$formatopts}];
+    foreach my $col ( @$formatopts ) {
+	my ($key, $title, $cutoff, $default) = @$col{ qw(key title cutoff default)};
+	$title //= $key;
+
+	push @keys, $key;
+	push @titles, $title;
+	$defaults{$key} = $default;
+
+	#calculate maximal print width and cutoff
+	my $titlelen = length($title);
+
+	my $longest = $titlelen;
+	foreach my $entry (@$data) {
+	    my $len = length($entry->{$key}) // 0;
+	    $longest = $len if $len > $longest;
+	}
+
+	$cutoff = (defined($cutoff) && $cutoff < $longest) ? $cutoff : $longest;
+	$cutoffs{$key} = $cutoff;
+
+	my $printalign = $cutoff > $titlelen ? '-' : '';
+	if ($col == $last_col) {
+	    $formatstring .= "%${printalign}${titlelen}s\n";
+	} else {
+	    $formatstring .= "%${printalign}${cutoff}s ";
+	}
+    }
+
+    printf $formatstring, @titles;
+
+    foreach my $entry (sort { $a->{$keys[0]} cmp $b->{$keys[0]} } @$data){
+        printf $formatstring, map { substr(($entry->{$_} // $defaults{$_}), 0 , $cutoffs{$_}) } @keys;
+    }
+}
+
+sub print_entry {
+    my $entry = shift;
+    #TODO: handle objects/hashes as well
+    foreach my $item (sort keys %$entry) {
+	if (ref($entry->{$item}) eq 'ARRAY'){
+	    printf "%s: [ %s ]\n", $item, join(", ", @{$entry->{$item}});
+	} else {
+	    printf "%s: %s\n", $item, $entry->{$item};
+	}
+    }
+}
+
 sub verify_api {
     my ($class) = @_;
 
