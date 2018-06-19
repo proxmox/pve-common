@@ -38,6 +38,34 @@ my $cmddef;
 my $exename;
 my $cli_handler_class;
 
+my $standard_mappings = {
+    'pve-password' => {
+	name => 'password',
+	desc => '<password>',
+	interactive => 1,
+	func => sub {
+	    my ($value) = @_;
+	    return $value if $value;
+	    return PVE::PTY::get_confirmed_password();
+	},
+    },
+};
+sub get_standard_mapping {
+    my ($name, $base) = @_;
+
+    my $std = $standard_mappings->{$name};
+    die "no such standard mapping '$name'\n" if !$std;
+
+    my $res = $base || {};
+
+    foreach my $opt (keys %$std) {
+	next if defined($res->{$opt});
+	$res->{$opt} = $std->{$opt};
+    }
+
+    return $res;
+}
+
 my $assert_initialized = sub {
     my @caller = caller;
     die "$caller[0]:$caller[2] - not initialized\n"
@@ -69,35 +97,6 @@ my $get_commands = sub {
 };
 
 my $complete_command_names = sub { $get_commands->($cmddef) };
-
-my $standard_mappings = {
-    'pve-password' => {
-	name => 'password',
-	desc => '<password>',
-	interactive => 1,
-	func => sub {
-	    my ($value) = @_;
-	    return $value if $value;
-	    return PVE::PTY::get_confirmed_password();
-	},
-    },
-};
-
-sub get_standard_mapping {
-    my ($name, $base) = @_;
-
-    my $std =  $standard_mappings->{$name};
-    die "no such standard mapping '$name'\n" if !$std;
-
-    my $res = $base || {};
-
-    foreach my $opt (keys %$std) {
-	next if defined($res->{$opt});
-	$res->{$opt} = $std->{$opt};
-    }
-
-    return $res;
-}
 
 # traverses the command definition using the $argv array, resolving one level
 # of aliases.
