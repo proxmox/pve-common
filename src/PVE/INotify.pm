@@ -813,7 +813,8 @@ sub __read_etc_network_interfaces {
 	'bridge-vlan-aware' => 'bridge_vlan_aware',
 	'bridge-fd' => 'bridge_fd',
 	'bridge-stp' => 'bridge_stp',
-	'bridge-ports' => 'bridge_ports'
+	'bridge-ports' => 'bridge_ports',
+	'bridge-vids' => 'bridge_vids'
     };
 
     my $line;
@@ -1091,6 +1092,8 @@ sub __interface_to_string {
 
 	if( defined($d->{bridge_vlan_aware})) {
 	    $raw .= "\tbridge-vlan-aware yes\n";
+	    $v = defined($d->{bridge_vids}) ? $d->{bridge_vids} : "2-4094";
+	    $raw .= "\tbridge-vids $v\n";
 	}
 	$done->{bridge_vlan_aware} = 1;
     
