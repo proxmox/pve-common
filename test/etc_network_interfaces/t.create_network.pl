@@ -35,9 +35,9 @@ iface vmbr0 inet static
 	address  10.0.0.2
 	netmask  255.255.255.0
 	gateway  10.0.0.1
-	bridge_ports eth0
-	bridge_stp off
-	bridge_fd 0
+	bridge-ports eth0
+	bridge-stp off
+	bridge-fd 0
 
 CHECK
 
@@ -78,9 +78,9 @@ iface vmbr0 inet static
 	address  10.0.0.2
 	netmask  255.255.255.0
 	gateway  10.0.0.1
-	bridge_ports eth0
-	bridge_stp off
-	bridge_fd 0
+	bridge-ports eth0
+	bridge-stp off
+	bridge-fd 0
 
 CHECK
 

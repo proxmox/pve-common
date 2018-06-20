@@ -1078,19 +1078,19 @@ sub __interface_to_string {
 
 	$d->{bridge_ports} =~ s/[;,\s]+/ /g;
 	my $ports = $d->{bridge_ports} || 'none';
-	$raw .= "\tbridge_ports $ports\n";
+	$raw .= "\tbridge-ports $ports\n";
 	$done->{bridge_ports} = 1;
 
 	my $v = defined($d->{bridge_stp}) ? $d->{bridge_stp} : 'off';
-	$raw .= "\tbridge_stp $v\n";
+	$raw .= "\tbridge-stp $v\n";
 	$done->{bridge_stp} = 1;
 
 	$v = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
-	$raw .= "\tbridge_fd $v\n";
+	$raw .= "\tbridge-fd $v\n";
 	$done->{bridge_fd} = 1;
 
 	if( defined($d->{bridge_vlan_aware})) {
-	    $raw .= "\tbridge_vlan_aware yes\n";
+	    $raw .= "\tbridge-vlan-aware yes\n";
 	}
 	$done->{bridge_vlan_aware} = 1;
     
@@ -1098,20 +1098,20 @@ sub __interface_to_string {
 
 	$d->{slaves} =~ s/[;,\s]+/ /g;
 	my $slaves = $d->{slaves} || 'none';
-	$raw .= "\tslaves $slaves\n";
+	$raw .= "\tbond-slaves $slaves\n";
 	$done->{slaves} = 1;
 
 	my $v = defined ($d->{'bond_miimon'}) ? $d->{'bond_miimon'} : 100;
-	$raw .= "\tbond_miimon $v\n";
+	$raw .= "\tbond-miimon $v\n";
 	$done->{'bond_miimon'} = 1;
 
 	$v = defined ($d->{'bond_mode'}) ? $d->{'bond_mode'} : 'balance-rr';
-	$raw .= "\tbond_mode $v\n";
+	$raw .= "\tbond-mode $v\n";
 	$done->{'bond_mode'} = 1;
 
 	if ($d->{'bond_mode'} && $d->{'bond_xmit_hash_policy'} &&
 	    ($d->{'bond_mode'} eq 'balance-xor' || $d->{'bond_mode'} eq '802.3ad')) {
-	    $raw .= "\tbond_xmit_hash_policy $d->{'bond_xmit_hash_policy'}\n";
+	    $raw .= "\tbond-xmit-hash-policy $d->{'bond_xmit_hash_policy'}\n";
 	}
 	$done->{'bond_xmit_hash_policy'} = 1;
 

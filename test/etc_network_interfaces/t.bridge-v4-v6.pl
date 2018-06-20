@@ -12,9 +12,9 @@ new_iface('vmbr0', 'bridge', [{ family => 'inet' }], autostart => 1, bridge_port
 expect load('base') . <<"EOF";
 auto vmbr0
 iface vmbr0 inet manual
-	bridge_ports eth0
-	bridge_stp off
-	bridge_fd 0
+	bridge-ports eth0
+	bridge-stp off
+	bridge-fd 0
 
 EOF
 
@@ -31,9 +31,9 @@ iface vmbr0 inet static
 	address  $ip
 	netmask  $nm
 	gateway  $gw
-	bridge_ports eth0
-	bridge_stp off
-	bridge_fd 0
+	bridge-ports eth0
+	bridge-stp off
+	bridge-fd 0
 
 EOF
 save('with-ipv4', w());
@@ -66,9 +66,9 @@ iface vmbr0 inet6 static
 	address  $ip6
 	netmask  $nm6
 	gateway  $gw6
-	bridge_ports eth0
-	bridge_stp off
-	bridge_fd 0
+	bridge-ports eth0
+	bridge-stp off
+	bridge-fd 0
 
 EOF
 
