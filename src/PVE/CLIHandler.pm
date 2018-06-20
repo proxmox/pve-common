@@ -448,7 +448,7 @@ sub print_text_table {
 
 	push @keys, $key;
 	push @titles, $title;
-	$defaults{$key} = $default;
+	$defaults{$key} = $default // '';
 
 	# calculate maximal print width and cutoff
 	my $titlelen = length($title);
