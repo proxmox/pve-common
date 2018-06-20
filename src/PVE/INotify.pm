@@ -1053,7 +1053,7 @@ sub __read_etc_network_interfaces {
 }
 
 sub __interface_to_string {
-    my ($iface, $d, $family, $first_block) = @_;
+    my ($iface, $d, $family, $first_block, $ifupdown2) = @_;
 
     (my $suffix = $family) =~ s/^inet//;
 
@@ -1162,7 +1162,13 @@ sub __interface_to_string {
 	$done->{ovs_type} = 1;
 
 	if ($d->{ovs_bridge}) {
-	    $raw = "allow-$d->{ovs_bridge} $iface\n$raw";
+
+	    if ($ifupdown2) {
+		$raw = "auto $iface\n$raw";
+	    } else {
+		$raw = "allow-$d->{ovs_bridge} $iface\n$raw";
+	    }
+
 	    $raw .= "\tovs_bridge $d->{ovs_bridge}\n";
 	    $done->{ovs_bridge} = 1;
 	}
@@ -1195,11 +1201,12 @@ sub __interface_to_string {
 
 sub write_etc_network_interfaces {
     my ($filename, $fh, $config) = @_;
-    my $raw = __write_etc_network_interfaces($config);
+    my $ifupdown2 = -e '/usr/share/ifupdown2';
+    my $raw = __write_etc_network_interfaces($config, $ifupdown2);
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 sub __write_etc_network_interfaces {
-    my ($config) = @_;
+    my ($config, $ifupdown2) = @_;
 
     my $ifaces = $config->{ifaces};
     my @options = @{$config->{options}};
@@ -1359,7 +1366,7 @@ NETWORKDOC
 	$printed->{$iface} = 1;
 	$raw .= "auto $iface\n" if $d->{autostart};
 	my $i = 0; # some options should be printed only once
-	$raw .= __interface_to_string($iface, $d, $_, !$i++) foreach @{$d->{families}};
+	$raw .= __interface_to_string($iface, $d, $_, !$i++, $ifupdown2) foreach @{$d->{families}};
     }
 
     $raw .= $_->[1] . "\n" foreach @options;
