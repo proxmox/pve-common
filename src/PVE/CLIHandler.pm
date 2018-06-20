@@ -443,12 +443,12 @@ sub print_text_table {
     my $last_col = $formatopts->[$#{$formatopts}];
 
     foreach my $col ( @$formatopts ) {
-	my ($key, $title, $cutoff, $default) = @$col{qw(key title cutoff default)};
+	my ($key, $title, $cutoff) = @$col{qw(key title cutoff)};
 	$title //= $key;
 
 	push @keys, $key;
 	push @titles, $title;
-	$defaults{$key} = $default // '';
+	$defaults{$key} = $col->{default} // '';
 
 	# calculate maximal print width and cutoff
 	my $titlelen = length($title);
