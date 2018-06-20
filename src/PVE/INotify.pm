@@ -896,7 +896,7 @@ sub __read_etc_network_interfaces {
 			} else {
 			    $d->{$id} = 'off';
 			}
-		    } elsif ($id eq 'bridge_fd') {
+		    } elsif ($id eq 'bridge_fd' || $id eq 'bridge_vids') {
 			$d->{$id} = $value;
 		    } elsif ($id eq 'bridge_vlan_aware') {
 			$d->{$id} = 1;
@@ -1096,6 +1096,7 @@ sub __interface_to_string {
 	    $raw .= "\tbridge-vids $v\n";
 	}
 	$done->{bridge_vlan_aware} = 1;
+	$done->{bridge_vids} = 1;
     
     } elsif ($d->{type} eq 'bond') {
 
