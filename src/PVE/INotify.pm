@@ -804,6 +804,18 @@ sub __read_etc_network_interfaces {
     my $ifaces = $config->{ifaces} = {};
     my $options = $config->{options} = [];
 
+    my $options_alternatives = {
+	'bond-slaves' => 'slaves',
+	'bond_slaves' => 'slaves',
+	'bond-xmit-hash-policy' => 'bond_xmit_hash_policy',
+	'bond-mode' => 'bond_mode',
+	'bond-miimon' =>'bond_miimon',
+	'bridge-vlan-aware' => 'bridge_vlan_aware',
+	'bridge-fd' => 'bridge_fd',
+	'bridge-stp' => 'bridge_stp',
+	'bridge-ports' => 'bridge_ports'
+    };
+
     my $line;
 
     if ($proc_net_dev) {
@@ -857,6 +869,9 @@ sub __read_etc_network_interfaces {
 		} elsif ($line =~ m/^\s*((\S+)\s+(.+))$/) {
 		    my $option = $1;
 		    my ($id, $value) = ($2, $3);
+
+		    $id = $options_alternatives->{$id} if $options_alternatives->{$id};
+
 		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast') || ($id eq 'gateway')) {
 			$f->{$id} = $value;
 		    } elsif ($id eq 'ovs_type' || $id eq 'ovs_options'|| $id eq 'ovs_bridge' ||
