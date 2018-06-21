@@ -1338,7 +1338,7 @@ sub method_get_child_link {
 # a way to parse command line parameters, using a 
 # schema to configure Getopt::Long
 sub get_options {
-    my ($schema, $args, $arg_param, $fixed_param, $pwcallback, $param_mapping_hash) = @_;
+    my ($schema, $args, $arg_param, $fixed_param, $param_mapping_hash) = @_;
 
     if (!$schema || !$schema->{properties}) {
 	raise("too many arguments\n", code => HTTP_BAD_REQUEST)
@@ -1367,11 +1367,6 @@ sub get_options {
 	    # optional and call the mapping function afterwards.
 	    push @getopt, "$prop:s";
 	    push @interactive, [$prop, $mapping->{func}];
-	} elsif ($prop eq 'password' && $pwcallback) {
-	    # we do not accept plain password on input line, instead
-	    # we turn this into a boolean option and ask for password below
-	    # using $pwcallback() (for security reasons).
-	    push @getopt, "$prop";
 	} elsif ($pd->{type} eq 'boolean') {
 	    push @getopt, "$prop:s";
 	} else {
@@ -1419,14 +1414,6 @@ sub get_options {
 		} else {
 		    raise("not enough arguments\n", code => HTTP_BAD_REQUEST);
 		}
-	    }
-	}
-    }
-
-    if (my $pd = $schema->{properties}->{password}) {
-	if ($pd->{type} ne 'boolean' && $pwcallback) {
-	    if ($opts->{password} || !$pd->{optional}) {
-		$opts->{password} = &$pwcallback(); 
 	    }
 	}
     }

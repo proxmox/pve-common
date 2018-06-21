@@ -51,6 +51,7 @@ my $standard_mappings = {
 	},
     },
 };
+
 sub get_standard_mapping {
     my ($name, $base) = @_;
 
@@ -66,6 +67,31 @@ sub get_standard_mapping {
 
     return $res;
 }
+
+my $gen_param_mapping_func = sub {
+    my ($cli_handler_class) = @_;
+
+    my $param_mapping = $cli_handler_class->can('param_mapping');
+
+    if (!$param_mapping) {
+	my $read_password = $cli_handler_class->can('read_password');
+	my $string_param_mapping = $cli_handler_class->can('string_param_file_mapping');
+
+	return $string_param_mapping if !$read_password;
+
+	$param_mapping = sub {
+	    my ($name) = @_;
+
+	    my $password_map = get_standard_mapping('pve-password', {
+		func => $read_password
+	    });
+	    my $map = $string_param_mapping ? $string_param_mapping->($name) : [];
+	    return [@$map, $password_map];
+	};
+    }
+
+    return $param_mapping;
+};
 
 my $assert_initialized = sub {
     my @caller = caller;
@@ -159,9 +185,7 @@ sub generate_usage_str {
     $separator //= '';
     $indent //= '';
 
-    my $read_password_func = $cli_handler_class->can('read_password');
-    my $param_mapping_func = $cli_handler_class->can('param_mapping') ||
-	$cli_handler_class->can('string_param_file_mapping');
+    my $param_mapping_func = $gen_param_mapping_func->($cli_handler_class);
 
     my ($subcmd, $def, undef, undef, $cmdstr) = resolve_cmd($cmd);
     $abort->("unknown command '$cmdstr'") if !defined($def) && ref($cmd) eq 'ARRAY';
@@ -182,7 +206,7 @@ sub generate_usage_str {
 		    $str .= $indent;
 		    $str .= $class->usage_str($name, "$prefix $cmd", $arg_param,
 		                              $fixed_param, $format,
-		                              $read_password_func, $param_mapping_func);
+		                              $param_mapping_func);
 		    $oldclass = $class;
 
 		} elsif (defined($def->{$cmd}->{alias}) && ($format eq 'asciidoc')) {
@@ -206,7 +230,7 @@ sub generate_usage_str {
 
 	    $str .= $indent;
 	    $str .= $class->usage_str($name, $prefix, $arg_param, $fixed_param, $format,
-	                              $read_password_func, $param_mapping_func);
+	                              $param_mapping_func);
 	}
 	return $str;
     };
@@ -642,7 +666,7 @@ sub setup_environment {
 }
 
 my $handle_cmd  = sub {
-    my ($args, $read_password_func, $preparefunc, $param_mapping_func) = @_;
+    my ($args, $preparefunc, $param_mapping_func) = @_;
 
     $cmddef->{help} = [ __PACKAGE__, 'help', ['extra-args'] ];
 
@@ -672,7 +696,7 @@ my $handle_cmd  = sub {
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def || []};
     $abort->("unknown command '$cmd_str'") if !$class;
 
-    my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
+    my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $param_mapping_func);
 
     if (defined $outsub) {
 	my $result_schema = $class->map_method_by_name($name)->{returns};
@@ -681,7 +705,7 @@ my $handle_cmd  = sub {
 };
 
 my $handle_simple_cmd = sub {
-    my ($args, $read_password_func, $preparefunc, $param_mapping_func) = @_;
+    my ($args, $preparefunc, $param_mapping_func) = @_;
 
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$cmddef};
     die "no class specified" if !$class;
@@ -710,7 +734,7 @@ my $handle_simple_cmd = sub {
 
     &$preparefunc() if $preparefunc;
 
-    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
+    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $param_mapping_func);
 
     if (defined $outsub) {
 	my $result_schema = $class->map_method_by_name($name)->{returns};
@@ -734,9 +758,7 @@ sub run_cli_handler {
 
     my $preparefunc = $params{prepare};
 
-    my $read_password_func = $class->can('read_password');
-    my $param_mapping_func = $cli_handler_class->can('param_mapping') ||
-	$class->can('string_param_file_mapping');
+    my $param_mapping_func = $gen_param_mapping_func->($cli_handler_class);
 
     $exename = &$get_exe_name($class);
 
@@ -746,9 +768,9 @@ sub run_cli_handler {
     $cmddef = ${"${class}::cmddef"};
 
     if (ref($cmddef) eq 'ARRAY') {
-	&$handle_simple_cmd(\@ARGV, $read_password_func, $preparefunc, $param_mapping_func);
+	$handle_simple_cmd->(\@ARGV, $preparefunc, $param_mapping_func);
     } else {
-	&$handle_cmd(\@ARGV, $read_password_func, $preparefunc, $param_mapping_func);
+	$handle_cmd->(\@ARGV, $preparefunc, $param_mapping_func);
     }
 
     exit 0;
