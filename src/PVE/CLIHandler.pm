@@ -510,7 +510,13 @@ sub print_api_list {
     if (!defined($props_to_print)) {
 	$props_to_print = [ sort keys %$returnprops ];
 	if (!scalar(@$props_to_print)) {
-	    $props_to_print = [ sort keys %{$data->[0]} ];
+	    my $all_props = {};
+	    foreach my $obj (@{$data}) {
+		foreach my $key (keys %{$obj}) {
+		    $all_props->{ $key } = 1;
+		}
+	    }
+	    $props_to_print = [ sort keys %{$all_props} ];
 	}
 	die "unable to detect list properties\n" if !scalar(@$props_to_print);
     }
