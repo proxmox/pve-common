@@ -497,8 +497,11 @@ sub print_text_table {
     }
 }
 
-# prints the result of an API GET call returning an array
-# and to have the results key of the API call defined.
+# prints the result of an API GET call returning an array as a table.
+# takes formatting information from the results property of the call
+# if $props_to_print is provided, prints only those columns. otherwise
+# takes all fields of the results property, with a fallback
+# to all fields occuring in items of $data.
 sub print_api_list {
     my ($data, $result_schema, $props_to_print) = @_;
 
