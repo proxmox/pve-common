@@ -499,6 +499,14 @@ sub print_api_list {
 
     my $returnprops = $returninfo->{items}->{properties};
 
+    if (!defined($props_to_print)) {
+	$props_to_print = [ sort keys %$returnprops ];
+	if (!scalar(@$props_to_print)) {
+	    $props_to_print = [ sort keys %{$data->[0]} ];
+	}
+	die "unable to detect list properties\n" if !scalar(@$props_to_print);
+    }
+
     my $formatopts = [];
     foreach my $prop ( @$props_to_print ) {
 	my $propinfo = $returnprops->{$prop};
@@ -531,8 +539,7 @@ sub print_api_result {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		my $prop_list = [ sort keys %{$result_schema->{items}->{properties}}];
-		print_api_list($prop_list, $data, $result_schema);
+		print_api_list(undef, $data, $result_schema);
 	    } else {
 		foreach my $entry (@$data) {
 		    print data_to_text($entry) . "\n";
