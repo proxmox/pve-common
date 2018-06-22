@@ -493,7 +493,7 @@ sub print_text_table {
 # prints the result of an API GET call returning an array
 # and to have the results key of the API call defined.
 sub print_api_list {
-    my ($props_to_print, $data, $returninfo) = @_;
+    my ($data, $returninfo, $props_to_print) = @_;
 
     die "can only print array result" if $returninfo->{type} ne 'array';
 
@@ -539,7 +539,7 @@ sub print_api_result {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		print_api_list(undef, $data, $result_schema);
+		print_api_list($data, $result_schema);
 	    } else {
 		foreach my $entry (@$data) {
 		    print data_to_text($entry) . "\n";
