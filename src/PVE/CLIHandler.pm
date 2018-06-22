@@ -495,7 +495,8 @@ sub print_text_table {
 sub print_api_list {
     my ($data, $returninfo, $props_to_print) = @_;
 
-    die "can only print array result" if $returninfo->{type} ne 'array';
+    die "can only print object lists\n"
+	if !($returninfo->{type} eq 'array' && $returninfo->{items}->{type} eq 'object');
 
     my $returnprops = $returninfo->{items}->{properties};
 
