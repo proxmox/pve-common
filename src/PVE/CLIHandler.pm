@@ -493,12 +493,12 @@ sub print_text_table {
 # prints the result of an API GET call returning an array
 # and to have the results key of the API call defined.
 sub print_api_list {
-    my ($data, $returninfo, $props_to_print) = @_;
+    my ($data, $result_schema, $props_to_print) = @_;
 
     die "can only print object lists\n"
-	if !($returninfo->{type} eq 'array' && $returninfo->{items}->{type} eq 'object');
+	if !($result_schema->{type} eq 'array' && $result_schema->{items}->{type} eq 'object');
 
-    my $returnprops = $returninfo->{items}->{properties};
+    my $returnprops = $result_schema->{items}->{properties};
 
     if (!defined($props_to_print)) {
 	$props_to_print = [ sort keys %$returnprops ];
@@ -656,8 +656,8 @@ my $handle_cmd  = sub {
     my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
 
     if (defined $outsub) {
-	my $returninfo = $class->map_method_by_name($name)->{returns};
-	$outsub->($res, $returninfo);
+	my $result_schema = $class->map_method_by_name($name)->{returns};
+	$outsub->($res, $result_schema);
     }
 };
 
@@ -694,8 +694,8 @@ my $handle_simple_cmd = sub {
     my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $read_password_func, $param_mapping_func);
 
     if (defined $outsub) {
-	my $returninfo = $class->map_method_by_name($name)->{returns};
-	$outsub->($res, $returninfo);
+	my $result_schema = $class->map_method_by_name($name)->{returns};
+	$outsub->($res, $result_schema);
     }
 };
 
