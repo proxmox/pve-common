@@ -449,10 +449,11 @@ sub data_to_text {
 #            the last column will never be cutoff
 # 'default' - optional default value for the column
 # formatopts element order defines column order (left to right)
+# sorts the output according to the leftmost column not containing any undef
 sub print_text_table {
     my ($formatopts, $data) = @_;
 
-    my ($formatstring, @keys, @titles, %cutoffs, %defaults);
+    my ($formatstring, @keys, @titles, %cutoffs, %defaults, $sort_key);
     my $last_col = $formatopts->[$#{$formatopts}];
 
     foreach my $col ( @$formatopts ) {
@@ -467,11 +468,14 @@ sub print_text_table {
 	my $titlelen = length($title);
 
 	my $longest = $titlelen;
+	my $sortable = 1;
 	foreach my $entry (@$data) {
 	    my $len = length(data_to_text($entry->{$key})) // 0;
 	    $longest = $len if $len > $longest;
+	    $sortable = 0 if !defined($entry->{$key});
 	}
 
+	$sort_key //= $key if $sortable;
 	$cutoff = (defined($cutoff) && $cutoff < $longest) ? $cutoff : $longest;
 	$cutoffs{$key} = $cutoff;
 
@@ -485,7 +489,10 @@ sub print_text_table {
 
     printf $formatstring, @titles;
 
-    foreach my $entry (sort { $a->{$keys[0]} cmp $b->{$keys[0]} } @$data) {
+    if (defined($sort_key)){
+	@$data = sort { $a->{$sort_key} cmp $b->{$sort_key} } @$data;
+    }
+    foreach my $entry (@$data) {
         printf $formatstring, map { substr((data_to_text($entry->{$_}) // $defaults{$_}), 0 , $cutoffs{$_}) } @keys;
     }
 }
