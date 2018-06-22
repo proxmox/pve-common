@@ -2,6 +2,7 @@ package PVE::CLIHandler;
 
 use strict;
 use warnings;
+use JSON;
 
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
@@ -428,6 +429,18 @@ my $print_bash_completion = sub {
     &$print_result(@option_list);
 };
 
+sub data_to_text {
+    my ($data) = @_;
+
+    return undef if !defined($data);
+
+    if (my $class = ref($data)) {
+	return to_json($data, { utf8 => 1, canonical => 1 });
+    } else {
+	return "$data";
+    }
+}
+
 # prints a formatted table with a title row.
 # $formatopts is an array of hashes, with the following keys:
 # 'key' - key of $data element to print
@@ -455,7 +468,7 @@ sub print_text_table {
 
 	my $longest = $titlelen;
 	foreach my $entry (@$data) {
-	    my $len = length($entry->{$key}) // 0;
+	    my $len = length(data_to_text($entry->{$key})) // 0;
 	    $longest = $len if $len > $longest;
 	}
 
@@ -473,20 +486,7 @@ sub print_text_table {
     printf $formatstring, @titles;
 
     foreach my $entry (sort { $a->{$keys[0]} cmp $b->{$keys[0]} } @$data) {
-        printf $formatstring, map { substr(($entry->{$_} // $defaults{$_}), 0 , $cutoffs{$_}) } @keys;
-    }
-}
-
-sub print_entry {
-    my $entry = shift;
-
-    #TODO: handle objects/hashes as well
-    foreach my $item (sort keys %$entry) {
-	if (ref($entry->{$item}) eq 'ARRAY') {
-	    printf "%s: [ %s ]\n", $item, join(", ", @{$entry->{$item}});
-	} else {
-	    printf "%s: %s\n", $item, $entry->{$item};
-	}
+        printf $formatstring, map { substr((data_to_text($entry->{$_}) // $defaults{$_}), 0 , $cutoffs{$_}) } @keys;
     }
 }
 
@@ -512,6 +512,38 @@ sub print_api_list {
     }
 
     print_text_table($formatopts, $data);
+}
+
+sub print_api_result {
+    my ($format, $data, $result_schema) = @_;
+
+    return if $result_schema->{type} eq 'null';
+
+    if ($format eq 'json') {
+	print to_json($data, {utf8 => 1, allow_nonref => 1, canonical => 1, pretty => 1 });
+    } elsif ($format eq 'text') {
+	my $type = $result_schema->{type};
+	if ($type eq 'object') {
+	    foreach my $key (sort keys %$data) {
+		print $key . ": " .  data_to_text($data->{$key}) . "\n";
+	    }
+	} elsif ($type eq 'array') {
+	    return if !scalar(@$data);
+	    my $item_type = $result_schema->{items}->{type};
+	    if ($item_type eq 'object') {
+		my $prop_list = [ sort keys %{$result_schema->{items}->{properties}}];
+		print_api_list($prop_list, $data, $result_schema);
+	    } else {
+		foreach my $entry (@$data) {
+		    print data_to_text($entry) . "\n";
+		}
+	    }
+	} else {
+	    print "$data\n";
+	}
+    } else {
+	die "internal error: unknown output format"; # should not happen
+    }
 }
 
 sub verify_api {
