@@ -540,7 +540,7 @@ sub print_api_list {
 }
 
 sub print_api_result {
-    my ($format, $data, $result_schema) = @_;
+    my ($format, $data, $result_schema, $props_to_print) = @_;
 
     return if $result_schema->{type} eq 'null';
 
@@ -549,14 +549,20 @@ sub print_api_result {
     } elsif ($format eq 'text') {
 	my $type = $result_schema->{type};
 	if ($type eq 'object') {
-	    foreach my $key (sort keys %$data) {
-		print $key . ": " .  data_to_text($data->{$key}) . "\n";
+	    if (defined($props_to_print)) {
+		foreach my $key (@$props_to_print) {
+		    print $key . ": " .  data_to_text($data->{$key}) . "\n";
+		}
+	    } else {
+		foreach my $key (sort keys %$data) {
+		    print $key . ": " .  data_to_text($data->{$key}) . "\n";
+		}
 	    }
 	} elsif ($type eq 'array') {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		print_api_list($data, $result_schema);
+		print_api_list($data, $result_schema, $props_to_print);
 	    } else {
 		foreach my $entry (@$data) {
 		    print data_to_text($entry) . "\n";
