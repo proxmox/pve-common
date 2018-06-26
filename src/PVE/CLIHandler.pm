@@ -432,7 +432,7 @@ my $print_bash_completion = sub {
 sub data_to_text {
     my ($data) = @_;
 
-    return undef if !defined($data);
+    return '' if !defined($data);
 
     if (my $class = ref($data)) {
 	return to_json($data, { utf8 => 1, canonical => 1 });
