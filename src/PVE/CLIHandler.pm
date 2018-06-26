@@ -551,14 +551,9 @@ sub print_api_result {
     } elsif ($format eq 'text') {
 	my $type = $result_schema->{type};
 	if ($type eq 'object') {
-	    if (defined($props_to_print)) {
-		foreach my $key (@$props_to_print) {
-		    print $key . ": " .  data_to_text($data->{$key}) . "\n";
-		}
-	    } else {
-		foreach my $key (sort keys %$data) {
-		    print $key . ": " .  data_to_text($data->{$key}) . "\n";
-		}
+	    $props_to_print = [ sort keys %$data ] if !defined($props_to_print);
+	    foreach my $key (@$props_to_print) {
+		print $key . ": " .  data_to_text($data->{$key}) . "\n";
 	    }
 	} elsif ($type eq 'array') {
 	    return if !scalar(@$data);
