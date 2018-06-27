@@ -1,3 +1,12 @@
+libpve-common-perl (5.0-35) unstable; urgency=medium
+
+  * replace read_password_func from cli handler with more flexible param
+    mapping
+
+  * add print_text_table and print_api_result helper
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 27 Jun 2018 12:33:09 +0200
+
 libpve-common-perl (5.0-34) unstable; urgency=medium
 
   * split out systemd specific code to own perl module
