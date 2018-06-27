@@ -445,15 +445,15 @@ sub data_to_text {
 # $data - the data to print (array of objects)
 # $returnprops -json schema property description
 # $props_to_print - ordered list of properties to print
-# $sort_key is either a column name, or integer 1 which simply
-# sorts the output according to the leftmost column not containing
-# any undef. if not specified, we do not change order.
+# $sort_key can be used to sort after a column, if it isn't set we sort
+#   after the leftmost column (with no undef value in $data) this can be
+#   turned off by passing 0 as $sort_key
 sub print_text_table {
     my ($data, $returnprops, $props_to_print, $sort_key) = @_;
 
-    my $autosort = 0;
-    if (defined($sort_key) && ($sort_key eq 1)) {
-	$autosort = 1;
+    my $autosort = 1;
+    if (defined($sort_key) && $sort_key eq 0) {
+	$autosort = 0;
 	$sort_key = undef;
     }
 
