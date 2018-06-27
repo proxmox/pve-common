@@ -442,21 +442,14 @@ sub data_to_text {
 }
 
 # prints a formatted table with a title row.
-# $formatopts is an array of hashes, with the following keys:
-# 'key' - key of $data element to print
-# 'title' - column title, defaults to 'key' - won't get cutoff
-# 'cutoff' - maximal (print) length of this column values, if set
-#            the last column will never be cutoff
-# 'default' - optional default value for the column
-# formatopts element order defines column order (left to right)
+# $data - the data to print (array of objects)
+# $returnprops -json schema property description
+# $props_to_print - ordered list of properties to print
 # $sort_key is either a column name, or integer 1 which simply
 # sorts the output according to the leftmost column not containing
 # any undef. if not specified, we do not change order.
 sub print_text_table {
-    my ($formatopts, $data, $sort_key) = @_;
-
-    my ($formatstring, @keys, @titles, %cutoffs, %defaults);
-    my $last_col = $formatopts->[$#{$formatopts}];
+    my ($data, $returnprops, $props_to_print, $sort_key) = @_;
 
     my $autosort = 0;
     if (defined($sort_key) && ($sort_key eq 1)) {
@@ -464,13 +457,18 @@ sub print_text_table {
 	$sort_key = undef;
     }
 
-    foreach my $col ( @$formatopts ) {
-	my ($key, $title, $cutoff) = @$col{qw(key title cutoff)};
-	$title //= $key;
+    my $colopts = {};
+    my $formatstring = '';
 
-	push @keys, $key;
-	push @titles, $title;
-	$defaults{$key} = $col->{default} // '';
+    my $column_count = scalar(@$props_to_print);
+
+    for (my $i = 0; $i < $column_count; $i++) {
+	my $prop = $props_to_print->[$i];
+	my $propinfo = $returnprops->{$prop};
+	die "undefined property '$prop'" if !$propinfo;
+
+	my $title = $propinfo->{title} // $prop;
+	my $cutoff = $propinfo->{print_width} // $propinfo->{maxLength};
 
 	# calculate maximal print width and cutoff
 	my $titlelen = length($title);
@@ -478,30 +476,38 @@ sub print_text_table {
 	my $longest = $titlelen;
 	my $sortable = $autosort;
 	foreach my $entry (@$data) {
-	    my $len = length(data_to_text($entry->{$key})) // 0;
+	    my $len = length(data_to_text($entry->{$prop})) // 0;
 	    $longest = $len if $len > $longest;
-	    $sortable = 0 if !defined($entry->{$key});
+	    $sortable = 0 if !defined($entry->{$prop});
 	}
-
-	$sort_key //= $key if $sortable;
 	$cutoff = (defined($cutoff) && $cutoff < $longest) ? $cutoff : $longest;
-	$cutoffs{$key} = $cutoff;
+	$sort_key //= $prop if $sortable;
 
-	my $printalign = $cutoff > $titlelen ? '-' : '';
-	if ($col == $last_col) {
-	    $formatstring .= "%${printalign}${titlelen}s\n";
+	$colopts->{$prop} = {
+	    title => $title,
+	    default => $propinfo->{default} // '',
+	    cutoff => $cutoff,
+	};
+
+	$formatstring .= ($i == ($column_count - 1)) ? "%s\n" : "%-${cutoff}s ";
+    }
+
+    printf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
+
+    if (defined($sort_key)) {
+	if ($returnprops->{$sort_key}->{type} eq 'integer' ||
+	    $returnprops->{$sort_key}->{type} eq 'number') {
+	    @$data = sort { $a->{$sort_key} <=> $b->{$sort_key} } @$data;
 	} else {
-	    $formatstring .= "%${printalign}${cutoff}s ";
+	    @$data = sort { $a->{$sort_key} cmp $b->{$sort_key} } @$data;
 	}
     }
 
-    printf $formatstring, @titles;
-
-    if (defined($sort_key)){
-	@$data = sort { $a->{$sort_key} cmp $b->{$sort_key} } @$data;
-    }
     foreach my $entry (@$data) {
-        printf $formatstring, map { substr((data_to_text($entry->{$_}) // $defaults{$_}), 0 , $cutoffs{$_}) } @keys;
+        printf $formatstring, map {
+	    substr(data_to_text($entry->{$_}) // $colopts->{$_}->{default},
+		   0, $colopts->{$_}->{cutoff});
+	} @$props_to_print;
     }
 }
 
@@ -532,19 +538,7 @@ sub print_api_list {
 	die "unable to detect list properties\n" if !scalar(@$props_to_print);
     }
 
-    my $formatopts = [];
-    foreach my $prop ( @$props_to_print ) {
-	my $propinfo = $returnprops->{$prop};
-	my $colopts = {
-	    key => $prop,
-	    title => $propinfo->{title},
-	    default => $propinfo->{default},
-	    cutoff => $propinfo->{print_width} // $propinfo->{maxLength},
-	};
-	push @$formatopts, $colopts;
-    }
-
-    print_text_table($formatopts, $data, $sort_key);
+    print_text_table($data, $returnprops, $props_to_print, $sort_key);
 }
 
 sub print_api_result {
