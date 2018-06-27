@@ -465,7 +465,6 @@ sub print_text_table {
     for (my $i = 0; $i < $column_count; $i++) {
 	my $prop = $props_to_print->[$i];
 	my $propinfo = $returnprops->{$prop} // {};
-	die "undefined property '$prop'" if !$propinfo;
 
 	my $title = $propinfo->{title} // $prop;
 	my $cutoff = $propinfo->{print_width} // $propinfo->{maxLength};
