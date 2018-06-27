@@ -495,7 +495,7 @@ sub print_text_table {
     printf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
 
     if (defined($sort_key)) {
-	my $type = $returnprops->{$sort_key}->{type};
+	my $type = $returnprops->{$sort_key}->{type} // 'string';
 	if ($type eq 'integer' || $type eq 'number') {
 	    @$data = sort { $a->{$sort_key} <=> $b->{$sort_key} } @$data;
 	} else {
