@@ -576,9 +576,9 @@ my $compute_param_mapping_hash = sub {
 #   'short'    ... command line only (text, one line)
 #   'full'     ... text, include description
 #   'asciidoc' ... generate asciidoc for man pages (like 'full')
-# $param_mapping_func ... mapping for string parameters to file path parameters
+# $param_cb ... mapping for string parameters to file path parameters
 sub usage_str {
-    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $param_mapping_func) = @_;
+    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $param_cb) = @_;
 
     $format = 'long' if !$format;
 
@@ -623,12 +623,12 @@ sub usage_str {
 
 	my $type_text = $prop->{$k}->{type} || 'string';
 
-	my $param_mapping_hash = {};
+	my $param_map = {};
 
-	if (defined($param_mapping_func)) {
-	    my $mapping = $param_mapping_func->($name);
-	    $param_mapping_hash = $compute_param_mapping_hash->($mapping);
-	    next if $k eq 'password' && $param_mapping_hash->{$k} && !$prop->{$k}->{optional};
+	if (defined($param_cb)) {
+	    my $mapping = $param_cb->($name);
+	    $param_map = $compute_param_mapping_hash->($mapping);
+	    next if $k eq 'password' && $param_map->{$k} && !$prop->{$k}->{optional};
 	}
 
 	my $base = $k;
@@ -642,8 +642,7 @@ sub usage_str {
 	}
 
 
-	$opts .= $get_property_description->($base, 'arg', $prop->{$k}, $format,
-					    $param_mapping_hash->{$k});
+	$opts .= $get_property_description->($base, 'arg', $prop->{$k}, $format, $param_map->{$k});
 
 	if (!$prop->{$k}->{optional}) {
 	    $args .= " " if $args;
@@ -727,9 +726,9 @@ sub dump_properties {
 }
 
 my $replace_file_names_with_contents = sub {
-    my ($param, $param_mapping_hash) = @_;
+    my ($param, $param_map) = @_;
 
-    while (my ($k, $d) = each %$param_mapping_hash) {
+    while (my ($k, $d) = each %$param_map) {
 	next if $d->{interactive}; # handled by the JSONSchema's get_options code
 	$param->{$k} = $d->{func}->($param->{$k})
 	    if defined($param->{$k});
@@ -739,18 +738,18 @@ my $replace_file_names_with_contents = sub {
 };
 
 sub cli_handler {
-    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $param_mapping_func) = @_;
+    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $param_cb) = @_;
 
     my $info = $self->map_method_by_name($name);
 
     my $res;
     eval {
-	my $param_mapping_hash = {};
-	$param_mapping_hash = $compute_param_mapping_hash->($param_mapping_func->($name)) if $param_mapping_func;
-	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $param_mapping_hash);
+	my $param_map = {};
+	$param_map = $compute_param_mapping_hash->($param_cb->($name)) if $param_cb;
+	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $param_map);
 
-	if (defined($param_mapping_hash)) {
-	    &$replace_file_names_with_contents($param, $param_mapping_hash);
+	if (defined($param_map)) {
+	    $replace_file_names_with_contents->($param, $param_map);
 	}
 
 	$res = $self->handle($info, $param);
@@ -760,7 +759,7 @@ sub cli_handler {
 
 	die $err if !$ec || $ec ne "PVE::Exception" || !$err->is_param_exc();
 	
-	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short',  $param_mapping_func);
+	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short',  $param_cb);
 
 	die $err;
     }
