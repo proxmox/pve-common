@@ -449,12 +449,20 @@ sub data_to_text {
 #            the last column will never be cutoff
 # 'default' - optional default value for the column
 # formatopts element order defines column order (left to right)
-# sorts the output according to the leftmost column not containing any undef
+# $sort_key is either a column name, or integer 1 which simply
+# sorts the output according to the leftmost column not containing
+# any undef. if not specified, we do not change order.
 sub print_text_table {
-    my ($formatopts, $data) = @_;
+    my ($formatopts, $data, $sort_key) = @_;
 
-    my ($formatstring, @keys, @titles, %cutoffs, %defaults, $sort_key);
+    my ($formatstring, @keys, @titles, %cutoffs, %defaults);
     my $last_col = $formatopts->[$#{$formatopts}];
+
+    my $autosort = 0;
+    if (defined($sort_key) && ($sort_key eq 1)) {
+	$autosort = 1;
+	$sort_key = undef;
+    }
 
     foreach my $col ( @$formatopts ) {
 	my ($key, $title, $cutoff) = @$col{qw(key title cutoff)};
@@ -468,7 +476,7 @@ sub print_text_table {
 	my $titlelen = length($title);
 
 	my $longest = $titlelen;
-	my $sortable = 1;
+	my $sortable = $autosort;
 	foreach my $entry (@$data) {
 	    my $len = length(data_to_text($entry->{$key})) // 0;
 	    $longest = $len if $len > $longest;
@@ -503,7 +511,7 @@ sub print_text_table {
 # takes all fields of the results property, with a fallback
 # to all fields occuring in items of $data.
 sub print_api_list {
-    my ($data, $result_schema, $props_to_print) = @_;
+    my ($data, $result_schema, $props_to_print, $sort_key) = @_;
 
     die "can only print object lists\n"
 	if !($result_schema->{type} eq 'array' && $result_schema->{items}->{type} eq 'object');
@@ -536,11 +544,11 @@ sub print_api_list {
 	push @$formatopts, $colopts;
     }
 
-    print_text_table($formatopts, $data);
+    print_text_table($formatopts, $data, $sort_key);
 }
 
 sub print_api_result {
-    my ($format, $data, $result_schema, $props_to_print) = @_;
+    my ($format, $data, $result_schema, $props_to_print, $sort_key) = @_;
 
     return if $result_schema->{type} eq 'null';
 
@@ -562,7 +570,7 @@ sub print_api_result {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		print_api_list($data, $result_schema, $props_to_print);
+		print_api_list($data, $result_schema, $props_to_print, $sort_key);
 	    } else {
 		foreach my $entry (@$data) {
 		    print data_to_text($entry) . "\n";
