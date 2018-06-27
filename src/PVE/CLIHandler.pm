@@ -480,7 +480,7 @@ sub print_text_table {
 	    $longest = $len if $len > $longest;
 	    $sortable = 0 if !defined($entry->{$prop});
 	}
-	$cutoff = (defined($cutoff) && $cutoff < $longest) ? $cutoff : $longest;
+	$cutoff = $longest if !defined($cutoff) || $cutoff > $longest;
 	$sort_key //= $prop if $sortable;
 
 	$colopts->{$prop} = {
@@ -489,14 +489,15 @@ sub print_text_table {
 	    cutoff => $cutoff,
 	};
 
+	# skip alignment and cutoff on last column
 	$formatstring .= ($i == ($column_count - 1)) ? "%s\n" : "%-${cutoff}s ";
     }
 
     printf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
 
     if (defined($sort_key)) {
-	if ($returnprops->{$sort_key}->{type} eq 'integer' ||
-	    $returnprops->{$sort_key}->{type} eq 'number') {
+	my $type = $returnprops->{$sort_key}->{type};
+	if ($type eq 'integer' || $type eq 'number') {
 	    @$data = sort { $a->{$sort_key} <=> $b->{$sort_key} } @$data;
 	} else {
 	    @$data = sort { $a->{$sort_key} cmp $b->{$sort_key} } @$data;
