@@ -12,6 +12,7 @@ LIB_SOURCES = \
 	ACME/StandAlone.pm \
 	AtomicFile.pm \
 	Certificate.pm \
+	CLIFormatter.pm \
 	CLIHandler.pm \
 	CalendarEvent.pm \
 	CpuSet.pm \
