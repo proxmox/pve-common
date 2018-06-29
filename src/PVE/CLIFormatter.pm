@@ -49,12 +49,21 @@ sub data_to_text {
 # $data - the data to print (array of objects)
 # $returnprops -json schema property description
 # $props_to_print - ordered list of properties to print
-# $sort_key can be used to sort after a column, if it isn't set we sort
+# $options
+# - sort_key: can be used to sort after a column, if it isn't set we sort
 #   after the leftmost column (with no undef value in $data) this can be
-#   turned off by passing 0 as $sort_key
-# $border - print with/without table header and asciiart border
+#   turned off by passing 0 as sort_key
+# - border: print with/without table header and asciiart border
+# - columns: limit output width (if > 0)
+# - utf8: use utf8 characters for table delimiters
+
 sub print_text_table {
-    my ($data, $returnprops, $props_to_print, $sort_key, $border, $columns) = @_;
+    my ($data, $returnprops, $props_to_print, $options) = @_;
+
+    my $sort_key = $options->{sort_key};
+    my $border = $options->{border};
+    my $columns = $options->{columns};
+    my $utf8 = $options->{utf8};
 
     my $autosort = 1;
     if (defined($sort_key) && $sort_key eq 0) {
@@ -139,7 +148,7 @@ sub print_text_table {
 # takes all fields of the results property, with a fallback
 # to all fields occuring in items of $data.
 sub print_api_list {
-    my ($data, $result_schema, $props_to_print, $sort_key, $border, $columns) = @_;
+    my ($data, $result_schema, $props_to_print, $options) = @_;
 
     die "can only print object lists\n"
 	if !($result_schema->{type} eq 'array' && $result_schema->{items}->{type} eq 'object');
@@ -160,11 +169,14 @@ sub print_api_list {
 	die "unable to detect list properties\n" if !scalar(@$props_to_print);
     }
 
-    print_text_table($data, $returnprops, $props_to_print, $sort_key, $border, $columns);
+    print_text_table($data, $returnprops, $props_to_print, $options);
 }
 
 sub print_api_result {
-    my ($format, $data, $result_schema, $props_to_print, $sort_key, $columns) = @_;
+    my ($format, $data, $result_schema, $props_to_print, $options) = @_;
+
+    $options //= {};
+    $options = { %$options }; # copy
 
     return if $result_schema->{type} eq 'null';
 
@@ -179,12 +191,14 @@ sub print_api_result {
 		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}) };
 	    }
 	    my $schema = { type => 'array', items => { type => 'object' }};
-	    print_api_list($kvstore, $schema, ['key', 'value'], 0, $format eq 'text', $columns);
+	    $options->{border} = $format eq 'text';
+	    print_api_list($kvstore, $schema, ['key', 'value'], $options);
 	} elsif ($type eq 'array') {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		print_api_list($data, $result_schema, $props_to_print, $sort_key, $format eq 'text', $columns);
+		$options->{border} = $format eq 'text';
+		print_api_list($data, $result_schema, $props_to_print, $options);
 	    } else {
 		foreach my $entry (@$data) {
 		    print data_to_text($entry) . "\n";
