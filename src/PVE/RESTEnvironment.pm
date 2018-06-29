@@ -496,10 +496,11 @@ sub fork_worker {
 	$SIG{CHLD} = $SIG{PIPE} = 'DEFAULT';
 	$SIG{TTOU} = 'IGNORE';
 
-	# set sess/process group - we want to be able to kill the
-	# whole process group
+	# set session/process group allows to kill the process group
 	if ($sync && -t STDIN) {
-	    POSIX::setpgid(0,0) or die "failed to setpgid: $!\n";;
+	    # some sync'ed workers operate on the tty but setsid sessions lose
+	    # the tty, so just create a new pgroup and give it the tty
+	    POSIX::setpgid(0, 0) or die "failed to setpgid: $!\n";;
 	    POSIX::tcsetpgrp(fileno(STDIN), $$) or die "failed to tcsetpgrp: $!\n";
 	} else {
 	    POSIX::setsid();
