@@ -121,6 +121,22 @@ sub get_format {
     return $format_list->{$format};
 }
 
+my $renderer_hash = {};
+
+sub register_renderer {
+    my ($name, $code) = @_;
+
+    die "renderer '$name' already registered\n"
+	if $renderer_hash->{$name};
+
+    $renderer_hash->{$name} = $code;
+}
+
+sub get_renderer {
+    my ($name) = @_;
+    return $renderer_hash->{$name};
+}
+
 # register some common type for pve
 
 register_format('string', sub {}); # allow format => 'string-list'
