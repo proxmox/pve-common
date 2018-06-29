@@ -2,10 +2,29 @@ package PVE::CLIFormatter;
 
 use strict;
 use warnings;
+use I18N::Langinfo;
+
 use PVE::JSONSchema;
+use PVE::PTY;
 use JSON;
 use utf8;
 use Encode;
+
+sub query_terminal_options {
+    my ($options) = @_;
+
+    $options //= {};
+
+    if (-t STDOUT) {
+	($options->{columns}) = PVE::PTY::tcgetsize(*STDOUT);
+    }
+
+    $options->{encoding} = I18N::Langinfo::langinfo(I18N::Langinfo::CODESET());
+
+    $options->{utf8} = 1 if $options->{encoding} eq 'UTF-8';
+
+    return $options;
+}
 
 sub println_max {
     my ($text, $encoding, $max) = @_;
@@ -217,8 +236,11 @@ sub print_api_list {
 sub print_api_result {
     my ($format, $data, $result_schema, $props_to_print, $options) = @_;
 
-    $options //= {};
-    $options = { %$options }; # copy
+    if (!defined($options)) {
+	$options = query_terminal_options({});
+    } else {
+	$options = { %$options }; # copy
+    }
 
     return if $result_schema->{type} eq 'null';
 
