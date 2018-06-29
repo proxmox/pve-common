@@ -42,6 +42,8 @@ sub println_max {
 sub data_to_text {
     my ($data, $propdef) = @_;
 
+    return '' if !defined($data);
+
     if (defined($propdef)) {
 	if (my $type = $propdef->{type}) {
 	    if ($type eq 'boolean') {
@@ -57,7 +59,6 @@ sub data_to_text {
 	    return $code->($data);
 	}
     }
-    return '' if !defined($data);
 
     if (my $class = ref($data)) {
 	return to_json($data, { canonical => 1 });
