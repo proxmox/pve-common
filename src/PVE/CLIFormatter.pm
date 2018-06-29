@@ -26,19 +26,6 @@ sub query_terminal_options {
     return $options;
 }
 
-sub println_max {
-    my ($text, $encoding, $max) = @_;
-
-    if ($max) {
-	my @lines = split(/\n/, $text);
-	foreach my $line (@lines) {
-	    print encode($encoding, substr($line, 0, $max) . "\n");
-	}
-    } else {
-	print encode($encoding, $text);
-    }
-}
-
 sub data_to_text {
     my ($data, $propdef) = @_;
 
@@ -91,7 +78,16 @@ sub print_text_table {
     my $autosort = 1;
     if (defined($sort_key) && $sort_key eq 0) {
 	$autosort = 0;
-	$sort_key = undef;
+	$sort_key = $props_to_print->[0];
+    }
+
+    if (defined($sort_key)) {
+	my $type = $returnprops->{$sort_key}->{type} // 'string';
+	if ($type eq 'integer' || $type eq 'number') {
+	    @$data = sort { $a->{$sort_key} <=> $b->{$sort_key} } @$data;
+	} else {
+	    @$data = sort { $a->{$sort_key} cmp $b->{$sort_key} } @$data;
+	}
     }
 
     my $colopts = {};
@@ -102,6 +98,40 @@ sub print_text_table {
     my $formatstring = '';
 
     my $column_count = scalar(@$props_to_print);
+
+    my $tabledata = [];
+
+    foreach my $entry (@$data) {
+
+	my $height = 1;
+	my $rowdata = {};
+
+	for (my $i = 0; $i < $column_count; $i++) {
+	    my $prop = $props_to_print->[$i];
+	    my $propinfo = $returnprops->{$prop} // {};
+
+	    my $text = data_to_text($entry->{$prop}, $propinfo);
+	    my $lines = [ split(/\n/, $text) ];
+	    my $linecount = scalar(@$lines);
+	    $height = $linecount if $linecount > $height;
+
+	    my $width = 0;
+	    foreach my $line (@$lines) {
+		my $len = length($line);
+		$width = $len if $len > $width;
+	    }
+
+	    $rowdata->{$prop} = {
+		lines => $lines,
+		width => $width,
+	    };
+	}
+
+	push @$tabledata, {
+	    height => $height,
+	    rowdata => $rowdata,
+	};
+    }
 
     for (my $i = 0; $i < $column_count; $i++) {
 	my $prop = $props_to_print->[$i];
@@ -114,31 +144,27 @@ sub print_text_table {
 	my $titlelen = length($title);
 
 	my $longest = $titlelen;
-	my $sortable = $autosort;
-	foreach my $entry (@$data) {
-	    my $len = length(data_to_text($entry->{$prop}, $propinfo)) // 0;
-	    $longest = $len if $len > $longest;
-	    $sortable = 0 if !defined($entry->{$prop});
+	foreach my $coldata (@$tabledata) {
+	    my $rowdata = $coldata->{rowdata}->{$prop};
+	    $longest = $rowdata->{width} if $rowdata->{width} > $longest;
 	}
 	$cutoff = $longest if !defined($cutoff) || $cutoff > $longest;
-	$sort_key //= $prop if $sortable;
 
 	$colopts->{$prop} = {
 	    title => $title,
-	    default => $propinfo->{default} // '',
 	    cutoff => $cutoff,
 	};
 
 	if ($border) {
 	    if ($i == 0 && ($column_count == 1)) {
 		if ($utf8) {
-		    $formatstring .= "│ %-${cutoff}s │\n";
-		    $borderstring_t .= "┌─" . ('─' x $cutoff) . "─┐\n";
-		    $borderstring_m .= "├─" . ('─' x $cutoff) . "─┤\n";
-		    $borderstring_b .= "└─" . ('─' x $cutoff) . "─┘\n";
+		    $formatstring .= "│ %-${cutoff}s │";
+		    $borderstring_t .= "┌─" . ('─' x $cutoff) . "─┐";
+		    $borderstring_m .= "├─" . ('─' x $cutoff) . "─┤";
+		    $borderstring_b .= "└─" . ('─' x $cutoff) . "─┘";
 		} else {
-		    $formatstring .= "| %-${cutoff}s |\n";
-		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+\n";
+		    $formatstring .= "| %-${cutoff}s |";
+		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+";
 		}
 	    } elsif ($i == 0) {
 		if ($utf8) {
@@ -152,13 +178,13 @@ sub print_text_table {
 		}
 	    } elsif ($i == ($column_count - 1)) {
 		if ($utf8) {
-		    $formatstring .= "│ %-${cutoff}s │\n";
-		    $borderstring_t .= "┬─" . ('─' x $cutoff) . "─┐\n";
-		    $borderstring_m .= "┼─" . ('─' x $cutoff) . "─┤\n";
-		    $borderstring_b .= "┴─" . ('─' x $cutoff) . "─┘\n";
+		    $formatstring .= "│ %-${cutoff}s │";
+		    $borderstring_t .= "┬─" . ('─' x $cutoff) . "─┐";
+		    $borderstring_m .= "┼─" . ('─' x $cutoff) . "─┤";
+		    $borderstring_b .= "┴─" . ('─' x $cutoff) . "─┘";
 		} else {
-		    $formatstring .= "| %-${cutoff}s |\n";
-		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+\n";
+		    $formatstring .= "| %-${cutoff}s |";
+		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+";
 		}
 	    } else {
 		if ($utf8) {
@@ -173,35 +199,41 @@ sub print_text_table {
 	    }
 	} else {
 	    # skip alignment and cutoff on last column
-	    $formatstring .= ($i == ($column_count - 1)) ? "%s\n" : "%-${cutoff}s ";
-	}
-    }
-
-    if (defined($sort_key)) {
-	my $type = $returnprops->{$sort_key}->{type} // 'string';
-	if ($type eq 'integer' || $type eq 'number') {
-	    @$data = sort { $a->{$sort_key} <=> $b->{$sort_key} } @$data;
-	} else {
-	    @$data = sort { $a->{$sort_key} cmp $b->{$sort_key} } @$data;
+	    $formatstring .= ($i == ($column_count - 1)) ? "%s" : "%-${cutoff}s ";
 	}
     }
 
     $borderstring_t = $borderstring_m if !length($borderstring_t);
     $borderstring_b = $borderstring_m if !length($borderstring_b);
 
-    println_max($borderstring_t, $encoding, $columns) if $border;
-    my $text = sprintf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
-    println_max($text, $encoding, $columns);
+    my $writeln = sub {
+	my ($text) = @_;
 
-    foreach my $entry (@$data) {
-	println_max($borderstring_m, $encoding, $columns) if $border;
-        $text = sprintf $formatstring, map {
-	    substr(data_to_text($entry->{$_}, $returnprops->{$_}) // $colopts->{$_}->{default},
-		   0, $colopts->{$_}->{cutoff});
-	} @$props_to_print;
-	println_max($text, $encoding, $columns);
+	if ($columns) {
+	    print encode($encoding, substr($text, 0, $columns) . "\n");
+	} else {
+	    print encode($encoding, $text) . "\n";
+	}
+    };
+
+    $writeln->($borderstring_t) if $border;
+    my $text = sprintf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
+    $writeln->($text);
+
+    foreach my $coldata (@$tabledata) {
+	$writeln->($borderstring_m) if $border;
+
+	for (my $i = 0; $i < $coldata->{height}; $i++) {
+
+	    $text = sprintf $formatstring, map {
+		substr($coldata->{rowdata}->{$_}->{lines}->[$i] // '', 0, $colopts->{$_}->{cutoff});
+	    } @$props_to_print;
+
+	    $writeln->($text);
+	}
     }
-    println_max($borderstring_b, $encoding, $columns) if $border;
+
+    $writeln->($borderstring_b) if $border;
 }
 
 # prints the result of an API GET call returning an array as a table.
