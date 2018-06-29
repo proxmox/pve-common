@@ -75,9 +75,7 @@ sub print_text_table {
     my $utf8 = $options->{utf8};
     my $encoding = $options->{encoding} // 'UTF-8';
 
-    my $autosort = 1;
-    if (defined($sort_key) && $sort_key eq 0) {
-	$autosort = 0;
+    if (!defined($sort_key) || $sort_key eq 0) {
 	$sort_key = $props_to_print->[0];
     }
 
