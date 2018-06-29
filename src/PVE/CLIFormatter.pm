@@ -8,15 +8,15 @@ use utf8;
 use Encode;
 
 sub println_max {
-    my ($text, $max) = @_;
+    my ($text, $encoding, $max) = @_;
 
     if ($max) {
 	my @lines = split(/\n/, $text);
 	foreach my $line (@lines) {
-	    print encode('UTF-8', substr($line, 0, $max) . "\n");
+	    print encode($encoding, substr($line, 0, $max) . "\n");
 	}
     } else {
-	print encode('UTF-8', $text);
+	print encode($encoding, $text);
     }
 }
 
@@ -66,6 +66,7 @@ sub print_text_table {
     my $border = $options->{border};
     my $columns = $options->{columns};
     my $utf8 = $options->{utf8};
+    my $encoding = $options->{encoding} // 'UTF-8';
 
     my $autosort = 1;
     if (defined($sort_key) && $sort_key eq 0) {
@@ -168,19 +169,19 @@ sub print_text_table {
     $borderstring_t = $borderstring_m if !length($borderstring_t);
     $borderstring_b = $borderstring_m if !length($borderstring_b);
 
-    println_max($borderstring_t, $columns) if $border;
+    println_max($borderstring_t, $encoding, $columns) if $border;
     my $text = sprintf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
-    println_max($text, $columns);
+    println_max($text, $encoding, $columns);
 
     foreach my $entry (@$data) {
-	println_max($borderstring_m, $columns) if $border;
+	println_max($borderstring_m, $encoding, $columns) if $border;
         $text = sprintf $formatstring, map {
 	    substr(data_to_text($entry->{$_}, $returnprops->{$_}) // $colopts->{$_}->{default},
 		   0, $colopts->{$_}->{cutoff});
 	} @$props_to_print;
-	println_max($text, $columns);
+	println_max($text, $encoding, $columns);
     }
-    println_max($borderstring_b, $columns) if $border;
+    println_max($borderstring_b, $encoding, $columns) if $border;
 }
 
 # prints the result of an API GET call returning an array as a table.
@@ -222,8 +223,10 @@ sub print_api_result {
     return if $result_schema->{type} eq 'null';
 
     if ($format eq 'json') {
+	# Note: we always use utf8 encoding for json format
 	print to_json($data, {utf8 => 1, allow_nonref => 1, canonical => 1, pretty => 1 });
     } elsif ($format eq 'text' || $format eq 'plain') {
+	my $encoding = $options->{encoding} // 'UTF-8';
 	my $type = $result_schema->{type};
 	if ($type eq 'object') {
 	    $props_to_print = [ sort keys %$data ] if !defined($props_to_print);
@@ -242,11 +245,11 @@ sub print_api_result {
 		print_api_list($data, $result_schema, $props_to_print, $options);
 	    } else {
 		foreach my $entry (@$data) {
-		    print data_to_text($entry) . "\n";
+		    print encode($encoding, data_to_text($entry) . "\n");
 		}
 	    }
 	} else {
-	    print "$data\n";
+	    print encode($encoding, "$data\n");
 	}
     } else {
 	die "internal error: unknown output format"; # should not happen
