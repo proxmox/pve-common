@@ -2,15 +2,31 @@ package PVE::CLIFormatter;
 
 use strict;
 use warnings;
+use PVE::JSONSchema;
 use JSON;
 
 sub data_to_text {
-    my ($data) = @_;
+    my ($data, $propdef) = @_;
 
+    if (defined($propdef)) {
+	if (my $type = $propdef->{type}) {
+	    if ($type eq 'boolean') {
+		return $data ? 1 : 0;
+	    }
+	}
+	if (!defined($data) && defined($propdef->{default})) {
+	    return "($propdef->{default})";
+	}
+	if (defined(my $renderer = $propdef->{renderer})) {
+	    my $code = PVE::JSONSchema::get_renderer($renderer);
+	    die "internal error: unknown renderer '$renderer'" if !$code;
+	    return $code->($data);
+	}
+    }
     return '' if !defined($data);
 
     if (my $class = ref($data)) {
-	return to_json($data, { utf8 => 1, canonical => 1 });
+	return to_json($data, { canonical => 1 });
     } else {
 	return "$data";
     }
@@ -53,7 +69,7 @@ sub print_text_table {
 	my $longest = $titlelen;
 	my $sortable = $autosort;
 	foreach my $entry (@$data) {
-	    my $len = length(data_to_text($entry->{$prop})) // 0;
+	    my $len = length(data_to_text($entry->{$prop}, $propinfo)) // 0;
 	    $longest = $len if $len > $longest;
 	    $sortable = 0 if !defined($entry->{$prop});
 	}
@@ -95,7 +111,7 @@ sub print_text_table {
     foreach my $entry (@$data) {
 	print $borderstring if $border;
         printf $formatstring, map {
-	    substr(data_to_text($entry->{$_}) // $colopts->{$_}->{default},
+	    substr(data_to_text($entry->{$_}, $returnprops->{$_}) // $colopts->{$_}->{default},
 		   0, $colopts->{$_}->{cutoff});
 	} @$props_to_print;
     }
@@ -145,7 +161,7 @@ sub print_api_result {
 	    $props_to_print = [ sort keys %$data ] if !defined($props_to_print);
 	    my $kvstore = [];
 	    foreach my $key (@$props_to_print) {
-		push @$kvstore, { key => $key, value => data_to_text($data->{$key}) };
+		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}) };
 	    }
 	    my $schema = { type => 'array', items => { type => 'object' }};
 	    print_api_list($kvstore, $schema, ['key', 'value'], 0, $format eq 'text');
