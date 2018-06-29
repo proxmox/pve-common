@@ -143,9 +143,12 @@ sub print_api_result {
 	my $type = $result_schema->{type};
 	if ($type eq 'object') {
 	    $props_to_print = [ sort keys %$data ] if !defined($props_to_print);
+	    my $kvstore = [];
 	    foreach my $key (@$props_to_print) {
-		print $key . ": " .  data_to_text($data->{$key}) . "\n";
+		push @$kvstore, { key => $key, value => data_to_text($data->{$key}) };
 	    }
+	    my $schema = { type => 'array', items => { type => 'object' }};
+	    print_api_list($kvstore, $schema, ['key', 'value'], 0, $format eq 'text');
 	} elsif ($type eq 'array') {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
