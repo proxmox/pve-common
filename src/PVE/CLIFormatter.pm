@@ -23,8 +23,9 @@ sub data_to_text {
 # $sort_key can be used to sort after a column, if it isn't set we sort
 #   after the leftmost column (with no undef value in $data) this can be
 #   turned off by passing 0 as $sort_key
+# $border - print with/without table header and asciiart border
 sub print_text_table {
-    my ($data, $returnprops, $props_to_print, $sort_key) = @_;
+    my ($data, $returnprops, $props_to_print, $sort_key, $border) = @_;
 
     my $autosort = 1;
     if (defined($sort_key) && $sort_key eq 0) {
@@ -33,6 +34,8 @@ sub print_text_table {
     }
 
     my $colopts = {};
+
+    my $borderstring = '';
     my $formatstring = '';
 
     my $column_count = scalar(@$props_to_print);
@@ -63,11 +66,19 @@ sub print_text_table {
 	    cutoff => $cutoff,
 	};
 
-	# skip alignment and cutoff on last column
-	$formatstring .= ($i == ($column_count - 1)) ? "%s\n" : "%-${cutoff}s ";
+	if ($border) {
+	    if ($i == ($column_count - 1)) {
+		$formatstring .= "| %-${cutoff}s |\n";
+		$borderstring .= "+-" . ('-' x $cutoff) . "-+\n";
+	    } else {
+		$formatstring .= "| %-${cutoff}s ";
+		$borderstring .= "+-" . ('-' x $cutoff) . '-';
+	    }
+	} else {
+	    # skip alignment and cutoff on last column
+	    $formatstring .= ($i == ($column_count - 1)) ? "%s\n" : "%-${cutoff}s ";
+	}
     }
-
-    printf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
 
     if (defined($sort_key)) {
 	my $type = $returnprops->{$sort_key}->{type} // 'string';
@@ -78,12 +89,17 @@ sub print_text_table {
 	}
     }
 
+    print $borderstring if $border;
+    printf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
+
     foreach my $entry (@$data) {
+	print $borderstring if $border;
         printf $formatstring, map {
 	    substr(data_to_text($entry->{$_}) // $colopts->{$_}->{default},
 		   0, $colopts->{$_}->{cutoff});
 	} @$props_to_print;
     }
+    print $borderstring if $border;
 }
 
 # prints the result of an API GET call returning an array as a table.
@@ -92,7 +108,7 @@ sub print_text_table {
 # takes all fields of the results property, with a fallback
 # to all fields occuring in items of $data.
 sub print_api_list {
-    my ($data, $result_schema, $props_to_print, $sort_key) = @_;
+    my ($data, $result_schema, $props_to_print, $sort_key, $border) = @_;
 
     die "can only print object lists\n"
 	if !($result_schema->{type} eq 'array' && $result_schema->{items}->{type} eq 'object');
@@ -113,7 +129,7 @@ sub print_api_list {
 	die "unable to detect list properties\n" if !scalar(@$props_to_print);
     }
 
-    print_text_table($data, $returnprops, $props_to_print, $sort_key);
+    print_text_table($data, $returnprops, $props_to_print, $sort_key, $border);
 }
 
 sub print_api_result {
@@ -123,7 +139,7 @@ sub print_api_result {
 
     if ($format eq 'json') {
 	print to_json($data, {utf8 => 1, allow_nonref => 1, canonical => 1, pretty => 1 });
-    } elsif ($format eq 'text') {
+    } elsif ($format eq 'text' || $format eq 'plain') {
 	my $type = $result_schema->{type};
 	if ($type eq 'object') {
 	    $props_to_print = [ sort keys %$data ] if !defined($props_to_print);
@@ -134,7 +150,7 @@ sub print_api_result {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		print_api_list($data, $result_schema, $props_to_print, $sort_key);
+		print_api_list($data, $result_schema, $props_to_print, $sort_key, $format eq 'text');
 	    } else {
 		foreach my $entry (@$data) {
 		    print data_to_text($entry) . "\n";
