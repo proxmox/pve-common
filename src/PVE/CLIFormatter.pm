@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use PVE::JSONSchema;
 use JSON;
+use utf8;
+use Encode;
 
 sub println_max {
     my ($text, $max) = @_;
@@ -11,10 +13,10 @@ sub println_max {
     if ($max) {
 	my @lines = split(/\n/, $text);
 	foreach my $line (@lines) {
-	    print substr($line, 0, $max) . "\n";
+	    print encode('UTF-8', substr($line, 0, $max) . "\n");
 	}
     } else {
-	print $text;
+	print encode('UTF-8', $text);
     }
 }
 
@@ -73,7 +75,9 @@ sub print_text_table {
 
     my $colopts = {};
 
-    my $borderstring = '';
+    my $borderstring_m = '';
+    my $borderstring_b = '';
+    my $borderstring_t = '';
     my $formatstring = '';
 
     my $column_count = scalar(@$props_to_print);
@@ -105,12 +109,46 @@ sub print_text_table {
 	};
 
 	if ($border) {
-	    if ($i == ($column_count - 1)) {
-		$formatstring .= "| %-${cutoff}s |\n";
-		$borderstring .= "+-" . ('-' x $cutoff) . "-+\n";
+	    if ($i == 0 && ($column_count == 1)) {
+		if ($utf8) {
+		    $formatstring .= "│ %-${cutoff}s │\n";
+		    $borderstring_t .= "┌─" . ('─' x $cutoff) . "─┐\n";
+		    $borderstring_m .= "├─" . ('─' x $cutoff) . "─┤\n";
+		    $borderstring_b .= "└─" . ('─' x $cutoff) . "─┘\n";
+		} else {
+		    $formatstring .= "| %-${cutoff}s |\n";
+		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+\n";
+		}
+	    } elsif ($i == 0) {
+		if ($utf8) {
+		    $formatstring .= "│ %-${cutoff}s ";
+		    $borderstring_t .= "┌─" . ('─' x $cutoff) . '─';
+		    $borderstring_m .= "├─" . ('─' x $cutoff) . '─';
+		    $borderstring_b .= "└─" . ('─' x $cutoff) . '─';
+		} else {
+		    $formatstring .= "| %-${cutoff}s ";
+		    $borderstring_m .= "+-" . ('-' x $cutoff) . '-';
+		}
+	    } elsif ($i == ($column_count - 1)) {
+		if ($utf8) {
+		    $formatstring .= "│ %-${cutoff}s │\n";
+		    $borderstring_t .= "┬─" . ('─' x $cutoff) . "─┐\n";
+		    $borderstring_m .= "┼─" . ('─' x $cutoff) . "─┤\n";
+		    $borderstring_b .= "┴─" . ('─' x $cutoff) . "─┘\n";
+		} else {
+		    $formatstring .= "| %-${cutoff}s |\n";
+		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+\n";
+		}
 	    } else {
-		$formatstring .= "| %-${cutoff}s ";
-		$borderstring .= "+-" . ('-' x $cutoff) . '-';
+		if ($utf8) {
+		    $formatstring .= "│ %-${cutoff}s ";
+		    $borderstring_t .= "┬─" . ('─' x $cutoff) . '─';
+		    $borderstring_m .= "┼─" . ('─' x $cutoff) . '─';
+		    $borderstring_b .= "┴─" . ('─' x $cutoff) . '─';
+		} else {
+		    $formatstring .= "| %-${cutoff}s ";
+		    $borderstring_m .= "+-" . ('-' x $cutoff) . '-';
+		}
 	    }
 	} else {
 	    # skip alignment and cutoff on last column
@@ -127,19 +165,22 @@ sub print_text_table {
 	}
     }
 
-    println_max($borderstring, $columns) if $border;
+    $borderstring_t = $borderstring_m if !length($borderstring_t);
+    $borderstring_b = $borderstring_m if !length($borderstring_b);
+
+    println_max($borderstring_t, $columns) if $border;
     my $text = sprintf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
     println_max($text, $columns);
 
     foreach my $entry (@$data) {
-	println_max($borderstring, $columns) if $border;
+	println_max($borderstring_m, $columns) if $border;
         $text = sprintf $formatstring, map {
 	    substr(data_to_text($entry->{$_}, $returnprops->{$_}) // $colopts->{$_}->{default},
 		   0, $colopts->{$_}->{cutoff});
 	} @$props_to_print;
 	println_max($text, $columns);
     }
-    println_max($borderstring, $columns) if $border;
+    println_max($borderstring_b, $columns) if $border;
 }
 
 # prints the result of an API GET call returning an array as a table.
