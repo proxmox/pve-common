@@ -500,7 +500,7 @@ sub fork_worker {
 	if ($sync && -t STDIN) {
 	    # some sync'ed workers operate on the tty but setsid sessions lose
 	    # the tty, so just create a new pgroup and give it the tty
-	    POSIX::setpgid(0, 0) or die "failed to setpgid: $!\n";;
+	    POSIX::setpgid(0, 0) or die "failed to setpgid: $!\n";
 	    POSIX::tcsetpgrp(fileno(STDIN), $$) or die "failed to tcsetpgrp: $!\n";
 	} else {
 	    POSIX::setsid();
