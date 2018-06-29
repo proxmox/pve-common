@@ -494,10 +494,16 @@ sub fork_worker {
 	$SIG{INT} = $SIG{QUIT} = $SIG{TERM} = sub { die "received interrupt\n"; };
 
 	$SIG{CHLD} = $SIG{PIPE} = 'DEFAULT';
+	$SIG{TTOU} = 'IGNORE';
 
 	# set sess/process group - we want to be able to kill the
 	# whole process group
-	POSIX::setsid();
+	if ($sync && -t STDIN) {
+	    POSIX::setpgid(0,0) or die "failed to setpgid: $!\n";;
+	    POSIX::tcsetpgrp(fileno(STDIN), $$) or die "failed to tcsetpgrp: $!\n";
+	} else {
+	    POSIX::setsid();
+	}
 
 	POSIX::close ($psync[0]);
 	POSIX::close ($ctrlfd[0]) if $sync;
