@@ -1081,6 +1081,11 @@ my $default_schema_noref = {
 	    optional => 1,
 	    description => "This provides the title of the property",
 	},
+	renderer => {
+	    type => "string",
+	    optional => 1,
+	    description => "This is used to provide rendering hints to format cli command output.",
+	},
 	requires => {
 	    type => [ "string", "object" ],
 	    optional => 1,
