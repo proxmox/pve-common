@@ -286,6 +286,24 @@ sub print_text_table {
     $writeln->($borderstring_b) if $border;
 }
 
+sub extract_properties_to_print {
+    my ($propdef) = @_;
+
+    my $required = [];
+    my $optional = [];
+
+    foreach my $key (keys %$propdef) {
+	my $prop = $propdef->{$key};
+	if ($prop->{optional}) {
+	    push @$optional, $key;
+	} else {
+	    push @$required, $key;
+	}
+    }
+
+    return [ sort(@$required), sort(@$optional) ];
+}
+
 # prints the result of an API GET call returning an array as a table.
 # takes formatting information from the results property of the call
 # if $props_to_print is provided, prints only those columns. otherwise
@@ -299,19 +317,20 @@ sub print_api_list {
 
     my $returnprops = $result_schema->{items}->{properties};
 
-    if (!defined($props_to_print)) {
-	$props_to_print = [ sort keys %$returnprops ];
-	if (!scalar(@$props_to_print)) {
-	    my $all_props = {};
-	    foreach my $obj (@{$data}) {
-		foreach my $key (keys %{$obj}) {
-		    $all_props->{ $key } = 1;
-		}
+    $props_to_print = extract_properties_to_print($returnprops)
+	if !defined($props_to_print);
+
+    if (!scalar(@$props_to_print)) {
+	my $all_props = {};
+	foreach my $obj (@$data) {
+	    foreach my $key (keys %$obj) {
+		$all_props->{$key} = 1;
 	    }
-	    $props_to_print = [ sort keys %{$all_props} ];
 	}
-	die "unable to detect list properties\n" if !scalar(@$props_to_print);
+	$props_to_print = [ sort keys %{$all_props} ];
     }
+
+    die "unable to detect list properties\n" if !scalar(@$props_to_print);
 
     print_text_table($data, $returnprops, $props_to_print, $options);
 }
@@ -334,7 +353,9 @@ sub print_api_result {
 	my $encoding = $options->{encoding} // 'UTF-8';
 	my $type = $result_schema->{type};
 	if ($type eq 'object') {
-	    $props_to_print = [ sort keys %$data ] if !defined($props_to_print);
+	    $props_to_print = extract_properties_to_print($result_schema->{properties})
+		if !defined($props_to_print);
+	    $props_to_print = [ sort keys %$data ] if !scalar(@$props_to_print);
 	    my $kvstore = [];
 	    foreach my $key (@$props_to_print) {
 		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}) };
