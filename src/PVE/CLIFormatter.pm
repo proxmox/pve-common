@@ -10,6 +10,58 @@ use JSON;
 use utf8;
 use Encode;
 
+sub render_duration {
+    my ($duration_in_seconds) = @_;
+
+    my $text = '';
+    my $rest = $duration_in_seconds;
+
+    my $step = sub {
+	my ($unit, $unitlength) = @_;
+
+	if ((my $v = int($rest/$unitlength)) > 0) {
+	    $text .= " " if length($text);
+	    $text .= "${v}${unit}";
+	    $rest -= $v * $unitlength;
+	}
+    };
+
+    $step->('w', 7*24*3600);
+    $step->('d', 24*3600);
+    $step->('h', 3600);
+    $step->('m', 60);
+    $step->('s', 1);
+
+    return $text;
+}
+
+PVE::JSONSchema::register_renderer('duration', \&render_duration);
+
+sub render_fraction_as_percentage {
+    my ($fraction) = @_;
+
+    return sprintf("%.2f%%", $fraction*100);
+}
+
+PVE::JSONSchema::register_renderer(
+    'fraction_as_percentage', \&render_fraction_as_percentage);
+
+sub render_bytes {
+    my ($value) = @_;
+
+    my @units = qw(B KiB MiB GiB TiB PiB);
+
+    my $max_unit = 0;
+    if ($value > 1023) {
+        $max_unit = int(log($value)/log(1024));
+        $value /= 1024**($max_unit);
+    }
+
+    return sprintf "%.2f $units[$max_unit]", $value;
+}
+
+PVE::JSONSchema::register_renderer('bytes', \&render_bytes);
+
 sub query_terminal_options {
     my ($options) = @_;
 
