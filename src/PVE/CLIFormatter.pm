@@ -89,7 +89,7 @@ sub query_terminal_options {
 }
 
 sub data_to_text {
-    my ($data, $propdef) = @_;
+    my ($data, $propdef, $options) = @_;
 
     return '' if !defined($data);
 
@@ -105,7 +105,7 @@ sub data_to_text {
 	if (defined(my $renderer = $propdef->{renderer})) {
 	    my $code = PVE::JSONSchema::get_renderer($renderer);
 	    die "internal error: unknown renderer '$renderer'" if !$code;
-	    return $code->($data);
+	    return $code->($data, $options);
 	}
     }
 
@@ -170,7 +170,7 @@ sub print_text_table {
 	    my $prop = $props_to_print->[$i];
 	    my $propinfo = $returnprops->{$prop} // {};
 
-	    my $text = data_to_text($entry->{$prop}, $propinfo);
+	    my $text = data_to_text($entry->{$prop}, $propinfo, $options);
 	    my $lines = [ split(/\n/, $text) ];
 	    my $linecount = scalar(@$lines);
 	    $height = $linecount if $linecount > $height;
@@ -368,7 +368,7 @@ sub print_api_result {
 	    $props_to_print = [ sort keys %$data ] if !scalar(@$props_to_print);
 	    my $kvstore = [];
 	    foreach my $key (@$props_to_print) {
-		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}) };
+		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}, $options) };
 	    }
 	    my $schema = { type => 'array', items => { type => 'object' }};
 	    $options->{border} = $format eq 'text';
@@ -381,7 +381,7 @@ sub print_api_result {
 		print_api_list($data, $result_schema, $props_to_print, $options);
 	    } else {
 		foreach my $entry (@$data) {
-		    print encode($encoding, data_to_text($entry) . "\n");
+		    print encode($encoding, data_to_text($entry, $result_schema->{items}, $options) . "\n");
 		}
 	    }
 	} else {
