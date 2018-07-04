@@ -3,12 +3,22 @@ package PVE::CLIFormatter;
 use strict;
 use warnings;
 use I18N::Langinfo;
+use POSIX qw(strftime);
 
 use PVE::JSONSchema;
 use PVE::PTY;
 use JSON;
 use utf8;
 use Encode;
+
+sub render_timestamp {
+    my ($epoch) = @_;
+
+    # ISO 8601 date format
+    return strftime("%F %H:%M:%S", localtime($epoch));
+}
+
+PVE::JSONSchema::register_renderer('timestamp', \&render_timestamp);
 
 sub render_duration {
     my ($duration_in_seconds) = @_;
