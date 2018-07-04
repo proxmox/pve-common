@@ -616,7 +616,8 @@ sub run_cli_handler {
 
     $exename = &$get_exe_name($class);
 
-    initlog($exename);
+    my $logid = $ENV{PVE_LOG_ID} || $exename;
+    initlog($logid);
 
     no strict 'refs';
     $cmddef = ${"${class}::cmddef"};
