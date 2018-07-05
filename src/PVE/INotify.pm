@@ -873,10 +873,29 @@ sub __read_etc_network_interfaces {
 
 		    $id = $options_alternatives->{$id} if $options_alternatives->{$id};
 
+		    my $simple_options = {
+			'ovs_type' => 1,
+			'ovs_options' => 1,
+			'ovs_bridge' => 1,
+			'ovs_bonds' => 1,
+			'ovs_ports' => 1,
+			'bridge_fd' => 1,
+			'bridge_vids' => 1,
+			'bridge-access' => 1,
+			'bridge-learning' => 1,
+			'bridge-arp-nd-suppress' => 1,
+			'bridge-unicast-flood' => 1,
+			'bridge-multicast-flood' => 1,
+			'bond_miimon' => 1,
+			'bond_xmit_hash_policy' => 1,
+			'vxlan-id' => 1,
+			'vxlan-svcnodeip' => 1,
+			'vxlan-physdev' => 1,
+			'vxlan-local-tunnelip' => 1 };
+
 		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast') || ($id eq 'gateway')) {
 			$f->{$id} = $value;
-		    } elsif ($id eq 'ovs_type' || $id eq 'ovs_options'|| $id eq 'ovs_bridge' ||
-			     $id eq 'ovs_bonds' || $id eq 'ovs_ports') {
+		    } elsif ($simple_options->{$id}) {
 			$d->{$id} = $value;
 		    } elsif ($id eq 'slaves' || $id eq 'bridge_ports') {
 			my $devs = {};
@@ -896,14 +915,8 @@ sub __read_etc_network_interfaces {
 			} else {
 			    $d->{$id} = 'off';
 			}
-		    } elsif ($id eq 'bridge_fd' || $id eq 'bridge_vids') {
-			$d->{$id} = $value;
 		    } elsif ($id eq 'bridge_vlan_aware') {
 			$d->{$id} = 1;
-		    } elsif ($id eq 'bond_miimon') {
-			$d->{$id} = $value;
-		    } elsif ($id eq 'bond_xmit_hash_policy') {
-			$d->{$id} = $value;
 		    } elsif ($id eq 'bond_mode') {
 			# always use names
 			foreach my $bm (keys %$bond_modes) {
@@ -913,9 +926,6 @@ sub __read_etc_network_interfaces {
 				last;
 			    }
 			}
-			$d->{$id} = $value;
-		    } elsif ($id eq 'vxlan-id' || $id eq 'vxlan-svcnodeip' || 
-			     $id eq 'vxlan-physdev' || $id eq 'vxlan-local-tunnelip') {
 			$d->{$id} = $value;
 		    } elsif ($id eq 'vxlan-remoteip') {
 			push @{$d->{$id}}, $value;
@@ -1138,7 +1148,6 @@ sub __interface_to_string {
 	    }
 	    $done->{'vxlan-remoteip'} = 1;
 	}
-
     } elsif ($d->{type} eq 'OVSBridge') {
 
 	$raw .= "\tovs_type $d->{type}\n";
@@ -1197,7 +1206,7 @@ sub __interface_to_string {
 
     if ($first_block) {
 	# print other settings
-	foreach my $k (keys %$d) {
+	foreach my $k (sort keys %$d) {
 	   next if $done->{$k};
 	   next if !$d->{$k};
 	   $raw .= "\t$k $d->{$k}\n";
@@ -1331,6 +1340,35 @@ sub __write_etc_network_interfaces {
 
 	if (defined($d->{'vxlan-svcnodeip'}) != defined($d->{'vxlan-physdev'})) {
 	    die "iface $iface : vxlan-svcnodeip and vxlan-physdev must be define together\n";
+	}
+    }
+
+    # check bridgeport option
+    my $bridgeports = {};
+    my $bridges = {};
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if ($d->{type} eq 'bridge') {
+	    foreach my $p (split (/\s+/, $d->{bridge_ports})) {
+		my $n = $ifaces->{$p};
+		die "bridge '$iface' - unable to find bridge port '$p'\n"
+		    if !$n;
+		$bridgeports->{$p} = $iface;
+	    }
+	    $bridges->{$iface} = $d;
+	}
+    }
+
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+
+        foreach my $k (qw(bridge-learning bridge-arp-nd-suppress bridge-unicast-flood bridge-multicast-flood bridge-access)) {
+	    die "iface $iface : bridgeports options can be used only if interface is in a bridge\n" 
+		if $d->{$k} && !$bridgeports->{$iface};
+        }
+
+	if ($d->{'bridge-access'} && !$bridges->{$bridgeports->{$iface}}->{bridge_vlan_aware}) {
+	    die "iface $iface : bridge-access option can be only used if interface is in a vlan aware bridge\n";
 	}
     }
 

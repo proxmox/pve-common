@@ -24,6 +24,40 @@ $config->{ifaces}->{eth1} = {
     autostart => 1
 };
 
+$config->{ifaces}->{vmbr1} = {
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => off,
+    bridge_fd => 0,
+    bridge_ports => vxlan1,
+    bridge_vlan_aware => yes,
+    autostart => 1
+};
+
+
+$config->{ifaces}->{vmbr2} = {
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => off,
+    bridge_fd => 0,
+    bridge_ports => vxlan2,
+    autostart => 1
+};
+
+$config->{ifaces}->{vmbr3} = {
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => off,
+    bridge_fd => 0,
+    bridge_ports => vxlan3,
+    bridge_vlan_aware => yes,
+    bridge_vids => '2-10',
+    autostart => 1
+};
+
 $config->{ifaces}->{vxlan1} = {
     type => 'vxlan',
     method => 'manual',
@@ -40,6 +74,10 @@ $config->{ifaces}->{vxlan2} = {
     families => ['inet'],
     'vxlan-id' => 2,
     'vxlan-local-tunnelip' => $ip,
+    'bridge-learning' => 'off',
+    'bridge-arp-nd-suppress' => 'on',
+    'bridge-unicast-flood' => 'off',
+    'bridge-multicast-flood' => 'off',
     autostart => 1
 };
 
@@ -49,6 +87,7 @@ $config->{ifaces}->{vxlan3} = {
     families => ['inet'],
     'vxlan-id' => 3,
     'vxlan-remoteip' => [$remoteip1, $remoteip2],
+    'bridge-access' => 3,
     autostart => 1
 };
 
@@ -73,6 +112,28 @@ iface vmbr0 inet static
 	bridge-stp off
 	bridge-fd 0
 
+auto vmbr1
+iface vmbr1 inet manual
+	bridge-ports vxlan1
+	bridge-stp off
+	bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-4094
+
+auto vmbr2
+iface vmbr2 inet manual
+	bridge-ports vxlan2
+	bridge-stp off
+	bridge-fd 0
+
+auto vmbr3
+iface vmbr3 inet manual
+	bridge-ports vxlan3
+	bridge-stp off
+	bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-10
+
 auto vxlan1
 iface vxlan1 inet manual
 	vxlan-id 1
@@ -83,12 +144,17 @@ auto vxlan2
 iface vxlan2 inet manual
 	vxlan-id 2
 	vxlan-local-tunnelip $ip
+	bridge-arp-nd-suppress on
+	bridge-learning off
+	bridge-multicast-flood off
+	bridge-unicast-flood off
 
 auto vxlan3
 iface vxlan3 inet manual
 	vxlan-id 3
 	vxlan-remoteip $remoteip1
 	vxlan-remoteip $remoteip2
+	bridge-access 3
 
 CHECK
 
