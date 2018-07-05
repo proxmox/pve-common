@@ -1319,6 +1319,21 @@ sub __write_etc_network_interfaces {
 	}
     }
 
+    # check bond
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if ($d->{type} eq 'bond' && $d->{slaves}) {
+	    foreach my $p (split (/\s+/, $d->{slaves})) {
+		my $n = $ifaces->{$p};
+
+		die "bond '$iface' - unable to find slave '$p'\n"
+		    if !$n;
+		die "bond '$iface' - wrong interface type on slave '$p' " .
+		    "('$n->{type}' != 'eth')\n" if $n->{type} ne 'eth';
+	    }
+	}
+    }
+
     # check vxlan
     my $vxlans = {};
     foreach my $iface (keys %$ifaces) {

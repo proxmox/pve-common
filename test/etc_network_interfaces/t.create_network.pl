@@ -24,6 +24,31 @@ $config->{ifaces}->{eth1} = {
     autostart => 1
 };
 
+$config->{ifaces}->{eth2} = {
+    type => 'eth',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
+$config->{ifaces}->{eth3} = {
+    type => 'eth',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
+$config->{ifaces}->{bond0} = {
+    type => 'bond',
+    slaves => 'eth2 eth3',
+    bond_mode => '802.3ad',
+    bond_xmit_hash_policy => 'layer3+4',
+    bond_miimon => 100,
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
 $config->{ifaces}->{vmbr1} = {
     type => 'bridge',
     method => 'manual',
@@ -102,6 +127,19 @@ iface eth1 inet static
 	address  $ip
 	netmask  $nm
 	gateway  $gw
+
+auto eth2
+iface eth2 inet manual
+
+auto eth3
+iface eth3 inet manual
+
+auto bond0
+iface bond0 inet manual
+	bond-slaves eth2 eth3
+	bond-miimon 100
+	bond-mode 802.3ad
+	bond-xmit-hash-policy layer3+4
 
 auto vmbr0
 iface vmbr0 inet static
