@@ -60,7 +60,6 @@ $config->{ifaces}->{vmbr1} = {
     autostart => 1
 };
 
-
 $config->{ifaces}->{vmbr2} = {
     type => 'bridge',
     method => 'manual',
@@ -116,6 +115,26 @@ $config->{ifaces}->{vxlan3} = {
     autostart => 1
 };
 
+$config->{ifaces}->{'vmbr1.100'} = {
+    type => 'vlan',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
+$config->{ifaces}->{'bond0.100'} = {
+    type => 'vlan',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
+$config->{ifaces}->{'eth1.100'} = {
+    type => 'vlan',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
 
 expect load('loopback') . <<"CHECK";
 source-directory interfaces.d
@@ -134,12 +153,18 @@ iface eth2 inet manual
 auto eth3
 iface eth3 inet manual
 
+auto eth1.100
+iface eth1.100 inet manual
+
 auto bond0
 iface bond0 inet manual
 	bond-slaves eth2 eth3
 	bond-miimon 100
 	bond-mode 802.3ad
 	bond-xmit-hash-policy layer3+4
+
+auto bond0.100
+iface bond0.100 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
@@ -171,6 +196,9 @@ iface vmbr3 inet manual
 	bridge-fd 0
 	bridge-vlan-aware yes
 	bridge-vids 2-10
+
+auto vmbr1.100
+iface vmbr1.100 inet manual
 
 auto vxlan1
 iface vxlan1 inet manual

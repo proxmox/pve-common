@@ -1358,6 +1358,25 @@ sub __write_etc_network_interfaces {
 	}
     }
 
+    # check vlan
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if ($d->{type} eq 'vlan' && $iface =~ m/^(\S+)\.\d+$/) {
+	    my $p = $1;
+	    my $n = $ifaces->{$p};
+
+	    die "vlan '$iface' - unable to find parent '$p'\n"
+		if $n->{exists} eq 0;
+
+	    if ($n->{type} eq 'bridge' && !$n->{bridge_vlan_aware}) {
+		die "vlan '$iface' - bridge vlan aware is not enabled on parent '$p'\n";
+	    } elsif ($n->{type} ne 'eth' && $n->{type} ne 'bridge' && $n->{type} ne 'bond') {
+		die "vlan '$iface' - wrong interface type on parent '$p' " .
+		    "('$n->{type}' != 'eth|bond|bridge' )\n";
+	    }
+	}
+    }
+
     # check bridgeport option
     my $bridgeports = {};
     my $bridges = {};
