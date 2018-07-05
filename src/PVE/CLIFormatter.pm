@@ -20,6 +20,15 @@ sub render_timestamp {
 
 PVE::JSONSchema::register_renderer('timestamp', \&render_timestamp);
 
+sub render_timestamp_gmt {
+    my ($epoch) = @_;
+
+    # ISO 8601 date format, standard Greenwich time zone
+    return strftime("%F %H:%M:%S", gmtime($epoch));
+}
+
+PVE::JSONSchema::register_renderer('timestamp_gmt', \&render_timestamp_gmt);
+
 sub render_duration {
     my ($duration_in_seconds) = @_;
 
