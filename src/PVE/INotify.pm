@@ -753,6 +753,20 @@ my $extract_ovs_option = sub {
     return $v;
 };
 
+my $check_mtu = sub {
+   my ($ifaces, $parent, $child) = @_;
+
+   die "check mtu : missing parent interface\n" if !$parent;
+   die "check mtu : missing child interface\n" if !$child;
+ 
+   my $pmtu = $ifaces->{$parent}->{mtu} ? $ifaces->{$parent}->{mtu} : 1500;
+   my $cmtu = $ifaces->{$child}->{mtu} ? $ifaces->{$child}->{mtu} : 1500;
+
+   die "interface '$parent' - mtu $pmtu is bigger than '$child' - mtu $cmtu\n"
+                    if $pmtu gt $cmtu;
+
+};
+
 # config => {
 #   ifaces => {
 #     $ifname => {
@@ -874,6 +888,7 @@ sub __read_etc_network_interfaces {
 		    $id = $options_alternatives->{$id} if $options_alternatives->{$id};
 
 		    my $simple_options = {
+			'mtu' => 1,
 			'ovs_type' => 1,
 			'ovs_options' => 1,
 			'ovs_bridge' => 1,
@@ -1301,6 +1316,8 @@ sub __write_etc_network_interfaces {
 		} else {
 		    die "interface '$p' is not defined as OVS port/bond\n";
 		}
+
+		&$check_mtu($ifaces, $iface, $p);
 	    }
 	}
     }
@@ -1315,6 +1332,7 @@ sub __write_etc_network_interfaces {
 		    if !$n;
 		die "OVS bond '$iface' - wrong interface type on slave '$p' " .
 		    "('$n->{type}' != 'eth')\n" if $n->{type} ne 'eth';
+		&$check_mtu($ifaces, $iface, $p);
 	    }
 	}
     }
@@ -1330,6 +1348,7 @@ sub __write_etc_network_interfaces {
 		    if !$n;
 		die "bond '$iface' - wrong interface type on slave '$p' " .
 		    "('$n->{type}' != 'eth')\n" if $n->{type} ne 'eth';
+		&$check_mtu($ifaces, $iface, $p);
 	    }
 	}
     }
@@ -1356,6 +1375,7 @@ sub __write_etc_network_interfaces {
 	if (defined($d->{'vxlan-svcnodeip'}) != defined($d->{'vxlan-physdev'})) {
 	    die "iface $iface : vxlan-svcnodeip and vxlan-physdev must be define together\n";
 	}
+	#fixme : check if vxlan mtu is lower than 50bytes than physical interface where tunnel is going out
     }
 
     # check vlan
@@ -1374,6 +1394,7 @@ sub __write_etc_network_interfaces {
 		die "vlan '$iface' - wrong interface type on parent '$p' " .
 		    "('$n->{type}' != 'eth|bond|bridge' )\n";
 	    }
+	    &$check_mtu($ifaces, $iface, $p);
 	}
     }
 
@@ -1387,6 +1408,7 @@ sub __write_etc_network_interfaces {
 		my $n = $ifaces->{$p};
 		die "bridge '$iface' - unable to find bridge port '$p'\n"
 		    if !$n;
+		&$check_mtu($ifaces, $iface, $p);
 		$bridgeports->{$p} = $iface;
 	    }
 	    $bridges->{$iface} = $d;

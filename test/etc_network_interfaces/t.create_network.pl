@@ -40,6 +40,7 @@ $config->{ifaces}->{eth3} = {
 
 $config->{ifaces}->{bond0} = {
     type => 'bond',
+    mtu => 1400,
     slaves => 'eth2 eth3',
     bond_mode => '802.3ad',
     bond_xmit_hash_policy => 'layer3+4',
@@ -50,6 +51,7 @@ $config->{ifaces}->{bond0} = {
 };
 
 $config->{ifaces}->{vmbr1} = {
+    mtu => 1400,
     type => 'bridge',
     method => 'manual',
     families => ['inet'],
@@ -117,6 +119,7 @@ $config->{ifaces}->{vxlan3} = {
 
 $config->{ifaces}->{'vmbr1.100'} = {
     type => 'vlan',
+    mtu => 1300,
     method => 'manual',
     families => ['inet'],
     autostart => 1
@@ -124,6 +127,7 @@ $config->{ifaces}->{'vmbr1.100'} = {
 
 $config->{ifaces}->{'bond0.100'} = {
     type => 'vlan',
+    mtu => 1300,
     method => 'manual',
     families => ['inet'],
     autostart => 1
@@ -131,6 +135,7 @@ $config->{ifaces}->{'bond0.100'} = {
 
 $config->{ifaces}->{'eth1.100'} = {
     type => 'vlan',
+    mtu => 1400,
     method => 'manual',
     families => ['inet'],
     autostart => 1
@@ -155,6 +160,7 @@ iface eth3 inet manual
 
 auto eth1.100
 iface eth1.100 inet manual
+	mtu 1400
 
 auto bond0
 iface bond0 inet manual
@@ -162,9 +168,11 @@ iface bond0 inet manual
 	bond-miimon 100
 	bond-mode 802.3ad
 	bond-xmit-hash-policy layer3+4
+	mtu 1400
 
 auto bond0.100
 iface bond0.100 inet manual
+	mtu 1300
 
 auto vmbr0
 iface vmbr0 inet static
@@ -182,6 +190,7 @@ iface vmbr1 inet manual
 	bridge-fd 0
 	bridge-vlan-aware yes
 	bridge-vids 2-4094
+	mtu 1400
 
 auto vmbr2
 iface vmbr2 inet manual
@@ -199,6 +208,7 @@ iface vmbr3 inet manual
 
 auto vmbr1.100
 iface vmbr1.100 inet manual
+	mtu 1300
 
 auto vxlan1
 iface vxlan1 inet manual
