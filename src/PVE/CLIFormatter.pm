@@ -384,14 +384,17 @@ sub print_api_result {
 	    print_api_list($kvstore, $schema, ['key', 'value'], $options);
 	} elsif ($type eq 'array') {
 	    return if !scalar(@$data);
+	    $options->{border} = $format eq 'text';
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		$options->{border} = $format eq 'text';
 		print_api_list($data, $result_schema, $props_to_print, $options);
 	    } else {
-		foreach my $entry (@$data) {
-		    print encode($encoding, data_to_text($entry, $result_schema->{items}, $options) . "\n");
+		my $kvstore = [];
+		foreach my $value (@$data) {
+		    push @$kvstore, { value => $value };
 		}
+		my $schema = { type => 'array', items => { type => 'object', properties => { value => $result_schema->{items} }}};
+		print_api_list($kvstore, $schema, ['value'], $options);
 	    }
 	} else {
 	    print encode($encoding, "$data\n");
