@@ -8,6 +8,11 @@ r(load('brbase'));
 my $ip = '192.168.0.2';
 my $nm = '255.255.255.0';
 my $gw = '192.168.0.1';
+my $svcnodeip = '239.192.105.237';
+my $physdev = 'eth0';
+my $remoteip1 = '192.168.0.3';
+my $remoteip2 = '192.168.0.4';
+
 
 $config->{ifaces}->{eth1} = {
     type => 'eth',
@@ -18,6 +23,35 @@ $config->{ifaces}->{eth1} = {
     families => ['inet'],
     autostart => 1
 };
+
+$config->{ifaces}->{vxlan1} = {
+    type => 'vxlan',
+    method => 'manual',
+    families => ['inet'],
+    'vxlan-id' => 1,
+    'vxlan-svcnodeip' => $svcnodeip,
+    'vxlan-physdev' => $physdev,
+    autostart => 1
+};
+
+$config->{ifaces}->{vxlan2} = {
+    type => 'vxlan',
+    method => 'manual',
+    families => ['inet'],
+    'vxlan-id' => 2,
+    'vxlan-local-tunnelip' => $ip,
+    autostart => 1
+};
+
+$config->{ifaces}->{vxlan3} = {
+    type => 'vxlan',
+    method => 'manual',
+    families => ['inet'],
+    'vxlan-id' => 3,
+    'vxlan-remoteip' => [$remoteip1, $remoteip2],
+    autostart => 1
+};
+
 
 expect load('loopback') . <<"CHECK";
 source-directory interfaces.d
@@ -38,6 +72,23 @@ iface vmbr0 inet static
 	bridge-ports eth0
 	bridge-stp off
 	bridge-fd 0
+
+auto vxlan1
+iface vxlan1 inet manual
+	vxlan-id 1
+	vxlan-svcnodeip $svcnodeip
+	vxlan-physdev $physdev
+
+auto vxlan2
+iface vxlan2 inet manual
+	vxlan-id 2
+	vxlan-local-tunnelip $ip
+
+auto vxlan3
+iface vxlan3 inet manual
+	vxlan-id 3
+	vxlan-remoteip $remoteip1
+	vxlan-remoteip $remoteip2
 
 CHECK
 
