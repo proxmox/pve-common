@@ -566,7 +566,7 @@ my $compute_param_mapping_hash = sub {
 
 # generate usage information for command line tools
 #
-# $name        ... the name of the method
+# $info        ... method info
 # $prefix      ... usually something like "$exename $cmd" ('pvesm add')
 # $arg_param   ... list of parameters we want to get as ordered arguments 
 #                  on the command line (or single parameter name for lists)
@@ -577,13 +577,13 @@ my $compute_param_mapping_hash = sub {
 #   'full'     ... text, include description
 #   'asciidoc' ... generate asciidoc for man pages (like 'full')
 # $param_cb ... mapping for string parameters to file path parameters
-sub usage_str {
-    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $param_cb) = @_;
+sub getopt_usage {
+    my ($info, $prefix, $arg_param, $fixed_param, $format, $param_cb) = @_;
 
     $format = 'long' if !$format;
 
-    my $info = $self->map_method_by_name($name);
     my $schema = $info->{parameters};
+    my $name = $info->{name};
     my $prop = $schema->{properties};
 
     my $out = '';
@@ -677,6 +677,14 @@ sub usage_str {
     $out .= $opts if $opts;
 
     return $out;
+}
+
+sub usage_str {
+    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $param_cb) = @_;
+
+    my $info = $self->map_method_by_name($name);
+
+    return getopt_usage($info, $prefix, $arg_param, $fixed_param, $format, $param_cb);
 }
 
 # generate docs from JSON schema properties
