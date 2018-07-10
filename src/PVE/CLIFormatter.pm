@@ -393,6 +393,7 @@ sub print_api_result {
 	    $props_to_print = [ sort keys %$data ] if !scalar(@$props_to_print);
 	    my $kvstore = [];
 	    foreach my $key (@$props_to_print) {
+		next if !defined($data->{$key});
 		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}, $options) };
 	    }
 	    my $schema = { type => 'array', items => { type => 'object' }};
