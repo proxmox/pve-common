@@ -380,8 +380,11 @@ sub print_api_result {
 
     if ($format eq 'json') {
 	# Note: we always use utf8 encoding for json format
+	print to_json($data, {utf8 => 1, allow_nonref => 1, canonical => 1 }) . "\n";
+    } elsif ($format eq 'json-pretty') {
+	# Note: we always use utf8 encoding for json format
 	print to_json($data, {utf8 => 1, allow_nonref => 1, canonical => 1, pretty => 1 });
-    } elsif ($format eq 'text' || $format eq 'plain') {
+    } elsif ($format eq 'text') {
 	my $encoding = $options->{encoding} // 'UTF-8';
 	my $type = $result_schema->{type};
 	if ($type eq 'object') {
