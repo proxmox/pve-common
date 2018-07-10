@@ -1,3 +1,16 @@
+libpve-common-perl (5.0-36) unstable; urgency=medium
+
+  * fix #1819: fork_worker: ensure sync'ed workers control terminal
+
+  * new class to generate and format CLI output, including common render
+    methods, table borders and output formats
+
+  * add vxlan interface support
+
+  * initial ifupdown2 option support for bridge and bond interfaces
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 10 Jul 2018 13:56:37 +0200
+
 libpve-common-perl (5.0-35) unstable; urgency=medium
 
   * replace read_password_func from cli handler with more flexible param
