@@ -394,7 +394,7 @@ sub find_handler {
 }
 
 sub handle {
-    my ($self, $info, $param) = @_;
+    my ($self, $info, $param, $output_options) = @_;
 
     my $func = $info->{code};
 
@@ -414,7 +414,8 @@ sub handle {
 	$param->{'extra-args'} = [map { /^(.*)$/ } @$extra] if $extra;
     }
 
-    my $result = &$func($param); 
+    $output_options //= {};
+    my $result = &$func($param, $output_options);
 
     # todo: this is only to be safe - disable?
     if (my $schema = $info->{returns}) {
@@ -745,22 +746,64 @@ my $replace_file_names_with_contents = sub {
     return $param;
 };
 
+our $standard_output_options = {
+    format => PVE::JSONSchema::get_standard_option('pve-output-format'),
+    noheader => {
+	description => "Do not show column headers (for 'text' format).",
+	type => 'boolean',
+	optional => 1,
+	default => 1,
+    },
+    noborder => {
+	description => "Do not draw borders (for 'text' format).",
+	type => 'boolean',
+	optional => 1,
+	default => 1,
+    },
+    quiet => {
+        description => "Suppress printing results.",
+        type => 'boolean',
+        optional => 1,
+    },
+    'human-readable' => {
+        description => "Call output rendering functions to produce human readable text.",
+        type => 'boolean',
+        optional => 1,
+	default => 1,
+    }
+};
+
+sub add_standard_output_parameters {
+    my ($org_schema) = @_;
+
+    my $schema = { %$org_schema };
+    $schema->{properties} = { %{$schema->{properties}}, %$standard_output_options };
+
+    return $schema;
+};
+
 sub cli_handler {
-    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $param_cb) = @_;
+    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $param_cb, $options) = @_;
 
     my $info = $self->map_method_by_name($name);
+    $options //= {};
 
     my $res;
     eval {
 	my $param_map = {};
 	$param_map = $compute_param_mapping_hash->($param_cb->($name)) if $param_cb;
-	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $param_map);
+	my $schema = add_standard_output_parameters($info->{parameters});
+	my $param = PVE::JSONSchema::get_options($schema, $args, $arg_param, $fixed_param, $param_map);
+
+	foreach my $opt (keys %$standard_output_options) {
+	    $options->{$opt} = delete $param->{$opt} if defined($param->{$opt});
+	}
 
 	if (defined($param_map)) {
 	    $replace_file_names_with_contents->($param, $param_map);
 	}
 
-	$res = $self->handle($info, $param);
+	$res = $self->handle($info, $param, $options);
     };
     if (my $err = $@) {
 	my $ec = ref($err);
