@@ -754,17 +754,16 @@ my $extract_ovs_option = sub {
 };
 
 my $check_mtu = sub {
-   my ($ifaces, $parent, $child) = @_;
+    my ($ifaces, $parent, $child) = @_;
 
-   die "check mtu - missing parent interface\n" if !$parent;
-   die "check mtu - missing child interface\n" if !$child;
- 
-   my $pmtu = $ifaces->{$parent}->{mtu} ? $ifaces->{$parent}->{mtu} : 1500;
-   my $cmtu = $ifaces->{$child}->{mtu} ? $ifaces->{$child}->{mtu} : 1500;
+    die "check mtu - missing parent interface\n" if !$parent;
+    die "check mtu - missing child interface\n" if !$child;
 
-   die "interface '$parent' - mtu $pmtu is bigger than '$child' - mtu $cmtu\n"
-                    if $pmtu gt $cmtu;
+    my $pmtu = $ifaces->{$parent}->{mtu} ? $ifaces->{$parent}->{mtu} : 1500;
+    my $cmtu = $ifaces->{$child}->{mtu} ? $ifaces->{$child}->{mtu} : 1500;
 
+    die "interface '$parent' - mtu $pmtu is bigger than '$child' - mtu $cmtu\n"
+	if $pmtu gt $cmtu;
 };
 
 # config => {
