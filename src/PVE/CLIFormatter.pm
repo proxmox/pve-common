@@ -364,7 +364,7 @@ sub print_api_list {
 }
 
 sub print_api_result {
-    my ($format, $data, $result_schema, $props_to_print, $options) = @_;
+    my ($data, $result_schema, $props_to_print, $options) = @_;
 
     return if $options->{quiet};
 
@@ -373,6 +373,8 @@ sub print_api_result {
     } else {
 	$options = { %$options }; # copy
     }
+
+    my $format = $options->{format} // 'text';
 
     return if $result_schema->{type} eq 'null';
 
