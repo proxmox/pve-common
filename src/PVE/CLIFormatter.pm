@@ -102,7 +102,9 @@ sub data_to_text {
 
     return '' if !defined($data);
 
-    if (defined($propdef)) {
+    my $human_readable = $options->{'human-readable'} // 1;
+
+     if ($human_readable && defined($propdef)) {
 	if (my $type = $propdef->{type}) {
 	    if ($type eq 'boolean') {
 		return $data ? 1 : 0;
@@ -133,7 +135,8 @@ sub data_to_text {
 # - sort_key: can be used to sort after a column, if it isn't set we sort
 #   after the leftmost column (with no undef value in $data) this can be
 #   turned off by passing 0 as sort_key
-# - border: print with/without table header and asciiart border
+# - noborder: print without asciiart border
+# - noheader: print without table header
 # - columns: limit output width (if > 0)
 # - utf8: use utf8 characters for table delimiters
 
@@ -141,7 +144,8 @@ sub print_text_table {
     my ($data, $returnprops, $props_to_print, $options) = @_;
 
     my $sort_key = $options->{sort_key};
-    my $border = $options->{border};
+    my $border = !$options->{noborder};
+    my $header = !$options->{noheader};
     my $columns = $options->{columns};
     my $utf8 = $options->{utf8};
     my $encoding = $options->{encoding} // 'UTF-8';
@@ -286,15 +290,20 @@ sub print_text_table {
     };
 
     $writeln->($borderstring_t) if $border;
-    my $text = sprintf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
-    $writeln->($text);
 
-    foreach my $coldata (@$tabledata) {
-	$writeln->($borderstring_m) if $border;
+    if ($header) {
+	my $text = sprintf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
+	$writeln->($text);
+    }
+
+    for (my $i = 0; $i < scalar(@$tabledata); $i++) {
+	my $coldata = $tabledata->[$i];
+
+	$writeln->($borderstring_m) if $border && ($i != 0 || $header);
 
 	for (my $i = 0; $i < $coldata->{height}; $i++) {
 
-	    $text = sprintf $formatstring, map {
+	    my $text = sprintf $formatstring, map {
 		substr($coldata->{rowdata}->{$_}->{lines}->[$i] // '', 0, $colopts->{$_}->{cutoff});
 	    } @$props_to_print;
 
@@ -357,6 +366,8 @@ sub print_api_list {
 sub print_api_result {
     my ($format, $data, $result_schema, $props_to_print, $options) = @_;
 
+    return if $options->{quiet};
+
     if (!defined($options)) {
 	$options = query_terminal_options({});
     } else {
@@ -380,11 +391,9 @@ sub print_api_result {
 		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}, $options) };
 	    }
 	    my $schema = { type => 'array', items => { type => 'object' }};
-	    $options->{border} = $format eq 'text';
 	    print_api_list($kvstore, $schema, ['key', 'value'], $options);
 	} elsif ($type eq 'array') {
 	    return if !scalar(@$data);
-	    $options->{border} = $format eq 'text';
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
 		print_api_list($data, $result_schema, $props_to_print, $options);
@@ -394,6 +403,7 @@ sub print_api_result {
 		    push @$kvstore, { value => $value };
 		}
 		my $schema = { type => 'array', items => { type => 'object', properties => { value => $result_schema->{items} }}};
+		$options->{noheader} = 1;
 		print_api_list($kvstore, $schema, ['value'], $options);
 	    }
 	} else {
