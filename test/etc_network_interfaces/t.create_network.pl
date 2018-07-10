@@ -1,9 +1,15 @@
 save('proc_net_dev', <<'/proc/net/dev');
 eth0:
 eth1:
+eth2:
+eth3:
 /proc/net/dev
 
 r(load('brbase'));
+
+#
+# Variables used for the various interfaces:
+#
 
 my $ip = '192.168.0.2';
 my $nm = '255.255.255.0';
@@ -13,6 +19,26 @@ my $physdev = 'eth0';
 my $remoteip1 = '192.168.0.3';
 my $remoteip2 = '192.168.0.4';
 
+#
+# Hunk for the default bridge of the 'brbase' configuration
+#
+
+my $vmbr0_part = <<"PART";
+auto vmbr0
+iface vmbr0 inet static
+	address  10.0.0.2
+	netmask  255.255.255.0
+	gateway  10.0.0.1
+	bridge-ports eth0
+	bridge-stp off
+	bridge-fd 0
+PART
+chomp $vmbr0_part;
+
+#
+# Configure eth1 statically, store its expected interfaces hunk in $eth1_part
+# and test!
+#
 
 $config->{ifaces}->{eth1} = {
     type => 'eth',
@@ -24,19 +50,33 @@ $config->{ifaces}->{eth1} = {
     autostart => 1
 };
 
-$config->{ifaces}->{eth2} = {
-    type => 'eth',
-    method => 'manual',
-    families => ['inet'],
-    autostart => 1
-};
+my $eth1_part = <<"PART";
+auto eth1
+iface eth1 inet static
+	address  $ip
+	netmask  $nm
+	gateway  $gw
+PART
+chomp $eth1_part;
 
-$config->{ifaces}->{eth3} = {
-    type => 'eth',
-    method => 'manual',
-    families => ['inet'],
-    autostart => 1
-};
+expect load('loopback') . <<"CHECK";
+source-directory interfaces.d
+
+iface eth0 inet manual
+
+$eth1_part
+
+iface eth2 inet manual
+
+iface eth3 inet manual
+
+$vmbr0_part
+
+CHECK
+
+#
+# Add a bond for eth2 & 3 and check the new output
+#
 
 $config->{ifaces}->{bond0} = {
     type => 'bond',
@@ -49,40 +89,37 @@ $config->{ifaces}->{bond0} = {
     families => ['inet'],
     autostart => 1
 };
+my $bond0_part = <<"PART";
+auto bond0
+iface bond0 inet manual
+	bond-slaves eth2 eth3
+	bond-miimon 100
+	bond-mode 802.3ad
+	bond-xmit-hash-policy layer3+4
+	mtu 1400
+PART
+chomp $bond0_part;
 
-$config->{ifaces}->{vmbr1} = {
-    mtu => 1400,
-    type => 'bridge',
-    method => 'manual',
-    families => ['inet'],
-    bridge_stp => off,
-    bridge_fd => 0,
-    bridge_ports => vxlan1,
-    bridge_vlan_aware => yes,
-    autostart => 1
-};
+expect load('loopback') . <<"CHECK";
+source-directory interfaces.d
 
-$config->{ifaces}->{vmbr2} = {
-    type => 'bridge',
-    method => 'manual',
-    families => ['inet'],
-    bridge_stp => off,
-    bridge_fd => 0,
-    bridge_ports => vxlan2,
-    autostart => 1
-};
+iface eth0 inet manual
 
-$config->{ifaces}->{vmbr3} = {
-    type => 'bridge',
-    method => 'manual',
-    families => ['inet'],
-    bridge_stp => off,
-    bridge_fd => 0,
-    bridge_ports => vxlan3,
-    bridge_vlan_aware => yes,
-    bridge_vids => '2-10',
-    autostart => 1
-};
+$eth1_part
+
+iface eth2 inet manual
+
+iface eth3 inet manual
+
+$bond0_part
+
+$vmbr0_part
+
+CHECK
+
+#
+# Add vxlan1 and 2
+#
 
 $config->{ifaces}->{vxlan1} = {
     type => 'vxlan',
@@ -100,12 +137,105 @@ $config->{ifaces}->{vxlan2} = {
     families => ['inet'],
     'vxlan-id' => 2,
     'vxlan-local-tunnelip' => $ip,
-    'bridge-learning' => 'off',
-    'bridge-arp-nd-suppress' => 'on',
-    'bridge-unicast-flood' => 'off',
-    'bridge-multicast-flood' => 'off',
     autostart => 1
 };
+
+my $vxlan12_part = <<"PART";
+auto vxlan1
+iface vxlan1 inet manual
+	vxlan-id 1
+	vxlan-svcnodeip $svcnodeip
+	vxlan-physdev $physdev
+
+auto vxlan2
+iface vxlan2 inet manual
+	vxlan-id 2
+	vxlan-local-tunnelip $ip
+PART
+chomp $vxlan12_part;
+
+expect load('loopback') . <<"CHECK";
+source-directory interfaces.d
+
+iface eth0 inet manual
+
+$eth1_part
+
+iface eth2 inet manual
+
+iface eth3 inet manual
+
+$bond0_part
+
+$vmbr0_part
+
+$vxlan12_part
+
+CHECK
+
+#
+# Add vxlan3 and 3 bridges using vxlan1..3
+#
+
+$config->{ifaces}->{vmbr1} = {
+    mtu => 1400,
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => 'off',
+    bridge_fd => 0,
+    bridge_ports => 'vxlan1',
+    bridge_vlan_aware => 'yes',
+    autostart => 1
+};
+
+$config->{ifaces}->{vmbr2} = {
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => 'off',
+    bridge_fd => 0,
+    bridge_ports => 'vxlan2',
+    autostart => 1
+};
+
+$config->{ifaces}->{vmbr3} = {
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => 'off',
+    bridge_fd => 0,
+    bridge_ports => 'vxlan3',
+    bridge_vlan_aware => 'yes',
+    bridge_vids => '2-10',
+    autostart => 1
+};
+
+my $vmbr123_part = <<"PART";
+auto vmbr1
+iface vmbr1 inet manual
+	bridge-ports vxlan1
+	bridge-stp off
+	bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-4094
+	mtu 1400
+
+auto vmbr2
+iface vmbr2 inet manual
+	bridge-ports vxlan2
+	bridge-stp off
+	bridge-fd 0
+
+auto vmbr3
+iface vmbr3 inet manual
+	bridge-ports vxlan3
+	bridge-stp off
+	bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-10
+PART
+chomp $vmbr123_part;
 
 $config->{ifaces}->{vxlan3} = {
     type => 'vxlan',
@@ -116,6 +246,51 @@ $config->{ifaces}->{vxlan3} = {
     'bridge-access' => 3,
     autostart => 1
 };
+
+my $vx = $config->{ifaces}->{vxlan2};
+$vx->{'bridge-learning'} = 'off';
+$vx->{'bridge-arp-nd-suppress'} = 'on';
+$vx->{'bridge-unicast-flood'} = 'off';
+$vx->{'bridge-multicast-flood'} = 'off';
+my $vxlan123_part = $vxlan12_part ."\n" . <<"PART";
+	bridge-arp-nd-suppress on
+	bridge-learning off
+	bridge-multicast-flood off
+	bridge-unicast-flood off
+
+auto vxlan3
+iface vxlan3 inet manual
+	vxlan-id 3
+	vxlan-remoteip $remoteip1
+	vxlan-remoteip $remoteip2
+	bridge-access 3
+PART
+chomp $vxlan123_part;
+
+expect load('loopback') . <<"CHECK";
+source-directory interfaces.d
+
+iface eth0 inet manual
+
+$eth1_part
+
+iface eth2 inet manual
+
+iface eth3 inet manual
+
+$bond0_part
+
+$vmbr0_part
+
+$vmbr123_part
+
+$vxlan123_part
+
+CHECK
+
+#
+# Now add vlans on all types of interfaces: vmbr1, bond0 and eth1
+#
 
 $config->{ifaces}->{'vmbr1.100'} = {
     type => 'vlan',
@@ -146,97 +321,45 @@ source-directory interfaces.d
 
 iface eth0 inet manual
 
-auto eth1
-iface eth1 inet static
-	address  $ip
-	netmask  $nm
-	gateway  $gw
+$eth1_part
 
-auto eth2
 iface eth2 inet manual
 
-auto eth3
 iface eth3 inet manual
 
 auto eth1.100
 iface eth1.100 inet manual
 	mtu 1400
 
-auto bond0
-iface bond0 inet manual
-	bond-slaves eth2 eth3
-	bond-miimon 100
-	bond-mode 802.3ad
-	bond-xmit-hash-policy layer3+4
-	mtu 1400
+$bond0_part
 
 auto bond0.100
 iface bond0.100 inet manual
 	mtu 1300
 
-auto vmbr0
-iface vmbr0 inet static
-	address  10.0.0.2
-	netmask  255.255.255.0
-	gateway  10.0.0.1
-	bridge-ports eth0
-	bridge-stp off
-	bridge-fd 0
+$vmbr0_part
 
-auto vmbr1
-iface vmbr1 inet manual
-	bridge-ports vxlan1
-	bridge-stp off
-	bridge-fd 0
-	bridge-vlan-aware yes
-	bridge-vids 2-4094
-	mtu 1400
-
-auto vmbr2
-iface vmbr2 inet manual
-	bridge-ports vxlan2
-	bridge-stp off
-	bridge-fd 0
-
-auto vmbr3
-iface vmbr3 inet manual
-	bridge-ports vxlan3
-	bridge-stp off
-	bridge-fd 0
-	bridge-vlan-aware yes
-	bridge-vids 2-10
+$vmbr123_part
 
 auto vmbr1.100
 iface vmbr1.100 inet manual
 	mtu 1300
 
-auto vxlan1
-iface vxlan1 inet manual
-	vxlan-id 1
-	vxlan-svcnodeip $svcnodeip
-	vxlan-physdev $physdev
-
-auto vxlan2
-iface vxlan2 inet manual
-	vxlan-id 2
-	vxlan-local-tunnelip $ip
-	bridge-arp-nd-suppress on
-	bridge-learning off
-	bridge-multicast-flood off
-	bridge-unicast-flood off
-
-auto vxlan3
-iface vxlan3 inet manual
-	vxlan-id 3
-	vxlan-remoteip $remoteip1
-	vxlan-remoteip $remoteip2
-	bridge-access 3
+$vxlan123_part
 
 CHECK
+
+#
+# Now check the new config for idempotency:
+#
 
 save('if', w());
 r(load('if'));
 expect load('if');
+
+#
+# Check a brbase with an ipv6 address on eth1
+#
 
 r(load('brbase'));
 
@@ -254,7 +377,6 @@ $config->{ifaces}->{eth1} = {
     autostart => 1
 };
 
-
 expect load('loopback') . <<"CHECK";
 source-directory interfaces.d
 
@@ -265,6 +387,10 @@ iface eth1 inet6 static
 	address  $ip
 	netmask  $nm
 	gateway  $gw
+
+iface eth2 inet manual
+
+iface eth3 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
