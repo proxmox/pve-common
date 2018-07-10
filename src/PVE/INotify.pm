@@ -763,7 +763,7 @@ my $check_mtu = sub {
     my $cmtu = $ifaces->{$child}->{mtu} ? $ifaces->{$child}->{mtu} : 1500;
 
     die "interface '$parent' - mtu $pmtu is bigger than '$child' - mtu $cmtu\n"
-	if $pmtu gt $cmtu;
+	if $pmtu > $cmtu;
 };
 
 # config => {
