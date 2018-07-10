@@ -756,8 +756,8 @@ my $extract_ovs_option = sub {
 my $check_mtu = sub {
    my ($ifaces, $parent, $child) = @_;
 
-   die "check mtu : missing parent interface\n" if !$parent;
-   die "check mtu : missing child interface\n" if !$child;
+   die "check mtu - missing parent interface\n" if !$parent;
+   die "check mtu - missing child interface\n" if !$child;
  
    my $pmtu = $ifaces->{$parent}->{mtu} ? $ifaces->{$parent}->{mtu} : 1500;
    my $cmtu = $ifaces->{$child}->{mtu} ? $ifaces->{$child}->{mtu} : 1500;
@@ -1152,10 +1152,10 @@ sub __interface_to_string {
 	$done->{'bond_xmit_hash_policy'} = 1;
     } elsif ($d->{type} eq 'vxlan') {
 
-        foreach my $k (qw(vxlan-id vxlan-svcnodeip vxlan-physdev vxlan-local-tunnelip)) {
-            $raw .= "\t$k $d->{$k}\n" if $d->{$k};
+	foreach my $k (qw(vxlan-id vxlan-svcnodeip vxlan-physdev vxlan-local-tunnelip)) {
+	    $raw .= "\t$k $d->{$k}\n" if defined $d->{$k};
 	    $done->{$k} = 1;
-        }
+	}
 
 	if ($d->{'vxlan-remoteip'}) {
 	    foreach my $remoteip (@{$d->{'vxlan-remoteip'}}) {
@@ -1276,10 +1276,10 @@ sub __write_etc_network_interfaces {
     # delete unused OVS ports
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
-	if ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' || 
+	if ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' ||
 	    $d->{type} eq 'OVSBond') {
 	    my $brname = $used_ports->{$iface};
-	    if (!$brname || !$ifaces->{$brname}) { 
+	    if (!$brname || !$ifaces->{$brname}) {
 		if ($iface =~ /^$PVE::Network::PHYSICAL_NIC_RE/) {
 		    $ifaces->{$iface} = { type => 'eth',
 					  exists => 1,
@@ -1309,7 +1309,7 @@ sub __write_etc_network_interfaces {
 		$n->{autostart} = 0;
 		if ($n->{type} eq 'eth') {
 		    $n->{type} = 'OVSPort';
-		    $n->{ovs_bridge} = $iface;		    
+		    $n->{ovs_bridge} = $iface;
 		} elsif ($n->{type} eq 'OVSBond' || $n->{type} eq 'OVSPort' ||
 		    $n->{type} eq 'OVSIntPort') {
 		    $n->{ovs_bridge} = $iface;
@@ -1360,7 +1360,7 @@ sub __write_etc_network_interfaces {
 
 	if ($d->{type} eq 'vxlan' && $d->{'vxlan-id'}) {
 	    my $vxlanid = $d->{'vxlan-id'};
-	    die "iface $iface : duplicate vxlan-id $vxlanid already used in $vxlans->{$vxlanid}\n" if $vxlans->{$vxlanid};
+	    die "iface $iface - duplicate vxlan-id $vxlanid already used in $vxlans->{$vxlanid}\n" if $vxlans->{$vxlanid};
 	    $vxlans->{$vxlanid} = $iface;
 	}
 
@@ -1369,11 +1369,11 @@ sub __write_etc_network_interfaces {
 	++$ips if defined $d->{'vxlan-remoteip'};
 	++$ips if defined $d->{'vxlan-local-tunnelip'};
 	if ($ips > 1) {
-            die "ifac $iface : vxlan-svcnodeip, vxlan-remoteip and vxlan-localtunnelip are mutually exclusive\n";
+	    die "iface $iface - vxlan-svcnodeip, vxlan-remoteip and vxlan-localtunnelip are mutually exclusive\n";
 	}
 
 	if (defined($d->{'vxlan-svcnodeip'}) != defined($d->{'vxlan-physdev'})) {
-	    die "iface $iface : vxlan-svcnodeip and vxlan-physdev must be define together\n";
+	    die "iface $iface - vxlan-svcnodeip and vxlan-physdev must be define together\n";
 	}
 	#fixme : check if vxlan mtu is lower than 50bytes than physical interface where tunnel is going out
     }
@@ -1419,12 +1419,12 @@ sub __write_etc_network_interfaces {
 	my $d = $ifaces->{$iface};
 
         foreach my $k (qw(bridge-learning bridge-arp-nd-suppress bridge-unicast-flood bridge-multicast-flood bridge-access)) {
-	    die "iface $iface : bridgeports options can be used only if interface is in a bridge\n" 
+	    die "iface $iface - $k: bridge port specific options can be used only on interfaces attached to a bridge\n"
 		if $d->{$k} && !$bridgeports->{$iface};
         }
 
 	if ($d->{'bridge-access'} && !$bridges->{$bridgeports->{$iface}}->{bridge_vlan_aware}) {
-	    die "iface $iface : bridge-access option can be only used if interface is in a vlan aware bridge\n";
+	    die "iface $iface - bridge-access option can be only used if interface is in a vlan aware bridge\n";
 	}
     }
 
