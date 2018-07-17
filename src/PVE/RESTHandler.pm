@@ -788,15 +788,19 @@ sub cli_handler {
     my $info = $self->map_method_by_name($name);
     $options //= {};
 
+    my $add_stdopts = $options->{'std-output-opts'};
+
     my $res;
     eval {
 	my $param_map = {};
 	$param_map = $compute_param_mapping_hash->($param_cb->($name)) if $param_cb;
-	my $schema = add_standard_output_parameters($info->{parameters});
+	my $schema = $add_stdopts ? add_standard_output_parameters($info->{parameters}) : $info->{properties} ;
 	my $param = PVE::JSONSchema::get_options($schema, $args, $arg_param, $fixed_param, $param_map);
 
-	foreach my $opt (keys %$standard_output_options) {
-	    $options->{$opt} = delete $param->{$opt} if defined($param->{$opt});
+	if ($add_stdopts) {
+	    foreach my $opt (keys %$standard_output_options) {
+		$options->{$opt} = delete $param->{$opt} if defined($param->{$opt});
+	    }
 	}
 
 	if (defined($param_map)) {
