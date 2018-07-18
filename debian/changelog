@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-37) unstable; urgency=medium
+
+  * make CLI standard options opt-in for commands
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 18 Jul 2018 10:47:33 +0200
+
 libpve-common-perl (5.0-36) unstable; urgency=medium
 
   * fix #1819: fork_worker: ensure sync'ed workers control terminal
