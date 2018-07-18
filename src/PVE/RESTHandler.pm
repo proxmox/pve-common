@@ -794,7 +794,7 @@ sub cli_handler {
     eval {
 	my $param_map = {};
 	$param_map = $compute_param_mapping_hash->($param_cb->($name)) if $param_cb;
-	my $schema = $add_stdopts ? add_standard_output_parameters($info->{parameters}) : $info->{properties} ;
+	my $schema = $add_stdopts ? add_standard_output_parameters($info->{parameters}) : $info->{parameters};
 	my $param = PVE::JSONSchema::get_options($schema, $args, $arg_param, $fixed_param, $param_map);
 
 	if ($add_stdopts) {
