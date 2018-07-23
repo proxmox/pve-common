@@ -37,7 +37,7 @@ sub api_clone_schema {
 		my ($name, $idx) = ($1, $2);
 		if ($idx == 0 && defined($d->{"${name}1"})) {
 		    $p = "${name}[n]";
-		} elsif (defined($d->{"${name}0"})) {
+		} elsif ($idx > 0 && defined($d->{"${name}0"})) {
 		    next; # only handle once for -xx0, but only if -xx0 exists
 		}
 	    }
