@@ -374,7 +374,7 @@ sub print_api_result {
 	$options = { %$options }; # copy
     }
 
-    my $format = $options->{format} // 'text';
+    my $format = $options->{'output-format'} // 'text';
 
     return if $result_schema->{type} eq 'null';
 

@@ -550,13 +550,11 @@ my $handle_cmd  = sub {
     my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def || []};
     $abort->("unknown command '$cmd_str'") if !$class;
 
-    my $options = PVE::CLIFormatter::query_terminal_options({});
-
-    my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $param_cb, $options);
+     my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $param_cb);
 
     if (defined $outsub) {
 	my $result_schema = $class->map_method_by_name($name)->{returns};
-	$outsub->($res, $result_schema, $options);
+	$outsub->($res, $result_schema);
     }
 };
 
@@ -590,13 +588,11 @@ my $handle_simple_cmd = sub {
 
     &$preparefunc() if $preparefunc;
 
-    my $options = PVE::CLIFormatter::query_terminal_options({});
-
-    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $param_cb, $options);
+    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $param_cb);
 
     if (defined $outsub) {
 	my $result_schema = $class->map_method_by_name($name)->{returns};
-	$outsub->($res, $result_schema, $options);
+	$outsub->($res, $result_schema);
     }
 };
 
