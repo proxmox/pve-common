@@ -17,7 +17,9 @@ use base qw(PVE::RESTHandler);
 # A real command is always an array consisting of its class, name, array of
 # position fixed (required) parameters and hash of predefined parameters when
 # mapping a CLI command t o an API call. Optionally an output method can be
-# passed at the end, e.g., for formatting or transformation purpose.
+# passed at the end, e.g., for formatting or transformation purpose, and
+# a schema of additional properties/arguments which are added to
+# the method schema and gets passed to the formatter.
 #
 # [class, name, fixed_params, API_pre-set params, output_sub ]
 #
@@ -200,12 +202,12 @@ sub generate_usage_str {
 	    foreach my $cmd (&$sortfunc($def)) {
 
 		if (ref($def->{$cmd}) eq 'ARRAY') {
-		    my ($class, $name, $arg_param, $fixed_param) = @{$def->{$cmd}};
+		    my ($class, $name, $arg_param, $fixed_param, undef, $formatter_properties) = @{$def->{$cmd}};
 
 		    $str .= $separator if $oldclass && $oldclass ne $class;
 		    $str .= $indent;
 		    $str .= $class->usage_str($name, "$prefix $cmd", $arg_param,
-		                              $fixed_param, $format, $param_cb);
+		                              $fixed_param, $format, $param_cb, $formatter_properties);
 		    $oldclass = $class;
 
 		} elsif (defined($def->{$cmd}->{alias}) && ($format eq 'asciidoc')) {
@@ -224,11 +226,11 @@ sub generate_usage_str {
 
 	    }
 	} else {
-	    my ($class, $name, $arg_param, $fixed_param) = @$def;
+	    my ($class, $name, $arg_param, $fixed_param, undef, $formatter_properties) = @$def;
 	    $abort->("unknown command '$cmd'") if !$class;
 
 	    $str .= $indent;
-	    $str .= $class->usage_str($name, $prefix, $arg_param, $fixed_param, $format, $param_cb);
+	    $str .= $class->usage_str($name, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties);
 	}
 	return $str;
     };
@@ -395,7 +397,7 @@ my $print_bash_completion = sub {
 
     my $skip_param = {};
 
-    my ($class, $name, $arg_param, $uri_param) = @$def;
+    my ($class, $name, $arg_param, $uri_param, undef, $formatter_properties) = @$def;
     $arg_param //= [];
     $uri_param //= {};
 
@@ -406,7 +408,8 @@ my $print_bash_completion = sub {
 
     my $info = $class->map_method_by_name($name);
 
-    my $prop = $info->{parameters}->{properties};
+    my $prop = { %{$info->{parameters}->{properties}} }; # copy
+    $prop = { %$prop, %$formatter_properties } if $formatter_properties;
 
     my $print_parameter_completion = sub {
 	my ($pname) = @_;
@@ -547,21 +550,22 @@ my $handle_cmd  = sub {
 
     &$preparefunc() if $preparefunc;
 
-    my ($class, $name, $arg_param, $uri_param, $outsub) = @{$def || []};
+    my ($class, $name, $arg_param, $uri_param, $outsub, $formatter_properties) = @{$def || []};
     $abort->("unknown command '$cmd_str'") if !$class;
 
-     my $res = $class->cli_handler($cmd_str, $name, $cmd_args, $arg_param, $uri_param, $param_cb);
+    my ($res, $formatter_params) = $class->cli_handler(
+	$cmd_str, $name, $cmd_args, $arg_param, $uri_param, $param_cb, $formatter_properties);
 
     if (defined $outsub) {
 	my $result_schema = $class->map_method_by_name($name)->{returns};
-	$outsub->($res, $result_schema);
+	$outsub->($res, $result_schema, $formatter_params);
     }
 };
 
 my $handle_simple_cmd = sub {
     my ($args, $preparefunc, $param_cb) = @_;
 
-    my ($class, $name, $arg_param, $uri_param, $outsub) = @{$cmddef};
+    my ($class, $name, $arg_param, $uri_param, $outsub, $formatter_properties) = @{$cmddef};
     die "no class specified" if !$class;
 
     if (scalar(@$args) >= 1) {
@@ -588,11 +592,12 @@ my $handle_simple_cmd = sub {
 
     &$preparefunc() if $preparefunc;
 
-    my $res = $class->cli_handler($name, $name, \@ARGV, $arg_param, $uri_param, $param_cb);
+    my ($res, $formatter_params) = $class->cli_handler(
+	$name, $name, \@ARGV, $arg_param, $uri_param, $param_cb, $formatter_properties);
 
     if (defined $outsub) {
 	my $result_schema = $class->map_method_by_name($name)->{returns};
-	$outsub->($res, $result_schema);
+	$outsub->($res, $result_schema, $formatter_params);
     }
 };
 

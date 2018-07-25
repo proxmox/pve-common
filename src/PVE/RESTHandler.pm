@@ -576,15 +576,17 @@ my $compute_param_mapping_hash = sub {
 #   'short'    ... command line only (text, one line)
 #   'full'     ... text, include description
 #   'asciidoc' ... generate asciidoc for man pages (like 'full')
-# $param_cb ... mapping for string parameters to file path parameters
+# $param_cb    ... mapping for string parameters to file path parameters
+# $formatter_properties  ... additional property definitions (passed to output formatter)
 sub getopt_usage {
-    my ($info, $prefix, $arg_param, $fixed_param, $format, $param_cb) = @_;
+    my ($info, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties) = @_;
 
     $format = 'long' if !$format;
 
     my $schema = $info->{parameters};
     my $name = $info->{name};
-    my $prop = $schema->{properties};
+    my $prop = { %{$schema->{properties}} }; # copy
+    $prop = { %$prop, %$formatter_properties } if $formatter_properties;
 
     my $out = '';
 
@@ -680,11 +682,11 @@ sub getopt_usage {
 }
 
 sub usage_str {
-    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $param_cb) = @_;
+    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties) = @_;
 
     my $info = $self->map_method_by_name($name);
 
-    return getopt_usage($info, $prefix, $arg_param, $fixed_param, $format, $param_cb);
+    return getopt_usage($info, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties);
 }
 
 # generate docs from JSON schema properties
@@ -802,15 +804,24 @@ sub extract_standard_output_properties {
 }
 
 sub cli_handler {
-    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $param_cb) = @_;
+    my ($self, $prefix, $name, $args, $arg_param, $fixed_param, $param_cb, $formatter_properties) = @_;
 
     my $info = $self->map_method_by_name($name);
-
     my $res;
+    my $fmt_param = {};
+
     eval {
 	my $param_map = {};
 	$param_map = $compute_param_mapping_hash->($param_cb->($name)) if $param_cb;
-	my $param = PVE::JSONSchema::get_options($info->{parameters}, $args, $arg_param, $fixed_param, $param_map);
+	my $schema = { %{$info->{parameters}} }; # copy
+	$schema->{properties} = { %{$schema->{properties}}, %$formatter_properties } if $formatter_properties;
+	my $param = PVE::JSONSchema::get_options($schema, $args, $arg_param, $fixed_param, $param_map);
+
+	if ($formatter_properties) {
+	    foreach my $opt (keys %$formatter_properties) {
+		$fmt_param->{$opt} = delete $param->{$opt} if defined($param->{$opt});
+	    }
+	}
 
 	if (defined($param_map)) {
 	    $replace_file_names_with_contents->($param, $param_map);
@@ -823,12 +834,12 @@ sub cli_handler {
 
 	die $err if !$ec || $ec ne "PVE::Exception" || !$err->is_param_exc();
 	
-	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short',  $param_cb);
+	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $param_cb, $formatter_properties);
 
 	die $err;
     }
 
-    return $res;
+    return wantarray ? ($res, $fmt_param) : $res;
 }
 
 # utility methods
