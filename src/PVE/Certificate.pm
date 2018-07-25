@@ -54,17 +54,20 @@ PVE::JSONSchema::register_standard_option('pve-certificate-info', {
 	notbefore => {
 	    type => 'integer',
 	    description => 'Certificate\'s notBefore timestamp (UNIX epoch).',
+	    renderer => 'timestamp',
 	    optional => 1,
 	},
 	notafter => {
 	    type => 'integer',
 	    description => 'Certificate\'s notAfter timestamp (UNIX epoch).',
+	    renderer => 'timestamp',
 	    optional => 1,
 	},
 	san => {
 	    type => 'array',
 	    description => 'List of Certificate\'s SubjectAlternativeName entries.',
 	    optional => 1,
+	    renderer => 'yaml',
 	    items => {
 		type => 'string',
 	    },
