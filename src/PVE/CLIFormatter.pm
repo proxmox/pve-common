@@ -132,7 +132,7 @@ sub data_to_text {
 # $returnprops -json schema property description
 # $props_to_print - ordered list of properties to print
 # $options
-# - sort_key: can be used to sort after a column, if it isn't set we sort
+# - sort_key: can be used to sort after a specific column, if it isn't set we sort
 #   after the leftmost column (with no undef value in $data) this can be
 #   turned off by passing 0 as sort_key
 # - noborder: print without asciiart border
@@ -150,11 +150,9 @@ sub print_text_table {
     my $utf8 = $options->{utf8};
     my $encoding = $options->{encoding} // 'UTF-8';
 
-    if (!defined($sort_key) || $sort_key eq 0) {
-	$sort_key = $props_to_print->[0];
-    }
+    $sort_key //= $props_to_print->[0];
 
-    if (defined($sort_key)) {
+    if (defined($sort_key) && $sort_key ne 0) {
 	my $type = $returnprops->{$sort_key}->{type} // 'string';
 	if ($type eq 'integer' || $type eq 'number') {
 	    @$data = sort { $a->{$sort_key} <=> $b->{$sort_key} } @$data;
