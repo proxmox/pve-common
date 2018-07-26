@@ -152,7 +152,9 @@ sub load {
     my ($self) = @_;
     return if $self->{loaded};
     $self->{loaded} = 1;
-    my $data = fromjs(file_get_contents($self->{path}));
+    my $raw = file_get_contents($self->{path});
+    if ($raw =~ m/^(.*)$/s) { $raw = $1; }  # untaint
+    my $data = fromjs($raw);
     $self->{$_} = $data->{$_} for @SAVED_VALUES;
     if (defined(my $keystr = $data->{key})) {
 	my $key = Crypt::OpenSSL::RSA->new_private_key($keystr);
