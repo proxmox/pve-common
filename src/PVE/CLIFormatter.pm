@@ -110,9 +110,11 @@ sub query_terminal_options {
 }
 
 sub data_to_text {
-    my ($data, $propdef, $options) = @_;
+    my ($data, $propdef, $options, $terminal_opts) = @_;
 
     return '' if !defined($data);
+
+    $terminal_opts //= {};
 
     my $human_readable = $options->{'human-readable'} // 1;
 
@@ -128,7 +130,7 @@ sub data_to_text {
 	if (defined(my $renderer = $propdef->{renderer})) {
 	    my $code = PVE::JSONSchema::get_renderer($renderer);
 	    die "internal error: unknown renderer '$renderer'" if !$code;
-	    return $code->($data, $options);
+	    return $code->($data, $options, $terminal_opts);
 	}
     }
 
@@ -153,14 +155,17 @@ sub data_to_text {
 # - utf8: use utf8 characters for table delimiters
 
 sub print_text_table {
-    my ($data, $returnprops, $props_to_print, $options) = @_;
+    my ($data, $returnprops, $props_to_print, $options, $terminal_opts) = @_;
+
+    $terminal_opts //= query_terminal_options({});
 
     my $sort_key = $options->{sort_key};
     my $border = !$options->{noborder};
     my $header = !$options->{noheader};
-    my $columns = $options->{columns};
-    my $utf8 = $options->{utf8};
-    my $encoding = $options->{encoding} // 'UTF-8';
+
+    my $columns = $terminal_opts->{columns};
+    my $utf8 = $terminal_opts->{utf8};
+    my $encoding = $terminal_opts->{encoding} // 'UTF-8';
 
     $sort_key //= $props_to_print->[0];
 
@@ -193,7 +198,7 @@ sub print_text_table {
 	    my $prop = $props_to_print->[$i];
 	    my $propinfo = $returnprops->{$prop} // {};
 
-	    my $text = data_to_text($entry->{$prop}, $propinfo, $options);
+	    my $text = data_to_text($entry->{$prop}, $propinfo, $options, $terminal_opts);
 	    my $lines = [ split(/\n/, $text) ];
 	    my $linecount = scalar(@$lines);
 	    $height = $linecount if $linecount > $height;
@@ -348,7 +353,7 @@ sub extract_properties_to_print {
 # takes all fields of the results property, with a fallback
 # to all fields occuring in items of $data.
 sub print_api_list {
-    my ($data, $result_schema, $props_to_print, $options) = @_;
+    my ($data, $result_schema, $props_to_print, $options, $terminal_opts) = @_;
 
     die "can only print object lists\n"
 	if !($result_schema->{type} eq 'array' && $result_schema->{items}->{type} eq 'object');
@@ -370,19 +375,15 @@ sub print_api_list {
 
     die "unable to detect list properties\n" if !scalar(@$props_to_print);
 
-    print_text_table($data, $returnprops, $props_to_print, $options);
+    print_text_table($data, $returnprops, $props_to_print, $options, $terminal_opts);
 }
 
 sub print_api_result {
-    my ($data, $result_schema, $props_to_print, $options) = @_;
+    my ($data, $result_schema, $props_to_print, $options, $terminal_opts) = @_;
 
     return if $options->{quiet};
 
-    if (!defined($options)) {
-	$options = query_terminal_options({});
-    } else {
-	$options = { %$options }; # copy
-    }
+    $terminal_opts //= query_terminal_options({});
 
     my $format = $options->{'output-format'} // 'text';
 
@@ -404,23 +405,22 @@ sub print_api_result {
 	    my $kvstore = [];
 	    foreach my $key (@$props_to_print) {
 		next if !defined($data->{$key});
-		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}, $options) };
+		push @$kvstore, { key => $key, value => data_to_text($data->{$key}, $result_schema->{properties}->{$key}, $options, $terminal_opts) };
 	    }
 	    my $schema = { type => 'array', items => { type => 'object' }};
-	    print_api_list($kvstore, $schema, ['key', 'value'], $options);
+	    print_api_list($kvstore, $schema, ['key', 'value'], $options, $terminal_opts);
 	} elsif ($type eq 'array') {
 	    return if !scalar(@$data);
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
-		print_api_list($data, $result_schema, $props_to_print, $options);
+		print_api_list($data, $result_schema, $props_to_print, $options, $terminal_opts);
 	    } else {
 		my $kvstore = [];
 		foreach my $value (@$data) {
 		    push @$kvstore, { value => $value };
 		}
 		my $schema = { type => 'array', items => { type => 'object', properties => { value => $result_schema->{items} }}};
-		$options->{noheader} = 1;
-		print_api_list($kvstore, $schema, ['value'], $options);
+		print_api_list($kvstore, $schema, ['value'], { %$options, noheader => 1 },  $terminal_opts);
 	    }
 	} else {
 	    print encode($encoding, "$data\n");
