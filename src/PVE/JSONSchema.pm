@@ -108,7 +108,7 @@ register_standard_option('fingerprint-sha256', {
 register_standard_option('pve-output-format', {
     type => 'string',
     description => 'Output format.',
-    enum => [ 'text', 'json', 'json-pretty' ],
+    enum => [ 'text', 'json', 'json-pretty', 'yaml' ],
     optional => 1,
     default => 'text',
 });

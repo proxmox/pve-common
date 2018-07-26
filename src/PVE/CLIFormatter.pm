@@ -389,7 +389,9 @@ sub print_api_result {
 
     return if $result_schema->{type} eq 'null';
 
-    if ($format eq 'json') {
+    if ($format eq 'yaml') {
+	print encode('UTF-8', CPAN::Meta::YAML::Dump($data));
+    } elsif ($format eq 'json') {
 	# Note: we always use utf8 encoding for json format
 	print to_json($data, {utf8 => 1, allow_nonref => 1, canonical => 1 }) . "\n";
     } elsif ($format eq 'json-pretty') {
