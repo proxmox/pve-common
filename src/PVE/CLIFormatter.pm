@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use I18N::Langinfo;
 use POSIX qw(strftime);
+use CPAN::Meta::YAML; # comes with perl-modules
 
 use PVE::JSONSchema;
 use PVE::PTY;
@@ -80,6 +81,17 @@ sub render_bytes {
 }
 
 PVE::JSONSchema::register_renderer('bytes', \&render_bytes);
+
+sub render_yaml {
+    my ($value) = @_;
+
+    my $data = CPAN::Meta::YAML::Dump($value);
+    $data =~ s/^---[\n\s]//; # remove yaml marker
+
+    return $data;
+}
+
+PVE::JSONSchema::register_renderer('yaml', \&render_yaml);
 
 sub query_terminal_options {
     my ($options) = @_;
