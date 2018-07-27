@@ -209,6 +209,8 @@ sub print_text_table {
 		$width = $len if $len > $width;
 	    }
 
+	    $width = ($width =~ m/^(\d+)$/) ? int($1) : 0; # untaint int
+
 	    $rowdata->{$prop} = {
 		lines => $lines,
 		width => $width,
