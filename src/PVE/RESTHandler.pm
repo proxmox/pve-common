@@ -624,6 +624,16 @@ sub getopt_usage {
 	}
     }
 
+    # also remove $standard_output_options from $prop (pvesh, pveclient)
+    if ($prop->{'output-format'}) {
+	$has_output_format_option = 1;
+	foreach my $key (keys %$prop) {
+	    if ($standard_output_options->{$key}) {
+		delete $prop->{$key};
+	    }
+	}
+    }
+
     my $out = '';
 
     my $arg_hash = {};
