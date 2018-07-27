@@ -436,4 +436,16 @@ sub print_api_result {
     }
 }
 
+sub print_api_result_plain {
+    my ($data, $result_schema, $props_to_print, $options) = @_;
+
+    # avoid borders and header, ignore terminal width
+    $options = $options ? { %$options } : {}; # copy
+
+    $options->{noheader} //= 1;
+    $options->{noborder} //= 1;
+
+    print_api_result($data, $result_schema, $props_to_print, $options, {});
+}
+
 1;
