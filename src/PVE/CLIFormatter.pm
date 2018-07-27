@@ -226,6 +226,8 @@ sub print_text_table {
     for (my $i = 0; $i < $column_count; $i++) {
 	my $prop = $props_to_print->[$i];
 	my $propinfo = $returnprops->{$prop} // {};
+	my $type = $propinfo->{type} // 'string';
+	my $alignstr = ($type eq 'integer' || $type eq 'number') ? '' : '-';
 
 	my $title = $propinfo->{title} // $prop;
 	my $cutoff = $propinfo->{print_width} // $propinfo->{maxLength};
@@ -248,48 +250,48 @@ sub print_text_table {
 	if ($border) {
 	    if ($i == 0 && ($column_count == 1)) {
 		if ($utf8) {
-		    $formatstring .= "│ %-${cutoff}s │";
+		    $formatstring .= "│ %$alignstr${cutoff}s │";
 		    $borderstring_t .= "┌─" . ('─' x $cutoff) . "─┐";
 		    $borderstring_m .= "├─" . ('─' x $cutoff) . "─┤";
 		    $borderstring_b .= "└─" . ('─' x $cutoff) . "─┘";
 		} else {
-		    $formatstring .= "| %-${cutoff}s |";
+		    $formatstring .= "| %$alignstr${cutoff}s |";
 		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+";
 		}
 	    } elsif ($i == 0) {
 		if ($utf8) {
-		    $formatstring .= "│ %-${cutoff}s ";
+		    $formatstring .= "│ %$alignstr${cutoff}s ";
 		    $borderstring_t .= "┌─" . ('─' x $cutoff) . '─';
 		    $borderstring_m .= "├─" . ('─' x $cutoff) . '─';
 		    $borderstring_b .= "└─" . ('─' x $cutoff) . '─';
 		} else {
-		    $formatstring .= "| %-${cutoff}s ";
+		    $formatstring .= "| %$alignstr${cutoff}s ";
 		    $borderstring_m .= "+-" . ('-' x $cutoff) . '-';
 		}
 	    } elsif ($i == ($column_count - 1)) {
 		if ($utf8) {
-		    $formatstring .= "│ %-${cutoff}s │";
+		    $formatstring .= "│ %$alignstr${cutoff}s │";
 		    $borderstring_t .= "┬─" . ('─' x $cutoff) . "─┐";
 		    $borderstring_m .= "┼─" . ('─' x $cutoff) . "─┤";
 		    $borderstring_b .= "┴─" . ('─' x $cutoff) . "─┘";
 		} else {
-		    $formatstring .= "| %-${cutoff}s |";
+		    $formatstring .= "| %$alignstr${cutoff}s |";
 		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+";
 		}
 	    } else {
 		if ($utf8) {
-		    $formatstring .= "│ %-${cutoff}s ";
+		    $formatstring .= "│ %$alignstr${cutoff}s ";
 		    $borderstring_t .= "┬─" . ('─' x $cutoff) . '─';
 		    $borderstring_m .= "┼─" . ('─' x $cutoff) . '─';
 		    $borderstring_b .= "┴─" . ('─' x $cutoff) . '─';
 		} else {
-		    $formatstring .= "| %-${cutoff}s ";
+		    $formatstring .= "| %$alignstr${cutoff}s ";
 		    $borderstring_m .= "+-" . ('-' x $cutoff) . '-';
 		}
 	    }
 	} else {
 	    # skip alignment and cutoff on last column
-	    $formatstring .= ($i == ($column_count - 1)) ? "%s" : "%-${cutoff}s ";
+	    $formatstring .= ($i == ($column_count - 1)) ? "%s" : "%$alignstr${cutoff}s ";
 	}
     }
 
