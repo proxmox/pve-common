@@ -135,7 +135,8 @@ sub data_to_text {
     }
 
     if (my $class = ref($data)) {
-	return to_json($data, { canonical => 1 });
+	# JSON::PP::Boolean requires allow_nonref
+	return to_json($data, { allow_nonref => 1, canonical => 1 });
     } else {
 	return "$data";
     }
@@ -382,6 +383,23 @@ sub print_api_list {
     print_text_table($data, $returnprops, $props_to_print, $options, $terminal_opts);
 }
 
+my $guess_type = sub {
+    my $data = shift;
+
+    return 'null' if !defined($data);
+
+    my $class = ref($data);
+    return 'string' if !$class;
+
+    if ($class eq 'HASH') {
+	return 'object';
+    } elsif ($class eq 'ARRAY') {
+	return 'array';
+    } else {
+	return 'string'; # better than nothing
+    }
+};
+
 sub print_api_result {
     my ($data, $result_schema, $props_to_print, $options, $terminal_opts) = @_;
 
@@ -391,7 +409,13 @@ sub print_api_result {
 
     my $format = $options->{'output-format'} // 'text';
 
-    return if $result_schema->{type} eq 'null';
+    if (!$result_schema) {
+	return if $result_schema->{type} eq 'null';
+    } else {
+	my $type = $guess_type->($data);
+	$result_schema = { type => $type };
+	$result_schema->{items} = { type => $guess_type->($data->[0]) } if $type eq 'array';
+    }
 
     if ($format eq 'yaml') {
 	print encode('UTF-8', CPAN::Meta::YAML::Dump($data));
