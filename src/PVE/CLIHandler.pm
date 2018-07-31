@@ -217,7 +217,7 @@ sub generate_usage_str {
 		} else {
 		    next if $def->{$cmd}->{alias};
 
-		    my $substr = $generate->($indent, $separator, $def->{$cmd}, "$prefix $cmd");
+		    my $substr = $generate->($indent, '', $def->{$cmd}, "$prefix $cmd");
 		    if ($substr) {
 			$substr .= $separator if $substr !~ /\Q$separator\E{2}/;
 			$str .= $substr;
@@ -335,7 +335,7 @@ sub print_usage_short {
     $assert_initialized->();
 
     print $fd "ERROR: $msg\n" if $msg;
-    print $fd "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n";
+    print $fd "USAGE: $exename <COMMAND> [ARGS] [OPTIONS]\n\n";
 
     print {$fd} generate_usage_str('short', $cmd, ' ' x 7, "\n", sub {
 	my ($h) = @_;
