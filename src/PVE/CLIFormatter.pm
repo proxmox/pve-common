@@ -409,7 +409,7 @@ sub print_api_result {
 
     my $format = $options->{'output-format'} // 'text';
 
-    if (!$result_schema) {
+    if ($result_schema) {
 	return if $result_schema->{type} eq 'null';
     } else {
 	my $type = $guess_type->($data);
