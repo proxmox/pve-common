@@ -69,9 +69,6 @@ PVE::JSONSchema::register_renderer(
 sub render_bytes {
     my ($value) = @_;
 
-    return $value if $value !~ m/^(\d+)$/;
-    $value = int($1); # untaint for sprintf
-
     my @units = qw(B KiB MiB GiB TiB PiB);
 
     my $max_unit = 0;
@@ -79,8 +76,8 @@ sub render_bytes {
         $max_unit = int(log($value)/log(1024));
         $value /= 1024**($max_unit);
     }
-
-    return sprintf "%.2f $units[$max_unit]", $value;
+    my $unit = $units[$max_unit];
+    return sprintf "%.2f $unit", $value;
 }
 
 PVE::JSONSchema::register_renderer('bytes', \&render_bytes);
