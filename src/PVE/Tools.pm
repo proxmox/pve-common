@@ -922,7 +922,6 @@ sub run_fork_with_timeout {
 
     # avoid leaving a zombie if the parent gets interrupted
     my $sig_received;
-    local $SIG{INT} = sub { $sig_received++; };
 
     my $child = fork();
     if (!defined($child)) {
@@ -946,11 +945,17 @@ sub run_fork_with_timeout {
 	POSIX::_exit(0);
     }
 
+    local $SIG{INT} = sub { $sig_received++; };
+    local $SIG{TERM} = sub {
+	$error //= "interrupted by unexpected signal\n";
+	kill('TERM', $child);
+    };
+
     $pipe_out->reader();
 
     my $readvalues = sub {
 	local $/ = undef;
-	my $child_res = decode_json(scalar<$pipe_out>);
+	my $child_res = decode_json(readline_nointr($pipe_out));
 	$res = $child_res->{result};
 	$error = $child_res->{error};
     };
