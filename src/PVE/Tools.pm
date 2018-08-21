@@ -1596,4 +1596,16 @@ sub convert_size {
     return int($value);
 }
 
+# uninterruptible readline
+# retries on EINTR
+sub readline_nointr {
+    my ($fh) = @_;
+    my $line;
+    while (1) {
+	$line = <$fh>;
+	last if defined($line) || ($! != EINTR);
+    }
+    return $line;
+}
+
 1;
