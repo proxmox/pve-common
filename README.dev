@@ -1,24 +1,40 @@
 = Setup PVE Development Environment =
 
-1. Install Debian 'stretch'
-2. Configure pvetest repository in apt sources.list
+0.  Read https://pve.proxmox.com/wiki/Developer_Documentation
+1.  Install Debian 9 'stretch'
+2.  Configure the network interface(s)
+3.  Change the IP address of your hostname for proper name resolution
+    in /etc/hosts
+    Using 127.0.1.1 will not work, so change it to an IP address from your
+    local network!
 
- deb http://download.proxmox.com/debian stretch pvetest
+4:  Check that the Debian repositories are set properly.
+    See https://wiki.debian.org/SourcesList for more information.
 
-3. Add our repository key with apt-key:
+5.  Optional: Install openssh-server and connect via ssh to the host.
 
- wget -O- "http://download.proxmox.com/debian/key.asc" | apt-key add -
+    run: apt-get update && apt-get install openssh-server
+    Connect via ssh to host and switch user to root
 
-4. make sure you have a read IP address for your hostname in /etc/hosts
-   (using 127.0.1.1 will not work)
+6.  Configure 'pvetest' repository in /etc/apt/sources.list.d/:
 
-5. run: apt-get update
-6. run: apt-get dist-upgrade
-7. run: apt-get install proxmox-ve
+    run: echo "deb http://download.proxmox.com/debian stretch pvetest" > /etc/apt/sources.list.d/pve-development.list
 
-You should now have a working Proxmox VE installation.
+7.  Add the repository key:
+
+    run: wget -O- "http://download.proxmox.com/debian/proxmox-ve-release-5.x.gpg" | apt-key add -
+
+8.  run: apt-get update && apt-get dist-upgrade
+9.  run: apt-get install proxmox-ve
+10. run: mv /etc/apt/sources.list.d/pve-enterprise.list /etc/apt/sources.list.d/pve-enterprise.list.bak
+
+11. You should now have a working Proxmox VE installation.
+    Open a browser: https://<host_IP_address>:8006 e.g. https://10.0.0.90:8006
+
 
 = Install build prerequisites for development environment =
+
+12. run:
 
 apt-get install build-essential git git-email debhelper \
 autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
@@ -45,56 +61,30 @@ liblzma-dev dosfstools mtools libxen-dev libfuse-dev corosync-dev \
 libcpg-dev libquorum-dev libcmap-dev libuuid-perl \
 libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
 graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
-libudev-dev asciidoc-dblatex source-highlight libiscsi-dev libiscsi7
+libudev-dev asciidoc-dblatex source-highlight libiscsi-dev libiscsi7 \
+librsvg2-bin
+
 
 = Compile PVE packages from Source =
 
-Download and install the following git modules in order from top to bottom:
+13: Download and install git repositories as Proxmox modules:
 
-# git clone git://git.proxmox.com/git/<PACKAGE.git>
+    run: mkdir /root/proxmox && cd /root/proxmox
 
-You currently need the following packages:
+    run: git clone git://git.proxmox.com/git/pve-common.git
 
-pve-common.git
-libpve-http-server-perl.git
-libpve-apiclient-perl.git
-pve-docs.git
-pve-cluster.git
-pve-access-control.git
-pve-storage.git
-pve-guest-common.git
-pve-firewall.git
-pve-qemu-kvm.git
-qemu-server.git
-vncterm.git
-spiceterm.git
-#vzquota.git
-#vzctl.git
-#fence-agents-pve.git
-#resource-agents-pve.git
-extjs.git
-pve-manager.git
-#pve-kernel-3.10.0.git
-#libiscsi.git
-#gfs2-utils.git
-ksm-control-daemon.git
-pve-container.git
-pve-kernel.git
+    'pve-common.git' is some kind of starting repository and needed for some
+    other repositories as dependency.
+    Install this to get an idea of how the installation process is working.
 
-Most packages can be installed with 'make dinstall' command.
+    See https://git.proxmox.com/ for all available repositories.
 
-4.  Reboot the system.
-5.  Learn to use the quilt patch scripts.
-6.  Happy coding.
+14: Most packages can be installed with 'make dinstall' command.
+    run: cd pve-common && make dinstall
 
-There is an experimental package containing the API documentation
-as ExtJS application:
-
-pve2-api-doc.git
-
-You can view the source code at:
-
-https://git.proxmox.com
+15: Reboot the system.
+16. Learn to use the quilt patch scripts.
+17. Happy coding!
 
 
 = REST vs. SOAP =
