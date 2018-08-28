@@ -1409,6 +1409,7 @@ sub __write_etc_network_interfaces {
 	my $d = $ifaces->{$iface};
 	if ($d->{type} eq 'bridge') {
 	    foreach my $p (split (/\s+/, $d->{bridge_ports})) {
+		$p =~ s/\.\d+$//;
 		my $n = $ifaces->{$p};
 		die "bridge '$iface' - unable to find bridge port '$p'\n"
 		    if !$n;
