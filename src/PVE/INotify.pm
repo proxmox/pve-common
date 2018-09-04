@@ -759,11 +759,16 @@ my $check_mtu = sub {
     die "check mtu - missing parent interface\n" if !$parent;
     die "check mtu - missing child interface\n" if !$child;
 
-    my $pmtu = $ifaces->{$parent}->{mtu} ? $ifaces->{$parent}->{mtu} : 1500;
-    my $cmtu = $ifaces->{$child}->{mtu} ? $ifaces->{$child}->{mtu} : 1500;
+    my $cmtu = $ifaces->{$child}->{mtu};
+    return if !$cmtu;
 
-    die "interface '$parent' - mtu $pmtu is bigger than '$child' - mtu $cmtu\n"
-	if $pmtu > $cmtu;
+    my $parentdata = $ifaces->{$parent};
+    my $pmtu = $parentdata->{mtu};
+    $pmtu = $cmtu if $parentdata->{type} eq 'bond' && !$pmtu;
+    $pmtu = 1500 if !$pmtu;
+
+    die "interface '$parent' - mtu $pmtu is lower than '$child' - mtu $cmtu\n"
+	if $pmtu < $cmtu;
 };
 
 # config => {
@@ -1393,7 +1398,7 @@ sub __write_etc_network_interfaces {
 		die "vlan '$iface' - wrong interface type on parent '$p' " .
 		    "('$n->{type}' != 'eth|bond|bridge' )\n";
 	    }
-	    &$check_mtu($ifaces, $iface, $p);
+	    &$check_mtu($ifaces, $p, $iface);
 	}
     }
 
