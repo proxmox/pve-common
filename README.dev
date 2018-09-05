@@ -35,10 +35,20 @@
 
 = Install build prerequisites for development environment =
 
-12. run:
+NOTE: this is a huge list intended to be able to build (almost) all packages,
+from the UI/API components to backend components to our Linux Kernel.
+If you only want to hack on specific topics you won't need most of those.
+We try to have a complete list of build dependencies in each source
+repositories 'debian/control' file. If you run `make deb` dpkg-buildpackge will
+stop and tell you if you miss some packages needed.
 
-apt-get install build-essential git git-email debhelper \
-autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
+12. For installing the most important, always needed, ones run:
+
+apt-get install build-essential git git-email debhelper pve-doc-generator
+
+Additionally, for quickly installing (almost) all build dependencies run:
+
+apt-get install autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
 groff quilt dpatch automake autoconf libtool lintian libdevel-cycle-perl \
 libjson-perl libcommon-sense-perl liblinux-inotify2-perl libio-stringy-perl \
 libstring-shellquote-perl dh-systemd rpm2cpio libsqlite3-dev sqlite3 \
