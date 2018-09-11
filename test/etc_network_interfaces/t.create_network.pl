@@ -205,7 +205,7 @@ $config->{ifaces}->{vmbr3} = {
     families => ['inet'],
     bridge_stp => 'off',
     bridge_fd => 0,
-    bridge_ports => 'vxlan3',
+    bridge_ports => 'vxlan3.50',
     bridge_vlan_aware => 'yes',
     bridge_vids => '2-10',
     autostart => 1
@@ -229,7 +229,7 @@ iface vmbr2 inet manual
 
 auto vmbr3
 iface vmbr3 inet manual
-	bridge-ports vxlan3
+	bridge-ports vxlan3.50
 	bridge-stp off
 	bridge-fd 0
 	bridge-vlan-aware yes
