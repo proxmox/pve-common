@@ -20,6 +20,7 @@ use Clone qw(clone);
 use Linux::Inotify2;
 use base 'Exporter';
 use JSON;
+use Digest::SHA;
 use Encode qw(encode decode);
 
 our @EXPORT_OK = qw(read_file write_file register_file);
@@ -536,6 +537,54 @@ sub write_etc_hostname {
 register_file('hostname', "/etc/hostname",  
 	      \&read_etc_hostname, 
 	      \&write_etc_hostname);
+
+sub read_etc_hosts {
+    my ($filename, $fh) = @_;
+
+    my $raw = '';
+    my $data = '';
+
+    while (my $line = <$fh>) {
+	$raw .= $line;
+	if ($line =~ m/^\s*#/) {
+	    $line = decode('UTF-8', $line);
+	}
+	$data .= $line;
+    }
+
+    return {
+	digest => Digest::SHA::sha1_hex($raw),
+	data => $data,
+    }
+}
+
+sub write_etc_hosts {
+    my ($filename, $fh, $hosts, @args) = @_;
+
+    # check validity of ips/names
+    for my $line (split("\n", $hosts)) {
+	next if $line =~ m/^\s*#/; # comments
+	next if $line =~ m/^\s*$/; # whitespace/empty lines
+
+	my ($ip, @names) = split(/\s+/, $line);
+
+	raise_param_exc({ 'data' => "Invalid IP '$ip'" })
+	    if $ip !~ m/^$PVE::Tools::IPRE$/;
+
+	for my $name (@names) {
+	    raise_param_exc({ 'data' => "Invalid Hostname '$name'" })
+		if $name !~ m/^[.\-a-zA-Z0-9]+$/;
+	}
+    }
+
+    die "write failed: $!" if !print $fh encode('UTF-8', $hosts);
+
+    return $hosts;
+}
+
+register_file('etchosts', "/etc/hosts",
+	      \&read_etc_hosts,
+	      \&write_etc_hosts);
 
 sub read_etc_resolv_conf {
     my ($filename, $fh) = @_;
