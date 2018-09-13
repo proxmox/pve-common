@@ -873,10 +873,9 @@ sub __read_etc_network_interfaces {
 	    while (defined ($line = <$fh>)) {
 		chomp $line;
 		if ($line =~ m/^\s*#(.*?)\s*$/) {
-		    # NOTE: we use 'comments' instead of 'comment' to 
-		    # avoid automatic utf8 conversion
 		    $f->{comments} = '' if !$f->{comments};
-		    $f->{comments} .= "$1\n";
+		    my $comment = decode('UTF-8', $1);
+		    $f->{comments} .= "$comment\n";
 		} elsif ($line =~ m/^\s*(?:iface\s
                                           |mapping\s
                                           |auto\s
@@ -1252,7 +1251,7 @@ sub write_etc_network_interfaces {
     my ($filename, $fh, $config) = @_;
     my $ifupdown2 = -e '/usr/share/ifupdown2';
     my $raw = __write_etc_network_interfaces($config, $ifupdown2);
-    PVE::Tools::safe_print($filename, $fh, $raw);
+    PVE::Tools::safe_print($filename, $fh, encode('UTF-8', $raw));
 }
 sub __write_etc_network_interfaces {
     my ($config, $ifupdown2) = @_;
