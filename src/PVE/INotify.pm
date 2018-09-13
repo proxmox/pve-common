@@ -19,7 +19,8 @@ use PVE::ProcFSTools;
 use Clone qw(clone);
 use Linux::Inotify2;
 use base 'Exporter';
-use JSON; 
+use JSON;
+use Encode qw(encode decode);
 
 our @EXPORT_OK = qw(read_file write_file register_file);
 
@@ -56,13 +57,11 @@ sub ccache_compute_diff {
 
     my $diff = '';
 
-    open (TMP, "diff -b -N -u '$filename' '$shadow'|");
-	
-    while (my $line = <TMP>) {
-	$diff .= $line;
-    }
-
-    close (TMP);
+    my $cmd = ['/usr/bin/diff', '-b', '-N', '-u', $filename, $shadow];
+    PVE::Tools::run_command($cmd, noerr => 1, outfunc => sub {
+	my ($line) = @_;
+	$diff .= decode('UTF-8', $line) . "\n";
+    });
 
     $diff = undef if !$diff;
 
