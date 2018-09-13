@@ -45,7 +45,7 @@ our $standard_output_options = {
 };
 
 sub api_clone_schema {
-    my ($schema) = @_;
+    my ($schema, $no_typetext) = @_;
 
     my $res = {};
     my $ref = ref($schema);
@@ -71,7 +71,7 @@ sub api_clone_schema {
 	    my $tmp = ref($pd) ? clone($pd) : $pd;
 	    # NOTE: add typetext property for more complex types, to
 	    # make the web api viewer code simpler
-	    if (!(defined($tmp->{enum}) || defined($tmp->{pattern}))) {
+	    if (!$no_typetext && !(defined($tmp->{enum}) || defined($tmp->{pattern}))) {
 		my $typetext = PVE::JSONSchema::schema_get_type_text($tmp);
 		if ($tmp->{type} && ($tmp->{type} ne $typetext)) {
 		    $tmp->{typetext} = $typetext;
@@ -143,6 +143,8 @@ sub api_dump_full {
 		    } else {
 			if ($k eq 'parameters') {
 			    $data->{$k} = api_clone_schema($d);
+			} elsif ($k eq 'returns') {
+			    $data->{$k} = api_clone_schema($d, 1);
 			} else {
 			    $data->{$k} = ref($d) ? clone($d) : $d;
 			}
