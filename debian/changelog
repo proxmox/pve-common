@@ -1,3 +1,19 @@
+libpve-common-perl (5.0-39) unstable; urgency=medium
+
+  * fix #1914: CLIFormatter: check also for existence of type
+
+  * generate_usage_str: do not group sub-commands
+
+  * run_fork_with_timeout: handle SIGTERM
+
+  * intoify: improve mtu/bridgebort checks
+
+  * api_dump_full: reduce enumerated options to a single one
+
+  * inotify: add methods for reading/writing /etc/hosts
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 20 Sep 2018 09:38:32 +0200
+
 libpve-common-perl (5.0-38) unstable; urgency=medium
 
   * getopt_usage: do not display $standard_output_options
