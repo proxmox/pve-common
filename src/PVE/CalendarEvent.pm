@@ -7,7 +7,7 @@ use Time::Local;
 use PVE::JSONSchema;
 use PVE::Tools qw(trim);
 
-# Note: This class implements a parser/utils for systemd like calender exents
+# Note: This class implements a parser/utils for systemd like calendar exents
 # Date specification is currently not implemented
 
 my $dow_names = {

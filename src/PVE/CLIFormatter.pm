@@ -2,12 +2,14 @@ package PVE::CLIFormatter;
 
 use strict;
 use warnings;
+
 use I18N::Langinfo;
 use POSIX qw(strftime);
 use CPAN::Meta::YAML; # comes with perl-modules
 
 use PVE::JSONSchema;
 use PVE::PTY;
+
 use JSON;
 use utf8;
 use Encode;
@@ -356,7 +358,7 @@ sub extract_properties_to_print {
 # takes formatting information from the results property of the call
 # if $props_to_print is provided, prints only those columns. otherwise
 # takes all fields of the results property, with a fallback
-# to all fields occuring in items of $data.
+# to all fields occurring in items of $data.
 sub print_api_list {
     my ($data, $result_schema, $props_to_print, $options, $terminal_opts) = @_;
 

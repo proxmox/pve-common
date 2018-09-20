@@ -3,7 +3,7 @@ package PVE::Daemon;
 # Abstract class to implement Daemons
 #
 # Features:
-# * lock and write PID file /var/run/$name.pid to make sure onyl
+# * lock and write PID file /var/run/$name.pid to make sure only
 #   one instance is running.
 # * keep lock open during restart
 # * correctly daemonize (redirect STDIN/STDOUT)
@@ -102,9 +102,9 @@ my $lockpidfile = sub {
 
 	my ($running, $pid) = $self->running();
 	if ($running) {
-	    die "can't aquire lock '$lkfn' - daemon already started (pid = $pid)\n";
+	    die "can't acquire lock '$lkfn' - daemon already started (pid = $pid)\n";
 	} else {
-	    die "can't aquire lock '$lkfn' - $err\n";
+	    die "can't acquire lock '$lkfn' - $err\n";
 	}
     }
 };

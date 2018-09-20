@@ -15,5 +15,5 @@ sub new {
 
 
 sub DESTROY {
-    # dont close atomatically (explicit close required to commit changes)
+    # don't close atomatically (explicit close required to commit changes)
 }

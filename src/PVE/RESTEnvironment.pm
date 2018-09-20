@@ -26,7 +26,7 @@ my $rest_env;
 # and register forked processes with &$register_worker(pid)
 # Note: using $SIG{CHLD} = 'IGNORE' or $SIG{CHLD} = sub { wait (); } or ...
 # has serious side effects, because perls built in system() and open()
-# functions can't get the correct exit status of a child. So we cant use
+# functions can't get the correct exit status of a child. So we can't use
 # that (also see perlipc)
 
 my $WORKER_PIDS;
@@ -520,7 +520,7 @@ sub fork_worker {
 		&$atfork();
 	    }
 
-	    # same algorythm as used inside SA
+	    # same algorithm as used inside SA
 	    # STDIN = /dev/null
 	    my $fd = fileno (STDIN);
 

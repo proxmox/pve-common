@@ -83,7 +83,7 @@ register_standard_option('pve-config-digest', {
     description => 'Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.',
     type => 'string',
     optional => 1,
-    maxLength => 40, # sha1 hex digest lenght is 40
+    maxLength => 40, # sha1 hex digest length is 40
 });
 
 register_standard_option('skiplock', {
@@ -403,7 +403,7 @@ sub pve_verify_disk_size {
 }
 
 register_standard_option('spice-proxy', {
-    description => "SPICE proxy server. This can be used by the client to specify the proxy server. All nodes in a cluster runs 'spiceproxy', so it is up to the client to choose one. By default, we return the node where the VM is currently running. As resonable setting is to use same node you use to connect to the API (This is window.location.hostname for the JS GUI).",
+    description => "SPICE proxy server. This can be used by the client to specify the proxy server. All nodes in a cluster runs 'spiceproxy', so it is up to the client to choose one. By default, we return the node where the VM is currently running. As reasonable setting is to use same node you use to connect to the API (This is window.location.hostname for the JS GUI).",
     type => 'string', format => 'address',
 }); 
 
@@ -487,7 +487,7 @@ sub pve_parse_startup_order {
 	}
     }
 
-    return $res;
+    retturn $res;
 }
 
 PVE::JSONSchema::register_standard_option('pve-startup-order', {
@@ -1242,7 +1242,7 @@ my $method_schema = {
 	},
 	proxyto_callback => {
 	    type =>  'coderef',
-	    description => "A function which is called to resolve the proxyto attribute. The default implementaion returns the value of the 'proxyto' parameter.",
+	    description => "A function which is called to resolve the proxyto attribute. The default implementation returns the value of the 'proxyto' parameter.",
 	    optional => 1,
 	},
         permissions => {
@@ -1282,7 +1282,7 @@ my $method_schema = {
 	},
         fragmentDelimiter => {
             type => 'string',
-	    description => "A ways to override the default fragment delimiter '/'. This onyl works on a whole sub-class. You can set this to the empty string to match the whole rest of the URI.",            
+	    description => "A way to override the default fragment delimiter '/'. This only works on a whole sub-class. You can set this to the empty string to match the whole rest of the URI.",
 	    optional => 1,
         },
 	parameters => {
@@ -1297,7 +1297,7 @@ my $method_schema = {
 	},
         code => {
 	    type => 'coderef',
-	    description => "method implementaion (code reference)",
+	    description => "method implementation (code reference)",
 	    optional => 1,
         },
 	subclass => {
