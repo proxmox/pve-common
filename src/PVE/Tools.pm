@@ -1613,4 +1613,18 @@ sub readline_nointr {
     return $line;
 }
 
+sub get_host_arch {
+
+    my @uname = POSIX::uname();
+    my $machine = $uname[4];
+
+    if ($machine eq 'x86_64') {
+	return 'amd64';
+    } elsif ($machine eq 'aarch64') {
+	return 'arm64';
+    } else {
+	die "unsupported host architecture '$machine'\n";
+    }
+}
+
 1;
