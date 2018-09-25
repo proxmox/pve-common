@@ -487,7 +487,7 @@ sub pve_parse_startup_order {
 	}
     }
 
-    retturn $res;
+    return $res;
 }
 
 PVE::JSONSchema::register_standard_option('pve-startup-order', {
