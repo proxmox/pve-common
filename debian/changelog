@@ -1,8 +1,8 @@
-libpve-common-perl (5.0-40) UNRELEASED; urgency=medium
+libpve-common-perl (5.0-40) unstable; urgency=medium
 
   * minor fixup for startup order code
 
- -- Proxmox Support Team <support@proxmox.com>  Tue, 25 Sep 2018 10:38:30 +0200
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 25 Sep 2018 11:33:34 +0200
 
 libpve-common-perl (5.0-39) unstable; urgency=medium
 
