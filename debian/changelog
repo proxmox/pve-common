@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-40) UNRELEASED; urgency=medium
+
+  * minor fixup for startup order code
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 25 Sep 2018 10:38:30 +0200
+
 libpve-common-perl (5.0-39) unstable; urgency=medium
 
   * fix #1914: CLIFormatter: check also for existence of type
