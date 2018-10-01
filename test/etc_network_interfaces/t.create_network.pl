@@ -305,6 +305,15 @@ $config->{ifaces}->{'bond0.100'} = {
     mtu => 1300,
     method => 'manual',
     families => ['inet'],
+    'vlan-protocol' => '802.1ad',
+    autostart => 1
+};
+
+$config->{ifaces}->{'bond0.100.10'} = {
+    type => 'vlan',
+    mtu => 1300,
+    method => 'manual',
+    families => ['inet'],
     autostart => 1
 };
 
@@ -335,6 +344,11 @@ $bond0_part
 
 auto bond0.100
 iface bond0.100 inet manual
+	mtu 1300
+	vlan-protocol 802.1ad
+
+auto bond0.100.10
+iface bond0.100.10 inet manual
 	mtu 1300
 
 $vmbr0_part

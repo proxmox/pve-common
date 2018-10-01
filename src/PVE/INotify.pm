@@ -954,6 +954,7 @@ sub __read_etc_network_interfaces {
 			'bridge-multicast-flood' => 1,
 			'bond_miimon' => 1,
 			'bond_xmit_hash_policy' => 1,
+			'vlan-protocol' => 1,
 			'vxlan-id' => 1,
 			'vxlan-svcnodeip' => 1,
 			'vxlan-physdev' => 1,
@@ -1201,6 +1202,10 @@ sub __interface_to_string {
 	    $raw .= "\tbond-xmit-hash-policy $d->{'bond_xmit_hash_policy'}\n";
 	}
 	$done->{'bond_xmit_hash_policy'} = 1;
+    } elsif ($d->{type} eq 'vlan') {
+	die "$iface: wrong vlan-protocol $d->{'vlan-protocol'}\n" 
+	    if $d->{'vlan-protocol'} && $d->{'vlan-protocol'} ne '802.1ad' && $d->{'vlan-protocol'} ne '802.1q';
+	
     } elsif ($d->{type} eq 'vxlan') {
 
 	foreach my $k (qw(vxlan-id vxlan-svcnodeip vxlan-physdev vxlan-local-tunnelip)) {
@@ -1441,11 +1446,13 @@ sub __write_etc_network_interfaces {
 
 	    if ($n->{type} eq 'bridge' && !$n->{bridge_vlan_aware}) {
 		die "vlan '$iface' - bridge vlan aware is not enabled on parent '$p'\n";
-	    } elsif ($n->{type} ne 'eth' && $n->{type} ne 'bridge' && $n->{type} ne 'bond') {
+	    } elsif ($n->{type} ne 'eth' && $n->{type} ne 'bridge' && $n->{type} ne 'bond' && $n->{type} ne 'vlan') {
 		die "vlan '$iface' - wrong interface type on parent '$p' " .
-		    "('$n->{type}' != 'eth|bond|bridge' )\n";
+		    "('$n->{type}' != 'eth|bond|bridge|vlan' )\n";
 	    }
+
 	    &$check_mtu($ifaces, $p, $iface);
+
 	}
     }
 
