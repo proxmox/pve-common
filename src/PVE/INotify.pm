@@ -1506,30 +1506,31 @@ NETWORKDOC
     my $if_type_hash = {
 	loopback => 100000,
 	eth => 200000,
+	OVSPort => 200000,
+	OVSIntPort => 200000,
 	bond => 300000,
 	bridge => 400000,
+	OVSBridge => 400000,
 	vxlan => 500000,
    };
 
     my $lookup_type_prio = sub {
-	my $iface = shift;
-
+	my ($iface, $ifaces) = @_;
 	my $child = 0;
-	if ($iface =~ m/^(\S+)(\.|:)\d+$/) {
-	    $iface = $1;
-	    $child = 1;
+	my $n = undef;
+
+	my $i=1;
+	for my $childiface (split(/(\.|:)/, $iface)) {
+	    if ($i > 1) {
+		$child++;
+	    } else {
+		$n = $ifaces->{$childiface};
+	    }
+	    $i++;
 	}
 
-	my $pri;
-	if ($iface eq 'lo') {
-	    $pri = $if_type_hash->{loopback};
-	} elsif ($iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
-	    $pri = $if_type_hash->{eth} + $child;
-	} elsif ($iface =~ m/^bond\d+$/) {
-	    $pri = $if_type_hash->{bond} + $child;
-	} elsif ($iface =~ m/^vmbr\d+$/) {
-	    $pri = $if_type_hash->{bridge} + $child;
-	}
+	my $pri = $if_type_hash->{$n->{type}} + $child
+	    if $n->{type} && $n->{type} ne 'unknown';
 
 	return $pri;
     };
@@ -1537,8 +1538,8 @@ NETWORKDOC
     foreach my $iface (sort {
 	my $ref1 = $ifaces->{$a};
 	my $ref2 = $ifaces->{$b};
-	my $tp1 = &$lookup_type_prio($a);
-	my $tp2 = &$lookup_type_prio($b);
+	my $tp1 = &$lookup_type_prio($a, $ifaces);
+	my $tp2 = &$lookup_type_prio($b, $ifaces);
 
 	# Only recognized types are in relation to each other. If one type
 	# is unknown then only consider the interfaces' priority attributes.
