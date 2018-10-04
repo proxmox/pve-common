@@ -1516,20 +1516,12 @@ NETWORKDOC
 
     my $lookup_type_prio = sub {
 	my ($iface, $ifaces) = @_;
-	my $child = 0;
-	my $n = undef;
 
-	my $i=1;
-	for my $childiface (split(/(\.|:)/, $iface)) {
-	    if ($i > 1) {
-		$child++;
-	    } else {
-		$n = $ifaces->{$childiface};
-	    }
-	    $i++;
-	}
+	my ($rootiface, @rest) = split(/[.:]/, $iface);
+	my $childlevel = scalar(@rest);
+	my $n = $ifaces->{$rootiface};
 
-	my $pri = $if_type_hash->{$n->{type}} + $child
+	my $pri = $if_type_hash->{$n->{type}} + $childlevel
 	    if $n->{type} && $n->{type} ne 'unknown';
 
 	return $pri;
