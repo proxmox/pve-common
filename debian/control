@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 10~),
                liblinux-inotify2-perl,
                libnet-ip-perl,
                libstring-shellquote-perl,
-Standards-Version: 3.8.4
+Standards-Version: 3.9.8
 
 Package: libpve-common-perl
 Architecture: all
