@@ -5,7 +5,7 @@ PACKAGE=libpve-common-perl
 
 ARCH=all
 
-BUILDDIR ?= build
+BUILDDIR ?= ${PACKAGE}-${VERSION}
 
 DEB=${PACKAGE}_${VERSION}-${PKGREL}_${ARCH}.deb
 DSC=${PACKAGE}_${VERSION}-${PKGREL}.dsc
