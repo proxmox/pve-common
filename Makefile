@@ -4,7 +4,6 @@ PKGREL=40
 PACKAGE=libpve-common-perl
 
 ARCH=all
-GITVERSION:=$(shell git rev-parse HEAD)
 
 BUILDDIR ?= build
 
@@ -22,7 +21,7 @@ dinstall: deb
 ${BUILDDIR}: src debian
 	rm -rf ${BUILDDIR}
 	rsync -a * ${BUILDDIR}
-	echo "git clone git://git.proxmox.com/git/pve-common.git\\ngit checkout ${GITVERSION}" > ${BUILDDIR}/debian/SOURCE
+	echo "git clone git://git.proxmox.com/git/pve-common.git\\ngit checkout $(shell git rev-parse HEAD)" > ${BUILDDIR}/debian/SOURCE
 
 .PHONY: deb
 deb: ${DEB}
