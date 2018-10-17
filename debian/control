@@ -3,9 +3,13 @@ Section: perl
 Priority: extra
 Maintainer: Proxmox Support Team <support@proxmox.com>
 Build-Depends: debhelper (>= 7.0.50~),
+               libclone-perl,
+               libdevel-cycle-perl,
                libfilesys-df-perl,
+               libhttp-message-perl,
                libjson-perl,
                liblinux-inotify2-perl,
+               libnet-ip-perl,
                libstring-shellquote-perl,
 Standards-Version: 3.8.4
 
