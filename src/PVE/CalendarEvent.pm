@@ -108,6 +108,9 @@ sub parse_calendar_event {
     };
 
     my @parts = split(/\s+/, $event);
+    my $utc = (@parts && uc($parts[-1]) eq 'UTC');
+    pop @parts if $utc;
+
 
     if ($parts[0] =~ m/$dowsel/i) {
 	my $dow_spec = shift @parts;
@@ -158,7 +161,7 @@ sub parse_calendar_event {
 	$m = [ sort { $a <=> $b } keys %$minutes_hash ];
     }
 
-    return { h => $h, m => $m, dow => [ sort keys %$dow_hash ]};
+    return { h => $h, m => $m, dow => [ sort keys %$dow_hash ], utc => $utc };
 }
 
 sub is_leap_year($) {
@@ -227,11 +230,12 @@ sub time_add_days($$) {
 }
 
 sub compute_next_event {
-    my ($calspec, $last, $utc) = @_;
+    my ($calspec, $last) = @_;
 
     my $hspec = $calspec->{h};
     my $mspec = $calspec->{m};
     my $dowspec = $calspec->{dow};
+    my $utc = $calspec->{utc};
 
     $last += 60; # at least one minute later
 
