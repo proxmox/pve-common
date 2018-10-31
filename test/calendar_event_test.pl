@@ -3,11 +3,16 @@
 use lib '../src';
 use strict;
 use warnings;
+use POSIX ();
 use Data::Dumper;
 use Time::Local;
 use Test::More;
 
 use PVE::CalendarEvent;
+
+# Time tests should run in a controlled setting
+$ENV{TZ} = 'UTC';
+POSIX::tzset();
 
 my $alldays = [0,1,2,3,4,5,6];
 my $tests = [
@@ -183,6 +188,7 @@ foreach my $test (@$tests) {
     my $timespec;
     eval { $timespec = PVE::CalendarEvent::parse_calendar_event($t); };
     my $err = $@;
+    delete $timespec->{utc};
 
     if ($expect->{error}) {
 	chomp $err if $err;
@@ -197,11 +203,36 @@ foreach my $test (@$tests) {
 
     foreach my $nt (@$nextsync) {
 	my ($last, $expect_next) = @$nt;
-
 	my $msg = "next event '$t' $last => ${expect_next}";
-	my $next = PVE::CalendarEvent::compute_next_event($timespec, $last, 1);
+	$timespec->{utc} = 1;
+	my $next = PVE::CalendarEvent::compute_next_event($timespec, $last);
 	is($next, $expect_next, $msg);
     }
 };
+
+sub tztest {
+    my ($calspec, $last) = @_;
+    my $spec = PVE::CalendarEvent::parse_calendar_event($calspec);
+    return PVE::CalendarEvent::compute_next_event($spec, $last);
+}
+
+# Test loop termination at CEST/CET switch (cannot happen here in UTC)
+is(tztest('mon..fri', timelocal(0, 0, 0, 28, 9, 2018)),
+                      timelocal(0, 0, 0, 29, 9, 2018));
+is(tztest('mon..fri UTC', timelocal(0, 0, 0, 28, 9, 2018)),
+                          timelocal(0, 0, 0, 29, 9, 2018));
+
+# Now in the affected time zone
+$ENV{TZ} = ':Europe/Vienna';
+POSIX::tzset();
+is(tztest('mon..fri', timelocal(0, 0, 0, 28, 9, 2018)),
+                      timelocal(0, 0, 0, 29, 9, 2018));
+# Specifically requesting UTC in the calendar spec means the resulting output
+# time as seen locally (timelocal() as opposed to timegm()) is shifted by 1
+# hour.
+is(tztest('mon..fri UTC', timelocal(0, 0, 0, 28, 9, 2018)),
+                          timelocal(0, 0, 1, 29, 9, 2018));
+$ENV{TZ} = 'UTC';
+POSIX::tzset();
 
 done_testing();
