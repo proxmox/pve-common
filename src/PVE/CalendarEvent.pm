@@ -161,6 +161,71 @@ sub parse_calendar_event {
     return { h => $h, m => $m, dow => [ sort keys %$dow_hash ]};
 }
 
+sub is_leap_year($) {
+    return 0 if $_[0] % 4;
+    return 1 if $_[0] % 100;
+    return 0 if $_[0] % 400;
+    return 1;
+}
+
+# mon = 0.. (Jan = 0)
+sub days_in_month($$) {
+    my ($mon, $year) = @_;
+    return 28 + is_leap_year($year) if $mon == 1;
+    return (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)[$mon];
+}
+
+# day = 1..
+# mon = 0.. (Jan = 0)
+sub wrap_time($) {
+    my ($time) = @_;
+    my ($sec, $min, $hour, $day, $mon, $year, $wday) = @$time;
+
+    use integer;
+    if ($sec >= 60) {
+	$min += $sec / 60;
+	$sec %= 60;
+    }
+
+    if ($min >= 60) {
+	$hour += $min / 60;
+	$min %= 60;
+    }
+
+    if ($hour >= 24) {
+	$day  += $hour / 24;
+	$wday += $hour / 24;
+	$hour %= 24;
+    }
+
+    # Translate to 0..($days_in_mon-1)
+    --$day;
+    while (1) {
+	my $days_in_mon = days_in_month($mon % 12, $year);
+	last if $day < $days_in_mon;
+	# Wrap one month
+	$day -= $days_in_mon;
+	++$mon;
+    }
+    # Translate back to 1..$days_in_mon
+    ++$day;
+
+    if ($mon >= 12) {
+	$year += $mon / 12;
+	$mon %= 12;
+    }
+
+    $wday %= 7;
+    return [$sec, $min, $hour, $day, $mon, $year, $wday];
+}
+
+# helper as we need to keep weekdays in sync
+sub time_add_days($$) {
+    my ($time, $inc) = @_;
+    my ($sec, $min, $hour, $day, $mon, $year, $wday) = @$time;
+    return wrap_time([$sec, $min, $hour, $day + $inc, $mon, $year, $wday + $inc]);
+}
+
 sub compute_next_event {
     my ($calspec, $last, $utc) = @_;
 
@@ -170,73 +235,60 @@ sub compute_next_event {
 
     $last += 60; # at least one minute later
 
-    while (1) {
+    my $t = [$utc ? gmtime($last) : localtime($last)];
+    $t->[0] = 0;     # we're not interested in seconds, actually
+    $t->[5] += 1900; # real years for clarity
 
-	my ($min, $hour, $mday, $mon, $year, $wday);
-	my $startofday;
-
-	if ($utc) {
-	    (undef, $min, $hour, $mday, $mon, $year, $wday) = gmtime($last);
-	    # gmtime and timegm interpret two-digit years differently
-	    $year += 1900;
-	    $startofday = timegm(0, 0, 0, $mday, $mon, $year);
-	} else {
-	    (undef, $min, $hour, $mday, $mon, $year, $wday) = localtime($last);
-	    # localtime and timelocal interpret two-digit years differently
-	    $year += 1900;
-	    $startofday = timelocal(0, 0, 0, $mday, $mon, $year);
-	}
-
-	$last = $startofday + $hour*3600 + $min*60;
-
-	my $check_dow = sub {
-	    foreach my $d (@$dowspec) {
-		return $last if $d == $wday;
-		if ($d > $wday) {
-		    return $startofday + ($d-$wday)*86400;
-		}
+    outer: for (my $i = 0; $i < 1000; ++$i) {
+	my $wday = $t->[6];
+	foreach my $d (@$dowspec) {
+	    goto this_wday if $d == $wday;
+	    if ($d > $wday) {
+		$t->[0] = $t->[1] = $t->[2] = 0; # sec = min = hour = 0
+		$t = time_add_days($t, $d - $wday);
+		next outer;
 	    }
-	    return $startofday + (7-$wday)*86400; # start of next week
-	};
-
-	if ((my $next = $check_dow->()) != $last) {
-	    $last = $next;
-	    next; # repeat
 	}
+	# Test next week:
+	$t->[0] = $t->[1] = $t->[2] = 0; # sec = min = hour = 0
+	$t = time_add_days($t, 7 - $wday);
+	next outer;
+    this_wday:
 
-	my $check_hour = sub {
-	    return $last if $hspec eq '*';
-	    foreach my $h (@$hspec) {
-		return $last if $h == $hour;
-		if ($h > $hour) {
-		    return $startofday + $h*3600;
-		}
+	goto this_hour if $hspec eq '*';
+	my $hour = $t->[2];
+	foreach my $h (@$hspec) {
+	    goto this_hour if $h == $hour;
+	    if ($h > $hour) {
+		$t->[0] = $t->[1] = 0; # sec = min = 0
+		$t->[2] = $h;          # hour = $h
+		next outer;
 	    }
-	    return $startofday + 24*3600; # test next day
-	};
-
-	if ((my $next = $check_hour->()) != $last) {
-	    $last = $next;
-	    next; # repeat
 	}
+	# Test next day:
+	$t->[0] = $t->[1] = $t->[2] = 0; # sec = min = hour = 0
+	$t = time_add_days($t, 1);
+	next outer;
+    this_hour:
 
-	my $check_minute = sub {
-	    return $last if $mspec eq '*';
-	    foreach my $m (@$mspec) {
-		return $last if $m == $min;
-		if ($m > $min) {
-		    return $startofday +$hour*3600 + $m*60;
-		}
+	goto this_min if $mspec eq '*';
+	my $min = $t->[1];
+	foreach my $m (@$mspec) {
+	    goto this_min if $m == $min;
+	    if ($m > $min) {
+		$t->[0] = 0;  # sec = 0
+		$t->[1] = $m; # min = $m
+		next outer;
 	    }
-	    return $startofday + ($hour + 1)*3600; # test next hour
-	};
-
-	if ((my $next = $check_minute->()) != $last) {
-	    $last = $next;
-	    next; # repeat
-	} else {
-	    return $last;
 	}
+	# Test next hour:
+	$t->[0] = $t->[1] = 0; # sec = min = hour = 0
+	$t->[2]++;
+	$t = wrap_time($t);
+	next outer;
+    this_min:
+
+	return $utc ? timegm(@$t) : timelocal(@$t);
     }
 
     die "unable to compute next calendar event\n";
