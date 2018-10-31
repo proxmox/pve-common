@@ -1,3 +1,15 @@
+libpve-common-perl (5.0-41) unstable; urgency=medium
+
+  * fix #1938: increase filesize limit for /proc/mounts
+
+  * inotify: network/interfaces: add support for 802.1ad stacked vlans
+
+  * build: split deb target into deb and src
+
+  * fix #1963: don't do day-time related math on time stamps
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 31 Oct 2018 14:58:42 +0100
+
 libpve-common-perl (5.0-40) unstable; urgency=medium
 
   * minor fixup for startup order code
