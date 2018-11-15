@@ -5,16 +5,12 @@ use warnings;
 use File::Basename;
 use Sys::Syslog ();
 use Encode;
+use base 'Exporter';
 
-use vars qw($VERSION @ISA @EXPORT);
+our $VERSION = '1.00';
 
-$VERSION = '1.00';
 
-require Exporter;
-
-@ISA = qw(Exporter);
-
-@EXPORT = qw(syslog initlog);
+our @EXPORT = qw(syslog initlog);
 
 my $log_tag = "unknown";
  

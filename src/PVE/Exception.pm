@@ -6,12 +6,9 @@ package PVE::Exception;
 
 use strict;
 use warnings;
-use vars qw(@ISA @EXPORT_OK);
-require Exporter;
 use Storable qw(dclone);       
 use HTTP::Status qw(:constants);
 
-@ISA = qw(Exporter);
 
 use overload '""' => sub {local $@; shift->stringify};
 use overload 'cmp' => sub {
@@ -20,7 +17,8 @@ use overload 'cmp' => sub {
     return "$a" cmp "$b"; # compare as string
 };
 
-@EXPORT_OK = qw(raise raise_param_exc raise_perm_exc);
+use base 'Exporter';
+our @EXPORT_OK = qw(raise raise_param_exc raise_perm_exc);
 
 sub new {
     my ($class, $msg, %param) = @_;

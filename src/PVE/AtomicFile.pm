@@ -3,9 +3,8 @@ package PVE::AtomicFile;
 use strict;
 use warnings;
 use IO::AtomicFile;
-use vars qw(@ISA);
 
-@ISA = qw(IO::AtomicFile);
+our @ISA = qw(IO::AtomicFile);
 
 sub new {
     my $class = shift;
