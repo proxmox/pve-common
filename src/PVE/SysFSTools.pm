@@ -33,12 +33,8 @@ sub lspci {
 }
 
 sub check_iommu_support{
-    #fixme : need to check IOMMU support
-    #http://www.linux-kvm.org/page/How_to_assign_devices_with_VT-d_in_KVM
-
-    my $iommu=1;
-    return $iommu;
-
+    # iommu support if there is anything in /sys/class/iommu besides . or ..
+    return PVE::Tools::dir_glob_regex('/sys/class/iommu/', "[^\.].*");
 }
 
 sub file_write {
