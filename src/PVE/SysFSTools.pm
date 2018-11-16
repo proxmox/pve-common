@@ -152,4 +152,61 @@ sub pci_dev_group_bind_to_vfio {
     return 1;
 }
 
+# idea is from usbutils package (/usr/bin/usb-devices) script
+sub __scan_usb_device {
+    my ($res, $devpath, $parent, $level) = @_;
+
+    return if ! -d $devpath;
+    return if $level && $devpath !~ m/^.*[-.](\d+)$/;
+    my $port = $level ? int($1 - 1) : 0;
+
+    my $busnum = int(file_read_firstline("$devpath/busnum"));
+    my $devnum = int(file_read_firstline("$devpath/devnum"));
+
+    my $d = {
+	port => $port,
+	level => $level,
+	busnum => $busnum,
+	devnum => $devnum,
+	speed => file_read_firstline("$devpath/speed"),
+	class => hex(file_read_firstline("$devpath/bDeviceClass")),
+	vendid => file_read_firstline("$devpath/idVendor"),
+	prodid => file_read_firstline("$devpath/idProduct"),
+    };
+
+    if ($level) {
+	my $usbpath = $devpath;
+	$usbpath =~ s|^.*/\d+\-||;
+	$d->{usbpath} = $usbpath;
+    }
+
+    my $product = file_read_firstline("$devpath/product");
+    $d->{product} = $product if $product;
+
+    my $manu = file_read_firstline("$devpath/manufacturer");
+    $d->{manufacturer} = $manu if $manu;
+
+    my $serial => file_read_firstline("$devpath/serial");
+    $d->{serial} = $serial if $serial;
+
+    push @$res, $d;
+
+    foreach my $subdev (<$devpath/$busnum-*>) {
+	next if $subdev !~ m|/$busnum-[0-9]+(\.[0-9]+)*$|;
+	__scan_usb_device($res, $subdev, $devnum, $level + 1);
+    }
+
+};
+
+sub scan_usb {
+
+    my $devlist = [];
+
+    foreach my $device (</sys/bus/usb/devices/usb*>) {
+	__scan_usb_device($devlist, $device, 0, 0);
+    }
+
+    return $devlist;
+}
+
 1;
