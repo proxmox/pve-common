@@ -30,6 +30,7 @@ LIB_SOURCES = \
 	SectionConfig.pm \
 	Subscription.pm \
 	Syscall.pm \
+	SysFSTools.pm \
 	Systemd.pm \
 	Ticket.pm \
 	Tools.pm
