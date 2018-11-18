@@ -670,7 +670,7 @@ sub template_replace {
     return $tmpl if !$tmpl;
 
     my $res = '';
-    while ($tmpl =~ m/([^{]+)?({([^}]+)})?/g) {
+    while ($tmpl =~ m/([^{]+)?(\{([^}]+)\})?/g) {
 	$res .= $1 if $1;
 	$res .= ($data->{$3} || '-') if $2;
     }
