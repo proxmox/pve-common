@@ -33,7 +33,7 @@ sub lspci {
 }
 
 sub check_iommu_support{
-    # iommu support if there is anything in /sys/class/iommu besides . or ..
+    # we have IOMMU support if /sys/class/iommu/ is populated
     return PVE::Tools::dir_glob_regex('/sys/class/iommu/', "[^\.].*");
 }
 
