@@ -40,7 +40,7 @@ from the UI/API components to backend components to our Linux Kernel.
 If you only want to hack on specific topics you won't need most of those.
 We try to have a complete list of build dependencies in each source
 repositories 'debian/control' file. If you run `make deb` dpkg-buildpackage will
-stop and tell you if you miss some needed packages.
+stop and tell you if you miss some required packages.
 
 12. For installing the most important, always needed, ones run:
 
