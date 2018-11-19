@@ -11,16 +11,17 @@ my $pcisysfs = "/sys/bus/pci";
 my $pciregex = "([a-f0-9]{4}):([a-f0-9]{2}):([a-f0-9]{2})\.([a-f0-9])";
 
 sub lspci {
-    my ($filter) = @_;
+    my ($id_filter) = @_;
 
     my $devices = {};
 
     dir_glob_foreach("$pcisysfs/devices", $pciregex, sub {
             my (undef, undef, $bus, $slot, $function) = @_;
+
 	    my $id = "$bus:$slot";
-	    return if defined($filter) && $id ne $filter;
-	    my $res = { id => $id, function => $function};
-	    push @{$devices->{$id}}, $res;
+	    return if defined($id_filter) && $id_filter ne $id;
+
+	    push @{$devices->{$id}}, { id => $id, function => $function };
     });
 
     # Entries should be sorted by functions.
