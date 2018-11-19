@@ -1,3 +1,11 @@
+libpve-common-perl (5.0-42) unstable; urgency=medium
+
+  * fix #1548: replace perl use vars with our
+
+  * introduce SysFSTools
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 19 Nov 2018 13:45:54 +0100
+
 libpve-common-perl (5.0-41) unstable; urgency=medium
 
   * fix #1938: increase filesize limit for /proc/mounts
