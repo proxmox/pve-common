@@ -10,25 +10,104 @@ use PVE::Tools qw(file_read_firstline dir_glob_foreach);
 my $pcisysfs = "/sys/bus/pci";
 my $pciregex = "([a-f0-9]{4}):([a-f0-9]{2}):([a-f0-9]{2})\.([a-f0-9])";
 
-sub lspci {
-    my ($id_filter) = @_;
+my $parse_pci_ids = sub {
+    my $ids = {};
 
-    my $devices = {};
+    open(my $fh, '<', "/usr/share/misc/pci.ids")
+	or return $ids;
+
+    my $curvendor;
+    my $curdevice;
+    while (my $line = <$fh>) {
+	if ($line =~ m/^([0-9a-fA-F]{4})\s+(.*)$/) {
+	    $curvendor = ($ids->{"0x$1"} = {});
+	    $curvendor->{name} = $2;
+	} elsif ($line =~ m/^\t([0-9a-fA-F]{4})\s+(.*)$/) {
+	    $curdevice = ($curvendor->{devices}->{"0x$1"} = {});
+	    $curdevice->{name} = $2;
+	} elsif ($line =~ m/^\t\t([0-9a-fA-F]{4}) ([0-9a-fA-F]{4})\s+(.*)$/) {
+	    $curdevice->{subs}->{"0x$1"}->{"0x$2"} = $3;
+	}
+    }
+
+    return $ids;
+};
+
+# returns a list of pci devices
+#
+# filter is either a string (then it tries to match to the id)
+# or a sub ref (then it adds the device if the sub returns truthy)
+#
+# verbose also returns iommu groups, subvendor/device and the
+# human readable names from /usr/share/misc/pci.ids
+sub lspci {
+    my ($filter, $verbose) = @_;
+
+    my $devices = [];
+    my $ids = {};
+    if ($verbose) {
+	$ids = $parse_pci_ids->();
+    }
 
     dir_glob_foreach("$pcisysfs/devices", $pciregex, sub {
-            my (undef, undef, $bus, $slot, $function) = @_;
+	my ($fullid, $domain, $bus, $slot, $function) = @_;
+	my $id = "$bus:$slot.$function";
 
-	    my $id = "$bus:$slot";
-	    return if defined($id_filter) && $id_filter ne $id;
+	if (defined($filter) && !ref($filter) && $id !~ m/^\Q$filter\E/) {
+	    return; # filter ids early
+	}
 
-	    push @{$devices->{$id}}, { id => $id, function => $function };
+	my $devdir = "$pcisysfs/devices/$fullid";
+
+	my $vendor = file_read_firstline("$devdir/vendor");
+	my $device = file_read_firstline("$devdir/device");
+	my $class = file_read_firstline("$devdir/class");
+
+	my $res = {
+	    id => $id,
+	    vendor => $vendor,
+	    device => $device,
+	    class => $class,
+	};
+
+	if (defined($filter) && ref($filter) eq 'CODE' && !$filter->($res)) {
+	    return;
+	}
+
+	if ($verbose) {
+	    $res->{iommugroup} = -1;
+	    if (-e "$devdir/iommu_group") {
+		my ($iommugroup) = (readlink("$devdir/iommu_group") =~ m/\/(\d+)$/);
+		$res->{iommugroup} = int($iommugroup);
+	    }
+
+	    if (-d "$devdir/mdev_supported_types") {
+		$res->{mdev} = 1;
+	    }
+
+	    my $device_hash = $ids->{$vendor}->{devices}->{$device} // {};
+
+	    my $sub_vendor = file_read_firstline("$devdir/subsystem_vendor");
+	    my $sub_device = file_read_firstline("$devdir/subsystem_device");
+
+	    my $vendor_name = $ids->{$vendor}->{name};
+	    my $device_name = $device_hash->{name};
+	    my $sub_vendor_name = $ids->{$sub_vendor}->{name};
+	    my $sub_device_name = $device_hash->{subs}->{$sub_vendor}->{$sub_device};
+
+	    $res->{vendor_name} = $vendor_name if defined($vendor_name);
+	    $res->{device_name} = $device_name if defined($device_name);
+	    $res->{subsystem_vendor} = $sub_vendor if defined($sub_vendor);
+	    $res->{subsystem_device} = $sub_device if defined($sub_device);
+	    $res->{subsystem_vendor_name} = $sub_vendor_name if defined($sub_vendor_name);
+	    $res->{subsystem_device_name} = $sub_device_name if defined($sub_device_name);
+	}
+
+	push @$devices, $res;
     });
 
-    # Entries should be sorted by functions.
-    foreach my $id (keys %$devices) {
-	my $dev = $devices->{$id};
-	$devices->{$id} = [ sort { $a->{function} <=> $b->{function} } @$dev ];
-    }
+    # Entries should be sorted by ids
+    $devices = [ sort { $a->{id} cmp $b->{id} } @$devices ];
 
     return $devices;
 }
