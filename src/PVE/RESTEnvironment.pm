@@ -496,10 +496,12 @@ sub fork_worker {
 	$SIG{CHLD} = $SIG{PIPE} = 'DEFAULT';
 	$SIG{TTOU} = 'IGNORE';
 
+	my $ppgid;
 	# set session/process group allows to kill the process group
 	if ($sync && -t STDIN) {
 	    # some sync'ed workers operate on the tty but setsid sessions lose
 	    # the tty, so just create a new pgroup and give it the tty
+	    $ppgid = POSIX::getpgrp() or die "failed to get old pgid: $!\n";
 	    POSIX::setpgid(0, 0) or die "failed to setpgid: $!\n";
 	    POSIX::tcsetpgrp(fileno(STDIN), $$) or die "failed to tcsetpgrp: $!\n";
 	} else {
@@ -592,7 +594,14 @@ sub fork_worker {
 	    $exitcode = 0;
 	}
 	POSIX::write($resfh, $msg, length($msg));
-	POSIX::close($resfh) if $sync;
+
+	if ($sync) {
+	    POSIX::close($resfh);
+	    if ( -t STDIN) {
+		POSIX::tcsetpgrp(fileno(STDIN), $ppgid) or
+		    die "failed to tcsetpgrp to parent: $!\n";
+	    }
+	}
 	POSIX::_exit($exitcode);
     }
 
