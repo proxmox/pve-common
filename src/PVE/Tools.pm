@@ -640,7 +640,7 @@ sub pipe_socket_to_command  {
 }
 
 sub split_list {
-    my $listtxt = shift || '';
+    my $listtxt = shift // '';
 
     return split (/\0/, $listtxt) if $listtxt =~ m/\0/;
 
