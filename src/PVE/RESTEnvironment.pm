@@ -603,6 +603,7 @@ sub fork_worker {
 	    }
 	}
 	POSIX::_exit($exitcode);
+	kill(-9, $$); # not really needed, just to be sure
     }
 
     # parent
