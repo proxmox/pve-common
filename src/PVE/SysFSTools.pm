@@ -33,6 +33,39 @@ sub lspci {
     return $devices;
 }
 
+sub get_mdev_types {
+    my ($id) = @_;
+
+    my $fullid = $id;
+    if ($id !~ m/^[0-9a-fA-f]{4}:/) {
+	$fullid = "0000:$id";
+    }
+
+    my $types = [];
+
+    my $mdev_path = "$pcisysfs/devices/$fullid/mdev_supported_types";
+    if (!-d $mdev_path) {
+	return $types;
+    }
+
+    dir_glob_foreach($mdev_path, '[^\.].*', sub {
+	my ($type) = @_;
+
+	my $type_path = "$mdev_path/$type";
+
+	my $available = int(file_read_firstline("$type_path/available_instances"));
+	my $description = PVE::Tools::file_get_contents("$type_path/description");
+
+	push @$types, {
+	    type => $type,
+	    description => $description,
+	    available => $available,
+	};
+    });
+
+    return $types;
+}
+
 sub check_iommu_support{
     # we have IOMMU support if /sys/class/iommu/ is populated
     return PVE::Tools::dir_glob_regex('/sys/class/iommu/', "[^\.].*");
@@ -151,6 +184,62 @@ sub pci_dev_group_bind_to_vfio {
     }
 
     return 1;
+}
+
+sub pci_create_mdev_device {
+    my ($pciid, $uuid, $type) = @_;
+
+    my $basedir = "$pcisysfs/devices/0000:$pciid";
+    my $mdev_dir = "$basedir/mdev_supported_types";
+
+    die "pci device '$pciid' does not support mediated devices \n"
+	if !-d $mdev_dir;
+
+    die "pci device '$pciid' has no type '$type'\n"
+	if !-d "$mdev_dir/$type";
+
+    if (-d "$basedir/$uuid") {
+	# it already exists, checking type
+	my $typelink = readlink("$basedir/$uuid/mdev_type");
+	my ($existingtype) = $typelink =~ m|/([^/]+)$|;
+	die "mdev instance '$uuid' already exits, but type is not '$type'\n"
+	    if $type ne $existingtype;
+
+	# instance exists, so use it but warn the user
+	warn "mdev instance '$uuid' already existed, using it.\n";
+	return undef;
+    }
+
+    my $instances = file_read_firstline("$mdev_dir/$type/available_instances");
+    my ($avail) = $instances =~ m/^(\d+)$/;
+    die "pci device '$pciid' has no available instances of '$type'\n"
+	if $avail < 1;
+
+    die "could not create 'type' for pci devices '$pciid'\n"
+	if !file_write("$mdev_dir/$type/create", $uuid);
+
+    return undef;
+}
+
+sub pci_cleanup_mdev_device {
+    my ($pciid, $uuid) = @_;
+
+    my $basedir = "$pcisysfs/devices/0000:$pciid/$uuid";
+
+    if (! -e $basedir) {
+	return 1; # no cleanup necessary if it does not exist
+    }
+
+    return file_write("$basedir/remove", "1");
+}
+
+# encode the hostpci index and vmid into the uuid
+sub generate_mdev_uuid {
+    my ($vmid, $index) = @_;
+
+    my $string = sprintf("%08d-0000-0000-0000-%012d", $index, $vmid);
+
+    return $string;
 }
 
 # idea is from usbutils package (/usr/bin/usb-devices) script
