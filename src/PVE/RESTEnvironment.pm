@@ -579,22 +579,21 @@ sub fork_worker {
 	    }
 	    &$function($upid);
 	};
+	my ($msg, $exitcode);
 	my $err = $@;
 	if ($err) {
 	    chomp $err;
 	    $err =~ s/\n/ /mg;
 	    syslog('err', $err);
-	    my $msg = "TASK ERROR: $err\n";
-	    POSIX::write($resfh, $msg, length($msg));
-	    POSIX::close($resfh) if $sync;
-	    POSIX::_exit(-1);
+	    $msg = "TASK ERROR: $err\n";
+	    $exitcode = -1;
 	} else {
-	    my $msg = "TASK OK\n";
-	    POSIX::write($resfh, $msg, length($msg));
-	    POSIX::close($resfh) if $sync;
-	    POSIX::_exit(0);
+	    $msg = "TASK OK\n";
+	    $exitcode = 0;
 	}
-	kill(-9, $$);
+	POSIX::write($resfh, $msg, length($msg));
+	POSIX::close($resfh) if $sync;
+	POSIX::_exit($exitcode);
     }
 
     # parent
