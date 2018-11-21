@@ -291,7 +291,7 @@ sub veth_create {
 
     # create veth pair
     if (! -d "/sys/class/net/$veth") {
-	my $cmd = "/sbin/ip link add name $veth type veth peer name $vethpeer mtu $bridgemtu";
+	my $cmd = "/sbin/ip link add name $veth mtu $bridgemtu type veth peer name $vethpeer mtu $bridgemtu";
 	$cmd .= " addr $mac" if $mac;
 	system($cmd) == 0 || die "can't create interface $veth\n";
     }
