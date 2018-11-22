@@ -1,3 +1,17 @@
+libpve-common-perl (5.0-43) unstable; urgency=medium
+
+  * fix #1956: return controlling terminal to parent
+
+  * Tools: cope with '0' in split_list
+
+  * network: fix setting MTU on veth pair
+
+  * SysFSTools: add helpers for mediated PCI devices
+
+  * SysFSTools: allow one to return verbose information from lspci
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 22 Nov 2018 11:19:46 +0100
+
 libpve-common-perl (5.0-42) unstable; urgency=medium
 
   * fix #1548: replace perl use vars with our
