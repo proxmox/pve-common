@@ -40,6 +40,28 @@ my $parse_pci_ids = sub {
 #
 # verbose also returns iommu groups, subvendor/device and the
 # human readable names from /usr/share/misc/pci.ids
+#
+# return format:
+# [
+#     {
+#         id => '00:00.0',
+#         vendor => '0xabab',
+#         device => '0xefef',
+#         class => '0x012345',
+#
+#         # optional
+#         iommugroup => '14',
+#         mdev => 1,
+#         vendor_name => 'Foo Inc.',
+#         device_name => 'Bar 9000AF',
+#         subsystem_vendor => '0xacac',
+#         subsystem_device => '0xfefe',
+#         subsystem_vendor_name => 'Foo Europe GmbH',
+#         subsystem_device_name => 'Bar 9001AF OC',
+#     },
+#     ...
+# ]
+#
 sub lspci {
     my ($filter, $verbose) = @_;
 
@@ -112,6 +134,17 @@ sub lspci {
     return $devices;
 }
 
+#
+# return format:
+# [
+#     {
+#         type => 'FooType_1',
+#         description => "a longer description with custom format\nand newlines",
+#         available => 5,
+#     },
+#     ...
+# ]
+#
 sub get_mdev_types {
     my ($id) = @_;
 
