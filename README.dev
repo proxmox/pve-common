@@ -73,7 +73,8 @@ libcpg-dev libquorum-dev libcmap-dev libuuid-perl \
 libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
 graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
 libudev-dev asciidoc-dblatex source-highlight libiscsi-dev libiscsi7 \
-librsvg2-bin
+librsvg2-bin libarchive-dev libgpgme-dev libcurl4-gnutls-dev \
+libtest-mockmodule-perl
 
 
 = Compile PVE packages from Source =
