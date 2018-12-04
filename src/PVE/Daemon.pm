@@ -102,9 +102,9 @@ my $lockpidfile = sub {
 
 	my ($running, $pid) = $self->running();
 	if ($running) {
-	    die "can't aquire lock '$lkfn' - daemon already started (pid = $pid)\n";
+	    die "can't acquire lock '$lkfn' - daemon already started (pid = $pid)\n";
 	} else {
-	    die "can't aquire lock '$lkfn' - $err\n";
+	    die "can't acquire lock '$lkfn' - $err\n";
 	}
     }
 };
