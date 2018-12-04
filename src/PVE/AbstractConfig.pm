@@ -64,7 +64,7 @@ sub write_config {
 }
 
 # Lock config file using flock, run $code with @param, unlock config file.
-# $timeout is the maximum time to aquire the flock
+# $timeout is the maximum time to acquire the flock
 sub lock_config_full {
     my ($class, $vmid, $timeout, $code, @param) = @_;
 
@@ -78,7 +78,7 @@ sub lock_config_full {
 }
 
 # Lock config file using flock, run $code with @param, unlock config file.
-# $timeout is the maximum time to aquire the flock
+# $timeout is the maximum time to acquire the flock
 # $shared eq 1 creates a non-exclusive ("read") flock
 sub lock_config_mode {
     my ($class, $vmid, $timeout, $shared, $code, @param) = @_;
