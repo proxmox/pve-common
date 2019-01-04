@@ -23,13 +23,13 @@ our $standard_output_options = {
 	description => "Do not show column headers (for 'text' format).",
 	type => 'boolean',
 	optional => 1,
-	default => 1,
+	default => 0,
     },
     noborder => {
 	description => "Do not draw borders (for 'text' format).",
 	type => 'boolean',
 	optional => 1,
-	default => 1,
+	default => 0,
     },
     quiet => {
         description => "Suppress printing results.",
