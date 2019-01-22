@@ -204,6 +204,17 @@ sub pve_verify_node_name {
     return $node;
 }
 
+register_format('mac-addr', \&pve_verify_mac_addr);
+sub pve_verify_mac_addr {
+    my ($mac_addr, $noerr) = @_;
+
+    if ($mac_addr !~ m/^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/i) {
+	return undef if $noerr;
+	die "value does not look like a valid MAC address\n";
+    }
+    return $mac_addr;
+}
+
 register_format('ipv4', \&pve_verify_ipv4);
 sub pve_verify_ipv4 {
     my ($ipv4, $noerr) = @_;
