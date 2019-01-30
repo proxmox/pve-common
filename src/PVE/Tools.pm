@@ -1399,6 +1399,11 @@ sub syncfs($) {
     return 0 == syscall(PVE::Syscall::syncfs, $fileno);
 }
 
+sub fsync($) {
+    my ($fileno) = @_;
+    return 0 == syscall(PVE::Syscall::fsync, $fileno);
+}
+
 sub sync_mountpoint {
     my ($path) = @_;
     sysopen my $fd, $path, O_PATH or die "failed to open $path: $!\n";

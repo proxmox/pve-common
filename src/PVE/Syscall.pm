@@ -8,6 +8,7 @@ BEGIN {
 	unshare => &SYS_unshare,
 	setns => &SYS_setns,
 	syncfs => &SYS_syncfs,
+	fsync => &SYS_fsync,
 	openat => &SYS_openat,
 	close => &SYS_close,
 	mkdirat => &SYS_mkdirat,
