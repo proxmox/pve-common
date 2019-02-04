@@ -1632,4 +1632,16 @@ sub get_host_arch {
     }
 }
 
+# Devices are: [ (12 bits minor) (12 bits major) (8 bits minor) ]
+sub dev_t_major($) {
+    my ($dev_t) = @_;
+    return (int($dev_t) & 0xfff00) >> 8;
+}
+
+sub dev_t_minor($) {
+    my ($dev_t) = @_;
+    $dev_t = int($dev_t);
+    return (($dev_t >> 12) & 0xfff00) | ($dev_t & 0xff);
+}
+
 1;
