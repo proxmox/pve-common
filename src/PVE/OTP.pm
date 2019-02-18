@@ -55,7 +55,7 @@ sub yubico_verify_otp {
 
     die "yubico: wrong OTP length\n" if (length($otp) < 32) || (length($otp) > 48);
 
-    $url = 'http://api2.yubico.com/wsapi/2.0/verify' if !defined($url);
+    $url = 'https://api2.yubico.com/wsapi/2.0/verify' if !defined($url);
 
     my $params = {
 	nonce =>  Digest::SHA::hmac_sha1_hex(time(), rand()),
