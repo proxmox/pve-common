@@ -490,6 +490,30 @@ complete -o default -C '$exename bashcomplete' $exename
 __EOD__
 }
 
+sub generate_zsh_completions {
+    my ($class) = @_;
+
+    # generate zsh completion config
+
+    $exename = &$get_exe_name($class);
+
+    print <<__EOD__;
+#compdef _$exename $exename
+
+function _$exename() {
+    local cwords line point cmd curr prev
+    cwords=\${#words[@]}
+    line=\$words
+    point=\${#line}
+    cmd=\${words[1]}
+    curr=\${words[cwords]}
+    prev=\${words[cwords-1]}
+    compadd \$(COMP_CWORD="\$cwords" COMP_LINE="\$line" COMP_POINT="\$point" \\
+	$exename bashcomplete "\$cmd" "\$curr" "\$prev")
+}
+__EOD__
+}
+
 sub generate_asciidoc_synopsys {
     my ($class) = @_;
     $class->generate_asciidoc_synopsis();
