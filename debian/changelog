@@ -1,3 +1,11 @@
+libpve-common-perl (5.0-47) unstable; urgency=medium
+
+  * partially fix #2023: Switch to https for yubico.com API
+
+  * Fix 1891: Add zsh command completion generator
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 20 Feb 2019 12:23:56 +0100
+
 libpve-common-perl (5.0-46) unstable; urgency=medium
 
   * add missing dependency on libhttp-daemon-perl, libhttp-manager-perl
