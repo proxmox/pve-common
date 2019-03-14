@@ -208,6 +208,8 @@ register_format('mac-addr', \&pve_verify_mac_addr);
 sub pve_verify_mac_addr {
     my ($mac_addr, $noerr) = @_;
 
+    # don't allow I/G bit to be set, most of the time it breaks things, see:
+    # https://pve.proxmox.com/pipermail/pve-devel/2019-March/035998.html
     if ($mac_addr !~ m/^[a-f0-9][02468ace](?::[a-f0-9]{2}){5}$/i) {
 	return undef if $noerr;
 	die "value does not look like a valid unicast MAC address\n";
@@ -218,6 +220,7 @@ sub pve_verify_mac_addr {
 register_standard_option('mac-addr', {
     type => 'string',
     description => 'Unicast MAC address.',
+    verbose_description => 'A common MAC address with the I/G (Individual/Group) bit not set.',
     format_description => "XX:XX:XX:XX:XX:XX",
     optional => 1,
     format => 'mac-addr',
