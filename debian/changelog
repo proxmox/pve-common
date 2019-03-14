@@ -1,3 +1,13 @@
+libpve-common-perl (5.0-48) unstable; urgency=medium
+
+  * JSONSchema: add 'mac-addr' standard option
+
+  * JSONSchema: Adapt MAC address format to unicast
+
+  * fix #2111: regex match for email addresses
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 14 Mar 2019 09:51:35 +0100
+
 libpve-common-perl (5.0-47) unstable; urgency=medium
 
   * partially fix #2023: Switch to https for yubico.com API
