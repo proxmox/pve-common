@@ -113,6 +113,12 @@ register_standard_option('pve-output-format', {
     default => 'text',
 });
 
+register_standard_option('pve-snapshot-name', {
+    description => "The name of the snapshot.",
+    type => 'string', format => 'pve-configid',
+    maxLength => 40,
+});
+
 my $format_list = {};
 
 sub register_format {
