@@ -466,23 +466,23 @@ my %bwlimit_opt = (
 my $bwlimit_format = {
 	default => {
 	    %bwlimit_opt,
-	    description => 'default bandwidth limit in MiB/s',
+	    description => 'default bandwidth limit in KiB/s',
 	},
 	restore => {
 	    %bwlimit_opt,
-	    description => 'bandwidth limit in MiB/s for restoring guests from backups',
+	    description => 'bandwidth limit in KiB/s for restoring guests from backups',
 	},
 	migration => {
 	    %bwlimit_opt,
-	    description => 'bandwidth limit in MiB/s for migrating guests',
+	    description => 'bandwidth limit in KiB/s for migrating guests (including moving local disks)',
 	},
 	clone => {
 	    %bwlimit_opt,
-	    description => 'bandwidth limit in MiB/s for cloning disks',
+	    description => 'bandwidth limit in KiB/s for cloning disks',
 	},
 	move => {
 	    %bwlimit_opt,
-	    description => 'bandwidth limit in MiB/s for moving disks',
+	    description => 'bandwidth limit in KiB/s for moving disks',
 	},
 };
 register_format('bwlimit', $bwlimit_format);
