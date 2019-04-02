@@ -231,6 +231,20 @@ sub get_u2f_challenge {
     die "no active u2f challenge\n";
 }
 
+sub set_request_host {
+    my ($self, $host) = @_;
+
+    $self->{request_host} = $host;
+}
+
+sub get_request_host {
+    my ($self, $noerr) = @_;
+
+    return $self->{request_host} if defined($self->{request_host}) || $noerr;
+
+    die "no hostname available in current environment\n";
+}
+
 sub is_worker {
     my ($class) = @_;
 
