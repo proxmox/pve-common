@@ -217,6 +217,20 @@ sub get_user {
     die "user name not set\n";
 }
 
+sub set_u2f_challenge {
+    my ($self, $challenge) = @_;
+
+    $self->{u2f_challenge} = $challenge;
+}
+
+sub get_u2f_challenge {
+    my ($self, $noerr) = @_;
+
+    return $self->{u2f_challenge} if defined($self->{u2f_challenge}) || $noerr;
+
+    die "no active u2f challenge\n";
+}
+
 sub is_worker {
     my ($class) = @_;
 
