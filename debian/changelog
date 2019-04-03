@@ -1,3 +1,11 @@
+libpve-common-perl (5.0-50) unstable; urgency=medium
+
+  * JSONSchema: fix units of bwlimit property
+
+  * add u2f challenge accessors and request host to RESTEnvironment
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 03 Apr 2019 13:53:12 +0200
+
 libpve-common-perl (5.0-49) unstable; urgency=medium
 
   * JSONSchema: register pve-snapshot-name here to avoid cyclic
