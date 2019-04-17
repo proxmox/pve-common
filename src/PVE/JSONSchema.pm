@@ -1596,7 +1596,7 @@ sub dump_config {
 
     my $data = '';
 
-    foreach my $k (keys %$cfg) {
+    foreach my $k (sort keys %$cfg) {
 	$data .= "$k: $cfg->{$k}\n";
     }
 
