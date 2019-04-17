@@ -1384,6 +1384,11 @@ sub parse_host_and_port {
     return; # nothing
 }
 
+sub setresuid($$$) {
+    my ($ruid, $euid, $suid) = @_;
+    return 0 == syscall(PVE::Syscall::setresuid, $ruid, $euid, $suid);
+}
+
 sub unshare($) {
     my ($flags) = @_;
     return 0 == syscall(PVE::Syscall::unshare, $flags);

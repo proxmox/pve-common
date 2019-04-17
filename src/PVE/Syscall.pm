@@ -13,6 +13,7 @@ BEGIN {
 	close => &SYS_close,
 	mkdirat => &SYS_mkdirat,
 	faccessat => &SYS_faccessat,
+	setresuid => &SYS_setresuid,
     );
 };
 
