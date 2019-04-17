@@ -111,9 +111,9 @@ sub init {
 
     # environment types
     # cli  ... command started fron command line
-    # pub  ... access from public server (apache)
+    # pub  ... access from public server (pveproxy)
     # priv ... access from private server (pvedaemon)
-    # ha   ... access from HA resource manager agent (rgmanager)
+    # ha   ... access from HA resource manager agent (pve-ha-manager)
 
     my $self = { type => $type };
 
