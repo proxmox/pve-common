@@ -16,6 +16,7 @@ use PVE::Exception qw(raise_param_exc);
 use PVE::Network;
 use PVE::Tools;
 use PVE::ProcFSTools;
+use PVE::JSONSchema;
 use Clone qw(clone);
 use Linux::Inotify2;
 use base 'Exporter';
@@ -1103,6 +1104,34 @@ sub __read_etc_network_interfaces {
 	    }
 	}
 
+	# map address and netmask to cidr
+	if ($d->{address}) {
+	    if ($d->{netmask} =~ m/^\d+$/) { # e.g. netmask 20
+		$d->{cidr} = $d->{address} . "/" . $d->{netmask};
+	    } elsif ($d->{netmask} &&
+		     (my $cidr = PVE::JSONSchema::get_netmask_bits($d->{netmask}))) { # e.g. netmask 255.255.255.0
+		$d->{cidr} = $d->{address} . "/" . $cidr;
+	    } elsif ($d->{address} =~ m!^(.*)/(\d+)$!) {
+		$d->{cidr} = $d->{address};
+		$d->{address} = $1;
+		$d->{netmask} = $2;
+	    } else {
+		$d->{cidr} = $d->{address};
+	    }
+	}
+
+	# map address6 and netmask6 to cidr6
+	if ($d->{address6}) {
+	    $d->{cidr6} = $d->{address6};
+	    if ($d->{netmask6}) {
+		$d->{cidr6} .= "/" . $d->{netmask6} if $d->{netmask6};
+	    } elsif ($d->{address6} =~ m!^(.*)/(\d+)$!) {
+		$d->{cidr6} = $d->{address6};
+		$d->{address6} = $1;
+		$d->{netmask6} = $2;
+	    }
+	}
+
 	$d->{method} = 'manual' if !$d->{method};
 	$d->{method6} = 'manual' if !$d->{method6};
 
@@ -1316,6 +1345,9 @@ sub __write_etc_network_interfaces {
 
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
+
+	delete $d->{cidr};
+	delete $d->{cidr6};
 
 	my $ports = '';
 	foreach my $k (qw(bridge_ports ovs_ports slaves ovs_bonds)) {
