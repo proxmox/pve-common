@@ -266,6 +266,7 @@ sub pve_verify_ip {
 }
 
 my $ipv4_mask_hash = {
+    '0.0.0.0' => 0,
     '128.0.0.0' => 1,
     '192.0.0.0' => 2,
     '224.0.0.0' => 3,
@@ -299,6 +300,11 @@ my $ipv4_mask_hash = {
     '255.255.255.254' => 31,
     '255.255.255.255' => 32,
 };
+
+sub get_netmask_bits {
+    my ($mask) = @_;
+    return $ipv4_mask_hash->{$mask};
+}
 
 register_format('ipv4mask', \&pve_verify_ipv4mask);
 sub pve_verify_ipv4mask {
