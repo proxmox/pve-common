@@ -1124,9 +1124,8 @@ sub __read_etc_network_interfaces {
 	if ($d->{address6}) {
 	    $d->{cidr6} = $d->{address6};
 	    if ($d->{netmask6}) {
-		$d->{cidr6} .= "/" . $d->{netmask6} if $d->{netmask6};
+		$d->{cidr6} .= "/" . $d->{netmask6};
 	    } elsif ($d->{address6} =~ m!^(.*)/(\d+)$!) {
-		$d->{cidr6} = $d->{address6};
 		$d->{address6} = $1;
 		$d->{netmask6} = $2;
 	    }
