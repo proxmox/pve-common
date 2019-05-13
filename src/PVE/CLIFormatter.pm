@@ -413,6 +413,7 @@ sub print_api_result {
 
     if ($result_schema && defined($result_schema->{type})) {
 	return if $result_schema->{type} eq 'null';
+	return if $result_schema->{optional} && !defined($data);
     } else {
 	my $type = $guess_type->($data);
 	$result_schema = { type => $type };
