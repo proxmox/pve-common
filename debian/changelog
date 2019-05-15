@@ -1,3 +1,17 @@
+libpve-common-perl (5.0-52) unstable; urgency=medium
+
+  * INotify: map address and netmask also to IP/CIDR while parsing
+    network interfaces
+
+  * print api res: always allow result to be undef if optional
+
+  * prevent adding options through autovivification in SectionConfig based
+    modules
+
+  * sort keys for stabillity when dumping config through JSONSchema
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 15 May 2019 14:14:02 +0200
+
 libpve-common-perl (5.0-51) unstable; urgency=medium
 
   * Tools: add setresuid syscall
