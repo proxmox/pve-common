@@ -379,10 +379,10 @@ sub check_config {
 
     foreach my $k (keys %$config) {
 	my $value = $config->{$k};
-	
+
 	die "can't change value of fixed parameter '$k'\n"
-	    if !$create && $opts->{$k}->{fixed};
-	
+	    if !$create && $opts->{$k} && $opts->{$k}->{fixed};
+
 	if (defined($value)) {
 	    my $tmp = $class->check_value($type, $k, $value, $sectionId, $skipSchemaCheck);
 	    $settings->{$k} = $class->decode_value($type, $k, $tmp);
