@@ -1,6 +1,6 @@
 Source: libpve-common-perl
 Section: perl
-Priority: extra
+Priority: optional
 Maintainer: Proxmox Support Team <support@proxmox.com>
 Build-Depends: debhelper (>= 10~),
                libclone-perl,
