@@ -125,14 +125,14 @@ sub assemble_spice_ticket {
     # Note: data needs to be lower case only, because virt-viewer needs that
     # Note: RSA signature are too long (>=256 charaters) and make problems with remote-viewer
 
-    my $plain = "pvespiceproxy:$timestamp:$vmid:" . lc($node);
+    my $plain = "pvespiceproxy:${timestamp}:${vmid}:" . lc($node);
 
     # produces 40 characters
     my $sig = unpack("H*", Digest::SHA::sha1($plain, $secret));
 
     #my $sig =  unpack("H*", $rsa_priv->sign($plain)); # this produce too long strings (512)
 
-    my $proxyticket = "$plain::$sig";
+    my $proxyticket = "${plain}::${sig}";
 
     return ($ticket, $proxyticket);
 }
