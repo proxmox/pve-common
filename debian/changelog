@@ -1,3 +1,10 @@
+libpve-common-perl (6.0-0+2) pve pmg; urgency=medium
+
+  * fix authentication over spice client by ensuring ticket does not use an
+    undefined variable
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 23 May 2019 13:00:15 +0200
+
 libpve-common-perl (6.0-0+1) pve pmg; urgency=medium
 
   * bump version for buster
