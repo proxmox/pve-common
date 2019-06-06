@@ -538,7 +538,7 @@ my $get_property_description = sub {
 	    die "unknown style '$style'";
 	}
 
-	my $tmp = sprintf "  %-10s %s$defaulttxt\n", $display_name, "$type_text";
+	my $tmp = sprintf "  %-10s %s%s\n", $display_name, "$type_text", "$defaulttxt";
 	my $indend = "             ";
 
 	$res .= Text::Wrap::wrap('', $indend, ($tmp));
