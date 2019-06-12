@@ -1106,7 +1106,7 @@ sub __read_etc_network_interfaces {
 
 	# map address and netmask to cidr
 	if ($d->{address}) {
-	    if ($d->{netmask} =~ m/^\d+$/) { # e.g. netmask 20
+	    if ($d->{netmask} && $d->{netmask} =~ m/^\d+$/) { # e.g. netmask 20
 		$d->{cidr} = $d->{address} . "/" . $d->{netmask};
 	    } elsif ($d->{netmask} &&
 		     (my $cidr = PVE::JSONSchema::get_netmask_bits($d->{netmask}))) { # e.g. netmask 255.255.255.0
