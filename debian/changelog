@@ -1,3 +1,11 @@
+libpve-common-perl (6.0-1) pve pmg; urgency=medium
+
+  * print defaulttxt as sprintf parameter
+
+  * inotify: network/interfaces: fix 'Use of uninitialized value' for netmask
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 14 Jun 2019 20:28:56 +0200
+
 libpve-common-perl (6.0-0+2) pve pmg; urgency=medium
 
   * fix authentication over spice client by ensuring ticket does not use an
