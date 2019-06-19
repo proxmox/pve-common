@@ -20,7 +20,7 @@ sub assemble_csrf_prevention_token {
 
     my $timestamp = sprintf("%08X", time());
 
-    my $digest = Digest::SHA::sha1_base64("$timestamp:$username", $secret);
+    my $digest = Digest::SHA::hmac_sha256_base64("$timestamp:$username", $secret);
 
     return "$timestamp:$digest";
 }
