@@ -1,3 +1,13 @@
+libpve-common-perl (6.0-2) pve pmg; urgency=medium
+
+  * systemd: add wait_for_unit_removed helper
+
+  * add fallback for CSRF token recognition
+
+  * use hmac_sha256 when assembling CSRF token
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 24 Jun 2019 17:16:28 +0200
+
 libpve-common-perl (6.0-1) pve pmg; urgency=medium
 
   * print defaulttxt as sprintf parameter
