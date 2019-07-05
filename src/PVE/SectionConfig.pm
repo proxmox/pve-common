@@ -44,11 +44,11 @@ sub properties {
 
 sub options {
     return {};
-}   
+}
 
 sub plugindata {
     return {};
-}   
+}
 
 sub createSchema {
     my ($class, $skip_type) = @_;
@@ -210,7 +210,7 @@ sub lookup_types {
     my ($class) = @_;
 
     my $pdata = $class->private();
-    
+
     return [ sort keys %{$pdata->{plugins}} ];
 }
 
@@ -234,7 +234,7 @@ sub check_value {
     return $value if $key eq 'type' && $type eq $value;
 
     my $opts = $pdata->{options}->{$type};
-    die "unknown section type '$type'\n" if !$opts; 
+    die "unknown section type '$type'\n" if !$opts;
 
     die "unexpected property '$key'\n" if !defined($opts->{$key});
 
@@ -296,7 +296,7 @@ sub parse_config {
     $raw = '' if !defined($raw);
 
     my $digest = Digest::SHA::sha1_hex($raw);
-    
+
     my $pri = 1;
 
     my $lineno = 0;
@@ -338,7 +338,7 @@ sub parse_config {
 
 		if ($line =~ m/^\s+(\S+)(\s+(.*\S))?\s*$/) {
 		    my ($k, $v) = ($1, $3);
-   
+
 		    eval {
 			die "duplicate attribute\n" if defined($config->{$k});
 			$config->{$k} = $plugin->check_value($type, $k, $v, $sectionId);
@@ -432,13 +432,13 @@ sub write_config {
 
     my $maxpri = 0;
     foreach my $sectionId (keys %$ids) {
-	my $pri = $order->{$sectionId}; 
+	my $pri = $order->{$sectionId};
 	$maxpri = $pri if $pri && $pri > $maxpri;
     }
     foreach my $sectionId (keys %$ids) {
 	if (!defined ($order->{$sectionId})) {
 	    $order->{$sectionId} = ++$maxpri;
-	} 
+	}
     }
 
     foreach my $sectionId (sort {$order->{$a} <=> $order->{$b}} keys %$ids) {
