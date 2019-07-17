@@ -1649,4 +1649,33 @@ sub dev_t_minor($) {
     return (($dev_t >> 12) & 0xfff00) | ($dev_t & 0xff);
 }
 
+# Given an array of array refs [ \[a b c], \[a b b], \[e b a] ]
+# Returns the intersection of elements as a single array [a b]
+sub array_intersect {
+    my ($arrays) = @_;
+
+    return [] if @$arrays == 0;
+    return $arrays->[0] if @$arrays == 1;
+
+    my $return_arr;
+    @$return_arr = array_unique(@{$arrays->[0]});
+    for my $i (1 .. $#$arrays) {
+	my %count = ();
+	foreach my $element (@$return_arr, array_unique(@{$arrays->[$i]})) {
+	    $count{$element}++;
+	}
+	$return_arr = [];
+	foreach my $element (keys %count) {
+	    push @$return_arr, $element if $count{$element} > 1;
+	}
+    }
+
+    return $return_arr;
+}
+
+sub array_unique {
+    my %seen = ();
+    return grep { ! $seen{ $_ }++ } @_;
+}
+
 1;
