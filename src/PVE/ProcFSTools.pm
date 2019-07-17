@@ -29,6 +29,7 @@ sub read_cpuinfo {
 	mhz => 0,
 	cpus => 1,
 	sockets => 1,
+	flags => '',
     };
 
     my $fh = IO::File->new ($fn, "r");
@@ -43,19 +44,22 @@ sub read_cpuinfo {
 	    $res->{model} = $1 if $res->{model} eq 'unknown';
 	} elsif ($line =~ m/^cpu\s+MHz\s*:\s*(\d+\.\d+)\s*$/i) {
 	    $res->{mhz} = $1 if !$res->{mhz};
-	} elsif ($line =~ m/^flags\s*:.*(vmx|svm)/) {
-	    $res->{hvm} = 1; # Hardware Virtual Machine (Intel VT / AMD-V)
+	} elsif ($line =~ m/^flags\s*:\s*(.*)$/) {
+	    $res->{flags} = $1 if !length $res->{flags};
 	} elsif ($line =~ m/^physical id\s*:\s*(\d+)\s*$/i) {
 	    $idhash->{$1} = 1;
 	}
     }
+
+    # Hardware Virtual Machine (Intel VT / AMD-V)
+    $res->{hvm} = $res->{flags} =~ m/\s(vmx|svm)\s/;
 
     $res->{sockets} = scalar(keys %$idhash) || 1;
 
     $res->{cpus} = $count;
 
     $fh->close;
-    
+
     $cpuinfo = $res;
 
     return $res;
