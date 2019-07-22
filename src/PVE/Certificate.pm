@@ -78,6 +78,16 @@ PVE::JSONSchema::register_standard_option('pve-certificate-info', {
 	    format => 'pem-certificate',
 	    optional => 1,
 	},
+	'public-key-type' => {
+	    type => 'string',
+	    description => 'Certificate\'s public key algorithm',
+	    optional => 1,
+	},
+	'public-key-bits' => {
+	    type => 'integer',
+	    description => 'Certificate\'s public key size',
+	    optional => 1,
+	},
     },
 });
 
