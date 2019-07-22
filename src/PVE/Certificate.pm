@@ -260,6 +260,14 @@ sub get_certificate_info {
     $info->{san} = $parse_san->(Net::SSLeay::X509_get_subjectAltNames($cert));
     $info->{pem} = Net::SSLeay::PEM_get_string_X509($cert);
 
+    my $pub_key = eval { Net::SSLeay::X509_get_pubkey($cert) };
+    warn $@ if $@;
+    if ($pub_key) {
+	$info->{'public-key-type'} = Net::SSLeay::OBJ_nid2sn(Net::SSLeay::EVP_PKEY_id($pub_key));
+	$info->{'public-key-bits'} = Net::SSLeay::EVP_PKEY_bits($pub_key);
+	Net::SSLeay::EVP_PKEY_free($pub_key);
+    }
+
     Net::SSLeay::X509_free($cert);
 
     $cert_path =~ s!^.*/!!g;
