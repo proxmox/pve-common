@@ -1654,6 +1654,10 @@ sub dev_t_minor($) {
 sub array_intersect {
     my ($arrays) = @_;
 
+    if (!ref($arrays->[0])) {
+	$arrays = [ grep { ref($_) eq 'ARRAY' } @_ ];
+    }
+
     return [] if scalar(@$arrays) == 0;
     return $arrays->[0] if scalar(@$arrays) == 1;
 
