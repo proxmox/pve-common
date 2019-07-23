@@ -1,3 +1,13 @@
+libpve-common-perl (6.0-3) pve pmg; urgency=medium
+
+  * cert: add public key type and size to info and JSON schema
+
+  * include all available CPU flags in read_cpuinfo
+
+  * add array_intersect method
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 23 Jul 2019 09:14:58 +0200
+
 libpve-common-perl (6.0-2) pve pmg; urgency=medium
 
   * systemd: add wait_for_unit_removed helper
