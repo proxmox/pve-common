@@ -1677,6 +1677,7 @@ sub array_intersect {
 	foreach my $element (keys %count) {
 	    push @$return_arr, $element if $count{$element} > 1;
 	}
+	last if scalar(@$return_arr) == 0; # empty intersection, early exit
     }
 
     return $return_arr;
