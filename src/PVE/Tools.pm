@@ -1654,18 +1654,22 @@ sub dev_t_minor($) {
 sub array_intersect {
     my ($arrays) = @_;
 
-    return [] if @$arrays == 0;
-    return $arrays->[0] if @$arrays == 1;
+    return [] if scalar(@$arrays) == 0;
+    return $arrays->[0] if scalar(@$arrays) == 1;
 
     my $array_unique = sub {
 	my %seen = ();
 	return grep { ! $seen{ $_ }++ } @_;
     };
 
-    my $return_arr;
-    @$return_arr = $array_unique->(@{$arrays->[0]});
+    # base idea is to get all unique members from the first array, then
+    # check the common elements with the next (uniquely made) one, only keep
+    # those. Repeat for every array and at the end we only have those left
+    # which exist in all arrays
+    my $return_arr = [ $array_unique->(@{$arrays->[0]}) ];
     for my $i (1 .. $#$arrays) {
 	my %count = ();
+	# $return_arr is already unique, explicit at before the loop, implicit below.
 	foreach my $element (@$return_arr, $array_unique->(@{$arrays->[$i]})) {
 	    $count{$element}++;
 	}
