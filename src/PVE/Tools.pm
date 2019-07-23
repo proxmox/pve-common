@@ -1657,11 +1657,16 @@ sub array_intersect {
     return [] if @$arrays == 0;
     return $arrays->[0] if @$arrays == 1;
 
+    my $array_unique = sub {
+	my %seen = ();
+	return grep { ! $seen{ $_ }++ } @_;
+    };
+
     my $return_arr;
-    @$return_arr = array_unique(@{$arrays->[0]});
+    @$return_arr = $array_unique->(@{$arrays->[0]});
     for my $i (1 .. $#$arrays) {
 	my %count = ();
-	foreach my $element (@$return_arr, array_unique(@{$arrays->[$i]})) {
+	foreach my $element (@$return_arr, $array_unique->(@{$arrays->[$i]})) {
 	    $count{$element}++;
 	}
 	$return_arr = [];
@@ -1673,9 +1678,5 @@ sub array_intersect {
     return $return_arr;
 }
 
-sub array_unique {
-    my %seen = ();
-    return grep { ! $seen{ $_ }++ } @_;
-}
 
 1;
