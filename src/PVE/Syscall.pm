@@ -14,6 +14,7 @@ BEGIN {
 	mkdirat => &SYS_mkdirat,
 	faccessat => &SYS_faccessat,
 	setresuid => &SYS_setresuid,
+	fchownat => &SYS_fchownat,
     );
 };
 

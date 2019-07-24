@@ -85,6 +85,8 @@ use constant {CLONE_NEWNS   => 0x00020000,
 use constant {O_PATH    => 0x00200000,
               O_TMPFILE => 0x00410000}; # This includes O_DIRECTORY
 
+use constant {AT_EMPTY_PATH => 0x1000};
+
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
 
@@ -1554,6 +1556,11 @@ sub openat($$$;$) {
 sub mkdirat($$$) {
     my ($dirfd, $name, $mode) = @_;
     return syscall(PVE::Syscall::mkdirat, $dirfd, $name, $mode) == 0;
+}
+
+sub fchownat($$$$$) {
+    my ($dirfd, $pathname, $owner, $group, $flags) = @_;
+    return syscall(PVE::Syscall::fchownat, $dirfd, $pathname, $owner, $group, $flags) == 0;
 }
 
 my $salt_starter = time();
