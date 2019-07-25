@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-54) unstable; urgency=medium
+
+  * cert: add public key type and size to info and JSON schema
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 25 Jul 2019 09:27:39 +0200
+
 libpve-common-perl (5.0-53) unstable; urgency=medium
 
   * add fallback CSRF token recognition
