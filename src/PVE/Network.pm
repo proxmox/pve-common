@@ -592,7 +592,7 @@ sub get_local_ip_from_cidr {
     my $code = sub {
 	my $line = shift;
 
-	if ($line =~ m!^\s*inet(?:6)?\s+($PVE::Tools::IPRE)/\d+!) {
+	if ($line =~ m!^\s*inet(?:6)?\s+($PVE::Tools::IPRE)(?:/\d+|\s+peer\s+)!) {
 	    push @$IPs, $1;
 	}
     };
