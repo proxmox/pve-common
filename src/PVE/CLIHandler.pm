@@ -190,7 +190,6 @@ sub generate_usage_str {
     my $param_cb = $gen_param_mapping_func->($cli_handler_class);
 
     my ($subcmd, $def, undef, undef, $cmdstr) = resolve_cmd($cmd);
-    $abort->("unknown command '$cmdstr'") if !defined($def) && ref($cmd) eq 'ARRAY';
 
     my $generate;
     $generate = sub {
