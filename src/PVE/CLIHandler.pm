@@ -108,12 +108,14 @@ my $abort = sub {
 };
 
 my $expand_command_name = sub {
-    my ($def, $cmd) = @_;
+    my ($def, $cmd, $enforce_exact) = @_;
 
     return $cmd if exists $def->{$cmd}; # command is already complete
 
     my $is_alias = sub { ref($_[0]) eq 'HASH' && exists($_[0]->{alias}) };
     my @expanded = grep { /^\Q$cmd\E/ && !$is_alias->($def->{$_}) } keys %$def;
+
+    return @expanded if !$enforce_exact;
 
     return $expanded[0] if scalar(@expanded) == 1; # enforce exact match
 
@@ -143,18 +145,23 @@ sub resolve_cmd {
 	my $last_arg_id = scalar(@$argv) - 1;
 
 	for my $i (0..$last_arg_id) {
-	    $cmd = $expand_command_name->($def, $argv->[$i]);
+	    $cmd = $expand_command_name->($def, $argv->[$i], 1);
 	    if (defined($cmd)) {
 		# If the argument was expanded (or was already complete) and it
 		# is the final argument, tell our caller about it:
 		$expanded_last_arg = $cmd if $i == $last_arg_id;
 	    } else {
 		# Otherwise continue with the unexpanded version of it.
-		$cmd = $argv->[$i]; 
+		$cmd = $argv->[$i];
 	    }
 	    $cmdstr .= " $cmd";
+	    if (!defined($def->{$cmd})) {
+		# $cmd still could be a valid prefix for bash_completion
+		# in that case keep $def as it is, else set it to undef
+		$def = undef if !$expand_command_name->($def, $cmd);
+		last;
+	    }
 	    $def = $def->{$cmd};
-	    last if !defined($def);
 
 	    if (ref($def) eq 'ARRAY') {
 		# could expand to a real command, rest of $argv are its arguments
