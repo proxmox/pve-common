@@ -1,3 +1,13 @@
+libpve-common-perl (6.0-4) pve pmg; urgency=medium
+
+  * fix #2303: detect IPs of p2p interfaces
+
+  * CLIHandler: consider all valid prefixes again for completion
+
+  * Tools: add fchownat syscall
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 17 Aug 2019 11:31:24 +0200
+
 libpve-common-perl (6.0-3) pve pmg; urgency=medium
 
   * cert: add public key type and size to info and JSON schema
