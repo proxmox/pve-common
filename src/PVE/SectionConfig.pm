@@ -334,7 +334,7 @@ sub parse_config {
 		}
 	    }
 
-	    while ($line = &$nextline()) {
+	    while ($line = $nextline->()) {
 		next if $ignore; # skip
 
 		$errprefix = "file $filename line $lineno";
