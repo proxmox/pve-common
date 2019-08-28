@@ -302,13 +302,16 @@ sub parse_config {
     my $lineno = 0;
     my @lines = split(/\n/, $raw);
     my $nextline = sub {
-	while (my $line = shift @lines) {
+	while (defined(my $line = shift @lines)) {
 	    $lineno++;
-	    return $line if $line !~ /^\s*(?:#|$)/;
+	    return $line if ($line !~ /^\s*#/);
 	}
     };
 
-    while (my $line = &$nextline()) {
+    while (@lines) {
+	my $line = $nextline->();
+	next if !$line;
+
 	my $errprefix = "file $filename line $lineno";
 
 	my ($type, $sectionId, $errmsg, $config) = $class->parse_section_header($line);
