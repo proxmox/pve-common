@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+
+#DEBHELPER#
+
+case "$1" in
+  configure)
+    if test -n "$2"; then
+
+        # TODO: remove once PVE 7.0 is released
+        if dpkg --compare-versions "$2" 'lt' '6.0-5'; then
+            sed -E -i -e 's/^www:(\w)/www: \1/' /etc/aliases
+       fi
+    fi
+    ;;
+
+esac
+
+exit 0
