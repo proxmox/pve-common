@@ -955,6 +955,7 @@ sub __read_etc_network_interfaces {
 			'bridge-multicast-flood' => 1,
 			'bond_miimon' => 1,
 			'bond_xmit_hash_policy' => 1,
+			'uplink-id' => 1,
 			'vlan-protocol' => 1,
 			'vxlan-id' => 1,
 			'vxlan-svcnodeip' => 1,
@@ -1183,7 +1184,7 @@ sub __interface_to_string {
 		 comments => 1, autostart => 1, options => 1,
 		 address => 1, netmask => 1, gateway => 1, broadcast => 1,
 		 method6 => 1, families => 1, options6 => 1,
-		 address6 => 1, netmask6 => 1, gateway6 => 1, broadcast6 => 1 };
+		 address6 => 1, netmask6 => 1, gateway6 => 1, broadcast6 => 1, 'uplink-id' => 1 };
 
     if (!$first_block) {
 	# not printing out options
@@ -1484,6 +1485,21 @@ sub __write_etc_network_interfaces {
 
 	    &$check_mtu($ifaces, $p, $iface);
 
+	}
+    }
+
+    # check uplink
+    my $uplinks = {};
+    foreach my $iface (keys %$ifaces) {
+	my $d = $ifaces->{$iface};
+	if (my $uplinkid = $d->{'uplink-id'}) {
+	    die "iface '$iface' - uplink-id $uplinkid is only allowed on physical and linux bond interfaces\n"
+		if $d->{type} ne 'eth' && $d->{type} ne 'bond'; 
+
+	    die "iface '$iface' - uplink-id $uplinkid is already assigned on '$uplinks->{$uplinkid}'\n"
+		if $uplinks->{$uplinkid};
+
+	    $uplinks->{$uplinkid} = $iface;
 	}
     }
 
