@@ -149,7 +149,7 @@ sub api_dump_full {
 			    $data->{$k} = ref($d) ? clone($d) : $d;
 			}
 		    }
-		} 
+		}
 		$res->{info}->{$info->{method}} = $data;
 	    };
 	}
@@ -248,7 +248,7 @@ sub register_method {
     my $path_lookup = $method_path_lookup->{$self};
 
     die "$errprefix no path" if !defined($info->{path});
-    
+
     foreach my $comp (split(/\/+/, $info->{path})) {
 	die "$errprefix path compoment has zero length\n" if $comp eq '';
 	my ($name, $regex);
@@ -264,7 +264,7 @@ sub register_method {
 	}
 
 	if ($regex) {
-	    $path_lookup->{regex} = {} if !defined($path_lookup->{regex});	
+	    $path_lookup->{regex} = {} if !defined($path_lookup->{regex});
 
 	    my $old_name = $path_lookup->{regex}->{match_name};
 	    die "$errprefix found changed regex match name\n"
@@ -274,14 +274,14 @@ sub register_method {
 		if defined($old_re) && ($old_re ne $regex);
 	    $path_lookup->{regex}->{match_name} = $name;
 	    $path_lookup->{regex}->{match_re} = $regex;
-	    
+
 	    die "$errprefix path match error - regex and fixed items\n"
 		if defined($path_lookup->{folders});
 
 	    $path_lookup = $path_lookup->{regex};
-	    
+
 	} else {
-	    $path_lookup->{folders}->{$name} = {} if !defined($path_lookup->{folders}->{$name});	
+	    $path_lookup->{folders}->{$name} = {} if !defined($path_lookup->{folders}->{$name});
 
 	    die "$errprefix path match error - regex and fixed items\n"
 		if defined($path_lookup->{regex});
@@ -290,7 +290,7 @@ sub register_method {
 	}
     }
 
-    die "$errprefix duplicate method definition\n" 
+    die "$errprefix duplicate method definition\n"
 	if defined($path_lookup->{$method});
 
     if ($method eq 'SUBCLASS') {
@@ -321,7 +321,7 @@ sub AUTOLOAD {
     my ($this) = @_;
 
     # also see "man perldiag"
- 
+
     my $sub = $AUTOLOAD;
     (my $method = $sub) =~ s/.*:://;
 
@@ -377,7 +377,7 @@ sub map_path_to_methods {
 	} else {
 	    die "internal error";
 	}
- 
+
 	return undef if !$path_lookup;
 
 	if (my $info = $path_lookup->{SUBCLASS}) {
@@ -387,7 +387,7 @@ sub map_path_to_methods {
 
 	    if (defined($fd)) {
 		# we only support the empty string '' (match whole URI)
-		die "unsupported fragmentDelimiter '$fd'" 
+		die "unsupported fragmentDelimiter '$fd'"
 		    if $fd ne '';
 
 		$stack = [ join ('/', @$stack) ] if scalar(@$stack) > 1;
@@ -597,7 +597,7 @@ my $compute_param_mapping_hash = sub {
 #
 # $info        ... method info
 # $prefix      ... usually something like "$exename $cmd" ('pvesm add')
-# $arg_param   ... list of parameters we want to get as ordered arguments 
+# $arg_param   ... list of parameters we want to get as ordered arguments
 #                  on the command line (or single parameter name for lists)
 # $fixed_param ... do not generate and info about those parameters
 # $format:
@@ -698,7 +698,7 @@ sub getopt_usage {
 	    $args .= " " if $args;
 	    $args .= "--$base <$type_text>"
 	}
-    } 
+    }
 
     if ($format eq 'asciidoc') {
 	$out .= "*${prefix}*";
@@ -748,7 +748,7 @@ sub dump_properties {
     my $raw = '';
 
     $style //= 'config';
-    
+
     my $idx_param = {}; # -vlan\d+ -scsi\d+
 
     foreach my $k (sort keys %$prop) {
@@ -781,7 +781,7 @@ sub dump_properties {
 	next if !(ref($prop_fmt) && (ref($prop_fmt) eq 'HASH'));
 
 	$raw .= dump_properties($prop_fmt, $format, 'config-sub')
-	
+
     }
 
     return $raw;
@@ -858,7 +858,7 @@ sub cli_handler {
 	my $ec = ref($err);
 
 	die $err if !$ec || $ec ne "PVE::Exception" || !$err->is_param_exc();
-	
+
 	$err->{usage} = $self->usage_str($name, $prefix, $arg_param, $fixed_param, 'short', $param_cb, $formatter_properties);
 
 	die $err;

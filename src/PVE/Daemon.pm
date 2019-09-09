@@ -13,7 +13,7 @@ package PVE::Daemon;
 # * allow to restart while workers are still runningl
 #   (option 'leave_children_open_on_reload')
 # * run as different user using setuid/setgid
- 
+
 use strict;
 use warnings;
 use English;
@@ -64,7 +64,7 @@ sub after_fork_cleanup {
 
     for my $sig (qw(CHLD HUP INT TERM QUIT)) {
 	$SIG{$sig} = 'DEFAULT'; # restore default handler
-	# AnyEvent signals only works if $SIG{XX} is 
+	# AnyEvent signals only works if $SIG{XX} is
 	# undefined (perl event loop)
 	delete $SIG{$sig}; # so that we can handle events with AnyEvent
     }
@@ -80,7 +80,7 @@ my $lockpidfile = sub {
     if (my $fd = $self->{env_pve_lock_fd}) {
 
 	$self->{daemon_lock_fh} = IO::Handle->new_from_fd($fd, "a");
-	
+
     } else {
 
 	$waittime = 5;
@@ -333,7 +333,7 @@ my $server_run = sub {
 	syslog('info' , "starting server");
     }
 
-    POSIX::setsid(); 
+    POSIX::setsid();
 
     open STDERR, '>&STDOUT' || die "can't close STDERR\n";
 
@@ -377,7 +377,7 @@ my $server_run = sub {
 	}
     };
 
-    eval { 
+    eval {
 	if ($self->{max_workers}) {
 	    my $old_sig_chld = $SIG{CHLD};
 	    local $SIG{CHLD} = sub {
@@ -387,7 +387,7 @@ my $server_run = sub {
 	    };
 
 	    # now loop forever (until we receive terminate signal)
-	    for (;;) { 
+	    for (;;) {
 		&$start_workers($self);
 		sleep(5);
 		&$terminate_old_workers($self);
@@ -397,7 +397,7 @@ my $server_run = sub {
 
 	} else {
 	    $self->run();
-	} 
+	}
     };
     my $err = $@;
 
@@ -430,7 +430,7 @@ sub new {
     eval {
 	my $class = ref($this) || $this;
 
-	$self = bless { 
+	$self = bless {
 	    name => $name,
 	    pidfile => "/var/run/${name}.pid",
 	    workers => {},
@@ -458,7 +458,7 @@ sub new {
 		die "unknown daemon option '$opt'\n";
 	    }
 	}
-	
+
 
 	# untaint
 	$self->{cmdline} = [map { /^(.*)$/ } @$cmdline];
@@ -565,7 +565,7 @@ my $read_pid = sub {
     return 0 if !$pid_str;
 
     return 0 if $pid_str !~ m/^(\d+)$/; # untaint
- 
+
     my $pid = int($1);
 
     return $pid;
@@ -579,7 +579,7 @@ my $init_ppid = sub {
     } else {
        return 0;
     }
-}; 
+};
 
 sub running {
     my ($self) = @_;
@@ -664,7 +664,7 @@ sub register_start_command {
             }
 
 	    return undef;
-	}});  
+	}});
 }
 
 my $reload_daemon = sub {
@@ -673,7 +673,7 @@ my $reload_daemon = sub {
     if ($self->{env_restart_pve_daemon}) {
 	$self->start();
     } else {
-	my ($running, $pid) = $self->running(); 
+	my ($running, $pid) = $self->running();
 	if (!$running) {
 	    $self->start();
 	} else {
@@ -714,7 +714,7 @@ sub register_restart_command {
 	    }
 
 	    return undef;
-	}});		   
+	}});
 }
 
 sub register_reload_command {
@@ -739,7 +739,7 @@ sub register_reload_command {
 	    &$reload_daemon($self, 1);
 
 	    return undef;
-	}});		   
+	}});
 }
 
 sub register_stop_command {
@@ -760,7 +760,7 @@ sub register_stop_command {
 
 	code => sub {
 	    my ($param) = @_;
-	    
+
 	    if (&$init_ppid()) {
 		$self->stop();
 	    } else {
@@ -768,7 +768,7 @@ sub register_stop_command {
 	    }
 
 	    return undef;
-	}});		   
+	}});
 }
 
 sub register_status_command {
@@ -785,7 +785,7 @@ sub register_status_command {
 	    additionalProperties => 0,
 	    properties => {},
 	},
-	returns => { 
+	returns => {
 	    type => 'string',
 	    enum => ['stopped', 'running'],
 	},
@@ -808,12 +808,12 @@ sub create_reusable_socket {
     if (defined($sockfd = $ENV{"PVE_DAEMON_SOCKET_$port"}) &&
 	$self->{env_restart_pve_daemon}) {
 
-	die "unable to parse socket fd '$sockfd'\n" 
+	die "unable to parse socket fd '$sockfd'\n"
 	    if $sockfd !~ m/^(\d+)$/;
 	$sockfd = $1; # untaint
 
 	$socket = IO::Socket::IP->new;
-	$socket->fdopen($sockfd, 'w') || 
+	$socket->fdopen($sockfd, 'w') ||
 	    die "cannot fdopen file descriptor '$sockfd' - $!\n";
 
 	$socket->fcntl(Fcntl::F_SETFD(), Fcntl::FD_CLOEXEC);

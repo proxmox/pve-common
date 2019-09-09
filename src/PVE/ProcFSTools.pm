@@ -168,9 +168,9 @@ sub check_process_running {
     # for processes spanned by other processes.
     # kill(0, pid) return succes for zombies.
     # So we read the status form /proc/$pid/stat instead
- 
+
     my $info = read_proc_pid_stat($pid);
- 
+
     return $info && (!$pstart || ($info->{starttime} eq $pstart)) && ($info->{status} ne 'Z') ? $info : undef;
 }
 
@@ -200,7 +200,7 @@ sub read_meminfo {
     while (my $line = <$fh>) {
 	if ($line =~ m/^(\S+):\s+(\d+)\s*kB/i) {
 	    $d->{lc ($1)} = $2 * 1024;
-	} 
+	}
     }
     close($fh);
 

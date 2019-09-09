@@ -13,7 +13,7 @@ our $VERSION = '1.00';
 our @EXPORT = qw(syslog initlog);
 
 my $log_tag = "unknown";
- 
+
 # never log to console - thats too slow, and
 # it corrupts the DBD database connection!
 
@@ -24,7 +24,7 @@ sub syslog {
 sub initlog {
     my ($tag, $facility) = @_;
 
-    if ($tag) { 
+    if ($tag) {
 	$tag = basename($tag);
 
 	$tag = encode("ascii", decode_utf8($tag));

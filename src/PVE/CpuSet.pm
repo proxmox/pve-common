@@ -24,7 +24,7 @@ sub new_from_cgroup {
     my $set_text = PVE::Tools::file_read_firstline($filename) // '';
 
     my $cpuset = $this->new();
-    
+
     my $members = $cpuset->{members};
 
     my $count = 0;
@@ -72,7 +72,7 @@ sub insert {
     my ($self, @members) = @_;
 
     my $count = 0;
-    
+
     foreach my $cpu (@members) {
 	next if $self->{members}->{$cpu};
 	$self->{members}->{$cpu} = 1;
@@ -86,7 +86,7 @@ sub delete {
     my ($self, @members) = @_;
 
     my $count = 0;
-    
+
     foreach my $cpu (@members) {
 	next if !$self->{members}->{$cpu};
 	delete $self->{members}->{$cpu};
@@ -107,7 +107,7 @@ sub members {
     my ($self) = @_;
 
     return sort { $a <=> $b } keys %{$self->{members}};
-}    
+}
 
 sub size {
     my ($self) = @_;
@@ -127,7 +127,7 @@ sub is_equal {
     foreach my $id (keys %$members2) {
 	return 0 if !$members1->{$id};
     }
-    
+
     return 1;
 }
 

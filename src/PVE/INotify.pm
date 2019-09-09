@@ -84,15 +84,15 @@ sub ccache_info {
 		    $cp->{$k} = $v;
 		}
 		$ccache->{$filename} = $cp;
-	    } 
+	    }
 	    return ($ccache->{$filename}, $filename);
 	}
     }
- 
+
     $filename = $ccachemap->{$filename} if defined ($ccachemap->{$filename});
 
     die "file '$filename' not added :ERROR" if !defined ($ccache->{$filename});
-   
+
     return ($ccache->{$filename}, $filename);
 }
 
@@ -135,7 +135,7 @@ sub write_file {
     if (!rename($tmpname, $realname)) {
 	my $msg = "close (rename) atomic file '$filename' failed: $!\n";
 	unlink $tmpname;
-	die $msg;	
+	die $msg;
     }
 
     my $diff;
@@ -168,7 +168,7 @@ sub update_file {
     my $code = sub {
 
 	$fd = IO::File->new ($filename, "r");
-	
+
 	my $new = &$update($filename, $fd, $data, @args);
 
 	if (defined($new)) {
@@ -216,9 +216,9 @@ sub read_file {
     my $parser;
 
     my ($ccinfo, $filename) = ccache_info($fileid);
-     
+
     $parser = $ccinfo->{parser};
- 
+
     my $fd;
     my $shadow;
 
@@ -238,7 +238,7 @@ sub read_file {
 
     if (!$fd) {
 	$ccinfo->{version} = undef;
-	$ccinfo->{data} = undef; 
+	$ccinfo->{data} = undef;
 	$ccinfo->{diff} = undef;
 	return undef if !$acp;
     }
@@ -260,7 +260,7 @@ sub read_file {
 	    $ret->{data} = $ccinfo->{data};
 	}
 	$ret->{changes} = $ccinfo->{diff};
-	
+
 	return $full ? $ret : $ret->{data};
     }
 
@@ -293,7 +293,7 @@ sub read_file {
     $ret->{changes} = $ccinfo->{diff};
 
     return $full ? $ret : $ret->{data};
-}    
+}
 
 sub parse_ccache_options {
     my ($ccinfo, %options) = @_;
@@ -337,7 +337,7 @@ sub register_file {
     $ccinfo->{update} = $update;
 
     parse_ccache_options($ccinfo, %options);
-    
+
     if ($options{shadow}) {
 	$shadowfiles->{$filename} = $options{shadow};
     }
@@ -353,7 +353,7 @@ sub register_regex {
 
     my $uid = "$dir/$regex";
     die "regular expression '$uid' already added :ERROR" if defined ($ccacheregex->{$uid});
- 
+
     my $ccinfo = {};
 
     $ccinfo->{dir} = $dir;
@@ -417,7 +417,7 @@ sub inotify_init {
 
     foreach my $uid (keys %$ccacheregex) {
 	my $ccinfo = $ccacheregex->{$uid};
-	$dirhash->{$ccinfo->{dir}}->{_regex} = 1;	
+	$dirhash->{$ccinfo->{dir}}->{_regex} = 1;
     }
 
     $inotify_pid = $$;
@@ -447,7 +447,7 @@ sub inotify_init {
 		syslog ('err', "got 'unmount' event on '$name' - disabling inotify");
 		$inotify = undef;
 	    }
-	    if ($e->IN_IGNORED) { 
+	    if ($e->IN_IGNORED) {
 		syslog ('err', "got 'ignored' event on '$name' - disabling inotify");
 		$inotify = undef;
 	    }
@@ -480,7 +480,7 @@ sub inotify_init {
 		    next if $dir ne $ccinfo->{dir};
 		    my $re = $ccinfo->{regex};
 		    if (my $fd = IO::Dir->new ($dir)) {
-			while (defined(my $de = $fd->read)) { 
+			while (defined(my $de = $fd->read)) {
 			    if ($de =~ m/^$re$/) {
 				my $fn = "$dir/$de";
 				$versions->{$fn}++; # init with version
@@ -535,8 +535,8 @@ sub write_etc_hostname {
     return $hostname;
 }
 
-register_file('hostname', "/etc/hostname",  
-	      \&read_etc_hostname, 
+register_file('hostname', "/etc/hostname",
+	      \&read_etc_hostname,
 	      \&write_etc_hostname);
 
 sub read_etc_hosts {
@@ -629,12 +629,12 @@ sub update_etc_resolv_conf {
 	next if $line =~ m/^(search|domain|nameserver)\s+/;
 	$data .= $line
     }
-    
+
     return $data;
 }
 
-register_file('resolvconf', "/etc/resolv.conf", 
-	      \&read_etc_resolv_conf, undef, 
+register_file('resolvconf', "/etc/resolv.conf",
+	      \&read_etc_resolv_conf, undef,
 	      \&update_etc_resolv_conf);
 
 sub read_etc_timezone {
@@ -664,8 +664,8 @@ sub write_etc_timezone {
 
 }
 
-register_file('timezone', "/etc/timezone", 
-	      \&read_etc_timezone, 
+register_file('timezone', "/etc/timezone",
+	      \&read_etc_timezone,
 	      \&write_etc_timezone);
 
 sub read_active_workers {
@@ -673,7 +673,7 @@ sub read_active_workers {
 
     return [] if !$fh;
 
-    my $res = []; 
+    my $res = [];
     while (defined (my $line = <$fh>)) {
 	if ($line =~ m/^(\S+)\s(0|1)(\s([0-9A-Za-z]{8})(\s(\s*\S.*))?)?$/) {
 	    my $upid = $1;
@@ -717,7 +717,7 @@ sub write_active_workers {
     PVE::Tools::safe_print($filename, $fh, $raw) if $raw;
 }
 
-register_file('active', "/var/log/pve/tasks/active", 
+register_file('active', "/var/log/pve/tasks/active",
 	      \&read_active_workers,
 	      \&write_active_workers);
 
@@ -735,7 +735,7 @@ my $ovs_bond_modes = {
     'active-backup' => 1,
     'balance-slb' => 1,
     'lacp-balance-slb' => 1,
-    'lacp-balance-tcp' => 1, 
+    'lacp-balance-tcp' => 1,
 };
 
 #sub get_bond_modes {
@@ -896,12 +896,12 @@ sub __read_etc_network_interfaces {
     }
 
     # we try to keep order inside the file
-    my $priority = 2; # 1 is reserved for lo 
+    my $priority = 2; # 1 is reserved for lo
 
     SECTION: while (defined ($line = <$fh>)) {
 	chomp ($line);
 	next if $line =~ m/^\s*#/;
- 
+
 	if ($line =~ m/^\s*auto\s+(.*)$/) {
 	    my @aa = split (/\s+/, $1);
 
@@ -1210,7 +1210,7 @@ sub __interface_to_string {
 	}
 	$done->{bridge_vlan_aware} = 1;
 	$done->{bridge_vids} = 1;
-    
+
     } elsif ($d->{type} eq 'bond') {
 
 	$d->{slaves} =~ s/[;,\s]+/ /g;
@@ -1232,9 +1232,9 @@ sub __interface_to_string {
 	}
 	$done->{'bond_xmit_hash_policy'} = 1;
     } elsif ($d->{type} eq 'vlan') {
-	die "$iface: wrong vlan-protocol $d->{'vlan-protocol'}\n" 
+	die "$iface: wrong vlan-protocol $d->{'vlan-protocol'}\n"
 	    if $d->{'vlan-protocol'} && $d->{'vlan-protocol'} ne '802.1ad' && $d->{'vlan-protocol'} ne '802.1q';
-	
+
     } elsif ($d->{type} eq 'vxlan') {
 
 	foreach my $k (qw(vxlan-id vxlan-svcnodeip vxlan-physdev vxlan-local-tunnelip)) {
@@ -1494,7 +1494,7 @@ sub __write_etc_network_interfaces {
 	my $d = $ifaces->{$iface};
 	if (my $uplinkid = $d->{'uplink-id'}) {
 	    die "iface '$iface' - uplink-id $uplinkid is only allowed on physical and linux bond interfaces\n"
-		if $d->{type} ne 'eth' && $d->{type} ne 'bond'; 
+		if $d->{type} ne 'eth' && $d->{type} ne 'bond';
 
 	    die "iface '$iface' - uplink-id $uplinkid is already assigned on '$uplinks->{$uplinkid}'\n"
 		if $uplinks->{$uplinkid};
@@ -1629,7 +1629,7 @@ sub read_iscsi_initiatorname {
     return 'undefined';
 }
 
-register_file('initiatorname', "/etc/iscsi/initiatorname.iscsi",  
+register_file('initiatorname', "/etc/iscsi/initiatorname.iscsi",
 	      \&read_iscsi_initiatorname);
 
 sub read_apt_auth {
@@ -1641,7 +1641,7 @@ sub read_apt_auth {
 
     $raw =~ s/^\s+//;
 
- 
+
     my @tokens = split(/\s+/, $raw);
 
     my $data = {};
@@ -1682,7 +1682,7 @@ sub write_apt_auth {
     my $raw = &$format_apt_auth_data($data);
 
     die "write failed: $!" unless print $fh "$raw\n";
-   
+
     return $data;
 }
 
@@ -1698,7 +1698,7 @@ sub update_apt_auth {
     return &$format_apt_auth_data($orig);
 }
 
-register_file('apt-auth', "/etc/apt/auth.conf",  
+register_file('apt-auth', "/etc/apt/auth.conf",
 	      \&read_apt_auth, \&write_apt_auth,
 	      \&update_apt_auth, perm => 0640);
 

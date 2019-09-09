@@ -6,14 +6,14 @@ package PVE::Exception;
 
 use strict;
 use warnings;
-use Storable qw(dclone);       
+use Storable qw(dclone);
 use HTTP::Status qw(:constants);
 
 
 use overload '""' => sub {local $@; shift->stringify};
 use overload 'cmp' => sub {
     my ($a, $b) = @_;
-    local $@;  
+    local $@;
     return "$a" cmp "$b"; # compare as string
 };
 
@@ -30,7 +30,7 @@ sub new {
     };
 
     foreach my $p (keys %param) {
-	next if defined($self->{$p}); 
+	next if defined($self->{$p});
 	my $v = $param{$p};
 	$self->{$p} = ref($v) ? dclone($v) : $v;
     }
@@ -41,7 +41,7 @@ sub new {
 sub raise {
 
     my $exc = PVE::Exception->new(@_);
-    
+
     my ($pkg, $filename, $line) = caller;
 
     $exc->{filename} = $filename;
@@ -56,11 +56,11 @@ sub raise_perm_exc {
     my $param = { code => HTTP_FORBIDDEN };
 
     my $msg = "Permission check failed";
-    
+
     $msg .= " ($what)" if $what;
 
     my $exc = PVE::Exception->new("$msg\n", %$param);
-    
+
     my ($pkg, $filename, $line) = caller;
 
     $exc->{filename} = $filename;
@@ -86,7 +86,7 @@ sub raise_param_exc {
     $param->{usage} = $usage if $usage;
 
     my $exc = PVE::Exception->new("Parameter verification failed.\n", %$param);
-    
+
     my ($pkg, $filename, $line) = caller;
 
     $exc->{filename} = $filename;
@@ -97,7 +97,7 @@ sub raise_param_exc {
 
 sub stringify {
     my $self = shift;
-    
+
     my $msg = $self->{code} ? "$self->{code} $self->{msg}" : $self->{msg};
 
     if ($msg !~ m/\n$/) {
@@ -132,7 +132,7 @@ sub stringify {
 sub PROPAGATE {
     my ($self, $file, $line) = @_;
 
-    push @{$self->{propagate}}, [$file, $line]; 
+    push @{$self->{propagate}}, [$file, $line];
 
     return $self;
 }

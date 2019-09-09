@@ -16,11 +16,11 @@ use Data::Dumper;
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
-register_standard_option 
+register_standard_option
 get_standard_option
 );
 
-# Note: This class implements something similar to JSON schema, but it is not 100% complete. 
+# Note: This class implements something similar to JSON schema, but it is not 100% complete.
 # see: http://tools.ietf.org/html/draft-zyp-json-schema-02
 # see: http://json-schema.org/
 
@@ -30,7 +30,7 @@ my $standard_options = {};
 sub register_standard_option {
     my ($name, $schema) = @_;
 
-    die "standard option '$name' already registered\n" 
+    die "standard option '$name' already registered\n"
 	if $standard_options->{$name};
 
     $standard_options->{$name} = $schema;
@@ -77,7 +77,7 @@ register_standard_option('pve-iface', {
 register_standard_option('pve-storage-id', {
     description => "The storage identifier.",
     type => 'string', format => 'pve-storage-id',
-}); 
+});
 
 register_standard_option('pve-config-digest', {
     description => 'Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.',
@@ -124,7 +124,7 @@ my $format_list = {};
 sub register_format {
     my ($format, $code) = @_;
 
-    die "JSON schema format '$format' already registered\n" 
+    die "JSON schema format '$format' already registered\n"
 	if $format_list->{$format};
 
     $format_list->{$format} = $code;
@@ -168,10 +168,10 @@ sub pve_verify_urlencoded {
 register_format('pve-configid', \&pve_verify_configid);
 sub pve_verify_configid {
     my ($id, $noerr) = @_;
- 
+
     if ($id !~ m/^[a-z][a-z0-9_]+$/i) {
 	return undef if $noerr;
-	die "invalid configuration ID '$id'\n"; 
+	die "invalid configuration ID '$id'\n";
     }
     return $id;
 }
@@ -403,10 +403,10 @@ sub pve_verify_dns_name {
 register_format('pve-iface', \&pve_verify_iface);
 sub pve_verify_iface {
     my ($id, $noerr) = @_;
- 
+
     if ($id !~ m/^[a-z][a-z0-9_]{1,20}([:\.]\d+)?$/i) {
 	return undef if $noerr;
-	die "invalid network interface name '$id'\n"; 
+	die "invalid network interface name '$id'\n";
     }
     return $id;
 }
@@ -438,7 +438,7 @@ sub pve_verify_disk_size {
 register_standard_option('spice-proxy', {
     description => "SPICE proxy server. This can be used by the client to specify the proxy server. All nodes in a cluster runs 'spiceproxy', so it is up to the client to choose one. By default, we return the node where the VM is currently running. As reasonable setting is to use same node you use to connect to the API (This is window.location.hostname for the JS GUI).",
     type => 'string', format => 'address',
-}); 
+});
 
 register_standard_option('remote-viewer-config', {
     description => "Returned values can be directly passed to the 'remote-viewer' application.",
@@ -537,7 +537,7 @@ sub check_format {
     return if $format eq 'regex';
 
     if ($format =~ m/^(.*)-a?list$/) {
-	
+
 	my $code = $format_list->{$1};
 
 	die "undefined format '$format'\n" if !$code;
@@ -566,7 +566,7 @@ sub check_format {
 	return parse_property_string($code, $value, $path) if ref($code) eq 'HASH';
 	&$code($value);
     }
-} 
+}
 
 sub parse_size {
     my ($value) = @_;
@@ -686,7 +686,7 @@ sub add_error {
     my ($errors, $path, $msg) = @_;
 
     $path = '_root' if !$path;
-    
+
     if ($errors->{$path}) {
 	$errors->{$path} = join ('\n', $errors->{$path}, $msg);
     } else {
@@ -698,7 +698,7 @@ sub is_number {
     my $value = shift;
 
     # see 'man perlretut'
-    return $value =~ /^[+-]?(\d+\.\d+|\d+\.|\.\d+|\d+)([eE][+-]?\d+)?$/; 
+    return $value =~ /^[+-]?(\d+\.\d+|\d+\.|\.\d+|\d+)([eE][+-]?\d+)?$/;
 }
 
 sub is_integer {
@@ -714,7 +714,7 @@ sub check_type {
 
     if (!defined($value)) {
 	return 1 if $type eq 'null';
-	die "internal error" 
+	die "internal error"
     }
 
     if (my $tt = ref($type)) {
@@ -722,16 +722,16 @@ sub check_type {
 	    foreach my $t (@$type) {
 		my $tmperr = {};
 		check_type($path, $t, $value, $tmperr);
-		return 1 if !scalar(%$tmperr); 
+		return 1 if !scalar(%$tmperr);
 	    }
 	    my $ttext = join ('|', @$type);
-	    add_error($errors, $path, "type check ('$ttext') failed"); 
+	    add_error($errors, $path, "type check ('$ttext') failed");
 	    return undef;
 	} elsif ($tt eq 'HASH') {
 	    my $tmperr = {};
 	    check_prop($value, $type, $path, $tmperr);
-	    return 1 if !scalar(%$tmperr); 
-	    add_error($errors, $path, "type check failed"); 	    
+	    return 1 if !scalar(%$tmperr);
+	    add_error($errors, $path, "type check failed");
 	    return undef;
 	} else {
 	    die "internal error - got reference type '$tt'";
@@ -807,7 +807,7 @@ sub check_type {
 		}
 	    }
 	}
-    }  
+    }
 
     return undef;
 }
@@ -843,7 +843,7 @@ sub check_object {
 		    #print "TEST: " . Dumper($value) . "\n", Dumper($requires) ;
 		    check_prop($value, $requires, $path, $errors);
 		} elsif (!defined($value->{$requires})) {
-		    add_error($errors, $path ? "$path.$requires" : $requires, 
+		    add_error($errors, $path ? "$path.$requires" : $requires,
 			      "missing property - '$newpath' requires this property");
 		}
 	    }
@@ -927,7 +927,7 @@ sub check_prop {
 		    }
 		}
 	    }
-	    return; 
+	    return;
 	} elsif ($schema->{properties} || $schema->{additionalProperties}) {
 	    check_object($path, defined($schema->{properties}) ? $schema->{properties} : {},
 			 $value, $schema->{additionalProperties}, $errors);
@@ -964,17 +964,17 @@ sub check_prop {
 		return;
 	    }
 	}
-	
+
 	if (is_number($value)) {
 	    if (defined (my $max = $schema->{maximum})) {
-		if ($value > $max) { 
+		if ($value > $max) {
 		    add_error($errors, $path, "value must have a maximum value of $max");
 		    return;
 		}
 	    }
 
 	    if (defined (my $min = $schema->{minimum})) {
-		if ($value < $min) { 
+		if ($value < $min) {
 		    add_error($errors, $path, "value must have a minimum value of $min");
 		    return;
 		}
@@ -1014,7 +1014,7 @@ sub validate {
     } elsif ($schema) {
 	check_prop($instance, $schema, '', $errors);
     }
-    
+
     if (scalar(%$errors)) {
 	raise $errmsg, code => HTTP_BAD_REQUEST, errors => $errors;
     }
@@ -1079,7 +1079,7 @@ my $default_schema_noref = {
 	    optional => 1,
 	    minimum => 0,
 	    default => 0,
-	},	
+	},
 	maxLength => {
 	    type => "integer",
 	    description => "When the instance value is a string, this indicates maximum length of the string.",
@@ -1206,7 +1206,7 @@ my $default_schema_noref = {
 	    description => "For CLI context, this defines the maximal width to print before truncating",
 	    optional => 1,
 	},
-    }	
+    }
 };
 
 my $default_schema = Storable::dclone($default_schema_noref);
@@ -1249,7 +1249,7 @@ my $method_schema = {
                     path => {},
                     parameters => {},
                     returns => {},
-                }             
+                }
             },
 	},
 	method => {
@@ -1260,7 +1260,7 @@ my $method_schema = {
 	},
         protected => {
             type => 'boolean',
-	    description => "Method needs special privileges - only pvedaemon can execute it",            
+	    description => "Method needs special privileges - only pvedaemon can execute it",
 	    optional => 1,
         },
         download => {
@@ -1289,15 +1289,15 @@ my $method_schema = {
 	             optional => 1,
 	        },
                 user => {
-                    description => "A simply way to allow access for 'all' authenticated users. Value 'world' is used to allow access without credentials.", 
-                    type => 'string', 
+                    description => "A simply way to allow access for 'all' authenticated users. Value 'world' is used to allow access without credentials.",
+                    type => 'string',
                     enum => ['all', 'world'],
                     optional => 1,
                 },
                 check => {
                     description => "Array of permission checks (prefix notation).",
-                    type => 'array', 
-                    optional => 1 
+                    type => 'array',
+                    optional => 1
                 },
             },
         },
@@ -1345,15 +1345,15 @@ my $method_schema = {
                     match_name => {},
                     match_re => {},
                     fragmentDelimiter => { optional => 1 }
-                }             
+                }
             },
-	}, 
+	},
     },
 
 };
 
 sub validate_schema {
-    my ($schema) = @_; 
+    my ($schema) = @_;
 
     my $errmsg = "internal error - unable to verify schema\n";
     validate($schema, $default_schema, $errmsg);
@@ -1364,13 +1364,13 @@ sub validate_method_info {
 
     my $errmsg = "internal error - unable to verify method info\n";
     validate($info, $method_schema, $errmsg);
- 
+
     validate_schema($info->{parameters}) if $info->{parameters};
     validate_schema($info->{returns}) if $info->{returns};
 }
 
 # run a self test on load
-# make sure we can verify the default schema 
+# make sure we can verify the default schema
 validate_schema($default_schema_noref);
 validate_schema($method_schema);
 
@@ -1397,7 +1397,7 @@ sub method_get_child_link {
     return $found;
 }
 
-# a way to parse command line parameters, using a 
+# a way to parse command line parameters, using a
 # schema to configure Getopt::Long
 sub get_options {
     my ($schema, $args, $arg_param, $fixed_param, $param_mapping_hash) = @_;
@@ -1534,7 +1534,7 @@ sub get_options {
 		    }
 		}
 	    }
-	}	
+	}
     }
 
     foreach my $p (keys %$fixed_param) {
@@ -1549,7 +1549,7 @@ sub parse_config {
     my ($schema, $filename, $raw) = @_;
 
     # do fast check (avoid validate_schema($schema))
-    die "got strange schema" if !$schema->{type} || 
+    die "got strange schema" if !$schema->{type} ||
 	!$schema->{properties} || $schema->{type} ne 'object';
 
     my $cfg = {};
@@ -1562,7 +1562,7 @@ sub parse_config {
 	if ($line =~ m/^(\S+?):\s*(.*)$/) {
 	    my $key = $1;
 	    my $value = $2;
-	    if ($schema->{properties}->{$key} && 
+	    if ($schema->{properties}->{$key} &&
 		$schema->{properties}->{$key}->{type} eq 'boolean') {
 
 		$value = parse_boolean($value) // $value;
@@ -1579,7 +1579,7 @@ sub parse_config {
     foreach my $k (keys %$errors) {
 	warn "parse error in '$filename' - '$k': $errors->{$k}\n";
 	delete $cfg->{$k};
-    } 
+    }
 
     return $cfg;
 }
@@ -1589,7 +1589,7 @@ sub dump_config {
     my ($schema, $filename, $cfg) = @_;
 
     # do fast check (avoid validate_schema($schema))
-    die "got strange schema" if !$schema->{type} || 
+    die "got strange schema" if !$schema->{type} ||
 	!$schema->{properties} || $schema->{type} ne 'object';
 
     validate($cfg, $schema, "validation error in '$filename'\n");

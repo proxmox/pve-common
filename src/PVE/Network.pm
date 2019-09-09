@@ -233,11 +233,11 @@ my $bridge_add_interface = sub {
 	} else {
 	    system("/sbin/bridge vlan add dev $iface vid 2-4094") == 0 ||
 	    die "unable to add default vlan tags to interface $iface\n" if !$trunks;
-	} 
+	}
 
 	if ($trunks) {
 	    my @trunks_array = split /;/, $trunks;
-	    foreach my $trunk (@trunks_array) { 
+	    foreach my $trunk (@trunks_array) {
 		system("/sbin/bridge vlan add dev $iface vid $trunk") == 0 ||
 		die "unable to add vlan $trunk to interface $iface\n";
 	    }
@@ -275,7 +275,7 @@ sub tap_create {
 
     my $bridgemtu = &$read_bridge_mtu($bridge);
 
-    eval { 
+    eval {
 	disable_ipv6($iface);
 	PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $iface, 'up', 'promisc', 'on', 'mtu', $bridgemtu]);
     };
@@ -348,7 +348,7 @@ my $create_firewall_bridge_ovs = sub {
 
     # set the same mtu for ovs int port
     PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $ovsintport, 'mtu', $bridgemtu]);
-    
+
     &$bridge_add_interface($fwbr, $ovsintport);
 };
 
@@ -356,7 +356,7 @@ my $cleanup_firewall_bridge = sub {
     my ($iface) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
-    return if !defined($vmid);  
+    return if !defined($vmid);
     my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
 
     # cleanup old port config from any openvswitch bridge
@@ -422,7 +422,7 @@ sub tap_unplug {
 
 	iface_set_master($iface, undef);
     }
-    
+
     &$cleanup_firewall_bridge($iface);
     #cleanup old port config from any openvswitch bridge
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
@@ -433,7 +433,7 @@ sub copy_bridge_config {
 
     return if $br0 eq $br1;
 
-    my $br_configs = [ 'ageing_time', 'stp_state', 'priority', 'forward_delay', 
+    my $br_configs = [ 'ageing_time', 'stp_state', 'priority', 'forward_delay',
 		       'hello_time', 'max_age', 'multicast_snooping', 'multicast_querier'];
 
     foreach my $sysname (@$br_configs) {
@@ -451,7 +451,7 @@ sub copy_bridge_config {
 sub activate_bridge_vlan_slave {
     my ($bridgevlan, $iface, $tag) = @_;
     my $ifacevlan = "${iface}.$tag";
-	
+
     # create vlan on $iface is not already exist
     if (! -d "/sys/class/net/$ifacevlan") {
 	system("/sbin/ip link add link $iface name $ifacevlan type vlan id $tag") == 0 ||
