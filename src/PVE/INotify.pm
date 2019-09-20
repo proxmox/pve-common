@@ -902,8 +902,8 @@ sub __read_etc_network_interfaces {
 	chomp ($line);
 	next if $line =~ m/^\s*#/;
 
-	if ($line =~ m/^\s*auto\s+(.*)$/) {
-	    my @aa = split (/\s+/, $1);
+	if ($line =~ m/^\s*(auto|allow-ovs)\s+(.*)$/) {
+	    my @aa = split (/\s+/, $2);
 
 	    foreach my $a (@aa) {
 		$ifaces->{$a}->{autostart} = 1;
@@ -1599,11 +1599,13 @@ NETWORKDOC
 	}
 
 	$printed->{$iface} = 1;
-	if ($d->{type} eq 'OVSBridge') {
-	    # cannot use 'auto' for OVS, would add race with systemd ifup@.service
-	    $raw .= "allow-ovs $iface\n";
-	} elsif ($d->{autostart}) {
-	    $raw .= "auto $iface\n";
+	if ($d->{autostart}) {
+	    if ($d->{type} eq 'OVSBridge') {
+		# cannot use 'auto' for OVS, would add race with systemd ifup@.service
+		$raw .= "allow-ovs $iface\n";
+	    } else {
+		$raw .= "auto $iface\n";
+	    }
 	}
 
 	my $i = 0; # some options should be printed only once
