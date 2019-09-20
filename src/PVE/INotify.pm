@@ -1294,10 +1294,9 @@ sub __interface_to_string {
 	$raw .= "\tovs_type $d->{type}\n";
 	$done->{ovs_type} = 1;
 
-	if ($d->{ovs_bridge}) {
-
-	    $raw = "allow-$d->{ovs_bridge} $iface\n$raw";
-	    $raw .= "\tovs_bridge $d->{ovs_bridge}\n";
+	if (my $bridge = $d->{ovs_bridge}) {
+	    $raw = "allow-$bridge $iface\n$raw";
+	    $raw .= "\tovs_bridge $bridge\n";
 	    $done->{ovs_bridge} = 1;
 	}
     }
@@ -1600,10 +1599,11 @@ NETWORKDOC
 	}
 
 	$printed->{$iface} = 1;
-        if ($d->{type} eq 'OVSBridge') {
+	if ($d->{type} eq 'OVSBridge') {
+	    # cannot use 'auto' for OVS, would add race with systemd ifup@.service
 	    $raw .= "allow-ovs $iface\n";
 	} elsif ($d->{autostart}) {
-	    $raw .= "auto $iface\n" if $d->{autostart};
+	    $raw .= "auto $iface\n";
 	}
 
 	my $i = 0; # some options should be printed only once
