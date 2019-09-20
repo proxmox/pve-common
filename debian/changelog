@@ -1,3 +1,18 @@
+libpve-common-perl (6.0-5) pve pmg; urgency=medium
+
+  * fix #2339: Handle multiple blank lines correctly in SectionConfig
+
+  * add postinst hook to fix /etc/aliases whitespace error~
+
+  * network: add uplink-id option
+
+  * network: use 'allow-ovs' instead of 'auto' for OVSBridge to fix race
+    with the then generated systemd ifup@.service on startup
+
+  * network: handle autostart setting for OVS interfaces
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 20 Sep 2019 16:38:39 +0200
+
 libpve-common-perl (6.0-4) pve pmg; urgency=medium
 
   * fix #2303: detect IPs of p2p interfaces
