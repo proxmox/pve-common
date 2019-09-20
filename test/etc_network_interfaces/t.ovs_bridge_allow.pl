@@ -39,7 +39,7 @@ iface eth2 inet manual
 
 iface eth3 inet manual
 
-auto vmbr0
+allow-ovs vmbr0
 iface vmbr0 inet static
 	address  $ip
 	netmask  $nm
@@ -67,7 +67,7 @@ iface eth2 inet manual
 
 iface eth3 inet manual
 
-auto vmbr0
+allow-ovs vmbr0
 iface vmbr0 inet static
 	address  $ip
 	netmask  $nm
@@ -102,7 +102,7 @@ iface eth3 inet manual
 
 iface eth2 inet manual
 
-auto vmbr0
+allow-ovs vmbr0
 iface vmbr0 inet static
 	address  $ip
 	netmask  $nm

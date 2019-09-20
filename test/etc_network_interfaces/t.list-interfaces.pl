@@ -53,7 +53,7 @@ iface vmbr0 inet6 static
 
 source-directory before-ovs.d
 
-auto vmbr1
+allow-ovs vmbr1
 iface vmbr1 inet static
 	address  $wanted{vmbr1}->{address}
 	netmask  $wanted{vmbr1}->{netmask}

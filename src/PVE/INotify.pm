@@ -1142,7 +1142,9 @@ sub __read_etc_network_interfaces {
     # from the {options} hash for them to be removed correctly.
     @$options = grep {defined($_)} map {
 	my ($pri, $line) = @$_;
-	if ($line =~ /^allow-(\S+)\s+(.*)$/) {
+	if ($line =~ /^allow-ovs\s+(.*)$/) {
+	    undef;
+	} elsif ($line =~ /^allow-(\S+)\s+(.*)$/) {
 	    my $bridge = $1;
 	    my @ports = split(/\s+/, $2);
 	    if (defined(my $br = $ifaces->{$bridge})) {
@@ -1254,6 +1256,7 @@ sub __interface_to_string {
 	$done->{ovs_type} = 1;
 
 	$raw .= "\tovs_ports $d->{ovs_ports}\n" if $d->{ovs_ports};
+
 	$done->{ovs_ports} = 1;
     } elsif ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' ||
 	     $d->{type} eq 'OVSBond') {
@@ -1293,12 +1296,7 @@ sub __interface_to_string {
 
 	if ($d->{ovs_bridge}) {
 
-	    if ($ifupdown2) {
-		$raw = "auto $iface\n$raw";
-	    } else {
-		$raw = "allow-$d->{ovs_bridge} $iface\n$raw";
-	    }
-
+	    $raw = "allow-$d->{ovs_bridge} $iface\n$raw";
 	    $raw .= "\tovs_bridge $d->{ovs_bridge}\n";
 	    $done->{ovs_bridge} = 1;
 	}
@@ -1592,7 +1590,6 @@ NETWORKDOC
 	return $a cmp $b;
     } keys %$ifaces) {
 	next if $printed->{$iface};
-
 	my $d = $ifaces->{$iface};
 	my $pri = $d->{priority} // 0;
 	if (@options && $options[0]->[0] < $pri) {
@@ -1603,7 +1600,12 @@ NETWORKDOC
 	}
 
 	$printed->{$iface} = 1;
-	$raw .= "auto $iface\n" if $d->{autostart};
+        if ($d->{type} eq 'OVSBridge') {
+	    $raw .= "allow-ovs $iface\n";
+	} elsif ($d->{autostart}) {
+	    $raw .= "auto $iface\n" if $d->{autostart};
+	}
+
 	my $i = 0; # some options should be printed only once
 	$raw .= __interface_to_string($iface, $d, $_, !$i++, $ifupdown2) foreach @{$d->{families}};
     }
