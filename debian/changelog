@@ -1,3 +1,9 @@
+libpve-common-perl (5.0-55) unstable; urgency=medium
+
+  * fix #2303: detect IPs of p2p interfaces
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 21 Sep 2019 10:34:48 +0200
+
 libpve-common-perl (5.0-54) unstable; urgency=medium
 
   * cert: add public key type and size to info and JSON schema
