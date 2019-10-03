@@ -499,6 +499,18 @@ register_standard_option('bwlimit', {
     format => $bwlimit_format,
 });
 
+# used for pve-tag-list in e.g., guest configs
+register_format('pve-tag', \&pve_verify_tag);
+sub pve_verify_tag {
+    my ($value, $noerr) = @_;
+
+    return $value if $value =~ m/^[a-z0-9_][a-z0-9_\-\+\.]*$/i;
+
+    return undef if $noerr;
+
+    die "invalid characters in tag\n";
+}
+
 sub pve_parse_startup_order {
     my ($value) = @_;
 
