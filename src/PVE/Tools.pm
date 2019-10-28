@@ -47,6 +47,7 @@ safe_print
 trim
 extract_param
 file_copy
+get_host_arch
 O_PATH
 O_TMPFILE
 );
@@ -1630,18 +1631,10 @@ sub readline_nointr {
     return $line;
 }
 
-sub get_host_arch {
-
-    my @uname = POSIX::uname();
-    my $machine = $uname[4];
-
-    if ($machine eq 'x86_64') {
-	return 'amd64';
-    } elsif ($machine eq 'aarch64') {
-	return 'arm64';
-    } else {
-	die "unsupported host architecture '$machine'\n";
-    }
+my $host_arch;
+sub get_host_arch() {
+    $host_arch = (POSIX::uname())[4] if !$host_arch;
+    return $host_arch;
 }
 
 # Devices are: [ (12 bits minor) (12 bits major) (8 bits minor) ]
