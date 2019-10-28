@@ -530,6 +530,25 @@ PVE::JSONSchema::register_standard_option('pve-startup-order', {
     typetext => '[[order=]\d+] [,up=\d+] [,down=\d+] ',
 });
 
+register_format('pve-tfa-secret', \&pve_verify_tfa_secret);
+sub pve_verify_tfa_secret {
+    my ($key, $noerr) = @_;
+
+    # The old format used 16 base32 chars or 40 hex digits. Since they have a common subset it's
+    # hard to distinguish them without the our previous length constraints, so add a 'v2' of the
+    # format to support arbitrary lengths properly:
+    if ($key =~ /^v2-0x[0-9a-fA-F]{16,128}$/ || # hex
+        $key =~ /^v2-[A-Z2-7=]{16,128}$/ ||     # base32
+        $key =~ /^(?:[A-Z2-7=]{16}|[A-Fa-f0-9]{40})$/) # and the old pattern copy&pasted
+    {
+	return $key;
+    }
+
+    return undef if $noerr;
+
+    die "unable to decode TFA secret\n";
+}
+
 sub check_format {
     my ($format, $value, $path) = @_;
 
