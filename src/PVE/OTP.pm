@@ -137,7 +137,13 @@ sub oath_verify_otp {
     foreach my $k (PVE::Tools::split_list($keys)) {
 	# Note: we generate 3 values to allow small time drift
 	my $binkey;
-	if ($k =~ /^[A-Z2-7=]{16}$/) {
+	if ($k =~ /^v2-0x([0-9a-fA-F]+)$/) {
+	    # v2, hex
+	    $binkey = pack('H*', $1);
+	} elsif ($k =~ /^v2-([A-Z2-7=]+)$/) {
+	    # v2, base32
+	    $binkey = MIME::Base32::decode_rfc3548($1);
+	} elsif ($k =~ /^[A-Z2-7=]{16}$/) {
 	    $binkey = MIME::Base32::decode_rfc3548($k);
 	} elsif ($k =~ /^[A-Fa-f0-9]{40}$/) {
 	    $binkey = pack('H*', $k);
