@@ -1632,7 +1632,7 @@ sub readline_nointr {
 }
 
 my $host_arch;
-sub get_host_arch() {
+sub get_host_arch {
     $host_arch = (POSIX::uname())[4] if !$host_arch;
     return $host_arch;
 }
