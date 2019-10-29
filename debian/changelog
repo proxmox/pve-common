@@ -1,3 +1,9 @@
+libpve-common-perl (6.0-6) pve pmg; urgency=medium
+
+  * fix #2433: add new TFA-secret format and support longer secrets
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 29 Oct 2019 08:07:29 +0100
+
 libpve-common-perl (6.0-5) pve pmg; urgency=medium
 
   * fix #2339: Handle multiple blank lines correctly in SectionConfig
