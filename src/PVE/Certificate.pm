@@ -216,6 +216,20 @@ sub convert_asn1_to_epoch {
     return Date::Parse::str2time($iso_time);
 }
 
+sub get_certificate_fingerprint {
+    my ($cert_path) = @_;
+
+    my $cert = $read_certificate->($cert_path);
+
+    my $fp = Net::SSLeay::X509_get_fingerprint($cert, 'sha256');
+    Net::SSLeay::X509_free($cert);
+
+    die "unable to get fingerprint for '$cert_path' - got empty value\n"
+	if !defined($fp) || $fp eq '';
+
+    return $fp;
+}
+
 sub get_certificate_info {
     my ($cert_path) = @_;
 
