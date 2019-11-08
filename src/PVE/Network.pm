@@ -585,19 +585,12 @@ sub is_ip_in_cidr {
 sub get_local_ip_from_cidr {
     my ($cidr) = @_;
 
-    my $cmd = ['/sbin/ip', 'address', 'show', 'to', $cidr, 'up'];
-
     my $IPs = [];
-
-    my $code = sub {
-	my $line = shift;
-
-	if ($line =~ m!^\s*inet(?:6)?\s+($PVE::Tools::IPRE)(?:/\d+|\s+peer\s+)!) {
+    run_command(['/sbin/ip', 'address', 'show', 'to', $cidr, 'up'], outfunc => sub {
+	if ($_[0] =~ m!^\s*inet(?:6)?\s+($PVE::Tools::IPRE)(?:/\d+|\s+peer\s+)!) {
 	    push @$IPs, $1;
 	}
-    };
-
-    PVE::Tools::run_command($cmd, outfunc => $code);
+    });
 
     return $IPs;
 }
