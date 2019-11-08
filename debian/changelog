@@ -1,3 +1,11 @@
+libpve-common-perl (6.0-7) pve pmg; urgency=medium
+
+  * cert: add fingerprint helper
+
+  * JSONSchema: add pve-tag format
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 08 Nov 2019 12:48:29 +0100
+
 libpve-common-perl (6.0-6) pve pmg; urgency=medium
 
   * fix #2433: add new TFA-secret format and support longer secrets
