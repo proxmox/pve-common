@@ -150,6 +150,7 @@ sub read_proc_pid_stat {
     if ($statstr && $statstr =~ m/^$pid \(.*\) (\S) (-?\d+) -?\d+ -?\d+ -?\d+ -?\d+ \d+ \d+ \d+ \d+ \d+ (\d+) (\d+) (-?\d+) (-?\d+) -?\d+ -?\d+ -?\d+ 0 (\d+) (\d+) (-?\d+) \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ -?\d+ -?\d+ \d+ \d+ \d+/) {
 	return {
 	    status => $1,
+	    ppid => $2,
 	    utime => $3,
 	    stime => $4,
 	    starttime => $7,
