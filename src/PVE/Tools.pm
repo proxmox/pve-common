@@ -1696,5 +1696,70 @@ sub array_intersect {
     return $return_arr;
 }
 
+sub open_tree($$$) {
+    my ($dfd, $pathname, $flags) = @_;
+    return PVE::Syscall::file_handle_result(syscall(
+	&PVE::Syscall::open_tree,
+	$dfd,
+	$pathname,
+	$flags,
+    ));
+}
+
+sub move_mount($$$$$) {
+    my ($from_dirfd, $from_pathname, $to_dirfd, $to_pathname, $flags) = @_;
+    return 0 == syscall(
+	&PVE::Syscall::move_mount,
+	$from_dirfd,
+	$from_pathname,
+	$to_dirfd,
+	$to_pathname,
+	$flags,
+    );
+}
+
+sub fsopen($$) {
+    my ($fsname, $flags) = @_;
+    return PVE::Syscall::file_handle_result(syscall(&PVE::Syscall::fsopen, $fsname, $flags));
+}
+
+sub fsmount($$$) {
+    my ($fd, $flags, $mount_attrs) = @_;
+    return PVE::Syscall::file_handle_result(syscall(
+	&PVE::Syscall::fsmount,
+	$fd,
+	$flags,
+	$mount_attrs,
+    ));
+}
+
+sub fspick($$$) {
+    my ($dirfd, $pathname, $flags) = @_;
+    return PVE::Syscall::file_handle_result(syscall(
+	&PVE::Syscall::fspick,
+	$dirfd,
+	$pathname,
+	$flags,
+    ));
+}
+
+sub fsconfig($$$$$) {
+    my ($fd, $command, $key, $value, $aux) = @_;
+    return 0 == syscall(&PVE::Syscall::fsconfig, $fd, $command, $key, $value, $aux);
+}
+
+# "raw" mount, old api, not for generic use (as it does not invoke any helpers).
+# use for lower level stuff such as bind/remount/... or simple tmpfs mounts
+sub mount($$$$$) {
+    my ($source, $target, $filesystemtype, $mountflags, $data) = @_;
+    return 0 == syscall(
+	&PVE::Syscall::mount,
+	$source,
+	$target,
+	$filesystemtype,
+	$mountflags,
+	$data,
+    );
+}
 
 1;
