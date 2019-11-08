@@ -90,3 +90,5 @@ sub file_handle_result($) {
 
     return $fh;
 }
+
+1;
