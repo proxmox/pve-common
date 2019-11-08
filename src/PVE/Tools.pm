@@ -50,6 +50,14 @@ file_copy
 get_host_arch
 O_PATH
 O_TMPFILE
+AT_EMPTY_PATH
+AT_FDCWD
+CLONE_NEWNS
+CLONE_NEWUTS
+CLONE_NEWIPC
+CLONE_NEWUSER
+CLONE_NEWPID
+CLONE_NEWNET
 );
 
 my $pvelogdir = "/var/log/pve";
@@ -86,7 +94,8 @@ use constant {CLONE_NEWNS   => 0x00020000,
 use constant {O_PATH    => 0x00200000,
               O_TMPFILE => 0x00410000}; # This includes O_DIRECTORY
 
-use constant {AT_EMPTY_PATH => 0x1000};
+use constant {AT_EMPTY_PATH => 0x1000,
+              AT_FDCWD => -100};
 
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
