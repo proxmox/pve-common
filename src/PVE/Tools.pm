@@ -1007,8 +1007,8 @@ sub df {
     my $res = eval { run_fork_with_timeout($timeout, $df) } // {};
     warn $@ if $@;
 
-    # untaint the values
-    my ($blocks, $used, $bavail) = map { defined($_) ? (/^([\d\.e\-+]+)$/) : 0 } # can be in scientific notation
+    # untaint, but be flexible: PB usage can result in scientific notation
+    my ($blocks, $used, $bavail) = map { defined($_) ? (/^([\d\.e\-+]+)$/) : 0 }
 	$res->@{qw(blocks used bavail)};
 
     return {
