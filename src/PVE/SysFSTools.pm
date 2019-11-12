@@ -73,9 +73,9 @@ sub lspci {
 
     dir_glob_foreach("$pcisysfs/devices", $pciregex, sub {
 	my ($fullid, $domain, $bus, $slot, $function) = @_;
-	my $id = "$bus:$slot.$function";
+	my $id = "$domain:$bus:$slot.$function";
 
-	if (defined($filter) && !ref($filter) && $id !~ m/^\Q$filter\E/) {
+	if (defined($filter) && !ref($filter) && $id !~ m/^(0000:)?\Q$filter\E/) {
 	    return; # filter ids early
 	}
 
@@ -279,13 +279,15 @@ sub pci_dev_group_bind_to_vfio {
     }
     die "Cannot find vfio-pci module!\n" if !-d $vfio_basedir;
 
+    $pciid = "0000:$pciid" if $pciid !~ m/^[0-9a-f]{4}:/;
+
     # get IOMMU group devices
-    opendir(my $D, "$pcisysfs/devices/0000:$pciid/iommu_group/devices/") || die "Cannot open iommu_group: $!\n";
-      my @devs = grep /^0000:/, readdir($D);
+    opendir(my $D, "$pcisysfs/devices/$pciid/iommu_group/devices/") || die "Cannot open iommu_group: $!\n";
+      my @devs = grep /^[0-9a-f]{4}:/, readdir($D);
     closedir($D);
 
     foreach my $pciid (@devs) {
-	$pciid =~ m/^([:\.\da-f]+)$/ or die "PCI ID $pciid not valid!\n";
+	$pciid =~ m/^([:\.0-9a-f]+)$/ or die "PCI ID $pciid not valid!\n";
 
         # pci bridges, switches or root ports are not supported
         # they have a pci_bus subdirectory so skip them
@@ -301,7 +303,9 @@ sub pci_dev_group_bind_to_vfio {
 sub pci_create_mdev_device {
     my ($pciid, $uuid, $type) = @_;
 
-    my $basedir = "$pcisysfs/devices/0000:$pciid";
+    $pciid = "0000:$pciid" if $pciid !~ m/^[0-9a-f]{4}:/;
+
+    my $basedir = "$pcisysfs/devices/$pciid";
     my $mdev_dir = "$basedir/mdev_supported_types";
 
     die "pci device '$pciid' does not support mediated devices \n"
@@ -336,7 +340,9 @@ sub pci_create_mdev_device {
 sub pci_cleanup_mdev_device {
     my ($pciid, $uuid) = @_;
 
-    my $basedir = "$pcisysfs/devices/0000:$pciid/$uuid";
+    $pciid = "0000:$pciid" if $pciid !~ m/^[0-9a-f]{4}:/;
+
+    my $basedir = "$pcisysfs/devices/$pciid/$uuid";
 
     if (! -e $basedir) {
 	return 1; # no cleanup necessary if it does not exist
