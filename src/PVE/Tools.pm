@@ -1008,7 +1008,7 @@ sub df {
     warn $@ if $@;
 
     # untaint the values
-    my ($blocks, $used, $bavail) = map { defined($_) ? (/^(\d+)$/) : 0 }
+    my ($blocks, $used, $bavail) = map { defined($_) ? (/^([\d\.e\-+]+)$/) : 0 } # can be in scientific notation
 	$res->@{qw(blocks used bavail)};
 
     return {
