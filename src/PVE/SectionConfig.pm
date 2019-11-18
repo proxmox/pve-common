@@ -2,11 +2,11 @@ package PVE::SectionConfig;
 
 use strict;
 use warnings;
+
 use Digest::SHA;
+
 use PVE::Exception qw(raise_param_exc);
 use PVE::JSONSchema qw(get_standard_option);
-
-use Data::Dumper;
 
 my $defaultData = {
     options => {},
