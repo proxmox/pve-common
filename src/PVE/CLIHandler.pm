@@ -2,7 +2,9 @@ package PVE::CLIHandler;
 
 use strict;
 use warnings;
+
 use JSON;
+use Scalar::Util qw(weaken);
 
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
@@ -198,8 +200,8 @@ sub generate_usage_str {
 
     my ($subcmd, $def, undef, undef, $cmdstr) = resolve_cmd($cmd);
 
-    my $generate;
-    $generate = sub {
+    my $generate_weak;
+    $generate_weak = sub {
 	my ($indent, $separator, $def, $prefix) = @_;
 
 	my $str = '';
@@ -223,7 +225,7 @@ sub generate_usage_str {
 		} else {
 		    next if $def->{$cmd}->{alias};
 
-		    my $substr = $generate->($indent, '', $def->{$cmd}, "$prefix $cmd");
+		    my $substr = $generate_weak->($indent, '', $def->{$cmd}, "$prefix $cmd");
 		    if ($substr) {
 			$substr .= $separator if $substr !~ /\Q$separator\E{2}/;
 			$str .= $substr;
@@ -240,6 +242,8 @@ sub generate_usage_str {
 	}
 	return $str;
     };
+    my $generate = $generate_weak;
+    weaken($generate_weak);
 
     return $generate->($indent, $separator, $def, $cmdstr);
 }
