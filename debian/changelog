@@ -1,3 +1,15 @@
+libpve-common-perl (6.0-8) pve pmg; urgency=medium
+
+  * fix Tools::df for big storage usage values
+
+  * ProcFSTools: include ppid in read_proc_pid_stat
+
+  * add new Kernel mount API wrappers and constants
+
+  * ysFSTools: do not assume PCI domain 0000
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 20 Nov 2019 18:43:05 +0100
+
 libpve-common-perl (6.0-7) pve pmg; urgency=medium
 
   * cert: add fingerprint helper
