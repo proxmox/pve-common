@@ -8,6 +8,7 @@ use Scalar::Util qw(weaken);
 
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
+use PVE::JSONSchema;
 use PVE::RESTHandler;
 use PVE::PTY;
 use PVE::INotify;
