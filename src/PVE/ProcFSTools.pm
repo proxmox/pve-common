@@ -80,6 +80,23 @@ sub read_proc_uptime {
     return (0, 0);
 }
 
+sub kernel_version {
+    my $line = PVE::Tools::file_read_firstline("/proc/version");
+
+    if ($line && $line =~ m|^Linux\sversion\s((\d+(?:\.\d+)+)-?(\S+)?)|) {
+        my ($fullversion, $version_numbers, $extra) = ($1, $2, $3);
+
+	# variable names are the one from the Linux kernel Makefile
+	my ($version, $patchlevel, $sublevel) = split(/\./, $version_numbers);
+
+	return wantarray
+	    ? (int($version), int($patchlevel), int($sublevel), $extra, $fullversion)
+	    : $fullversion;
+    }
+
+    return (0, 0, 0, '', '');
+}
+
 sub read_loadavg {
 
     my $line = PVE::Tools::file_read_firstline('/proc/loadavg');
