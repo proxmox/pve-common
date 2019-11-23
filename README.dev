@@ -68,12 +68,11 @@ python-pyparsing libfilesys-df-perl libcrypt-ssleay-perl \
 libfile-readbackwards-perl libanyevent-perl libanyevent-http-perl \
 unzip liblocale-po-perl libfile-sync-perl cstream \
 lzop dtach apt-transport-https hdparm gdisk parted ttf-dejavu-core \
-liblzma-dev dosfstools mtools libxen-dev libfuse-dev corosync-dev \
-libcpg-dev libquorum-dev libcmap-dev libuuid-perl \
-libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
-graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
-libudev-dev asciidoc-dblatex source-highlight libiscsi-dev libiscsi7 \
-librsvg2-bin libarchive-dev libgpgme-dev libcurl4-gnutls-dev \
+liblzma-dev dosfstools mtools libxen-dev libfuse-dev libcpg-dev libquorum-dev \
+libcmap-dev libuuid-perl libqb-dev libapparmor-dev docbook2x libcap-dev \
+dh-apparmor graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev \
+libdlm-dev libudev-dev asciidoc-dblatex source-highlight libiscsi-dev \
+libiscsi7 librsvg2-bin libarchive-dev libgpgme-dev libcurl4-gnutls-dev \
 libtest-mockmodule-perl libjemalloc-dev libjpeg-dev
 
 
