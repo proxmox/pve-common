@@ -4,12 +4,13 @@ all:
 
 .PHONY: check install clean distclean
 
-check:
-	for d in $(SUBDIRS); do $(MAKE) -C $$d check; done
-	./lock_file.pl
-	./calendar_event_test.pl
-	./convert_size_test.pl
+export PERLLIB=../src
 
-install: check
+check: lock_file.test calendar_event_test.test convert_size_test.test
+	for d in $(SUBDIRS); do $(MAKE) -C $$d check; done
+
+%.test: %.pl
+	./$<
+
 distclean: clean
 clean:
