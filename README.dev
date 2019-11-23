@@ -35,18 +35,25 @@
 
 = Install build prerequisites for development environment =
 
-NOTE: this is a huge list intended to be able to build (almost) all packages,
-from the UI/API components to backend components to our Linux Kernel.
-If you only want to hack on specific topics you won't need most of those.
-We try to have a complete list of build dependencies in each source
-repositories 'debian/control' file. If you run `make deb` dpkg-buildpackage will
-stop and tell you if you miss some required packages.
+NOTE: this is a huge and probably outdated list intended to be able to build
+(almost) all packages, from the UI/API components to backend components to our
+Linux Kernel.  If you only want to hack on specific topics you won't need most
+of those.
+Instead we try to have a complete list of build dependencies in each source
+repositories 'debian/control' file. If you run `make deb` dpkg-buildpackage
+will stop and tell you if you miss some required packages.
 
 12. For installing the most important, always needed, ones run:
 
 apt-get install build-essential git git-email debhelper pve-doc-generator
 
 Additionally, for quickly installing (almost) all build dependencies run:
+
+WARNING: this list is almost for sure outdated! Use the build-deps definitions
+defined in each package! You could install `devscripts` (huge package, but nice
+helpers) and use:
+# mk-build-deps --install
+in the top-level directory of a git repository.
 
 apt-get install autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
 groff quilt dpatch automake autoconf libtool lintian libdevel-cycle-perl \
