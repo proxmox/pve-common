@@ -312,7 +312,7 @@ sub parse_ccache_options {
 	    # noclone flag for large read-only data chunks like aplinfo
 	    $ccinfo->{$opt} = $v;
 	} elsif ($opt eq 'always_call_parser') {
-	    # when set, we call parser even when the file does not exists.
+	    # when set, we call parser even when the file does not exist.
 	    # this allows the parser to return some default
 	    $ccinfo->{$opt} = $v;
 	} else {
