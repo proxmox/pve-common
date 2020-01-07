@@ -901,6 +901,7 @@ sub __read_etc_network_interfaces {
     SECTION: while (defined ($line = <$fh>)) {
 	chomp ($line);
 	next if $line =~ m/^\s*#/;
+	next if $line =~ m/^\s*(allow-hotplug)\s+(.*)$/;
 
 	if ($line =~ m/^\s*(auto|allow-ovs)\s+(.*)$/) {
 	    my @aa = split (/\s+/, $2);
