@@ -438,7 +438,11 @@ sub handle {
 	# untaint data (already validated)
 	my $extra = delete $param->{'extra-args'};
 	while (my ($key, $val) = each %$param) {
-	    ($param->{$key}) = $val =~ /^(.*)$/s;
+	    if (defined($val)) {
+		($param->{$key}) = $val =~ /^(.*)$/s;
+	    } else {
+		$param->{$key} = undef;
+	    }
 	}
 	$param->{'extra-args'} = [map { /^(.*)$/ } @$extra] if $extra;
     }
