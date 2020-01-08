@@ -147,9 +147,11 @@ sub read_proc_stat {
 	my $useddiff =  $res->{used} - $last_proc_stat->{used};
 	$useddiff = $diff if $useddiff > $diff;
 	$res->{cpu} = $useddiff/$diff;
+
 	my $waitdiff =  $res->{iowait} - $last_proc_stat->{iowait};
 	$waitdiff = $diff if $waitdiff > $diff;
 	$res->{wait} = $waitdiff/$diff;
+
 	$last_proc_stat = $res;
     } else {
 	$res->{cpu} = $last_proc_stat->{cpu};

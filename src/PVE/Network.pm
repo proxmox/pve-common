@@ -2,15 +2,16 @@ package PVE::Network;
 
 use strict;
 use warnings;
-use PVE::Tools qw(run_command lock_file);
-use PVE::ProcFSTools;
+
 use PVE::INotify;
+use PVE::ProcFSTools;
+use PVE::Tools qw(run_command lock_file);
+
 use File::Basename;
 use IO::Socket::IP;
-use Socket qw(NI_NUMERICHOST NI_NUMERICSERV);
-use POSIX qw(ECONNREFUSED);
-
 use Net::IP;
+use POSIX qw(ECONNREFUSED);
+use Socket qw(NI_NUMERICHOST NI_NUMERICSERV);
 
 # host network related utility functions
 
