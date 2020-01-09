@@ -956,6 +956,7 @@ sub __read_etc_network_interfaces {
 			'bridge-multicast-flood' => 1,
 			'bond_miimon' => 1,
 			'bond_xmit_hash_policy' => 1,
+			'bond-primary' => 1,
 			'uplink-id' => 1,
 			'vlan-protocol' => 1,
 			'vxlan-id' => 1,
@@ -1234,6 +1235,12 @@ sub __interface_to_string {
 	    $raw .= "\tbond-xmit-hash-policy $d->{'bond_xmit_hash_policy'}\n";
 	}
 	$done->{'bond_xmit_hash_policy'} = 1;
+
+	if ($d->{'bond_mode'} && $d->{'bond_mode'} eq 'active-backup' && $d->{'bond-primary'}) {
+	    $raw .= "\tbond-primary $d->{'bond-primary'}\n";
+	}
+	$done->{'bond-primary'} = 1;
+
     } elsif ($d->{type} eq 'vlan') {
 	die "$iface: wrong vlan-protocol $d->{'vlan-protocol'}\n"
 	    if $d->{'vlan-protocol'} && $d->{'vlan-protocol'} ne '802.1ad' && $d->{'vlan-protocol'} ne '802.1q';
@@ -1427,15 +1434,18 @@ sub __write_etc_network_interfaces {
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
 	if ($d->{type} eq 'bond' && $d->{slaves}) {
+	    my $bond_primary_is_slave = undef;
 	    foreach my $p (split (/\s+/, $d->{slaves})) {
 		my $n = $ifaces->{$p};
-
+		
 		die "bond '$iface' - unable to find slave '$p'\n"
 		    if !$n;
 		die "bond '$iface' - wrong interface type on slave '$p' " .
 		    "('$n->{type}' != 'eth')\n" if $n->{type} ne 'eth';
 		&$check_mtu($ifaces, $iface, $p);
+		$bond_primary_is_slave = 1 if $d->{'bond-primary'} && $d->{'bond-primary'} eq $p;
 	    }
+	    die "bond '$iface' - bond-primary interface is not a slave" if $d->{'bond-primary'} && !$bond_primary_is_slave;
 	}
     }
 
