@@ -1474,9 +1474,7 @@ sub __write_etc_network_interfaces {
 	    die "vlan '$iface' - unable to find parent '$p'\n"
 		if !$n;
 
-	    if ($n->{type} eq 'bridge' && !$n->{bridge_vlan_aware}) {
-		die "vlan '$iface' - bridge vlan aware is not enabled on parent '$p'\n";
-	    } elsif ($n->{type} ne 'eth' && $n->{type} ne 'bridge' && $n->{type} ne 'bond' && $n->{type} ne 'vlan') {
+	    if ($n->{type} ne 'eth' && $n->{type} ne 'bridge' && $n->{type} ne 'bond' && $n->{type} ne 'vlan') {
 		die "vlan '$iface' - wrong interface type on parent '$p' " .
 		    "('$n->{type}' != 'eth|bond|bridge|vlan' )\n";
 	    }
