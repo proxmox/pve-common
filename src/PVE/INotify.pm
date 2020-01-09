@@ -872,6 +872,7 @@ sub __read_etc_network_interfaces {
     my $options = $config->{options} = [];
 
     my $options_alternatives = {
+	'ovs_mtu'     => 'mtu',
 	'bond-slaves' => 'slaves',
 	'bond_slaves' => 'slaves',
 	'bond-xmit-hash-policy' => 'bond_xmit_hash_policy',
@@ -1215,6 +1216,9 @@ sub __interface_to_string {
 	$done->{bridge_vlan_aware} = 1;
 	$done->{bridge_vids} = 1;
 
+	$raw .= "\tmtu $d->{mtu}\n" if $d->{mtu};
+	$done->{mtu} = 1;
+
     } elsif ($d->{type} eq 'bond') {
 
 	$d->{slaves} =~ s/[;,\s]+/ /g;
@@ -1241,6 +1245,9 @@ sub __interface_to_string {
 	}
 	$done->{'bond-primary'} = 1;
 
+	$raw .= "\tmtu $d->{mtu}\n" if $d->{mtu};
+	$done->{mtu} = 1;
+
     } elsif ($d->{type} eq 'vlan') {
 	die "$iface: wrong vlan-protocol $d->{'vlan-protocol'}\n"
 	    if $d->{'vlan-protocol'} && $d->{'vlan-protocol'} ne '802.1ad' && $d->{'vlan-protocol'} ne '802.1q';
@@ -1258,14 +1265,21 @@ sub __interface_to_string {
 	    }
 	    $done->{'vxlan-remoteip'} = 1;
 	}
+
+	$raw .= "\tmtu $d->{mtu}\n" if $d->{mtu};
+	$done->{mtu} = 1;
+
     } elsif ($d->{type} eq 'OVSBridge') {
 
 	$raw .= "\tovs_type $d->{type}\n";
 	$done->{ovs_type} = 1;
 
 	$raw .= "\tovs_ports $d->{ovs_ports}\n" if $d->{ovs_ports};
-
 	$done->{ovs_ports} = 1;
+
+	$raw .= "\tovs_mtu $d->{mtu}\n" if $d->{mtu};
+	$done->{mtu} = 1;
+
     } elsif ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' ||
 	     $d->{type} eq 'OVSBond') {
 
@@ -1307,6 +1321,9 @@ sub __interface_to_string {
 	    $raw .= "\tovs_bridge $bridge\n";
 	    $done->{ovs_bridge} = 1;
 	}
+
+	$raw .= "\tovs_mtu $d->{mtu}\n" if $d->{mtu};
+	$done->{mtu} = 1;
     }
 
     if ($first_block) {
