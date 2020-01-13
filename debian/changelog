@@ -1,3 +1,15 @@
+libpve-common-perl (6.0-10) pve pmg; urgency=medium
+
+  * INotify: add "bond-primary" and "ovs_mtu" option
+
+  * INotify: allow vlan tagged bridge interface on non-vlanaware bridge
+
+  * INotify: forbid ip address on bridged interface.
+
+  * generate_csr: allow to set CN explicitly
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 13 Jan 2020 17:51:58 +0100
+
 libpve-common-perl (6.0-9) pve pmg; urgency=medium
 
   * add kernel_version helper to ProcFSTools
