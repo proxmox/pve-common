@@ -336,6 +336,9 @@ sub generate_csr {
     my $san = [ map { $_->{value} } grep { $_->{type} eq 'dns' } @$identifiers ];
     die "DNS identifiers are required to generate a CSR.\n" if !scalar @$san;
 
+    # optional
+    my $common_name = delete($attr{common_name}) // $san->[0];
+
     my $md = eval { Net::SSLeay::EVP_get_digestbyname($dig_alg) };
     die "Invalid digest algorithm '$dig_alg'\n" if !$md;
 
@@ -366,7 +369,7 @@ sub generate_csr {
 	}
     };
 
-    $add_name_entry->('CN', @$san[0]);
+    $add_name_entry->('CN', $common_name);
     for (qw(C ST L O OU)) {
         if (defined(my $v = $attr{$_})) {
 	    $add_name_entry->($_, $v);
