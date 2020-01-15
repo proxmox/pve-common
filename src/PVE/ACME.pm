@@ -396,7 +396,7 @@ sub finalize_order {
 }
 
 # Get order status
-# POST to order URL
+# GET-as-POST to order URL
 # Expects a '200 OK' reply
 # returns order object
 sub get_order {
@@ -408,7 +408,7 @@ sub get_order {
 }
 
 # Gets authorization object
-# Post to authorization URL
+# GET-as-POST to authorization URL
 # Expects a '200 OK' reply
 # returns authorization object, including challenges array
 sub get_authorization {
@@ -437,7 +437,7 @@ sub deactivate_authorization {
 }
 
 # Get certificate
-# POST to order's certificate URL
+# GET-as-POST to order's certificate URL
 # Expects a '200 OK' reply
 # returns certificate chain in PEM format
 sub get_certificate {
