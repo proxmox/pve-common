@@ -202,7 +202,7 @@ sub jws {
     my $key = $self->{key}
 	or die "No key was generated yet\n";
 
-    my $payload = encode(tojs($data));
+    my $payload = $data ne '' ? encode(tojs($data)) : $data;
 
     if (!defined($self->{nonce})) {
 	my $method = $self->_method('newNonce');
@@ -396,27 +396,27 @@ sub finalize_order {
 }
 
 # Get order status
-# GET to order URL
+# POST to order URL
 # Expects a '200 OK' reply
 # returns order object
 sub get_order {
     my ($self, $order_url) = @_;
-    my $r = $self->do(GET => $order_url);
+    my $r = $self->do(POST => $order_url, '');
     my $return = eval { __get_result($r, 200); };
-    $self->fatal("GET of '$order_url' failed - $@", $r) if $@;
+    $self->fatal("POST of '$order_url' failed - $@", $r) if $@;
     return $return;
 }
 
 # Gets authorization object
-# GET to authorization URL
+# Post to authorization URL
 # Expects a '200 OK' reply
 # returns authorization object, including challenges array
 sub get_authorization {
     my ($self, $auth_url) = @_;
 
-    my $r = $self->do(GET => $auth_url);
+    my $r = $self->do(POST => $auth_url, '');
     my $return = eval { __get_result($r, 200); };
-    $self->fatal("GET of '$auth_url' failed - $@", $r) if $@;
+    $self->fatal("POST of '$auth_url' failed - $@", $r) if $@;
     return $return;
 }
 
@@ -437,7 +437,7 @@ sub deactivate_authorization {
 }
 
 # Get certificate
-# GET to order's certificate URL
+# POST to order's certificate URL
 # Expects a '200 OK' reply
 # returns certificate chain in PEM format
 sub get_certificate {
@@ -446,9 +446,9 @@ sub get_certificate {
     $self->fatal("no certificate URL available (yet?)", $order)
        if !$order->{certificate};
 
-    my $r = $self->do(GET => $order->{certificate});
+    my $r = $self->do(POST => $order->{certificate}, '');
     my $return = eval { __get_result($r, 200, 1); };
-    $self->fatal("GET of '$order->{certificate}' failed - $@", $r) if $@;
+    $self->fatal("POST of '$order->{certificate}' failed - $@", $r) if $@;
     return $return;
 }
 
