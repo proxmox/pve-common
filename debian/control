@@ -11,6 +11,7 @@ Build-Depends: debhelper (>= 10~),
                liblinux-inotify2-perl,
                libnet-ip-perl,
                libstring-shellquote-perl,
+               libtest-mockmodule-perl,
 Standards-Version: 3.9.8
 
 Package: libpve-common-perl
