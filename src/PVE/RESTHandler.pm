@@ -242,6 +242,9 @@ sub register_method {
 	$errprefix = "register method ${self}/$info->{path} -";
 	$info->{method} = 'GET' if !$info->{method};
 	$method = $info->{method};
+
+	# apply default value
+	$info->{allowtoken} = 1 if !defined($info->{allowtoken});
     }
 
     $method_path_lookup->{$self} = {} if !defined($method_path_lookup->{$self});

@@ -1294,6 +1294,12 @@ my $method_schema = {
 	    description => "Method needs special privileges - only pvedaemon can execute it",
 	    optional => 1,
         },
+	allowtoken => {
+	    type => 'boolean',
+	    description => "Method is available for clients authenticated using an API token.",
+	    optional => 1,
+	    default => 1,
+	},
         download => {
             type => 'boolean',
 	    description => "Method downloads the file content (filename is the return value of the method).",
