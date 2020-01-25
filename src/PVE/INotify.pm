@@ -960,6 +960,8 @@ sub __read_etc_network_interfaces {
 			'bond-primary' => 1,
 			'uplink-id' => 1,
 			'vlan-protocol' => 1,
+			'vlan-raw-device' => 1,
+			'vlan-id' => 1,
 			'vxlan-id' => 1,
 			'vxlan-svcnodeip' => 1,
 			'vxlan-physdev' => 1,
@@ -1076,12 +1078,14 @@ sub __read_etc_network_interfaces {
 		$ifaces->{$1}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
-	} elsif ($iface =~ m/^(\S+)\.\d+$/) {
+	} elsif ($iface =~ m/^(\S+)\.\d+$/ || $d->{'vlan-raw-device'}) {
 	    $d->{type} = 'vlan';
-	    if (defined ($ifaces->{$1})) {
-		$d->{exists} = $ifaces->{$1}->{exists};
+
+	    my $raw_iface = $d->{'vlan-raw-device'} ? $d->{'vlan-raw-device'} : $1;
+	    if (defined ($ifaces->{$raw_iface})) {
+		$d->{exists} = $ifaces->{$raw_iface}->{exists};
 	    } else {
-		$ifaces->{$1}->{exists} = 0;
+		$ifaces->{$raw_iface}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
 	} elsif ($iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
@@ -1494,10 +1498,31 @@ sub __write_etc_network_interfaces {
     # check vlan
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
-	if ($d->{type} eq 'vlan' && $iface =~ m/^(\S+)\.\d+$/) {
-	    my $p = $1;
+	if ($d->{type} eq 'vlan') {
+
+	    my $p = undef;
+	    my $vlanid = undef;
+
+	    if ($iface =~ m/^(\S+)\.(\d+)$/) {
+		$p = $1;
+		$vlanid = $2;
+		delete $d->{'vlan-raw-device'} if $d->{'vlan-raw-device'};
+	    } else {
+		die "missing vlan-raw-device option" if !$d->{'vlan-raw-device'};
+		$p = $d->{'vlan-raw-device'};
+
+		if ($iface =~ m/^vlan(\d+)$/) {
+		    $vlanid = $1;
+		    delete $d->{'vlan-id'} if $d->{'vlan-id'};
+		} else {
+		    die "custom vlan interface name need ifupdown2" if !$ifupdown2;
+		    die "missing vlan-id option" if !$d->{'vlan-id'};
+		    $vlanid = $d->{'vlan-id'};
+		}
+	    }
 	    my $n = $ifaces->{$p};
 
+	    die "vlan '$iface' - vlan-id $vlanid should be <= 4094\n" if $vlanid > 4094;
 	    die "vlan '$iface' - unable to find parent '$p'\n"
 		if !$n;
 
@@ -1584,6 +1609,7 @@ NETWORKDOC
 	bond => 300000,
 	bridge => 400000,
 	OVSBridge => 400000,
+	vlan => 500000,
 	vxlan => 500000,
    };
 
