@@ -1,3 +1,14 @@
+libpve-common-perl (6.0-11) pve pmg; urgency=medium
+
+  * ACME: use GET-as-POST call for compatibility with new API authorization
+    requirements
+
+  * API schema: add 'allowtoken' property
+
+  * INotify network: improve vlan interface parsing
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 28 Jan 2020 11:33:21 +0100
+
 libpve-common-perl (6.0-10) pve pmg; urgency=medium
 
   * INotify: add "bond-primary" and "ovs_mtu" option
