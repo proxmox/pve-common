@@ -97,6 +97,23 @@ sub kernel_version {
     return (0, 0, 0, '', '');
 }
 
+# Check if the kernel is at least $major.$minor. Return either just a boolean,
+# or a boolean and the kernel version's major.minor string from /proc/version
+sub check_kernel_release {
+    my ($major, $minor) = @_;
+
+    my ($k_major, $k_minor) = kernel_version();
+
+    my $ok;
+    if (defined($minor)) {
+	$ok = $k_major > $major || ($k_major == $major && $k_minor >= $minor);
+    } else {
+	$ok = $k_major >= $major;
+    }
+
+    return wantarray ? ($ok, "$k_major.$k_minor") : $ok;
+}
+
 sub read_loadavg {
 
     my $line = PVE::Tools::file_read_firstline('/proc/loadavg');
