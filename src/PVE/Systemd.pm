@@ -7,6 +7,31 @@ use Net::DBus qw(dbus_uint32 dbus_uint64);
 use Net::DBus::Callback;
 use Net::DBus::Reactor;
 
+sub escape_unit {
+    my ($val, $is_path) = @_;
+
+    # NOTE: this is not complete, but enough for our needs. normally all
+    # characters which are not alpha-numerical, '.' or '_' would need escaping
+    $val =~ s/\-/\\x2d/g;
+
+    if ($is_path) {
+	$val =~ s/^\///g;
+	$val =~ s/\/$//g;
+    }
+    $val =~ s/\//-/g;
+
+    return $val;
+}
+
+sub unescape_unit {
+    my ($val) = @_;
+
+    $val =~ s/-/\//g;
+    $val =~ s/\\x([a-fA-F0-9]{2})/chr(hex($1))/eg;
+
+    return $val;
+}
+
 # $code should take the parameters ($interface, $reactor, $finish_callback).
 #
 # $finish_callback can be used by dbus-signal-handlers to stop the reactor.
