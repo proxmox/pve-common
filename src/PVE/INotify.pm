@@ -1565,7 +1565,7 @@ sub __write_etc_network_interfaces {
 		    if ($n->{method} eq 'static' && $n->{address} ne '0.0.0.0') ||
 		       ($n->{method6} eq 'static' && $n->{address} ne '::');
 
-		&$check_mtu($ifaces, $iface, $p);
+		&$check_mtu($ifaces, $p, $iface);
 		$bridgeports->{$p} = $iface;
 	    }
 	    $bridges->{$iface} = $d;

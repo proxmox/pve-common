@@ -325,6 +325,17 @@ $config->{ifaces}->{'eth1.100'} = {
     autostart => 1
 };
 
+$config->{ifaces}->{'vmbr4'} = {
+    mtu => 1200,
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => 'off',
+    bridge_fd => 0,
+    bridge_ports => 'bond0.100',
+    autostart => 1
+};
+
 expect load('loopback') . <<"CHECK";
 source-directory interfaces.d
 
@@ -354,6 +365,13 @@ iface bond0.100.10 inet manual
 $vmbr0_part
 
 $vmbr123_part
+
+auto vmbr4
+iface vmbr4 inet manual
+	bridge-ports bond0.100
+	bridge-stp off
+	bridge-fd 0
+	mtu 1200
 
 auto vmbr1.100
 iface vmbr1.100 inet manual
