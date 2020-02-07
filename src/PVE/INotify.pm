@@ -1,7 +1,6 @@
 package PVE::INotify;
 
 # todo: maybe we do not need update_file() ?
-
 use strict;
 use warnings;
 
@@ -1554,18 +1553,26 @@ sub __write_etc_network_interfaces {
     # check bridgeport option
     my $bridgeports = {};
     my $bridges = {};
-    foreach my $iface (keys %$ifaces) {
-	my $d = $ifaces->{$iface};
+    my $ifaces_copy = { %$ifaces };
+    foreach my $iface (keys %$ifaces_copy) {
+	my $d = $ifaces_copy->{$iface};
 	if ($d->{type} eq 'bridge') {
 	    foreach my $p (split (/\s+/, $d->{bridge_ports})) {
-		$p =~ s/\.\d+$//;
-		my $n = $ifaces->{$p};
+		if($p =~ m/(\S+)\.(\d+)$/) {
+		    my $vlanparent = $1;
+		    if (!defined($ifaces_copy->{$p})) {
+			$ifaces_copy->{$p}->{type} = 'vlan';
+			$ifaces_copy->{$p}->{method} = 'manual';
+			$ifaces_copy->{$p}->{method6} = 'manual';
+			$ifaces_copy->{$p}->{mtu} = $ifaces_copy->{$vlanparent}->{mtu} if defined($ifaces_copy->{$1}->{mtu});
+		    }
+		}
+		my $n = $ifaces_copy->{$p};
 		die "bridge '$iface' - unable to find bridge port '$p'\n" if !$n;
 		die "iface $p - ip address can't be set on interface if bridged in $iface\n"
 		    if ($n->{method} && $n->{method} eq 'static' && $n->{address} ne '0.0.0.0') ||
 		       ($n->{method6} && $n->{method6} eq 'static' && $n->{address} ne '::');
-
-		&$check_mtu($ifaces, $p, $iface);
+		&$check_mtu($ifaces_copy, $p, $iface);
 		$bridgeports->{$p} = $iface;
 	    }
 	    $bridges->{$iface} = $d;

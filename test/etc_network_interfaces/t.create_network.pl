@@ -205,7 +205,7 @@ $config->{ifaces}->{vmbr3} = {
     families => ['inet'],
     bridge_stp => 'off',
     bridge_fd => 0,
-    bridge_ports => 'vxlan3.50',
+    bridge_ports => 'vxlan3',
     bridge_vlan_aware => 'yes',
     bridge_vids => '2-10',
     autostart => 1
@@ -229,7 +229,7 @@ iface vmbr2 inet manual
 
 auto vmbr3
 iface vmbr3 inet manual
-	bridge-ports vxlan3.50
+	bridge-ports vxlan3
 	bridge-stp off
 	bridge-fd 0
 	bridge-vlan-aware yes
@@ -336,6 +336,17 @@ $config->{ifaces}->{'vmbr4'} = {
     autostart => 1
 };
 
+$config->{ifaces}->{'vmbr5'} = {
+    mtu => 1100,
+    type => 'bridge',
+    method => 'manual',
+    families => ['inet'],
+    bridge_stp => 'off',
+    bridge_fd => 0,
+    bridge_ports => 'vmbr4.99',
+    autostart => 1
+};
+
 expect load('loopback') . <<"CHECK";
 source-directory interfaces.d
 
@@ -372,6 +383,13 @@ iface vmbr4 inet manual
 	bridge-stp off
 	bridge-fd 0
 	mtu 1200
+
+auto vmbr5
+iface vmbr5 inet manual
+	bridge-ports vmbr4.99
+	bridge-stp off
+	bridge-fd 0
+	mtu 1100
 
 auto vmbr1.100
 iface vmbr1.100 inet manual
