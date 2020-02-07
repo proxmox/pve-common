@@ -1562,8 +1562,8 @@ sub __write_etc_network_interfaces {
 		my $n = $ifaces->{$p};
 		die "bridge '$iface' - unable to find bridge port '$p'\n" if !$n;
 		die "iface $p - ip address can't be set on interface if bridged in $iface\n"
-		    if ($n->{method} eq 'static' && $n->{address} ne '0.0.0.0') ||
-		       ($n->{method6} eq 'static' && $n->{address} ne '::');
+		    if ($n->{method} && $n->{method} eq 'static' && $n->{address} ne '0.0.0.0') ||
+		       ($n->{method6} && $n->{method6} eq 'static' && $n->{address} ne '::');
 
 		&$check_mtu($ifaces, $p, $iface);
 		$bridgeports->{$p} = $iface;
