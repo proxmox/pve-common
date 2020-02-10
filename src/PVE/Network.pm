@@ -272,6 +272,17 @@ my $activate_interface = sub {
 sub tap_create {
     my ($iface, $bridge) = @_;
 
+    my $have_sdn;
+    eval {
+	require PVE::Network::SDN::Zones;
+	$have_sdn = 1;
+    };
+
+    if ($have_sdn) {
+	my ($bridgesdn, undef) = PVE::Network::SDN::Zones::get_bridge_vlan($bridge);
+	$bridge = $bridgesdn if $bridgesdn;
+    }
+
     die "unable to get bridge setting\n" if !$bridge;
 
     my $bridgemtu = &$read_bridge_mtu($bridge);
@@ -285,6 +296,17 @@ sub tap_create {
 
 sub veth_create {
     my ($veth, $vethpeer, $bridge, $mac) = @_;
+
+    my $have_sdn;
+    eval {
+	require PVE::Network::SDN::Zones;
+	$have_sdn = 1;
+    };
+
+    if ($have_sdn) {
+	my ($bridgesdn, undef) = PVE::Network::SDN::Zones::get_bridge_vlan($bridge);
+	$bridge = $bridgesdn if $bridgesdn;
+    }
 
     die "unable to get bridge setting\n" if !$bridge;
 
@@ -376,6 +398,18 @@ my $cleanup_firewall_bridge = sub {
 
 sub tap_plug {
     my ($iface, $bridge, $tag, $firewall, $trunks, $rate) = @_;
+
+    my $have_sdn;
+    eval {
+	require PVE::Network::SDN::Zones;
+	$have_sdn = 1;
+    };
+
+    if ($have_sdn) {
+	my ($bridgesdn, $tag) = PVE::Network::SDN::Zones::get_bridge_vlan($bridge);
+	$bridge = $bridgesdn if $bridgesdn;
+	$trunks = undef;
+    }
 
     #cleanup old port config from any openvswitch bridge
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
