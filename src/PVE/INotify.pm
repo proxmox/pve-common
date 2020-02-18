@@ -1601,12 +1601,13 @@ NETWORKDOC
 	loopback => 100000,
 	eth => 200000,
 	OVSPort => 200000,
-	OVSIntPort => 200000,
-	bond => 300000,
-	bridge => 400000,
-	OVSBridge => 400000,
-	vlan => 500000,
-	vxlan => 500000,
+	OVSIntPort => 300000,
+	OVSBond => 400000,
+	bond => 400000,
+	bridge => 500000,
+	OVSBridge => 500000,
+	vlan => 600000,
+	vxlan => 600000,
    };
 
     my $lookup_type_prio = sub {

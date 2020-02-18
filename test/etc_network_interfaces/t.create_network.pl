@@ -3,6 +3,8 @@ eth0:
 eth1:
 eth2:
 eth3:
+eth4:
+eth5:
 /proc/net/dev
 
 r(load('brbase'));
@@ -66,6 +68,10 @@ iface eth2 inet manual
 
 iface eth3 inet manual
 
+iface eth4 inet manual
+
+iface eth5 inet manual
+
 $vmbr0_part
 
 CHECK
@@ -106,6 +112,10 @@ $eth1_part
 iface eth2 inet manual
 
 iface eth3 inet manual
+
+iface eth4 inet manual
+
+iface eth5 inet manual
 
 $bond0_part
 
@@ -160,6 +170,10 @@ $eth1_part
 iface eth2 inet manual
 
 iface eth3 inet manual
+
+iface eth4 inet manual
+
+iface eth5 inet manual
 
 $bond0_part
 
@@ -274,6 +288,10 @@ iface eth2 inet manual
 
 iface eth3 inet manual
 
+iface eth4 inet manual
+
+iface eth5 inet manual
+
 $bond0_part
 
 $vmbr0_part
@@ -343,6 +361,36 @@ $config->{ifaces}->{'vmbr5'} = {
     autostart => 1
 };
 
+$config->{ifaces}->{vmbr6} = {
+    ovs_mtu => 1400,
+    type => 'OVSBridge',
+    ovs_ports => 'bond1 ovsintvlan',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
+$config->{ifaces}->{bond1} = {
+    ovs_mtu => 1300,
+    type => 'OVSBond',
+    ovs_bridge => 'vmbr6',
+    ovs_bonds => 'eth4 eth5',
+    ovs_options => 'bond_mode=active-backup',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
+$config->{ifaces}->{ovsintvlan} = {
+    ovs_mtu => 1300,
+    type => 'OVSIntPort',
+    ovs_bridge => 'vmbr6',
+    ovs_options => 'tag=14',
+    method => 'manual',
+    families => ['inet'],
+    autostart => 1
+};
+
 expect load('loopback') . <<"CHECK";
 source-directory interfaces.d
 
@@ -354,11 +402,30 @@ iface eth2 inet manual
 
 iface eth3 inet manual
 
+iface eth4 inet manual
+
+iface eth5 inet manual
+
 auto eth1.100
 iface eth1.100 inet manual
 	mtu 1400
 
+allow-vmbr6 ovsintvlan
+iface ovsintvlan inet manual
+	ovs_type OVSIntPort
+	ovs_bridge vmbr6
+	ovs_mtu 1300
+	ovs_options tag=14
+
 $bond0_part
+
+allow-vmbr6 bond1
+iface bond1 inet manual
+	ovs_bonds eth4 eth5
+	ovs_type OVSBond
+	ovs_bridge vmbr6
+	ovs_mtu 1300
+	ovs_options bond_mode=active-backup
 
 auto bond0.100
 iface bond0.100 inet manual
@@ -386,6 +453,12 @@ iface vmbr5 inet manual
 	bridge-stp off
 	bridge-fd 0
 	mtu 1100
+
+allow-ovs vmbr6
+iface vmbr6 inet manual
+	ovs_type OVSBridge
+	ovs_ports bond1 ovsintvlan
+	ovs_mtu 1400
 
 auto vmbr1.100
 iface vmbr1.100 inet manual
@@ -436,6 +509,10 @@ iface eth1 inet6 static
 iface eth2 inet manual
 
 iface eth3 inet manual
+
+iface eth4 inet manual
+
+iface eth5 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
