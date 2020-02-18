@@ -1032,6 +1032,7 @@ sub __read_etc_network_interfaces {
 
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
+	$d->{type} = 'unknown';
 	if ($iface =~ m/^bond\d+$/) {
 	    if (!$d->{ovs_type}) {
 		$d->{type} = 'bond';
@@ -1051,8 +1052,6 @@ sub __read_etc_network_interfaces {
 		}
 		my $tag = &$extract_ovs_option($d, 'tag');
 		$d->{ovs_tag} = $tag if defined($tag);
-	    } else {
-		$d->{type} = 'unknown';
 	    }
 	} elsif ($iface =~ m/^vmbr\d+$/) {
 	    if (!$d->{ovs_type}) {
@@ -1066,8 +1065,6 @@ sub __read_etc_network_interfaces {
 		}
 	    } elsif ($d->{ovs_type} eq 'OVSBridge') {
 		$d->{type} = $d->{ovs_type};
-	    } else {
-		$d->{type} = 'unknown';
 	    }
 	} elsif ($iface =~ m/^(\S+):\d+$/) {
 	    $d->{type} = 'alias';
@@ -1094,16 +1091,12 @@ sub __read_etc_network_interfaces {
 		$d->{type} = $d->{ovs_type};
 		my $tag = &$extract_ovs_option($d, 'tag');
 		$d->{ovs_tag} = $tag if defined($tag);
-	    } else {
-		$d->{type} = 'unknown';
 	    }
 	} elsif ($iface =~ m/^lo$/) {
 	    $d->{type} = 'loopback';
 	} else {
 	    if ($d->{'vxlan-id'}) {
 		$d->{type} = 'vxlan';
-	    } elsif (!$d->{ovs_type}) {
-		$d->{type} = 'unknown';
 	    } elsif ($d->{ovs_type} eq 'OVSIntPort') {
 		$d->{type} = $d->{ovs_type};
 		my $tag = &$extract_ovs_option($d, 'tag');
