@@ -519,7 +519,7 @@ function _$exename() {
     cmd=\${words[1]}
     curr=\${words[cwords]}
     prev=\${words[cwords-1]}
-    compadd \$(COMP_CWORD="\$cwords" COMP_LINE="\$line" COMP_POINT="\$point" \\
+    compadd -- \$(COMP_CWORD="\$cwords" COMP_LINE="\$line" COMP_POINT="\$point" \\
 	$exename bashcomplete "\$cmd" "\$curr" "\$prev")
 }
 __EOD__
