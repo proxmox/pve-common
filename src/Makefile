@@ -20,6 +20,7 @@ LIB_SOURCES = \
 	Exception.pm \
 	INotify.pm \
 	JSONSchema.pm \
+	LDAP.pm \
 	Network.pm \
 	OTP.pm \
 	PTY.pm \
