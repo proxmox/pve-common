@@ -1114,28 +1114,20 @@ sub __read_etc_network_interfaces {
 	# map address and netmask to cidr
 	if ($d->{address}) {
 	    if ($d->{netmask} && $d->{netmask} =~ m/^\d+$/) { # e.g. netmask 20
-		$d->{cidr} = $d->{address} . "/" . $d->{netmask};
+		$d->{address} = $d->{address} . "/" . $d->{netmask};
 	    } elsif ($d->{netmask} &&
 		     (my $cidr = PVE::JSONSchema::get_netmask_bits($d->{netmask}))) { # e.g. netmask 255.255.255.0
-		$d->{cidr} = $d->{address} . "/" . $cidr;
-	    } elsif ($d->{address} =~ m!^(.*)/(\d+)$!) {
-		$d->{cidr} = $d->{address};
-		$d->{address} = $1;
-		$d->{netmask} = $2;
-	    } else {
-		$d->{cidr} = $d->{address};
+		$d->{address} = $d->{address} . "/" . $cidr;
 	    }
+           #for api compatibility
+           $d->{cidr} = $d->{address} 
 	}
 
 	# map address6 and netmask6 to cidr6
 	if ($d->{address6}) {
-	    $d->{cidr6} = $d->{address6};
-	    if ($d->{netmask6}) {
-		$d->{cidr6} .= "/" . $d->{netmask6};
-	    } elsif ($d->{address6} =~ m!^(.*)/(\d+)$!) {
-		$d->{address6} = $1;
-		$d->{netmask6} = $2;
-	    }
+	    $d->{address6} .= "/" . $d->{netmask6} if $d->{address6} !~ m!^(.*)/(\d+)$! && $d->{netmask6};
+            #for api compatibility
+	    $d->{cidr6} = $d->{address6} 
 	}
 
 	$d->{method} = 'manual' if !$d->{method};
@@ -1184,9 +1176,7 @@ sub __interface_to_string {
 
     $raw .= "iface $iface $family " . $d->{"method$suffix"} . "\n";
     $raw .= "\taddress  " . $d->{"address$suffix"} . "\n" if $d->{"address$suffix"};
-    $raw .= "\tnetmask  " . $d->{"netmask$suffix"} . "\n" if $d->{"netmask$suffix"};
     $raw .= "\tgateway  " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
-    $raw .= "\tbroadcast  " . $d->{"broadcast$suffix"} . "\n" if $d->{"broadcast$suffix"};
 
     my $done = { type => 1, priority => 1, method => 1, active => 1, exists => 1,
 		 comments => 1, autostart => 1, options => 1,

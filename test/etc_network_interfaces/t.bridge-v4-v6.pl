@@ -1,8 +1,6 @@
-my $ip = '10.0.0.2';
-my $nm = '255.255.255.0';
+my $ip = '10.0.0.2/24';
 my $gw = '10.0.0.1';
-my $ip6 = 'fc05::1:2';
-my $nm6 = '112';
+my $ip6 = 'fc05::1:2/112';
 my $gw6 = 'fc05::1:1';
 
 r(load('base'));
@@ -22,14 +20,12 @@ EOF
 update_iface('vmbr0',
     [ { family => 'inet',
 	address => $ip,
-	netmask => $nm,
 	gateway => $gw } ],
     autostart => 0);
 
 expect load('base') . <<"EOF";
 iface vmbr0 inet static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 	bridge-ports eth0
 	bridge-stp off
@@ -41,13 +37,11 @@ save('with-ipv4', w());
 update_iface('vmbr0',
     [ { family => 'inet6',
 	address => $ip6,
-	netmask => $nm6,
 	gateway => $gw6 } ]);
 
 expect load('with-ipv4') . <<"EOF";
 iface vmbr0 inet6 static
 	address  $ip6
-	netmask  $nm6
 	gateway  $gw6
 
 EOF
@@ -64,7 +58,6 @@ delete_iface('vmbr0', 'inet');
 expect load('base') . <<"EOF";
 iface vmbr0 inet6 static
 	address  $ip6
-	netmask  $nm6
 	gateway  $gw6
 	bridge-ports eth0
 	bridge-stp off

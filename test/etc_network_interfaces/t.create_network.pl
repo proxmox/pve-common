@@ -11,8 +11,7 @@ r(load('brbase'));
 # Variables used for the various interfaces:
 #
 
-my $ip = '192.168.0.2';
-my $nm = '255.255.255.0';
+my $ip = '192.168.0.2/24';
 my $gw = '192.168.0.1';
 my $svcnodeip = '239.192.105.237';
 my $physdev = 'eth0';
@@ -26,8 +25,7 @@ my $remoteip2 = '192.168.0.4';
 my $vmbr0_part = <<"PART";
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2
-	netmask  255.255.255.0
+	address  10.0.0.2/24
 	gateway  10.0.0.1
 	bridge-ports eth0
 	bridge-stp off
@@ -44,7 +42,6 @@ $config->{ifaces}->{eth1} = {
     type => 'eth',
     method => 'static',
     address => $ip,
-    netmask => $nm,
     gateway => $gw,
     families => ['inet'],
     autostart => 1
@@ -54,7 +51,6 @@ my $eth1_part = <<"PART";
 auto eth1
 iface eth1 inet static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 PART
 chomp $eth1_part;
@@ -435,7 +431,6 @@ iface eth0 inet manual
 auto eth1
 iface eth1 inet6 static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 
 iface eth2 inet manual
@@ -444,8 +439,7 @@ iface eth3 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2
-	netmask  255.255.255.0
+	address  10.0.0.2/24
 	gateway  10.0.0.1
 	bridge-ports eth0
 	bridge-stp off

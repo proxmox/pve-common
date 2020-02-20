@@ -1,7 +1,6 @@
 use strict;
 
-my $ip = '192.168.0.100';
-my $nm = '255.255.255.0';
+my $ip = '192.168.0.100/24';
 my $gw = '192.168.0.1';
 
 # replace proc_net_dev with one with a bunch of interfaces
@@ -17,7 +16,6 @@ r('');
 new_iface('vmbr0', 'OVSBridge',
     [ { family => 'inet',
         address => $ip,
-        netmask => $nm,
         gateway => $gw } ],
     autostart => 1);
 
@@ -42,7 +40,6 @@ iface eth3 inet manual
 allow-ovs vmbr0
 iface vmbr0 inet static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 	ovs_type OVSBridge
 
@@ -70,7 +67,6 @@ iface eth3 inet manual
 allow-ovs vmbr0
 iface vmbr0 inet static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 	ovs_type OVSBridge
 	ovs_ports eth1 eth2
@@ -105,7 +101,6 @@ iface eth2 inet manual
 allow-ovs vmbr0
 iface vmbr0 inet static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 	ovs_type OVSBridge
 	ovs_ports eth1

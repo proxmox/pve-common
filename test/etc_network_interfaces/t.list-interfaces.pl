@@ -16,13 +16,10 @@ eth100:
 /proc/net/dev
 
 my %wanted = (
-    vmbr0 => { address => '192.168.1.2',
-	       netmask => '255.255.255.0',
+    vmbr0 => { address => '192.168.1.2/24',
 	       gateway => '192.168.1.1',
-	       address6 => 'fc05::1:1',
-	       netmask6 => '112' },
-    vmbr1 => { address => '10.0.0.5',
-	       netmask => '255.255.255.0' }
+	       address6 => 'fc05::1:1/112'},
+    vmbr1 => { address => '10.0.0.5/24'}
 );
 
 save('interfaces', <<"/etc/network/interfaces");
@@ -40,23 +37,23 @@ iface eth100 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-	address  $wanted{vmbr0}->{address}
-	netmask  $wanted{vmbr0}->{netmask}
+	address  192.168.1.2
+	netmask  24
 	gateway  $wanted{vmbr0}->{gateway}
 	bridge_ports eth0
 	bridge_stp off
 	bridge_fd 0
 
 iface vmbr0 inet6 static
-	address  $wanted{vmbr0}->{address6}
-	netmask  $wanted{vmbr0}->{netmask6}
+	address  fc05::1:1
+	netmask  112
 
 source-directory before-ovs.d
 
 allow-ovs vmbr1
 iface vmbr1 inet static
-	address  $wanted{vmbr1}->{address}
-	netmask  $wanted{vmbr1}->{netmask}
+	address  10.0.0.5
+	netmask  255.255.255.0
 	ovs_type OVSBridge
 	ovs_ports eth100
 

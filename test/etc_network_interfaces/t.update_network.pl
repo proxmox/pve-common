@@ -3,11 +3,9 @@ eth0:
 eth1:
 /proc/net/dev
 
-my $ip = '192.168.0.2';
-my $nm = '255.255.255.0';
+my $ip = '192.168.0.2/24';
 my $gw = '192.168.0.1';
-my $ip6 = 'fc05::2';
-my $nm6 = '112';
+my $ip6 = 'fc05::2/112';
 my $gw6 = 'fc05::1';
 
 # Load
@@ -18,7 +16,6 @@ $config->{ifaces}->{eth1} = {
     type => 'eth',
     method => 'static',
     address => $ip,
-    netmask => $nm,
     gateway => $gw,
     families => ['inet'],
     autostart => 1
@@ -33,13 +30,11 @@ iface eth0 inet manual
 auto eth1
 iface eth1 inet static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2
-	netmask  255.255.255.0
+	address  10.0.0.2/24
 	gateway  10.0.0.1
 	bridge-ports eth0
 	bridge-stp off
@@ -69,18 +64,15 @@ iface eth0 inet manual
 auto eth1
 iface eth1 inet static
 	address  $ip
-	netmask  $nm
 	gateway  $gw
 
 iface eth1 inet6 static
 	address  $ip6
-	netmask  $nm6
 	gateway  $gw6
 
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2
-	netmask  255.255.255.0
+	address  10.0.0.2/24
 	gateway  10.0.0.1
 	bridge-ports eth0
 	bridge-stp off

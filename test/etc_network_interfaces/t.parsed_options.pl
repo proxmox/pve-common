@@ -18,8 +18,7 @@ iface eth1 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2
-	netmask  255.255.255.0
+	address  10.0.0.2/24
 	gateway  10.0.0.1
 	bridge-ports eth0
 	bridge-stp off
