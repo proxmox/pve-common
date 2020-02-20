@@ -39,8 +39,8 @@ iface eth3 inet manual
 
 allow-ovs vmbr0
 iface vmbr0 inet static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 	ovs_type OVSBridge
 
 /etc/network/interfaces
@@ -66,8 +66,8 @@ iface eth3 inet manual
 
 allow-ovs vmbr0
 iface vmbr0 inet static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 	ovs_type OVSBridge
 	ovs_ports eth1 eth2
 
@@ -100,8 +100,8 @@ iface eth2 inet manual
 
 allow-ovs vmbr0
 iface vmbr0 inet static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 	ovs_type OVSBridge
 	ovs_ports eth1
 

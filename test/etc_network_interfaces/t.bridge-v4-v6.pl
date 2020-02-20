@@ -25,8 +25,8 @@ update_iface('vmbr0',
 
 expect load('base') . <<"EOF";
 iface vmbr0 inet static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 	bridge-ports eth0
 	bridge-stp off
 	bridge-fd 0
@@ -41,8 +41,8 @@ update_iface('vmbr0',
 
 expect load('with-ipv4') . <<"EOF";
 iface vmbr0 inet6 static
-	address  $ip6
-	gateway  $gw6
+	address $ip6
+	gateway $gw6
 
 EOF
 
@@ -57,8 +57,8 @@ delete_iface('vmbr0', 'inet');
 # bridge ports must now appear in the inet6 block
 expect load('base') . <<"EOF";
 iface vmbr0 inet6 static
-	address  $ip6
-	gateway  $gw6
+	address $ip6
+	gateway $gw6
 	bridge-ports eth0
 	bridge-stp off
 	bridge-fd 0

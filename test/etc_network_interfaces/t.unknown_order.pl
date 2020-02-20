@@ -25,7 +25,7 @@ iface bond0 inet manual
 
 auto bond1
 iface bond1 inet static
-	address  10.10.10.$ip/24
+	address 10.10.10.$ip/24
 	bond-slaves eth2 eth3
 	bond-miimon 100
 	bond-mode balance-alb
@@ -39,25 +39,25 @@ iface bond2 inet manual
 # Private networking
 
 iface unknown3 inet static
-	address  0.0.0.0
+	address 0.0.0.0
 
 iface unknown4 inet static
-	address  0.0.0.0
+	address 0.0.0.0
 
 iface unknown5 inet static
-	address  0.0.0.0
+	address 0.0.0.0
 
 auto vmbr0
 iface vmbr0 inet static
-	address  192.168.100.13/24
-	gateway  192.168.100.1
+	address 192.168.100.13/24
+	gateway 192.168.100.1
 	bridge-ports bond0
 	bridge-stp off
 	bridge-fd 0
 
 auto unknown6
 iface unknown6 inet static
-	address  10.10.11.13/24
+	address 10.10.11.13/24
 	pre-up ifconfig bond0 up
 
 auto vmbr3

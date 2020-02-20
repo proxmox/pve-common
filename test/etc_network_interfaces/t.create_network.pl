@@ -25,8 +25,8 @@ my $remoteip2 = '192.168.0.4';
 my $vmbr0_part = <<"PART";
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2/24
-	gateway  10.0.0.1
+	address 10.0.0.2/24
+	gateway 10.0.0.1
 	bridge-ports eth0
 	bridge-stp off
 	bridge-fd 0
@@ -50,8 +50,8 @@ $config->{ifaces}->{eth1} = {
 my $eth1_part = <<"PART";
 auto eth1
 iface eth1 inet static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 PART
 chomp $eth1_part;
 
@@ -430,8 +430,8 @@ iface eth0 inet manual
 
 auto eth1
 iface eth1 inet6 static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 
 iface eth2 inet manual
 
@@ -439,8 +439,8 @@ iface eth3 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2/24
-	gateway  10.0.0.1
+	address 10.0.0.2/24
+	gateway 10.0.0.1
 	bridge-ports eth0
 	bridge-stp off
 	bridge-fd 0

@@ -29,13 +29,13 @@ iface eth0 inet manual
 
 auto eth1
 iface eth1 inet static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2/24
-	gateway  10.0.0.1
+	address 10.0.0.2/24
+	gateway 10.0.0.1
 	bridge-ports eth0
 	bridge-stp off
 	bridge-fd 0
@@ -63,17 +63,17 @@ iface eth0 inet manual
 
 auto eth1
 iface eth1 inet static
-	address  $ip
-	gateway  $gw
+	address $ip
+	gateway $gw
 
 iface eth1 inet6 static
-	address  $ip6
-	gateway  $gw6
+	address $ip6
+	gateway $gw6
 
 auto vmbr0
 iface vmbr0 inet static
-	address  10.0.0.2/24
-	gateway  10.0.0.1
+	address 10.0.0.2/24
+	gateway 10.0.0.1
 	bridge-ports eth0
 	bridge-stp off
 	bridge-fd 0

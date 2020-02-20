@@ -1175,8 +1175,8 @@ sub __interface_to_string {
     my $raw = '';
 
     $raw .= "iface $iface $family " . $d->{"method$suffix"} . "\n";
-    $raw .= "\taddress  " . $d->{"address$suffix"} . "\n" if $d->{"address$suffix"};
-    $raw .= "\tgateway  " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
+    $raw .= "\taddress " . $d->{"address$suffix"} . "\n" if $d->{"address$suffix"};
+    $raw .= "\tgateway " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
 
     my $done = { type => 1, priority => 1, method => 1, active => 1, exists => 1,
 		 comments => 1, autostart => 1, options => 1,
