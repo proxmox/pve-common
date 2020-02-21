@@ -1352,7 +1352,7 @@ sub __interface_to_string {
 
 sub write_etc_network_interfaces {
     my ($filename, $fh, $config) = @_;
-    my $ifupdown2 = -e '/usr/share/ifupdown2';
+    my $ifupdown2 = -e '/usr/share/ifupdown2/ifupdown2';
     my $raw = __write_etc_network_interfaces($config, $ifupdown2);
     PVE::Tools::safe_print($filename, $fh, encode('UTF-8', $raw));
 }
