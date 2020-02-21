@@ -607,19 +607,22 @@ sub addr_to_ip {
 sub get_ip_from_hostname {
     my ($hostname, $noerr) = @_;
 
-    my ($family, $ip);
-
-    eval {
-	my @res = PVE::Tools::getaddrinfo_all($hostname);
-	$family = $res[0]->{family};
-	$ip = addr_to_ip($res[0]->{addr})
-    };
+    my @res = eval { PVE::Tools::getaddrinfo_all($hostname) };
     if ($@) {
 	die "hostname lookup '$hostname' failed - $@" if !$noerr;
 	return undef;
     }
 
-    if ($ip =~ m/^127\.|^::1$/) {
+    my ($ip, $family);
+    for my $ai (@res) {
+	$family = $ai->{family};
+	my $tmpip = addr_to_ip($ai->{addr});
+	if ($tmpip !~ m/^127\.|^::1$/) {
+	    $ip = $tmpip;
+	    last;
+	}
+    }
+    if (!defined($ip) ) {
 	die "hostname lookup '$hostname' failed - got local IP address '$ip'\n" if !$noerr;
 	return undef;
     }
