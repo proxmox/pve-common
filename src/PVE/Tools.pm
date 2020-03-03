@@ -908,9 +908,13 @@ sub next_vnc_port {
     return next_unused_port(5900, 6000, $family, $address);
 }
 
+sub spice_port_range {
+    return (61000, 61999);
+}
+
 sub next_spice_port {
     my ($family, $address) = @_;
-    return next_unused_port(61000, 61099, $family, $address);
+    return next_unused_port(spice_port_range(), $family, $address);
 }
 
 sub must_stringify {
