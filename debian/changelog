@@ -1,3 +1,21 @@
+libpve-common-perl (6.0-13) pve pmg; urgency=medium
+
+  * INotify: fix mtu check and add test
+
+  * INotify : check_bridge : fix bridge-ports with vlan tagged interface
+
+  * zsh-completion: Add missing "options end here flag" to compadd
+
+  * get_ip_from_hostname: check all address we get from getaddrinfo_all for non-local IP
+
+  * INotify: use cidr for address on config change
+
+  * partially fix #2618: increase maximum port for spice to 61999
+
+  * add LDAP Wrapper code from Mailgateway
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 04 Mar 2020 15:44:15 +0100
+
 libpve-common-perl (6.0-12) pve pmg; urgency=medium
 
   * systemd: add un-/escape_unit helpers
