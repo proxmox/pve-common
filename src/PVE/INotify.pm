@@ -1113,21 +1113,22 @@ sub __read_etc_network_interfaces {
 
 	# map address and netmask to cidr
 	if ($d->{address}) {
-	    if ($d->{netmask} && $d->{netmask} =~ m/^\d+$/) { # e.g. netmask 20
-		$d->{address} = $d->{address} . "/" . $d->{netmask};
-	    } elsif ($d->{netmask} &&
-		     (my $cidr = PVE::JSONSchema::get_netmask_bits($d->{netmask}))) { # e.g. netmask 255.255.255.0
-		$d->{address} = $d->{address} . "/" . $cidr;
+	    if ($d->{netmask}) {
+		if ($d->{netmask} =~ m/^\d+$/) { # e.g. netmask 20
+		    $d->{address} = $d->{address} . "/" . $d->{netmask};
+		} elsif (my $mask = PVE::JSONSchema::get_netmask_bits($d->{netmask})) {
+		    $d->{address} = $d->{address} . "/" . $mask;
+		}
 	    }
-           #for api compatibility
-           $d->{cidr} = $d->{address} 
+	   # for api compatibility
+	   $d->{cidr} = $d->{address};
 	}
 
 	# map address6 and netmask6 to cidr6
 	if ($d->{address6}) {
 	    $d->{address6} .= "/" . $d->{netmask6} if $d->{address6} !~ m!^(.*)/(\d+)$! && $d->{netmask6};
-            #for api compatibility
-	    $d->{cidr6} = $d->{address6} 
+	    # for api compatibility
+	    $d->{cidr6} = $d->{address6};
 	}
 
 	$d->{method} = 'manual' if !$d->{method};
