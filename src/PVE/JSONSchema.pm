@@ -265,6 +265,19 @@ sub pve_verify_ip {
     return $ip;
 }
 
+PVE::JSONSchema::register_format('ldap-simple-attr', \&verify_ldap_simple_attr);
+sub verify_ldap_simple_attr {
+    my ($attr, $noerr) = @_;
+
+    if ($attr =~ m/^[a-zA-Z0-9]+$/) {
+	return $attr;
+    }
+
+    die "value '$attr' does not look like a simple ldap attribute name\n" if !$noerr;
+
+    return undef;
+}
+
 my $ipv4_mask_hash = {
     '0.0.0.0' => 0,
     '128.0.0.0' => 1,
