@@ -1,3 +1,11 @@
+libpve-common-perl (6.0-14) pve pmg; urgency=medium
+
+  * INotify: use 'auto' for ovs interfaces with ifupdown2
+
+  * INotify : fix OVSBond and OvsintPort order, and add more tests
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 07 Mar 2020 17:51:16 +0100
+
 libpve-common-perl (6.0-13) pve pmg; urgency=medium
 
   * INotify: fix mtu check and add test
