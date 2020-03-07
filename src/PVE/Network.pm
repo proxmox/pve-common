@@ -13,6 +13,12 @@ use Net::IP;
 use POSIX qw(ECONNREFUSED);
 use Socket qw(NI_NUMERICHOST NI_NUMERICSERV);
 
+my $have_sdn;
+eval {
+    require PVE::Network::SDN::Zones;
+    $have_sdn = 1;
+};
+
 # host network related utility functions
 
 our $PHYSICAL_NIC_RE = qr/(?:eth\d+|en[^:.]+|ib\d+)/;
@@ -272,12 +278,6 @@ my $activate_interface = sub {
 sub tap_create {
     my ($iface, $bridge) = @_;
 
-    my $have_sdn;
-    eval {
-	require PVE::Network::SDN::Zones;
-	$have_sdn = 1;
-    };
-
     if ($have_sdn) {
 	my ($bridgesdn, undef) = PVE::Network::SDN::Zones::get_bridge_vlan($bridge);
 	$bridge = $bridgesdn if $bridgesdn;
@@ -296,12 +296,6 @@ sub tap_create {
 
 sub veth_create {
     my ($veth, $vethpeer, $bridge, $mac) = @_;
-
-    my $have_sdn;
-    eval {
-	require PVE::Network::SDN::Zones;
-	$have_sdn = 1;
-    };
 
     if ($have_sdn) {
 	my ($bridgesdn, undef) = PVE::Network::SDN::Zones::get_bridge_vlan($bridge);
@@ -398,12 +392,6 @@ my $cleanup_firewall_bridge = sub {
 
 sub tap_plug {
     my ($iface, $bridge, $tag, $firewall, $trunks, $rate) = @_;
-
-    my $have_sdn;
-    eval {
-	require PVE::Network::SDN::Zones;
-	$have_sdn = 1;
-    };
 
     if ($have_sdn) {
 	my ($bridgesdn, $tag) = PVE::Network::SDN::Zones::get_bridge_vlan($bridge);
