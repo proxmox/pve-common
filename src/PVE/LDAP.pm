@@ -38,7 +38,7 @@ sub ldap_connect {
 	$ldap_opts{$opt} = $opts->{$opt} if $opts->{$opt};
     }
 
-    my $ldap = Net::LDAP->new($hosts, %ldap_opts) || die $@;
+    my $ldap = Net::LDAP->new($hosts, %ldap_opts) || die "$@\n";
 
     if ($start_tls) {
 	$ldap->start_tls(%$opts);
