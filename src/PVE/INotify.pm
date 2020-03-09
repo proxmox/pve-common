@@ -1097,10 +1097,12 @@ sub __read_etc_network_interfaces {
 	} else {
 	    if ($d->{'vxlan-id'}) {
 		$d->{type} = 'vxlan';
-	    } elsif ($d->{ovs_type} eq 'OVSIntPort') {
-		$d->{type} = $d->{ovs_type};
-		my $tag = &$extract_ovs_option($d, 'tag');
-		$d->{ovs_tag} = $tag if defined($tag);
+	    } elsif (defined($d->{ovs_type})) {
+		if ($d->{ovs_type} eq 'OVSIntPort') {
+		    $d->{type} = $d->{ovs_type};
+		    my $tag = &$extract_ovs_option($d, 'tag');
+		    $d->{ovs_tag} = $tag if defined($tag);
+		}
 	    }
 	}
 
