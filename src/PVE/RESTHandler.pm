@@ -621,7 +621,10 @@ sub getopt_usage {
 
     my $schema = $info->{parameters};
     my $name = $info->{name};
-    my $prop = { %{$schema->{properties}} }; # copy
+    my $prop =  {};
+    if ($schema->{properties}) {
+	$prop = { %{$schema->{properties}} }; # copy
+    }
 
     my $has_output_format_option = $formatter_properties->{'output-format'} ? 1 : 0;
 
