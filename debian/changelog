@@ -1,3 +1,13 @@
+libpve-common-perl (6.0-15) pve pmg; urgency=medium
+
+  * inotify: read interfaces: avoid uninitialized value access
+
+  * RESTHandler getopt_usage: schema properties can be optional
+
+  * add ldap-simple-attr format from Proxmox Mailgateway for reuse
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 09 Mar 2020 17:01:42 +0100
+
 libpve-common-perl (6.0-14) pve pmg; urgency=medium
 
   * INotify: use 'auto' for ovs interfaces with ifupdown2
