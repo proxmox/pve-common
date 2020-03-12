@@ -1385,10 +1385,12 @@ sub __write_etc_network_interfaces {
 	    my $brname = $used_ports->{$iface};
 	    if (!$brname || !$ifaces->{$brname}) {
 		if ($iface =~ /^$PVE::Network::PHYSICAL_NIC_RE/) {
-		    $ifaces->{$iface} = { type => 'eth',
-					  exists => 1,
-					  method => 'manual',
-					  families => ['inet'] };
+		    $ifaces->{$iface} = {
+			type => 'eth',
+			exists => 1,
+			method => 'manual',
+			families => ['inet'],
+		    };
 		} else {
 		    delete $ifaces->{$iface};
 		}
