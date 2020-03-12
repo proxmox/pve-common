@@ -1171,7 +1171,20 @@ sub __interface_to_string {
     my $raw = '';
 
     $raw .= "iface $iface $family " . $d->{"method$suffix"} . "\n";
-    $raw .= "\taddress " . $d->{"address$suffix"} . "\n" if $d->{"address$suffix"};
+
+    if (my $addr = $d->{"address$suffix"}) {
+
+	if ($addr !~ /\/\d+$/ && $d->{"netmask$suffix"}) {
+	    if ($d->{"netmask$suffix"} =~ m/^\d+$/) {
+		$addr .= "/" . $d->{"netmask$suffix"};
+	    } elsif (my $mask = PVE::JSONSchema::get_netmask_bits($d->{"netmask$suffix"})) {
+		$addr .= "/" . $mask;
+	    }
+	}
+
+	$raw .= "\taddress " . $addr . "\n";
+    }
+
     $raw .= "\tgateway " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
 
     my $done = { type => 1, priority => 1, method => 1, active => 1, exists => 1,

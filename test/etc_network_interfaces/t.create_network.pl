@@ -503,7 +503,7 @@ iface eth0 inet manual
 
 auto eth1
 iface eth1 inet6 static
-	address $ip
+	address $ip/$nm
 	gateway $gw
 
 iface eth2 inet manual
