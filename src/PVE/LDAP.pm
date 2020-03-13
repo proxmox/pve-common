@@ -94,7 +94,7 @@ sub auth_user_dn {
 }
 
 sub query_users {
-    my ($ldap, $filter, $attributes, $base_dn) = @_;
+    my ($ldap, $filter, $attributes, $base_dn, $classes) = @_;
 
     # build filter from given filter and attribute list
     my $tmp = "(|";
@@ -102,6 +102,14 @@ sub query_users {
 	$tmp .= "($att=*)";
     }
     $tmp .= ")";
+
+    if ($classes) {
+	$tmp = "(&$tmp(|";
+	for my $class (@$classes) {
+	    $tmp .= "(objectclass=$class)";
+	}
+	$tmp .= "))";
+    }
 
     if ($filter) {
 	$filter = "($filter)" if $filter !~ m/^\(.*\)$/;
