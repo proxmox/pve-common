@@ -4,24 +4,26 @@ package PVE::INotify;
 use strict;
 use warnings;
 
-use POSIX;
-use IO::File;
-use IO::Dir;
-use File::stat;
-use File::Basename;
-use Fcntl qw(:DEFAULT :flock);
-use PVE::SafeSyslog;
-use PVE::Exception qw(raise_param_exc);
-use PVE::Network;
-use PVE::Tools;
-use PVE::ProcFSTools;
-use PVE::JSONSchema;
 use Clone qw(clone);
-use Linux::Inotify2;
-use base 'Exporter';
-use JSON;
 use Digest::SHA;
 use Encode qw(encode decode);
+use Fcntl qw(:DEFAULT :flock);
+use File::Basename;
+use File::stat;
+use IO::Dir;
+use IO::File;
+use JSON;
+use Linux::Inotify2;
+use POSIX;
+
+use PVE::Exception qw(raise_param_exc);
+use PVE::JSONSchema;
+use PVE::Network;
+use PVE::ProcFSTools;
+use PVE::SafeSyslog;
+use PVE::Tools;
+
+use base 'Exporter';
 
 our @EXPORT_OK = qw(read_file write_file register_file);
 
