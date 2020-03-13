@@ -1109,23 +1109,34 @@ sub __read_etc_network_interfaces {
 	}
 
 	# map address and netmask to cidr
-	if ($d->{address}) {
-	    if ($d->{netmask}) {
-		if ($d->{netmask} =~ m/^\d+$/) { # e.g. netmask 20
-		    $d->{address} = $d->{address} . "/" . $d->{netmask};
-		} elsif (my $mask = PVE::JSONSchema::get_netmask_bits($d->{netmask})) {
-		    $d->{address} = $d->{address} . "/" . $mask;
-		}
+	if (my $addr = $d->{address}) {
+	    if (_address_is_cidr($addr)) {
+		$d->{cidr} = $addr;
+		my ($baseaddr, $mask) = _cidr_split($addr);
+		$d->{address} = $baseaddr;
+		$d->{netmask} = $mask;
+	    } elsif (my $cidr = _get_cidr($d->{address}, $d->{netmask})) {
+		$d->{cidr} = $cidr;
+		(undef, $d->{netmask}) = _cidr_split($cidr);
+	    } else {
+		# no mask, else we'd got a cidr above
+		$d->{cidr} = $addr ."/32";
 	    }
-	   # for api compatibility
-	   $d->{cidr} = $d->{address};
 	}
 
 	# map address6 and netmask6 to cidr6
-	if ($d->{address6}) {
-	    $d->{address6} .= "/" . $d->{netmask6} if $d->{address6} !~ m!^(.*)/(\d+)$! && $d->{netmask6};
-	    # for api compatibility
-	    $d->{cidr6} = $d->{address6};
+	if (my $addr6 = $d->{address6}) {
+	    if (_address_is_cidr($addr6)) {
+		$d->{cidr6} = $addr6;
+		my ($baseaddr, $mask) = _cidr_split($addr6);
+		$d->{address6} = $baseaddr;
+		$d->{netmask6} = $mask;
+	    } elsif (my $cidr6 = _get_cidr($d->{address6}, $d->{netmask6})) {
+		$d->{cidr6} = $cidr6;
+	    } else {
+		# no mask, else we'd got a cidr above
+		$d->{cidr6} = $addr6 ."/128";
+	    }
 	}
 
 	$d->{method} = 'manual' if !$d->{method};
@@ -1161,6 +1172,31 @@ sub __read_etc_network_interfaces {
     } @$options;
 
     return $config;
+}
+
+sub _address_is_cidr {
+    my ($addr) = @_;
+    return $addr =~ /\/\d+$/ ? 1 : 0;
+}
+
+sub _cidr_split {
+    my ($cidr) = @_;
+    $cidr =~ /^(.+)\/(\d+)$/;
+    return ($1, $2); # (address, mask)
+}
+
+sub _get_cidr {
+    my ($addr, $mask) = @_;
+
+    return $addr if _address_is_cidr($addr);
+    return undef if !$mask;
+
+    if ($mask =~ m/^\d+$/) { # cidr notation
+	return $addr . "/" . $mask;
+    } elsif (my $cidrmask = PVE::JSONSchema::get_netmask_bits($mask)) {
+	return $addr . "/" . $cidrmask;
+    }
+    return undef;
 }
 
 sub __interface_to_string {

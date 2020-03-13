@@ -17,12 +17,18 @@ eth100:
 
 my %wanted = (
     vmbr0 => {
-	address => '192.168.1.2/24',
+	address => '192.168.1.2',
+	netmask => '24',
+	cidr => '192.168.1.2/24',
 	gateway => '192.168.1.1',
-	address6 => 'fc05::1:1/112',
+	address6 => 'fc05::1:1',
+	netmask6 => '112',
+	cidr6 => 'fc05::1:1/112',
     },
     vmbr1 => {
-	address => '10.0.0.5/24',
+	address => '10.0.0.5',
+	netmask => '24',
+	cidr => '10.0.0.5/24',
     },
 );
 
