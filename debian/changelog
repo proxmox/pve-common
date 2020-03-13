@@ -1,3 +1,11 @@
+libpve-common-perl (6.0-17) pve pmg; urgency=medium
+
+  * inotify: ensure backwards compatibility on interface read
+
+  * normalize cidr, address and netmask entries.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 13 Mar 2020 12:24:58 +0100
+
 libpve-common-perl (6.0-16) pve pmg; urgency=medium
 
   * notify: fix compatibility when address and netmask got passed separately on
