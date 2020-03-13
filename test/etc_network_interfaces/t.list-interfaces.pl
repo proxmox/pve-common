@@ -30,6 +30,14 @@ my %wanted = (
 	netmask => '24',
 	cidr => '10.0.0.5/24',
     },
+    eth2 => {
+	address => '172.16.0.1',
+	netmask => '24',
+	cidr => '172.16.0.1/24',
+	address6 => 'fc05::1:2',
+	netmask6 => '112',
+	cidr6 => 'fc05::1:2/112',
+    },
 );
 
 save('interfaces', <<"/etc/network/interfaces");
@@ -40,6 +48,12 @@ source-directory interfaces.d
 
 iface eth0 inet manual
 
+iface eth2 inet static
+	address  $wanted{eth2}->{cidr}
+
+iface eth2 inet6 static
+	address  $wanted{eth2}->{cidr6}
+
 allow-vmbr1 eth100
 iface eth100 inet manual
 	ovs_type OVSPort
@@ -47,23 +61,23 @@ iface eth100 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-	address  192.168.1.2
-	netmask  24
+	address  $wanted{vmbr0}->{address}
+	netmask  $wanted{vmbr0}->{netmask}
 	gateway  $wanted{vmbr0}->{gateway}
 	bridge_ports eth0
 	bridge_stp off
 	bridge_fd 0
 
 iface vmbr0 inet6 static
-	address  fc05::1:1
-	netmask  112
+	address  $wanted{vmbr0}->{address6}
+	netmask  $wanted{vmbr0}->{netmask6}
 
 source-directory before-ovs.d
 
 allow-ovs vmbr1
 iface vmbr1 inet static
-	address  10.0.0.5
-	netmask  255.255.255.0
+	address  $wanted{vmbr1}->{address}
+	netmask  $wanted{vmbr1}->{netmask}
 	ovs_type OVSBridge
 	ovs_ports eth100
 
