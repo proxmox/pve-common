@@ -16,10 +16,14 @@ eth100:
 /proc/net/dev
 
 my %wanted = (
-    vmbr0 => { address => '192.168.1.2/24',
-	       gateway => '192.168.1.1',
-	       address6 => 'fc05::1:1/112'},
-    vmbr1 => { address => '10.0.0.5/24'}
+    vmbr0 => {
+	address => '192.168.1.2/24',
+	gateway => '192.168.1.1',
+	address6 => 'fc05::1:1/112',
+    },
+    vmbr1 => {
+	address => '10.0.0.5/24',
+    },
 );
 
 save('interfaces', <<"/etc/network/interfaces");
