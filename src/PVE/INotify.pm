@@ -1413,8 +1413,9 @@ sub __write_etc_network_interfaces {
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
 
-	delete $d->{cidr};
-	delete $d->{cidr6};
+	my ($cidr, $cidr6) = (delete $d->{cidr}, delete $d->{cidr6});
+	$d->{address} //= $cidr;
+	$d->{address6} //= $cidr6;
 
 	my $ports = '';
 	foreach my $k (qw(bridge_ports ovs_ports slaves ovs_bonds)) {
