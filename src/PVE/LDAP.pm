@@ -176,7 +176,7 @@ sub query_users {
 }
 
 sub query_groups {
-    my ($ldap, $base_dn, $classes, $filter) = @_;
+    my ($ldap, $base_dn, $classes, $filter, $group_name_attr) = @_;
 
     my $tmp = "(|";
     for my $class (@$classes) {
@@ -193,12 +193,14 @@ sub query_groups {
 
     my $page = Net::LDAP::Control::Paged->new(size => 100);
 
+    my $attrs = [ 'member', 'uniqueMember' ];
+    push @$attrs, $group_name_attr if $group_name_attr;
     my @args = (
 	base     => $base_dn,
 	scope    => "subtree",
 	filter   => $filter,
 	control  => [ $page ],
-	attrs    => [ 'member', 'uniqueMember' ],
+	attrs    => $attrs,
     );
 
     my $cookie;
@@ -225,6 +227,9 @@ sub query_groups {
 		$members = [$entry->get_value('uniqueMember')];
 	    }
 	    $group->{members} = $members;
+	    if ($group_name_attr && (my $name = $entry->get_value($group_name_attr))) {
+		$group->{name} = $name;
+	    }
 	    push @$groups, $group;
 	}
 
