@@ -8,6 +8,7 @@ use warnings;
 use Carp;
 use POSIX;
 use IO::Handle;
+use Storable qw(dclone);
 
 use PVE::INotify;
 
@@ -74,7 +75,9 @@ sub r($;$$) {
 
 # Turn the current network config into a string.
 sub w() {
-    return PVE::INotify::__write_etc_network_interfaces($config);
+    # write shouldn't be able to change a previously parsed config
+    my $config_clone = dclone($config);
+    return PVE::INotify::__write_etc_network_interfaces($config_clone);
 }
 
 ##
