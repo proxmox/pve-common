@@ -1,3 +1,11 @@
+libpve-common-perl (6.0-18) pve pmg; urgency=medium
+
+  * ldap: add optional classes to query_users and use them to filter
+
+  * ldap: optionally save group name by attribute
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 21 Mar 2020 16:49:47 +0100
+
 libpve-common-perl (6.0-17) pve pmg; urgency=medium
 
   * inotify: ensure backwards compatibility on interface read
