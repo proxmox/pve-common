@@ -6,27 +6,34 @@ use PVE::Tools;
 use PVE::ProcFSTools;
 
 sub new {
-    my ($this) = @_;
+    my ($class, $members) = @_;
 
-    my $class = ref($this) || $this;
-
-    my $self = bless { members => {} }, $class;
+    $members //= {};
+    my $self = bless { members => $members }, $class;
 
     return $self;
 }
 
 sub new_from_cgroup {
-    my ($this, $cgroup, $kind) = @_;
+    my ($class, $cgroup, $kind) = @_;
 
     $kind //= 'cpus';
 
     my $filename = "/sys/fs/cgroup/cpuset/$cgroup/cpuset.$kind";
     my $set_text = PVE::Tools::file_read_firstline($filename) // '';
 
-    my $cpuset = $this->new();
+    my ($count, $members) = parse_cpuset($set_text);
 
-    my $members = $cpuset->{members};
+    die "got empty cpuset for cgroup '$cgroup'\n"
+	if !$count;
 
+    return $class->new($members);
+}
+
+sub parse_cpuset {
+    my ($set_text) = @_;
+
+    my $members = {};
     my $count = 0;
 
     foreach my $part (split(/,/, $set_text)) {
@@ -43,10 +50,7 @@ sub new_from_cgroup {
 	}
     }
 
-    die "got empty cpuset for cgroup '$cgroup'\n"
-	if !$count;
-
-    return $cpuset;
+    return ($count, $members);
 }
 
 sub write_to_cgroup {
