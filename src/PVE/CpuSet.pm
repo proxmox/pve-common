@@ -25,9 +25,17 @@ sub new_from_cgroup {
 sub new_from_path {
     my ($class, $path, $effective) = @_;
 
-    my $kind = $effective ? 'effective_cpus' : 'cpus';
+    my $filename;
+    if ($effective) {
+	$filename = "$path/cpuset.effective_cpus";
+	if (!-e $filename) {
+	    # cgroupv2:
+	    $filename = "$path/cpuset.cpus.effective";
+	}
+    } else {
+	$filename = "$path/cpuset.cpus";
+    }
 
-    my $filename = "$path/cpuset.$kind";
     my $set_text = PVE::Tools::file_read_firstline($filename) // '';
 
     my ($count, $members) = parse_cpuset($set_text);
