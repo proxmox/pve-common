@@ -14,18 +14,25 @@ sub new {
     return $self;
 }
 
-# Create a new set with the contents of a cgroup-v1 subdirectory
+# Create a new set with the contents of a cgroup-v1 subdirectory.
 sub new_from_cgroup {
     my ($class, $cgroup, $effective) = @_;
 
+    return $class->new_from_path("/sys/fs/cgroup/cpuset/$cgroup", $effective);
+}
+
+# Create a new set from the contents of a complete path to a cgroup directory.
+sub new_from_path {
+    my ($class, $path, $effective) = @_;
+
     my $kind = $effective ? 'effective_cpus' : 'cpus';
 
-    my $filename = "/sys/fs/cgroup/cpuset/$cgroup/cpuset.$kind";
+    my $filename = "$path/cpuset.$kind";
     my $set_text = PVE::Tools::file_read_firstline($filename) // '';
 
     my ($count, $members) = parse_cpuset($set_text);
 
-    die "got empty cpuset for cgroup '$cgroup'\n"
+    die "got empty cpuset for cgroup '$path'\n"
 	if !$count;
 
     return $class->new($members);
