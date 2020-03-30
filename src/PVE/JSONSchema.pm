@@ -222,6 +222,66 @@ sub pve_verify_node_name {
     return $node;
 }
 
+sub parse_idmap {
+    my ($idmap, $idformat) = @_;
+
+    return undef if !$idmap;
+
+    my $map = {};
+
+    foreach my $entry (PVE::Tools::split_list($idmap)) {
+	if ($entry eq '1') {
+	    $map->{identity} = 1;
+	} elsif ($entry =~ m/^([^:]+):([^:]+)$/) {
+	    my ($source, $target) = ($1, $2);
+	    eval {
+		PVE::JSONSchema::check_format($idformat, $source, '');
+		PVE::JSONSchema::check_format($idformat, $target, '');
+	    };
+	    die "entry '$entry' contains invalid ID - $@\n"
+		if $@;
+
+	    die "duplicate mapping for source '$source'\n"
+		if $map->{entries}->{$source};
+
+	    $map->{entries}->{$source} = $target;
+	} else {
+	    eval {
+		PVE::JSONSchema::check_format($idformat, $entry);
+	    };
+
+	    die "entry '$entry' contains invalid ID - $@\n"
+		if $@;
+
+	    die "default target ID can only be provided once\n"
+		if $map->{default};
+
+	    $map->{default} = $entry;
+	}
+    }
+
+    die "identity mapping cannot be combined with other mappings\n"
+	if $map->{identity} && ($map->{default} || $map->{entries});
+
+    return $map;
+}
+
+register_format('storagepair', \&verify_storagepair);
+sub verify_storagepair {
+    my ($storagepair, $noerr) = @_;
+
+    # note: this only checks a single list entry
+    # when using a storagepair-list map, you need to pass the full
+    # parameter to parse_idmap
+    eval { parse_idmap($storagepair, 'pve-storage-id') };
+    if ($@) {
+	return undef if $noerr;
+	die "$@\n";
+    }
+
+    return $storagepair;
+}
+
 register_format('mac-addr', \&pve_verify_mac_addr);
 sub pve_verify_mac_addr {
     my ($mac_addr, $noerr) = @_;
