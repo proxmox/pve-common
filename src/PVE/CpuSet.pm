@@ -14,10 +14,11 @@ sub new {
     return $self;
 }
 
+# Create a new set with the contents of a cgroup-v1 subdirectory
 sub new_from_cgroup {
-    my ($class, $cgroup, $kind) = @_;
+    my ($class, $cgroup, $effective) = @_;
 
-    $kind //= 'cpus';
+    my $kind = $effective ? 'effective_cpus' : 'cpus';
 
     my $filename = "/sys/fs/cgroup/cpuset/$cgroup/cpuset.$kind";
     my $set_text = PVE::Tools::file_read_firstline($filename) // '';
