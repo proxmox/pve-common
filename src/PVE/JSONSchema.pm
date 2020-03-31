@@ -183,6 +183,13 @@ sub parse_storage_id {
     return parse_id($storeid, 'storage', $noerr);
 }
 
+PVE::JSONSchema::register_format('acme-plugin-id', \&parse_acme_plugin_id);
+sub parse_acme_plugin_id {
+    my ($pluginid, $noerr) = @_;
+
+    return parse_id($pluginid, 'ACME plugin', $noerr);
+}
+
 sub parse_id {
     my ($id, $type, $noerr) = @_;
 
