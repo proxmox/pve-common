@@ -180,13 +180,18 @@ PVE::JSONSchema::register_format('pve-storage-id', \&parse_storage_id);
 sub parse_storage_id {
     my ($storeid, $noerr) = @_;
 
-    if ($storeid !~ m/^[a-z][a-z0-9\-\_\.]*[a-z0-9]$/i) {
-	return undef if $noerr;
-	die "storage ID '$storeid' contains illegal characters\n";
-    }
-    return $storeid;
+    return parse_id($storeid, 'storage', $noerr);
 }
 
+sub parse_id {
+    my ($id, $type, $noerr) = @_;
+
+     if ($id !~ m/^[a-z][a-z0-9\-\_\.]*[a-z0-9]$/i) {
+	return undef if $noerr;
+	die "$type ID '$id' contains illegal characters\n";
+    }
+    return $id;
+}
 
 register_format('pve-vmid', \&pve_verify_vmid);
 sub pve_verify_vmid {
