@@ -15,6 +15,7 @@ sub new {
 }
 
 # Create a new set with the contents of a cgroup-v1 subdirectory.
+# Deprecated:
 sub new_from_cgroup {
     my ($class, $cgroup, $effective) = @_;
 
@@ -66,10 +67,19 @@ sub parse_cpuset {
     return ($count, $members);
 }
 
+# Deprecated:
 sub write_to_cgroup {
     my ($self, $cgroup) = @_;
 
-    my $filename = "/sys/fs/cgroup/cpuset/$cgroup/cpuset.cpus";
+    return $self->write_to_path("/sys/fs/cgroup/cpuset/$cgroup");
+}
+
+# Takes the cgroup directory containing the cpuset.cpus file (to be closer to
+# new_from_path behavior this doesn't take the complete file name).
+sub write_to_path {
+    my ($self, $path) = @_;
+
+    my $filename = "$path/cpuset.cpus";
 
     my $value = '';
     my @members = $self->members();
