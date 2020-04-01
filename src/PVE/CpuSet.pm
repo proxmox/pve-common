@@ -40,9 +40,6 @@ sub new_from_path {
 
     my ($count, $members) = parse_cpuset($set_text);
 
-    die "got empty cpuset for cgroup '$path'\n"
-	if !$count;
-
     return $class->new($members);
 }
 
@@ -80,8 +77,6 @@ sub write_to_cgroup {
 	$value .= ',' if length($value);
 	$value .= $cpuid;
     }
-
-    die "unable to write empty cpu set\n" if !length($value);
 
     open(my $fh, '>', $filename) || die "failed to open '$filename' - $!\n";
     PVE::Tools::safe_print($filename, $fh, "$value\n");
