@@ -235,33 +235,30 @@ sub parse_idmap {
 	} elsif ($entry =~ m/^([^:]+):([^:]+)$/) {
 	    my ($source, $target) = ($1, $2);
 	    eval {
-		PVE::JSONSchema::check_format($idformat, $source, '');
-		PVE::JSONSchema::check_format($idformat, $target, '');
+		check_format($idformat, $source, '');
+		check_format($idformat, $target, '');
 	    };
-	    die "entry '$entry' contains invalid ID - $@\n"
-		if $@;
+	    die "entry '$entry' contains invalid ID - $@\n" if $@;
 
 	    die "duplicate mapping for source '$source'\n"
-		if $map->{entries}->{$source};
+		if exists $map->{entries}->{$source};
 
 	    $map->{entries}->{$source} = $target;
 	} else {
 	    eval {
-		PVE::JSONSchema::check_format($idformat, $entry);
+		check_format($idformat, $entry);
 	    };
-
-	    die "entry '$entry' contains invalid ID - $@\n"
-		if $@;
+	    die "entry '$entry' contains invalid ID - $@\n" if $@;
 
 	    die "default target ID can only be provided once\n"
-		if $map->{default};
+		if exists $map->{default};
 
 	    $map->{default} = $entry;
 	}
     }
 
     die "identity mapping cannot be combined with other mappings\n"
-	if $map->{identity} && ($map->{default} || $map->{entries});
+	if $map->{identity} && ($map->{default} || exists $map->{entries});
 
     return $map;
 }
