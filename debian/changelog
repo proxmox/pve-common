@@ -1,3 +1,15 @@
+libpve-common-perl (6.0-19) pve pmg; urgency=medium
+
+  * cpuset: cgroupv2 support and cleanup/refactor
+
+  * cpuset: allow empty cpusets
+
+  * JSONSchema: add acme-plugin-format
+
+  * JSONSchema: add idmap parser and storagepair format
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 04 Apr 2020 19:55:24 +0200
+
 libpve-common-perl (6.0-18) pve pmg; urgency=medium
 
   * ldap: add optional classes to query_users and use them to filter
