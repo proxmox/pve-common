@@ -924,6 +924,8 @@ sub __read_etc_network_interfaces {
 
 	    while (defined ($line = <$fh>)) {
 		chomp $line;
+		$line =~ s/\s+$//;
+
 		if ($line =~ m/^\s*#(.*?)\s*$/) {
 		    $f->{comments} = '' if !$f->{comments};
 		    my $comment = decode('UTF-8', $1);
