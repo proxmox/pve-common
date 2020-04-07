@@ -923,8 +923,7 @@ sub __read_etc_network_interfaces {
 	    push @{$d->{families}}, $family;
 
 	    while (defined ($line = <$fh>)) {
-		chomp $line;
-		$line =~ s/\s+$//;
+		$line =~ s/\s+$//; # drop trailing whitespaces
 
 		if ($line =~ m/^\s*#(.*?)\s*$/) {
 		    $f->{comments} = '' if !$f->{comments};
