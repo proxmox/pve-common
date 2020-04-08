@@ -217,22 +217,24 @@ my $bridge_add_interface = sub {
 
    if ($vlan_aware) {
 	if ($tag) {
-	    system({'/sbin/bridge'} 'bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094') == 0
-		or die "failed to remove default vlan tags of $iface\n";
-	    system({'/sbin/bridge'} 'bridge', 'vlan', 'add', 'dev', $iface, 'vid', $tag, 'pvid', 'untagged') == 0
-		or die "unable to add vlan $tag to interface $iface\n";
+	    eval { run_command(['/sbin/bridge', 'bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094']) };
+	    die "failed to remove default vlan tags of $iface - $@\n" if $@;
+
+	    eval { run_command(['/sbin/bridge', 'bridge', 'vlan', 'add', 'dev', $iface, 'vid', $tag, 'pvid', 'untagged']) };
+	    die "unable to add vlan $tag to interface $iface - $@\n" if $@;
 
 	    warn "Caution: Setting VLAN ID 1 on a VLAN aware bridge may be dangerous\n" if $tag == 1;
 	} else {
-	    system("/sbin/bridge vlan add dev $iface vid 2-4094") == 0 ||
-	    die "unable to add default vlan tags to interface $iface\n" if !$trunks;
+	    eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', '2-4094']) };
+	    die "unable to add default vlan tags to interface $iface - $@\n"
+		if $@ && !$trunks;
 	}
 
 	if ($trunks) {
 	    my @trunks_array = split /;/, $trunks;
 	    foreach my $trunk (@trunks_array) {
-		system("/sbin/bridge vlan add dev $iface vid $trunk") == 0 ||
-		die "unable to add vlan $trunk to interface $iface\n";
+		eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $trunk]) };
+		die "unable to add vlan $trunk to interface $iface - $@\n" if $@;
 	    }
 	}
    }
@@ -243,22 +245,29 @@ my $ovs_bridge_add_port = sub {
 
     $trunks =~ s/;/,/g if $trunks;
 
-    my $cmd = "/usr/bin/ovs-vsctl add-port $bridge $iface";
-    $cmd .= " tag=$tag" if $tag;
-    $cmd .= " trunks=". join(',', $trunks) if $trunks;
-    $cmd .= " vlan_mode=native-untagged" if $tag && $trunks;
+    my $cmd = ['/usr/bin/ovs-vsctl'];
+    # first command
+    push @$cmd, '--', 'add-port', $bridge, $iface;
+    push @$cmd, "tag=$tag" if $tag;
+    push @$cmd, "trunks=". join(',', $trunks) if $trunks;
+    push @$cmd, "vlan_mode=native-untagged" if $tag && $trunks;
 
-    $cmd .= " -- set Interface $iface type=internal" if $internal;
-    system($cmd) == 0 ||
-	die "can't add ovs port '$iface'\n";
+    if ($internal) {
+	# second command
+	push @$cmd, '--', 'set', 'Interface', $iface, 'type=internal';
+    }
+
+    eval { run_command($cmd) };
+    die "can't add ovs port '$iface' - $@\n" if $@;
+
     disable_ipv6($iface);
 };
 
 my $activate_interface = sub {
     my ($iface) = @_;
 
-    system("/sbin/ip link set $iface up") == 0 ||
-	die "can't activate interface '$iface'\n";
+    eval { run_command(['/sbin/ip', 'link', 'set', $iface, 'up']) };
+    die "can't activate interface '$iface' - $@\n" if $@;
 };
 
 sub tap_create {
@@ -284,9 +293,18 @@ sub veth_create {
 
     # create veth pair
     if (! -d "/sys/class/net/$veth") {
-	my $cmd = "/sbin/ip link add name $veth mtu $bridgemtu type veth peer name $vethpeer mtu $bridgemtu";
-	$cmd .= " addr $mac" if $mac;
-	system($cmd) == 0 || die "can't create interface $veth\n";
+	my $cmd = ['/sbin/ip', 'link', 'add'];
+	# veth device + MTU
+	push @$cmd, 'name', $veth;
+	push @$cmd, 'mtu', $bridgemtu;
+	push @$cmd, 'type', 'veth';
+	# peer device + MTU
+	push @$cmd, 'peer', 'name', $vethpeer, 'mtu', $bridgemtu;
+
+	push @$cmd, 'addr', $mac if $mac;
+
+	eval { run_command($cmd) };
+	die "can't create interface $veth - $@\n" if $@;
     }
 
     # up vethpair
@@ -447,8 +465,14 @@ sub activate_bridge_vlan_slave {
 
     # create vlan on $iface is not already exist
     if (! -d "/sys/class/net/$ifacevlan") {
-	system("/sbin/ip link add link $iface name $ifacevlan type vlan id $tag") == 0 ||
-	    die "can't add vlan tag $tag to interface $iface\n";
+	eval {
+	    my $cmd = ['/sbin/ip', 'link', 'add'];
+	    push @$cmd, 'link', $iface;
+	    push @$cmd, 'name', $ifacevlan;
+	    push @$cmd, 'type', 'vlan', 'id', $tag;
+	    run_command($cmd);
+	};
+	die "can't add vlan tag $tag to interface $iface - $@\n" if $@;
 
 	# remove ipv6 link-local address before activation
 	disable_ipv6($ifacevlan);
