@@ -82,7 +82,7 @@ our $ipv4_mask_hash_localnet = {
 };
 
 sub setup_tc_rate_limit {
-    my ($iface, $rate, $burst, $debug) = @_;
+    my ($iface, $rate, $burst) = @_;
 
     # these are allowed / expected to fail, e.g. when there is no previous rate limit to remove
     eval { run_command("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1"); };
@@ -104,23 +104,15 @@ sub setup_tc_rate_limit {
 		"prio 50 basic " .
 		"police rate ${rate}bps burst ${burst}b mtu 64kb " .
 		"drop");
-
-    if ($debug) {
-	print "DEBUG tc settings\n";
-	system("/sbin/tc qdisc ls dev $iface");
-	system("/sbin/tc class ls dev $iface");
-	system("/sbin/tc filter ls dev $iface parent ffff:");
-    }
 }
 
 sub tap_rate_limit {
     my ($iface, $rate) = @_;
 
-    my $debug = 0;
     $rate = int($rate*1024*1024) if $rate;
     my $burst = 1024*1024;
 
-    setup_tc_rate_limit($iface, $rate, $burst, $debug);
+    setup_tc_rate_limit($iface, $rate, $burst);
 }
 
 my $read_bridge_mtu = sub {
