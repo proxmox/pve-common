@@ -169,7 +169,7 @@ register_format('pve-configid', \&pve_verify_configid);
 sub pve_verify_configid {
     my ($id, $noerr) = @_;
 
-    if ($id !~ m/^[a-z][a-z0-9_]+$/i) {
+    if ($id !~ m/^[a-z][a-z0-9_-]+$/i) {
 	return undef if $noerr;
 	die "invalid configuration ID '$id'\n";
     }
