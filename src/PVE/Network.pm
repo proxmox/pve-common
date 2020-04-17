@@ -115,7 +115,7 @@ sub tap_rate_limit {
     setup_tc_rate_limit($iface, $rate, $burst);
 }
 
-my $read_bridge_mtu = sub {
+sub read_bridge_mtu {
     my ($bridge) = @_;
 
     my $mtu = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/mtu");
@@ -274,7 +274,7 @@ sub tap_create {
 
     die "unable to get bridge setting\n" if !$bridge;
 
-    my $bridgemtu = &$read_bridge_mtu($bridge);
+    my $bridgemtu = read_bridge_mtu($bridge);
 
     eval {
 	disable_ipv6($iface);
@@ -288,7 +288,7 @@ sub veth_create {
 
     die "unable to get bridge setting\n" if !$bridge;
 
-    my $bridgemtu = &$read_bridge_mtu($bridge);
+    my $bridgemtu = read_bridge_mtu($bridge);
 
     # create veth pair
     if (! -d "/sys/class/net/$veth") {
@@ -346,7 +346,7 @@ my $create_firewall_bridge_ovs = sub {
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, undef, undef, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
 
-    my $bridgemtu = &$read_bridge_mtu($bridge);
+    my $bridgemtu = read_bridge_mtu($bridge);
 
     &$cond_create_bridge($fwbr);
     &$activate_interface($fwbr);
