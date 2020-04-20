@@ -1,3 +1,11 @@
+libpve-common-perl (6.0-20) pve pmg; urgency=medium
+
+  * network: replace system() with run_command()
+
+  * acme: split out into new package proxmox-acme-perl
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 20 Apr 2020 10:03:53 +0200
+
 libpve-common-perl (6.0-19) pve pmg; urgency=medium
 
   * cpuset: cgroupv2 support and cleanup/refactor
