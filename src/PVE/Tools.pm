@@ -1766,4 +1766,13 @@ sub mount($$$$$) {
     );
 }
 
+sub safe_compare {
+    my ($left, $right, $cmp) = @_;
+
+    return 0 if !defined($left) && !defined($right);
+    return -1 if !defined($left);
+    return 1 if !defined($right);
+    return $cmp->($left, $right);
+}
+
 1;

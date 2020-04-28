@@ -150,8 +150,7 @@ sub data_to_text {
 # $props_to_print - ordered list of properties to print
 # $options
 # - sort_key: can be used to sort after a specific column, if it isn't set we sort
-#   after the leftmost column (with no undef value in $data) this can be
-#   turned off by passing 0 as sort_key
+#   after the leftmost column. This can be turned off by passing 0 as sort_key
 # - noborder: print without asciiart border
 # - noheader: print without table header
 # - columns: limit output width (if > 0)
@@ -174,11 +173,15 @@ sub print_text_table {
 
     if (defined($sort_key) && $sort_key ne 0) {
 	my $type = $returnprops->{$sort_key}->{type} // 'string';
+	my $cmpfn;
 	if ($type eq 'integer' || $type eq 'number') {
-	    @$data = sort { $a->{$sort_key} <=> $b->{$sort_key} } @$data;
+	    $cmpfn = sub { $_[0] <=> $_[1] };
 	} else {
-	    @$data = sort { $a->{$sort_key} cmp $b->{$sort_key} } @$data;
+	    $cmpfn = sub { $_[0] cmp $_[1] };
 	}
+	@$data = sort {
+	    PVE::Tools::safe_compare($a->{$sort_key}, $b->{$sort_key}, $cmpfn)
+	} @$data;
     }
 
     my $colopts = {};
