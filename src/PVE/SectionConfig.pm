@@ -3,6 +3,7 @@ package PVE::SectionConfig;
 use strict;
 use warnings;
 
+use Carp;
 use Digest::SHA;
 
 use PVE::Exception qw(raise_param_exc);
@@ -197,6 +198,8 @@ sub init {
 
 sub lookup {
     my ($class, $type) = @_;
+
+    croak "cannot lookup undefined type!" if !defined($type);
 
     my $pdata = $class->private();
     my $plugin = $pdata->{plugins}->{$type};
