@@ -16,8 +16,9 @@ use Data::Dumper;
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
-register_standard_option
 get_standard_option
+parse_property_string
+register_standard_option
 );
 
 # Note: This class implements something similar to JSON schema, but it is not 100% complete.
