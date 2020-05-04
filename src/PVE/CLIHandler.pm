@@ -235,8 +235,8 @@ sub generate_usage_str {
 
 	    }
 	} else {
+	    $abort->("unknown command '$cmd->[0]'") if !$def;
 	    my ($class, $name, $arg_param, $fixed_param, undef, $formatter_properties) = @$def;
-	    $abort->("unknown command '$cmd'") if !$class;
 
 	    $str .= $indent;
 	    $str .= $class->usage_str($name, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties);
