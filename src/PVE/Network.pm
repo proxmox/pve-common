@@ -217,10 +217,10 @@ my $bridge_add_interface = sub {
 
    if ($vlan_aware) {
 	if ($tag) {
-	    eval { run_command(['/sbin/bridge', 'bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094']) };
+	    eval { run_command(['/sbin/bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094']) };
 	    die "failed to remove default vlan tags of $iface - $@\n" if $@;
 
-	    eval { run_command(['/sbin/bridge', 'bridge', 'vlan', 'add', 'dev', $iface, 'vid', $tag, 'pvid', 'untagged']) };
+	    eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $tag, 'pvid', 'untagged']) };
 	    die "unable to add vlan $tag to interface $iface - $@\n" if $@;
 
 	    warn "Caution: Setting VLAN ID 1 on a VLAN aware bridge may be dangerous\n" if $tag == 1;
