@@ -1,3 +1,13 @@
+libpve-common-perl (6.1-1) pve pmg; urgency=medium
+
+  * fix #2696: avoid 'undefined value' warning in unkown commands
+
+  * ProcFSTools: fix read_meminfo without KSM
+
+  * network: fix adding vlan tags to bridge
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 06 May 2020 12:14:19 +0200
+
 libpve-common-perl (6.0-20) pve pmg; urgency=medium
 
   * network: replace system() with run_command()
