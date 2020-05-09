@@ -224,10 +224,9 @@ my $bridge_add_interface = sub {
 	    die "unable to add vlan $tag to interface $iface - $@\n" if $@;
 
 	    warn "Caution: Setting VLAN ID 1 on a VLAN aware bridge may be dangerous\n" if $tag == 1;
-	} else {
+	} elsif (!$trunks) {
 	    eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', '2-4094']) };
-	    die "unable to add default vlan tags to interface $iface - $@\n"
-		if $@ && !$trunks;
+	    die "unable to add default vlan tags to interface $iface - $@\n" if $@;
 	}
 
 	if ($trunks) {
