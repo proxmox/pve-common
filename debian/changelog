@@ -1,3 +1,9 @@
+libpve-common-perl (6.1-2) pve pmg; urgency=medium
+
+  * fix adding VLAN trunks to virtual guests NICs
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 09 May 2020 21:00:29 +0200
+
 libpve-common-perl (6.1-1) pve pmg; urgency=medium
 
   * fix #2696: avoid 'undefined value' warning in unkown commands
