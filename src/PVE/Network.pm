@@ -216,26 +216,24 @@ my $bridge_add_interface = sub {
    my $vlan_aware = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/bridge/vlan_filtering");
 
    if ($vlan_aware) {
-	if ($tag) {
-	    eval { run_command(['/sbin/bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094']) };
-	    die "failed to remove default vlan tags of $iface - $@\n" if $@;
 
-	    eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $tag, 'pvid', 'untagged']) };
-	    die "unable to add vlan $tag to interface $iface - $@\n" if $@;
+        eval { run_command(['/sbin/bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094']) };
+        die "failed to remove default vlan tags of $iface - $@\n" if $@;
 
-	    warn "Caution: Setting VLAN ID 1 on a VLAN aware bridge may be dangerous\n" if $tag == 1;
-	} elsif (!$trunks) {
-	    eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', '2-4094']) };
-	    die "unable to add default vlan tags to interface $iface - $@\n" if $@;
-	}
+        if ($trunks) {
+            my @trunks_array = split /;/, $trunks;
+            foreach my $trunk (@trunks_array) {
+                eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $trunk]) };
+                die "unable to add vlan $trunk to interface $iface - $@\n" if $@;
+            }
+        } elsif (!$tag) {
+            eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', '2-4094']) };
+            die "unable to add default vlan tags to interface $iface - $@\n" if $@;
+        }
 
-	if ($trunks) {
-	    my @trunks_array = split /;/, $trunks;
-	    foreach my $trunk (@trunks_array) {
-		eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $trunk]) };
-		die "unable to add vlan $trunk to interface $iface - $@\n" if $@;
-	    }
-	}
+        $tag = 1 if !$tag;
+        eval { run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $tag, 'pvid', 'untagged']) };
+        die "unable to add vlan $tag to interface $iface - $@\n" if $@;
    }
 };
 
