@@ -5,6 +5,7 @@ use warnings;
 use POSIX;
 use Time::HiRes qw (gettimeofday);
 use IO::File;
+use List::Util qw(sum);
 use PVE::Tools;
 use Cwd qw();
 
@@ -35,6 +36,7 @@ sub read_cpuinfo {
     my $fh = IO::File->new ($fn, "r");
     return $res if !$fh;
 
+    my $cpuid = 0;
     my $idhash = {};
     my $count = 0;
     while (defined(my $line = <$fh>)) {
@@ -47,7 +49,10 @@ sub read_cpuinfo {
 	} elsif ($line =~ m/^flags\s*:\s*(.*)$/) {
 	    $res->{flags} = $1 if !length $res->{flags};
 	} elsif ($line =~ m/^physical id\s*:\s*(\d+)\s*$/i) {
-	    $idhash->{$1} = 1;
+	    $cpuid = $1;
+	    $idhash->{$1} = 1 if not defined($idhash->{$1});
+	} elsif ($line =~ m/^cpu cores\s*:\s*(\d+)\s*$/i) {
+	    $idhash->{$cpuid} = $1 if defined($idhash->{$cpuid});
 	}
     }
 
@@ -55,6 +60,8 @@ sub read_cpuinfo {
     $res->{hvm} = $res->{flags} =~ m/\s(vmx|svm)\s/;
 
     $res->{sockets} = scalar(keys %$idhash) || 1;
+
+    $res->{cores} = sum(values %$idhash) || 1;
 
     $res->{cpus} = $count;
 
