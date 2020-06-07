@@ -1487,6 +1487,7 @@ sub __write_etc_network_interfaces {
 	if ($d->{type} eq 'OVSBond' && $d->{ovs_bonds}) {
 	    foreach my $p (split (/\s+/, $d->{ovs_bonds})) {
 		my $n = $ifaces->{$p};
+		$n->{autostart} = 1;
 		die "OVS bond '$iface' - unable to find slave '$p'\n"
 		    if !$n;
 		die "OVS bond '$iface' - wrong interface type on slave '$p' " .
@@ -1503,6 +1504,7 @@ sub __write_etc_network_interfaces {
 	    my $bond_primary_is_slave = undef;
 	    foreach my $p (split (/\s+/, $d->{slaves})) {
 		my $n = $ifaces->{$p};
+		$n->{autostart} = 1;
 
 		die "bond '$iface' - unable to find slave '$p'\n"
 		    if !$n;

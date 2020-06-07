@@ -109,8 +109,10 @@ iface eth0 inet manual
 
 $eth1_part
 
+auto eth2
 iface eth2 inet manual
 
+auto eth3
 iface eth3 inet manual
 
 iface eth4 inet manual
@@ -167,8 +169,10 @@ iface eth0 inet manual
 
 $eth1_part
 
+auto eth2
 iface eth2 inet manual
 
+auto eth3
 iface eth3 inet manual
 
 iface eth4 inet manual
@@ -284,8 +288,10 @@ iface eth0 inet manual
 
 $eth1_part
 
+auto eth2
 iface eth2 inet manual
 
+auto eth3
 iface eth3 inet manual
 
 iface eth4 inet manual
@@ -398,12 +404,16 @@ iface eth0 inet manual
 
 $eth1_part
 
+auto eth2
 iface eth2 inet manual
 
+auto eth3
 iface eth3 inet manual
 
+auto eth4
 iface eth4 inet manual
 
+auto eth5
 iface eth5 inet manual
 
 auto eth1.100

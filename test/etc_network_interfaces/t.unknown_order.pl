@@ -2,16 +2,22 @@ my $base = load('loopback');
 sub wanted($) {
     my ($ip) = @_;
     return $base . <<"IFACES";
+auto eth0
 iface eth0 inet manual
 
+auto eth1
 iface eth1 inet manual
 
+auto eth2
 iface eth2 inet manual
 
+auto eth3
 iface eth3 inet manual
 
+auto eth4
 iface eth4 inet manual
 
+auto eth5
 iface eth5 inet manual
 
 iface eth6 inet manual
