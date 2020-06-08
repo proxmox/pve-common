@@ -1,3 +1,14 @@
+libpve-common-perl (6.1-3) pve pmg; urgency=medium
+
+  * network: vlan-aware bridge: fix PVID when trunks are defined
+
+  * Add total sum of physical CPU core count to CPU info used by node status
+    API call
+
+  * netowrk: always autostart bond slaves interfaces
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 08 Jun 2020 17:37:11 +0200
+
 libpve-common-perl (6.1-2) pve pmg; urgency=medium
 
   * fix adding VLAN trunks to virtual guests NICs
