@@ -1236,8 +1236,8 @@ sub __interface_to_string {
 	# not printing out options
     } elsif ($d->{type} eq 'bridge') {
 
-	$d->{bridge_ports} =~ s/[;,\s]+/ /g;
 	my $ports = $d->{bridge_ports} || 'none';
+	$ports =~ s/[;,\s]+/ /g;
 	$raw .= "\tbridge-ports $ports\n";
 	$done->{bridge_ports} = 1;
 
@@ -1605,7 +1605,7 @@ sub __write_etc_network_interfaces {
     foreach my $iface (keys %$ifaces_copy) {
 	my $d = $ifaces_copy->{$iface};
 	if ($d->{type} eq 'bridge') {
-	    foreach my $p (split (/\s+/, $d->{bridge_ports})) {
+	    foreach my $p (split (/\s+/, $d->{bridge_ports} // '')) {
 		if($p =~ m/(\S+)\.(\d+)$/) {
 		    my $vlanparent = $1;
 		    if (!defined($ifaces_copy->{$p})) {
