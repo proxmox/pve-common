@@ -9,7 +9,7 @@ case "$1" in
     if test -n "$2"; then
 
         # TODO: remove once PVE 7.0 is released
-        if dpkg --compare-versions "$2" 'lt' '6.0-5'; then
+        if dpkg --compare-versions "$2" 'lt' '6.0-5' && [ -e /etc/aliases ]; then
             sed -E -i -e 's/^www:(\w)/www: \1/' /etc/aliases
        fi
     fi
