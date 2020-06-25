@@ -121,19 +121,26 @@ register_standard_option('pve-snapshot-name', {
 });
 
 my $format_list = {};
+my $format_validators = {};
 
 sub register_format {
-    my ($format, $code) = @_;
+    my ($name, $format, $validator) = @_;
 
-    die "JSON schema format '$format' already registered\n"
-	if $format_list->{$format};
+    die "JSON schema format '$name' already registered\n"
+	if $format_list->{$name};
 
-    $format_list->{$format} = $code;
+    if ($validator) {
+	die "A \$validator function can only be specified for hash-based formats\n"
+	    if ref($format) ne 'HASH';
+	$format_validators->{$name} = $validator;
+    }
+
+    $format_list->{$name} = $format;
 }
 
 sub get_format {
-    my ($format) = @_;
-    return $format_list->{$format};
+    my ($name) = @_;
+    return $format_list->{$name};
 }
 
 my $renderer_hash = {};
@@ -666,39 +673,47 @@ sub pve_verify_tfa_secret {
 sub check_format {
     my ($format, $value, $path) = @_;
 
-    return parse_property_string($format, $value, $path) if ref($format) eq 'HASH';
+    if (ref($format) eq 'HASH') {
+	# hash ref cannot have validator/list/opt handling attached
+	return parse_property_string($format, $value, $path);
+    }
+
+    if (ref($format) eq 'CODE') {
+	# we are the (sole, old-style) validator
+	return $format->($value);
+    }
+
     return if $format eq 'regex';
 
-    if ($format =~ m/^(.*)-a?list$/) {
+    my $parsed;
+    $format =~ m/^(.*?)(?:-a?(list|opt))?$/;
+    my ($format_name, $format_type) = ($1, $2 // 'none');
+    my $registered = get_format($format_name);
+    die "undefined format '$format'\n" if !$registered;
 
-	my $code = $format_list->{$1};
+    die "'-$format_type' format must have code ref, not hash\n"
+	if $format_type ne 'none' && ref($registered) ne 'CODE';
 
-	die "undefined format '$format'\n" if !$code;
-
+    if ($format_type eq 'list') {
 	# Note: we allow empty lists
 	foreach my $v (split_list($value)) {
-	    &$code($v);
+	    $parsed = $registered->($v);
 	}
-
-    } elsif ($format =~ m/^(.*)-opt$/) {
-
-	my $code = $format_list->{$1};
-
-	die "undefined format '$format'\n" if !$code;
-
-	return if !$value; # allow empty string
-
- 	&$code($value);
-
+    } elsif ($format_type eq 'opt') {
+	$parsed = $registered->($value) if $value;
    } else {
-
-	my $code = $format_list->{$format};
-
-	die "undefined format '$format'\n" if !$code;
-
-	return parse_property_string($code, $value, $path) if ref($code) eq 'HASH';
-	&$code($value);
+	if (ref($registered) eq 'HASH') {
+	    # Note: this is the only case where a validator function could be
+	    # attached, hence it's safe to handle that in parse_property_string.
+	    # We do however have to call it with $format_name instead of
+	    # $registered, so it knows about the name (and thus any validators).
+	    $parsed = parse_property_string($format, $value, $path);
+	} else {
+	    $parsed = $registered->($value);
+	}
     }
+
+    return $parsed;
 }
 
 sub parse_size {
@@ -754,9 +769,16 @@ sub parse_property_string {
     $additional_properties = 0 if !defined($additional_properties);
 
     # Support named formats here, too:
+    my $validator;
     if (!ref($format)) {
-	if (my $desc = $format_list->{$format}) {
-	    $format = $desc;
+	if (my $reg = get_format($format)) {
+	    die "parse_property_string only accepts hash based named formats\n"
+		if ref($reg) ne 'HASH';
+
+	    # named formats can have validators attached
+	    $validator = $format_validators->{$format};
+
+	    $format = $reg;
 	} else {
 	    die "unknown format: $format\n";
 	}
@@ -812,6 +834,7 @@ sub parse_property_string {
 	raise "format error\n", errors => $errors;
     }
 
+    return $validator->($res) if $validator;
     return $res;
 }
 
