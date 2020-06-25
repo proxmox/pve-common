@@ -1897,9 +1897,12 @@ sub generate_typetext {
 sub print_property_string {
     my ($data, $format, $skip, $path) = @_;
 
+    my $validator;
     if (ref($format) ne 'HASH') {
 	my $schema = get_format($format);
 	die "not a valid format: $format\n" if !$schema;
+	# named formats can have validators attached
+	$validator = $format_validators->{$format};
 	$format = $schema;
     }
 
@@ -1908,6 +1911,8 @@ sub print_property_string {
     if (scalar(%$errors)) {
 	raise "format error", errors => $errors;
     }
+
+    $data = $validator->($data) if $validator;
 
     my ($default_key, $keyAliasProps) = &$find_schema_default_key($format);
 
