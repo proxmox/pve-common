@@ -486,19 +486,19 @@ register_format('timezone', \&pve_verify_timezone);
 sub pve_verify_timezone {
     my ($timezone, $noerr) = @_;
 
-    my $zonetab = "/usr/share/zoneinfo/zone.tab";
     return $timezone if $timezone eq 'UTC';
-    open(my $fh, "<", $zonetab);
-    while(my $line = <$fh>) {
-	next if $line =~ /^#/;
+
+    open(my $fh, "<",  "/usr/share/zoneinfo/zone.tab");
+    while (my $line = <$fh>) {
+	next if $line =~ /^\s*#/;
 	chomp $line;
-	return $timezone if $timezone eq (split /\t/, $line)[2]; # found
+	my $zone = (split /\t/, $line)[2];
+	return $timezone if $timezone eq $zone; # found
     }
     close $fh;
 
     return undef if $noerr;
     die "invalid time zone '$timezone'\n";
-
 }
 
 # network interface name
