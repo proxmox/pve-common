@@ -1,3 +1,13 @@
+libpve-common-perl (6.1-4) pve pmg; urgency=medium
+
+  * fix #2374: bridge-ports is assumed to be defined
+
+  * schema: register timezone format and add verification method
+
+  * fix #2796: debian/postinst: check for existing /etc/aliases
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 03 Jul 2020 14:16:49 +0200
+
 libpve-common-perl (6.1-3) pve pmg; urgency=medium
 
   * network: vlan-aware bridge: fix PVID when trunks are defined
