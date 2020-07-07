@@ -1,3 +1,11 @@
+libpve-common-perl (6.1-5) pve pmg; urgency=medium
+
+  * JSONSchema: add format validator support and cleanup check_format
+
+  * sendmail: separate 'mailto' list from the rest of the parameters
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 07 Jul 2020 19:26:58 +0200
+
 libpve-common-perl (6.1-4) pve pmg; urgency=medium
 
   * fix #2374: bridge-ports is assumed to be defined
