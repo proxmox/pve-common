@@ -1454,7 +1454,7 @@ sub sendmail {
 
     $author = $author || 'Proxmox VE';
 
-    open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom, @$mailto) ||
+    open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom, "--", @$mailto) ||
 	die "unable to open 'sendmail' - $!";
 
     # multipart spec see https://www.ietf.org/rfc/rfc1521.txt
