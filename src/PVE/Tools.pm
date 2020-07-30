@@ -497,12 +497,13 @@ sub run_command {
 		if ($h eq $reader) {
 		    if ($outfunc || $logfunc) {
 			eval {
-			    $outlog .= $buf;
-			    while ($outlog =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//s) {
-				my $line = $1;
+			    while ($buf =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//) {
+				my $line = $outlog . $1;
+				$outlog = '';
 				&$outfunc($line) if $outfunc;
 				&$logfunc($line) if $logfunc;
 			    }
+			    $outlog .= $buf;
 			};
 			my $err = $@;
 			if ($err) {
@@ -517,12 +518,13 @@ sub run_command {
 		} elsif ($h eq $error) {
 		    if ($errfunc || $logfunc) {
 			eval {
-			    $errlog .= $buf;
-			    while ($errlog =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//s) {
-				my $line = $1;
+			    while ($buf =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//s) {
+				my $line = $errlog . $1;
+				$errlog = '';
 				&$errfunc($line) if $errfunc;
 				&$logfunc($line) if $logfunc;
 			    }
+			    $errlog .= $buf;
 			};
 			my $err = $@;
 			if ($err) {
