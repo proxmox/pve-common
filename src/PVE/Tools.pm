@@ -288,7 +288,8 @@ sub file_read_firstline {
 sub safe_read_from {
     my ($fh, $max, $oneline, $filename) = @_;
 
-    $max = 32768 if !$max;
+    # pmxcfs file size limit
+    $max = 512*1024 if !$max;
 
     my $subject = defined($filename) ? "file '$filename'" : 'input';
 
