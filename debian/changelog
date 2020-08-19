@@ -1,3 +1,14 @@
+libpve-common-perl (6.2-1) pve pmg; urgency=medium
+
+  * file get contents: bump default size limit to 512k to match pmxcfs max file
+    size
+
+  * run command helper: improve performance for logging and long lines
+
+  * run command helper: fix matching of \r\n line ending
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 19 Aug 2020 12:29:06 +0200
+
 libpve-common-perl (6.1-5) pve pmg; urgency=medium
 
   * JSONSchema: add format validator support and cleanup check_format
