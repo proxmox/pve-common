@@ -497,7 +497,7 @@ sub run_command {
 		if ($h eq $reader) {
 		    if ($outfunc || $logfunc) {
 			eval {
-			    while ($buf =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//) {
+			    while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
 				my $line = $outlog . $1;
 				$outlog = '';
 				&$outfunc($line) if $outfunc;
@@ -518,7 +518,7 @@ sub run_command {
 		} elsif ($h eq $error) {
 		    if ($errfunc || $logfunc) {
 			eval {
-			    while ($buf =~ s/^([^\010\r\n]*)(\r|\n|(\010)+|\r\n)//s) {
+			    while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
 				my $line = $errlog . $1;
 				$errlog = '';
 				&$errfunc($line) if $errfunc;
