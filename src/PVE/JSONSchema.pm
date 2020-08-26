@@ -1613,7 +1613,8 @@ sub get_options {
 	    $opts->{$list_param} = $args;
 	    $args = [];
 	} elsif (ref($arg_param)) {
-	    foreach my $arg_name (@$arg_param) {
+	    for (my $i = 0; $i < scalar(@$arg_param); $i++) {
+		my $arg_name = $arg_param->[$i];
 		if ($opts->{'extra-args'}) {
 		    raise("internal error: extra-args must be the last argument\n", code => HTTP_BAD_REQUEST);
 		}
@@ -1622,7 +1623,15 @@ sub get_options {
 		    $args = [];
 		    next;
 		}
-		raise("not enough arguments\n", code => HTTP_BAD_REQUEST) if !@$args;
+		if (!@$args) {
+		    # check if all left-over arg_param are optional, else we
+		    # must die as the mapping is then ambigious
+		    for (my $j = $i; $j < scalar(@$arg_param); $j++) {
+			my $prop = $arg_param->[$j];
+			raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
+			    if !$schema->{properties}->{$prop}->{optional};
+		    }
+		}
 		$opts->{$arg_name} = shift @$args;
 	    }
 	    raise("too many arguments\n", code => HTTP_BAD_REQUEST) if @$args;
