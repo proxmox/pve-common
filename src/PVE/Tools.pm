@@ -25,6 +25,8 @@ use Text::ParseWords;
 use String::ShellQuote;
 use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
 use Scalar::Util 'weaken';
+use Date::Format qw(time2str);
+
 use PVE::Syscall;
 
 # avoid warning when parsing long hex values with hex()
@@ -1460,23 +1462,36 @@ sub sendmail {
     open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom, "--", @$mailto) ||
 	die "unable to open 'sendmail' - $!";
 
+    my $date = time2str('%a, %d %b %Y %H:%M:%S %z', time());
+
+    my $is_multipart = $text && $html;
+
     # multipart spec see https://www.ietf.org/rfc/rfc1521.txt
     my $boundary = "----_=_NextPart_001_".int(time).$$;
 
-    print MAIL "Content-Type: multipart/alternative;\n";
-    print MAIL "\tboundary=\"$boundary\"\n";
-    print MAIL "MIME-Version: 1.0\n";
+    if ($subject =~ /[^[:ascii:]]/) {
+	$subject = Encode::encode('MIME-Header', $subject);
+    }
 
-    print MAIL "FROM: $author <$mailfrom>\n";
-    print MAIL "TO: $rcvrtxt\n";
-    print MAIL "SUBJECT: $subject\n";
-    print MAIL "\n";
-    print MAIL "This is a multi-part message in MIME format.\n\n";
-    print MAIL "--$boundary\n";
+    if ($subject =~ /[^[:ascii:]]/ || $is_multipart) {
+	print MAIL "MIME-Version: 1.0\n";
+    }
+    print MAIL "From: $author <$mailfrom>\n";
+    print MAIL "To: $rcvrtxt\n";
+    print MAIL "Date: $date\n";
+    print MAIL "Subject: $subject\n";
+
+    if ($is_multipart) {
+	print MAIL "Content-Type: multipart/alternative;\n";
+	print MAIL "\tboundary=\"$boundary\"\n";
+	print MAIL "\n";
+	print MAIL "This is a multi-part message in MIME format.\n\n";
+	print MAIL "--$boundary\n";
+    }
 
     if (defined($text)) {
 	print MAIL "Content-Type: text/plain;\n";
-	print MAIL "\tcharset=\"UTF8\"\n";
+	print MAIL "\tcharset=\"UTF-8\"\n";
 	print MAIL "Content-Transfer-Encoding: 8bit\n";
 	print MAIL "\n";
 
@@ -1486,18 +1501,18 @@ sub sendmail {
 
 	print MAIL $text;
 
-	print MAIL "\n--$boundary\n";
+	print MAIL "\n--$boundary\n" if $is_multipart;
     }
 
     if (defined($html)) {
 	print MAIL "Content-Type: text/html;\n";
-	print MAIL "\tcharset=\"UTF8\"\n";
+	print MAIL "\tcharset=\"UTF-8\"\n";
 	print MAIL "Content-Transfer-Encoding: 8bit\n";
 	print MAIL "\n";
 
 	print MAIL $html;
 
-	print MAIL "\n--$boundary--\n";
+	print MAIL "\n--$boundary--\n" if $is_multipart;
     }
 
     close(MAIL);
