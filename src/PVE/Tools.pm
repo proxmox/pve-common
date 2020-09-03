@@ -1457,7 +1457,7 @@ sub sendmail {
     die "illegal character in mailfrom address\n"
 	if $mailfrom =~ $mail_re;
 
-    $author = $author || 'Proxmox VE';
+    $author = $author // 'Proxmox VE';
 
     open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom, "--", @$mailto) ||
 	die "unable to open 'sendmail' - $!";
