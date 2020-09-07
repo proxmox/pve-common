@@ -1644,7 +1644,7 @@ sub get_options {
 	    foreach my $arg_name (@$arg_param) {
 		if ($arg_name eq 'extra-args') {
 		    $opts->{'extra-args'} = [];
-		} else {
+		} elsif (!$schema->{properties}->{$arg_name}->{optional}) {
 		    raise("not enough arguments\n", code => HTTP_BAD_REQUEST);
 		}
 	    }
