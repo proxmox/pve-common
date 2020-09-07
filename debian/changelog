@@ -1,3 +1,14 @@
+libpve-common-perl (6.2-2) pve pmg; urgency=medium
+
+  * sendmail helper: only send multipart if necessary
+
+  * sendmail helper: allow empty display name in "from" field
+
+  * CLI option parser: allow ommiting optional positional arguemnts, if there's
+    no ambiguity about it.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 07 Sep 2020 10:01:03 +0200
+
 libpve-common-perl (6.2-1) pve pmg; urgency=medium
 
   * file get contents: bump default size limit to 512k to match pmxcfs max file
