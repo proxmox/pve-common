@@ -94,6 +94,7 @@ use constant {CLONE_NEWNS   => 0x00020000,
               CLONE_NEWNET  => 0x40000000};
 
 use constant {O_PATH    => 0x00200000,
+              O_CLOEXEC => 0x00080000,
               O_TMPFILE => 0x00410000}; # This includes O_DIRECTORY
 
 use constant {AT_EMPTY_PATH => 0x1000,
@@ -1432,7 +1433,7 @@ sub fsync($) {
 
 sub sync_mountpoint {
     my ($path) = @_;
-    sysopen my $fd, $path, O_PATH or die "failed to open $path: $!\n";
+    sysopen my $fd, $path, O_RDONLY|O_CLOEXEC or die "failed to open $path: $!\n";
     my $result = syncfs(fileno($fd));
     close($fd);
     return $result;
