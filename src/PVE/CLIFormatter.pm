@@ -5,7 +5,8 @@ use warnings;
 
 use I18N::Langinfo;
 use POSIX qw(strftime);
-use CPAN::Meta::YAML; # comes with perl-modules
+use YAML::XS; # supports Dumping JSON::PP::Boolean
+$YAML::XS::Boolean = "JSON::PP";
 
 use PVE::JSONSchema;
 use PVE::PTY;
@@ -87,7 +88,7 @@ PVE::JSONSchema::register_renderer('bytes', \&render_bytes);
 sub render_yaml {
     my ($value) = @_;
 
-    my $data = CPAN::Meta::YAML::Dump($value);
+    my $data = YAML::XS::Dump($value);
     $data =~ s/^---[\n\s]//; # remove yaml marker
 
     return $data;
@@ -440,7 +441,7 @@ sub print_api_result {
     }
 
     if ($format eq 'yaml') {
-	print encode('UTF-8', CPAN::Meta::YAML::Dump($data));
+	print encode('UTF-8', YAML::XS::Dump($data));
     } elsif ($format eq 'json') {
 	# Note: we always use utf8 encoding for json format
 	print to_json($data, {utf8 => 1, allow_nonref => 1, canonical => 1 }) . "\n";
