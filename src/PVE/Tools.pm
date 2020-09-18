@@ -1434,9 +1434,12 @@ sub fsync($) {
 sub sync_mountpoint {
     my ($path) = @_;
     sysopen my $fd, $path, O_RDONLY|O_CLOEXEC or die "failed to open $path: $!\n";
-    my $result = syncfs(fileno($fd));
+    my $syncfs_err;
+    if (!syncfs(fileno($fd))) {
+	$syncfs_err = "$!";
+    }
     close($fd);
-    return $result;
+    die "syncfs '$path' failed - $syncfs_err\n" if defined $syncfs_err;
 }
 
 # support sending multi-part mail messages with a text and or a HTML part
