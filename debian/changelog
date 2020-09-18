@@ -1,3 +1,13 @@
+libpve-common-perl (6.2-3) pve pmg; urgency=medium
+
+  * properly encode CLI tool's output when using YAML output-format via
+    YAML::XS
+
+  * fix the behavior of the sync_mountpoint helper and improve its error
+    propagation
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 18 Sep 2020 17:33:56 +0200
+
 libpve-common-perl (6.2-2) pve pmg; urgency=medium
 
   * sendmail helper: only send multipart if necessary
