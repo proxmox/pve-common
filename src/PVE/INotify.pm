@@ -1509,7 +1509,7 @@ sub __write_etc_network_interfaces {
 		die "bond '$iface' - unable to find slave '$p'\n"
 		    if !$n;
 		die "bond '$iface' - wrong interface type on slave '$p' " .
-		    "('$n->{type}' != 'eth')\n" if $n->{type} ne 'eth';
+		    "('$n->{type}' != 'eth or bond')\n" if ($n->{type} ne 'eth' && $n->{type} ne 'bond');
 		&$check_mtu($ifaces, $iface, $p);
 		$bond_primary_is_slave = 1 if $d->{'bond-primary'} && $d->{'bond-primary'} eq $p;
 	    }
