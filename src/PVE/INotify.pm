@@ -1500,21 +1500,21 @@ sub __write_etc_network_interfaces {
     # check bond
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
-	if ($d->{type} eq 'bond' && $d->{slaves}) {
-	    my $bond_primary_is_slave = undef;
-	    foreach my $p (split (/\s+/, $d->{slaves})) {
-		my $n = $ifaces->{$p};
-		$n->{autostart} = 1;
+	next if !($d->{type} eq 'bond' && $d->{slaves});
 
-		die "bond '$iface' - unable to find slave '$p'\n"
-		    if !$n;
-		die "bond '$iface' - wrong interface type on slave '$p' " .
-		    "('$n->{type}' != 'eth or bond')\n" if ($n->{type} ne 'eth' && $n->{type} ne 'bond');
-		&$check_mtu($ifaces, $iface, $p);
-		$bond_primary_is_slave = 1 if $d->{'bond-primary'} && $d->{'bond-primary'} eq $p;
-	    }
-	    die "bond '$iface' - bond-primary interface is not a slave" if $d->{'bond-primary'} && !$bond_primary_is_slave;
+	my $bond_primary_is_slave = undef;
+	foreach my $p (split (/\s+/, $d->{slaves})) {
+	    my $n = $ifaces->{$p};
+	    $n->{autostart} = 1;
+
+	    die "bond '$iface' - unable to find slave '$p'\n" if !$n;
+	    die "bond '$iface' - wrong interface type on slave '$p' ('$n->{type}' != 'eth or bond')\n"
+		if ($n->{type} ne 'eth' && $n->{type} ne 'bond');
+
+	    $check_mtu->($ifaces, $iface, $p);
+	    $bond_primary_is_slave = 1 if $d->{'bond-primary'} && $d->{'bond-primary'} eq $p;
 	}
+	die "bond '$iface' - bond-primary interface is not a slave" if $d->{'bond-primary'} && !$bond_primary_is_slave;
     }
 
     # check vxlan
