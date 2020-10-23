@@ -1674,12 +1674,10 @@ NETWORKDOC
 
 	my ($rootiface, @rest) = split(/[.:]/, $iface);
 	my $childlevel = scalar(@rest);
-	my $n = $ifaces->{$rootiface};
+	my $type = $ifaces->{$rootiface}->{type};
+	return if !$type || $type eq 'unknown';
 
-	my $pri = $if_type_hash->{$n->{type}} + $childlevel
-	    if $n->{type} && $n->{type} ne 'unknown';
-
-	return $pri;
+	return $if_type_hash->{$type} + $childlevel
     };
 
     foreach my $iface (sort {
