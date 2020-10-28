@@ -21,6 +21,8 @@ parse_property_string
 register_standard_option
 );
 
+our $CONFIGID_RE = qr/[a-z][a-z0-9_-]+/i;
+
 # Note: This class implements something similar to JSON schema, but it is not 100% complete.
 # see: http://tools.ietf.org/html/draft-zyp-json-schema-02
 # see: http://json-schema.org/
@@ -177,7 +179,7 @@ register_format('pve-configid', \&pve_verify_configid);
 sub pve_verify_configid {
     my ($id, $noerr) = @_;
 
-    if ($id !~ m/^[a-z][a-z0-9_-]+$/i) {
+    if ($id !~ m/^$CONFIGID_RE$/) {
 	return undef if $noerr;
 	die "invalid configuration ID '$id'\n";
     }
