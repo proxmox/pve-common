@@ -7,6 +7,8 @@ use Net::DBus qw(dbus_uint32 dbus_uint64);
 use Net::DBus::Callback;
 use Net::DBus::Reactor;
 
+use PVE::Tools qw(file_set_contents file_get_contents trim);
+
 sub escape_unit {
     my ($val, $is_path) = @_;
 
@@ -162,5 +164,75 @@ sub wait_for_unit_removed($;$) {
 	return undef;
     }, $timeout);
 }
+
+sub read_ini {
+    my ($filename) = @_;
+
+    my $content = file_get_contents($filename);
+    my @lines = split /\n/, $content;
+
+    my $result = {};
+    my $section;
+
+    foreach my $line (@lines) {
+	$line = trim($line);
+	if ($line =~ m/^\[([^\]]+)\]/) {
+	    $section = $1;
+	    if (!defined($result->{$section})) {
+		$result->{$section} = {};
+	    }
+	} elsif ($line =~ m/^(.*?)=(.*)$/) {
+	    my ($key, $val) = ($1, $2);
+	    if (!$section) {
+		warn "key value pair found without section, skipping\n";
+		next;
+	    }
+
+	    if ($result->{$section}->{$key}) {
+		# make duplicate properties to arrays to keep the order
+		my $prop = $result->{$section}->{$key};
+		if (ref($prop) eq 'ARRAY') {
+		    push @$prop, $val;
+		} else {
+		    $result->{$section}->{$key} = [$prop, $val];
+		}
+	    } else {
+		$result->{$section}->{$key} = $val;
+	    }
+	}
+	# ignore everything else
+    }
+
+    return $result;
+};
+
+sub write_ini {
+    my ($ini, $filename) = @_;
+
+    my $content = "";
+
+    foreach my $sname (sort keys %$ini) {
+	my $section = $ini->{$sname};
+
+	$content .= "[$sname]\n";
+
+	foreach my $pname (sort keys %$section) {
+	    my $prop = $section->{$pname};
+
+	    if (!ref($prop)) {
+		$content .= "$pname=$prop\n";
+	    } elsif (ref($prop) eq 'ARRAY') {
+		foreach my $val (@$prop) {
+		    $content .= "$pname=$val\n";
+		}
+	    } else {
+		die "invalid property '$pname'\n";
+	    }
+	}
+	$content .= "\n";
+    }
+
+    file_set_contents($filename, $content);
+};
 
 1;
