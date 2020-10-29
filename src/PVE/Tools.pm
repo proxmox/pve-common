@@ -1450,16 +1450,14 @@ sub sendmail {
 
     $mailto = [ $mailto ] if !ref($mailto);
 
-    foreach (@$mailto) {
-	die "illegal character in mailto address\n"
-	    if ($_ =~ $mail_re);
+    for my $to (@$mailto) {
+	die "illegal character in mailto address\n" if $to =~ $mail_re;
     }
 
     my $rcvrtxt = join (', ', @$mailto);
 
     $mailfrom = $mailfrom || "root";
-    die "illegal character in mailfrom address\n"
-	if $mailfrom =~ $mail_re;
+    die "illegal character in mailfrom address\n" if $mailfrom =~ $mail_re;
 
     $author = $author // 'Proxmox VE';
 
