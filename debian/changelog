@@ -1,3 +1,15 @@
+libpve-common-perl (6.2-4) pve pmg; urgency=medium
+
+  * fix #3108: properly check IPv6 local address
+
+  * systemd: add helpers for parsing unit files
+
+  * network config parser: allow bond of bond
+
+  * ProcFSTools: add helper methods to read CPU/Memory/IO pressure metrics
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 05 Nov 2020 10:55:57 +0100
+
 libpve-common-perl (6.2-3) pve pmg; urgency=medium
 
   * properly encode CLI tool's output when using YAML output-format via
