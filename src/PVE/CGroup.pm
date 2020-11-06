@@ -22,8 +22,6 @@ use PVE::Tools qw(
     file_read_firstline
 );
 
-use PVE::LXC::Command;
-
 # We don't want to do a command socket round trip for every cgroup read/write,
 # so any cgroup function needs to have the container's path cached, so this
 # package has to be instantiated.
@@ -130,6 +128,7 @@ sub cgroupv2_base_path() {
 # available via both we favor cgroupv2 here as well.
 #
 # Returns nothing if the controller is not available.
+
 sub find_cgroup_controller($) {
     my ($controller) = @_;
 
@@ -163,39 +162,10 @@ sub cpuset_controller_path() {
 }
 
 # Get a subdirectory (without the cgroup mount point) for a controller.
-#
-# If `$controller` is `undef`, get the unified (cgroupv2) path.
-#
-# Note that in cgroup v2, lxc uses the activated controller names
-# (`cgroup.controllers` file) as list of controllers for the unified hierarchy,
-# so this returns a result when a `controller` is provided even when using
-# a pure cgroupv2 setup.
-my sub get_subdir {
+sub get_subdir {
     my ($self, $controller, $limiting) = @_;
 
-    my $entry_name = $controller || 'unified';
-    my $entry = ($self->{controllers}->{$entry_name} //= {});
-
-    my $kind = $limiting ? 'limit' : 'ns';
-    my $path = $entry->{$kind};
-
-    return $path if defined $path;
-
-    $path = PVE::LXC::Command::get_cgroup_path(
-	$self->{vmid},
-	$controller,
-	$limiting,
-    ) or return undef;
-
-    # untaint:
-    if ($path =~ /\.\./) {
-	die "lxc returned suspicious path: '$path'\n";
-    }
-    ($path) = ($path =~ /^(.*)$/s);
-
-    $entry->{$kind} = $path;
-
-    return $path;
+    die "implement in subclass";
 }
 
 # Get path and version for a controller.
@@ -205,12 +175,11 @@ my sub get_subdir {
 # Returns either just the path, or the path and cgroup version as a tuple.
 sub get_path {
     my ($self, $controller, $limiting) = @_;
-
     # Find the controller before querying the lxc monitor via a socket:
     my ($cgpath, $ver) = find_cgroup_controller($controller)
 	or return undef;
 
-    my $path = get_subdir($self, $controller, $limiting)
+    my $path = $self->get_subdir($controller, $limiting)
 	or return undef;
 
     $path = "$cgpath/$path";
@@ -515,7 +484,7 @@ sub change_cpu_shares {
 
 my sub v1_freeze_thaw {
     my ($self, $controller_path, $freeze) = @_;
-    my $path = get_subdir($self, 'freezer', 1)
+    my $path = $self->get_subdir('freezer', 1)
 	or die "trying to freeze container: container not running\n";
     $path = "$controller_path/$path/freezer.state";
 
@@ -532,7 +501,7 @@ my sub v1_freeze_thaw {
 
 my sub v2_freeze_thaw {
     my ($self, $controller_path, $freeze) = @_;
-    my $path = get_subdir($self, undef, 1)
+    my $path = $self->get_subdir(undef, 1)
 	or die "trying to freeze container: container not running\n";
     $path = "$controller_path/$path";
 
