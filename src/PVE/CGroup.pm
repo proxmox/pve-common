@@ -472,7 +472,7 @@ sub change_cpu_shares {
 	die "cpu weight (shares) must be in range [1, 10000]\n" if $shares < 1 || $shares > 10000;
 	PVE::ProcFSTools::write_proc_entry("$path/cpu.weight", $shares);
     } elsif ($ver == 1) {
-	$shares //= 100;
+	$shares //= 1024;
 	PVE::ProcFSTools::write_proc_entry("$path/cpu.shares", $shares // $cgroupv1_default);
     } else {
 	die "bad cgroup version: $ver\n";
