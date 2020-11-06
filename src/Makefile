@@ -13,6 +13,7 @@ LIB_SOURCES = \
 	CLIHandler.pm \
 	CalendarEvent.pm \
 	CpuSet.pm \
+	CGroup.pm \
 	Daemon.pm \
 	Exception.pm \
 	INotify.pm \
