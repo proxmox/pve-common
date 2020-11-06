@@ -107,7 +107,7 @@ sub enter_systemd_scope {
     foreach my $key (keys %extra) {
 	if ($key eq 'Slice' || $key eq 'KillMode') {
 	    push @{$properties}, [$key, $extra{$key}];
-	} elsif ($key eq 'CPUShares') {
+	} elsif ($key eq 'CPUShares' || $key eq 'CPUWeight') {
 	    push @{$properties}, [$key, dbus_uint64($extra{$key})];
 	} elsif ($key eq 'CPUQuota') {
 	    push @{$properties}, ['CPUQuotaPerSecUSec',
