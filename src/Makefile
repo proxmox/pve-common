@@ -21,6 +21,7 @@ LIB_SOURCES = \
 	LDAP.pm \
 	Network.pm \
 	OTP.pm \
+	PBSClient.pm \
 	PTY.pm \
 	ProcFSTools.pm \
 	RESTEnvironment.pm \
