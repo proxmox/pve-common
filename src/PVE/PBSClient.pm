@@ -234,13 +234,10 @@ sub backup_tree {
 };
 
 sub restore_pxar {
-    my ($self, $opts) = @_;
+    my ($self, $snapshot, $pxarname, $target, $cmd_opts) = @_;
 
-    my $snapshot = delete $opts->{snapshot};
     die "snapshot not provided\n" if !defined($snapshot);
-    my $pxarname = delete $opts->{pxarname};
     die "archive name not provided\n" if !defined($pxarname);
-    my $target = delete $opts->{target};
     die "restore-target not provided\n" if !defined($target);
 
     my $param = [
@@ -249,8 +246,9 @@ sub restore_pxar {
 	"$target",
 	"--allow-existing-dirs", 0,
     ];
+    $cmd_opts //= {};
 
-    return $self->run_raw_client_cmd('restore', $param, %$opts);
+    return $self->run_raw_client_cmd('restore', $param, %$cmd_opts);
 };
 
 sub forget_snapshot {
