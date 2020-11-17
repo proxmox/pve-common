@@ -1,3 +1,9 @@
+libpve-common-perl (6.2-6) pve pmg; urgency=medium
+
+  * rest: register method: allow minus in path template parameter names
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 17 Nov 2020 16:07:53 +0100
+
 libpve-common-perl (6.2-5) pve pmg; urgency=medium
 
   * move over CGroup handling code for reuse
