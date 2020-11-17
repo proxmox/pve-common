@@ -194,7 +194,11 @@ my sub run_client_cmd {
 sub autogen_encryption_key {
     my ($self) = @_;
     my $encfile = $self->encryption_key_file_name();
-    run_command(['proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile]);
+    run_command(
+        ['proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile],
+        errmsg => 'failed to create encryption key'
+    );
+    return file_get_contents($encfile);
 };
 
 sub get_snapshots {
