@@ -255,9 +255,9 @@ sub register_method {
     foreach my $comp (split(/\/+/, $info->{path})) {
 	die "$errprefix path compoment has zero length\n" if $comp eq '';
 	my ($name, $regex);
-	if ($comp =~ m/^\{(\w+)(:(.*))?\}$/) {
+	if ($comp =~ m/^\{(\w+)(?::(.*))?\}$/) {
 	    $name = $1;
-	    $regex = $3 ? $3 : '\S+';
+	    $regex = $2 ? $2 : '\S+';
 	    push @$match_re, $regex;
 	    push @$match_name, $name;
 	} else {
