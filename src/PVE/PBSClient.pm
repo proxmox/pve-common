@@ -202,11 +202,12 @@ sub autogen_encryption_key {
     return file_get_contents($encfile);
 };
 
+# lists all snapshots, optionally limited to a specific group
 sub get_snapshots {
-    my ($self, $opts) = @_;
+    my ($self, $group) = @_;
 
     my $param = [];
-    push @$param, $opts->{group} if defined($opts->{group});
+    push @$param, $group if defined($group);
 
     return run_client_cmd($self, "snapshots", $param);
 };
