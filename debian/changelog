@@ -1,3 +1,11 @@
+libpve-common-perl (6.2-5) pve pmg; urgency=medium
+
+  * move over CGroup handling code for reuse
+
+  * move over Proxmox Backup Sercer client helper module for reuse
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 17 Nov 2020 14:29:13 +0100
+
 libpve-common-perl (6.2-4) pve pmg; urgency=medium
 
   * fix #3108: properly check IPv6 local address
