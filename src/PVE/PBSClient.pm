@@ -205,9 +205,7 @@ sub get_snapshots {
     my ($self, $opts) = @_;
 
     my $param = [];
-    if (defined($opts->{group})) {
-	push @$param, $opts->{group};
-    }
+    push @$param, $opts->{group} if defined($opts->{group});
 
     return $self->run_client_cmd("snapshots", $param);
 };
@@ -225,11 +223,11 @@ sub backup_tree {
     die "archive name not provided\n" if !defined($pxarname);
     my $time = delete $opts->{time};
 
-    my $param = [];
-
-    push @$param, "$pxarname.pxar:$root";
-    push @$param, '--backup-type', $type;
-    push @$param, '--backup-id', $id;
+    my $param = [
+	"$pxarname.pxar:$root",
+	'--backup-type', $type,
+	'--backup-id', $id,
+    ];
     push @$param, '--backup-time', $time if defined($time);
 
     return $self->run_raw_client_cmd('backup', $param, %$opts);
@@ -244,14 +242,13 @@ sub restore_pxar {
     die "archive name not provided\n" if !defined($pxarname);
     my $target = delete $opts->{target};
     die "restore-target not provided\n" if !defined($target);
-    #my $time = delete $opts->{time};
 
-    my $param = [];
-
-    push @$param, "$snapshot";
-    push @$param, "$pxarname.pxar";
-    push @$param, "$target";
-    push @$param, "--allow-existing-dirs", 0;
+    my $param = [
+	"$snapshot",
+	"$pxarname.pxar",
+	"$target",
+	"--allow-existing-dirs", 0,
+    ];
 
     return $self->run_raw_client_cmd('restore', $param, %$opts);
 };
@@ -261,11 +258,7 @@ sub forget_snapshot {
 
     die "snapshot not provided\n" if !defined($snapshot);
 
-    my $param = [];
-
-    push @$param, "$snapshot";
-
-    return $self->run_raw_client_cmd('forget', $param);
+    return $self->run_raw_client_cmd('forget', ["$snapshot"]);
 };
 
 sub prune_group {
