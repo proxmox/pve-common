@@ -1,16 +1,16 @@
 package PVE::PBSClient;
-
-# utility functions for interaction with Proxmox Backup Server
+# utility functions for interaction with Proxmox Backup client CLI executable
 
 use strict;
 use warnings;
+
 use Fcntl qw(F_GETFD F_SETFD FD_CLOEXEC);
 use IO::File;
 use JSON;
 use POSIX qw(strftime ENOENT);
 
-use PVE::Tools qw(run_command file_set_contents file_get_contents file_read_firstline);
 use PVE::JSONSchema qw(get_standard_option);
+use PVE::Tools qw(run_command file_set_contents file_get_contents file_read_firstline);
 
 sub new {
     my ($class, $scfg, $storeid, $sdir) = @_;
@@ -20,7 +20,12 @@ sub new {
 
     my $secret_dir = $sdir // '/etc/pve/priv/storage';
 
-    my $self = bless { scfg => $scfg, storeid => $storeid, secret_dir => $secret_dir }, $class;
+    my $self = bless {
+	scfg => $scfg,
+	storeid => $storeid,
+	secret_dir => $secret_dir
+    }, $class;
+    return $self;
 }
 
 my sub password_file_name {
@@ -32,7 +37,7 @@ my sub password_file_name {
 sub set_password {
     my ($self, $password) = @_;
 
-    my $pwfile = password_file_name($self);
+    my $pwfile = $self->password_file_name();
     mkdir $self->{secret_dir};
 
     PVE::Tools::file_set_contents($pwfile, "$password\n", 0600);
@@ -41,7 +46,7 @@ sub set_password {
 sub delete_password {
     my ($self) = @_;
 
-    my $pwfile = password_file_name($self);
+    my $pwfile = $self->password_file_name();
 
     unlink $pwfile;
 };
@@ -49,7 +54,7 @@ sub delete_password {
 sub get_password {
     my ($self) = @_;
 
-    my $pwfile = password_file_name($self);
+    my $pwfile = $self->password_file_name();
 
     return PVE::Tools::file_read_firstline($pwfile);
 }
@@ -63,7 +68,7 @@ sub encryption_key_file_name {
 sub set_encryption_key {
     my ($self, $key) = @_;
 
-    my $encfile = encryption_key_file_name($self);
+    my $encfile = $self->encryption_key_file_name();
     mkdir $self->{secret_dir};
 
     PVE::Tools::file_set_contents($encfile, "$key\n", 0600);
@@ -72,7 +77,7 @@ sub set_encryption_key {
 sub delete_encryption_key {
     my ($self) = @_;
 
-    my $encfile = encryption_key_file_name($self);
+    my $encfile = $self->encryption_key_file_name();
 
     if (!unlink $encfile) {
 	return if $! == ENOENT;
@@ -84,7 +89,7 @@ sub delete_encryption_key {
 my sub open_encryption_key {
     my ($self) = @_;
 
-    my $encryption_key_file = encryption_key_file_name($self);
+    my $encryption_key_file = $self->encryption_key_file_name();
 
     my $keyfd;
     if (!open($keyfd, '<', $encryption_key_file)) {
@@ -126,7 +131,7 @@ my sub do_raw_client_cmd {
     # This must live in the top scope to not get closed before the `run_command`
     my $keyfd;
     if ($use_crypto) {
-	if (defined($keyfd = open_encryption_key($self))) {
+	if (defined($keyfd = $self->open_encryption_key())) {
 	    my $flags = fcntl($keyfd, F_GETFD, 0)
 		// die "failed to get file descriptor flags: $!\n";
 	    fcntl($keyfd, F_SETFD, $flags & ~FD_CLOEXEC)
@@ -141,7 +146,7 @@ my sub do_raw_client_cmd {
 
     push @$cmd, "--repository", "$username\@$server:$datastore";
 
-    local $ENV{PBS_PASSWORD} = get_password($self);
+    local $ENV{PBS_PASSWORD} = $self->get_password();
 
     local $ENV{PBS_FINGERPRINT} = $scfg->{fingerprint};
 
@@ -158,7 +163,7 @@ my sub do_raw_client_cmd {
 
 my sub run_raw_client_cmd {
     my ($self, $client_cmd, $param, %opts) = @_;
-    return do_raw_client_cmd($self, $client_cmd, $param, %opts);
+    return $self->do_raw_client_cmd($client_cmd, $param, %opts);
 }
 
 my sub run_client_cmd {
@@ -172,8 +177,12 @@ my sub run_client_cmd {
 
     $param = [@$param, '--output-format=json'] if !$no_output;
 
-    do_raw_client_cmd($self, $client_cmd, $param,
-		      outfunc => $outfunc, errmsg => 'proxmox-backup-client failed');
+    $self->do_raw_client_cmd(
+        $client_cmd,
+        $param,
+        outfunc => $outfunc,
+        errmsg => 'proxmox-backup-client failed'
+    );
 
     return undef if $no_output;
 
@@ -184,7 +193,7 @@ my sub run_client_cmd {
 
 sub autogen_encryption_key {
     my ($self) = @_;
-    my $encfile = encryption_key_file_name($self);
+    my $encfile = $self->encryption_key_file_name();
     run_command(['proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile]);
 };
 
@@ -196,7 +205,7 @@ sub get_snapshots {
 	push @$param, $opts->{group};
     }
 
-    return run_client_cmd($self, "snapshots", $param);
+    return $self->run_client_cmd("snapshots", $param);
 };
 
 sub backup_tree {
@@ -219,7 +228,7 @@ sub backup_tree {
     push @$param, '--backup-id', $id;
     push @$param, '--backup-time', $time if defined($time);
 
-    return run_raw_client_cmd($self, 'backup', $param, %$opts);
+    return $self->run_raw_client_cmd('backup', $param, %$opts);
 };
 
 sub restore_pxar {
@@ -240,7 +249,7 @@ sub restore_pxar {
     push @$param, "$target";
     push @$param, "--allow-existing-dirs", 0;
 
-    return run_raw_client_cmd($self, 'restore', $param, %$opts);
+    return $self->run_raw_client_cmd('restore', $param, %$opts);
 };
 
 sub forget_snapshot {
@@ -252,7 +261,7 @@ sub forget_snapshot {
 
     push @$param, "$snapshot";
 
-    return run_raw_client_cmd($self, 'forget', $param);
+    return $self->run_raw_client_cmd('forget', $param);
 };
 
 sub prune_group {
@@ -276,7 +285,7 @@ sub prune_group {
     }
     push @$param, "$group";
 
-    return run_client_cmd($self, 'prune', $param);
+    return $self->run_client_cmd('prune', $param);
 };
 
 sub status {
@@ -288,7 +297,7 @@ sub status {
     my $active = 0;
 
     eval {
-	my $res = run_client_cmd($self, "status");
+	my $res = $self->run_client_cmd("status");
 
 	$active = 1;
 	$total = $res->{total};
