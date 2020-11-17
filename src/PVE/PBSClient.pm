@@ -212,27 +212,24 @@ sub get_snapshots {
     return run_client_cmd($self, "snapshots", $param);
 };
 
-sub backup_tree {
-    my ($self, $opts) = @_;
+# create a new PXAR backup of a FS directory tree - doesn't cross FS boundary
+# by default.
+sub backup_fs_tree {
+    my ($self, $root, $id, $pxarname, $cmd_opts) = @_;
 
-    my $type = delete $opts->{type};
-    die "backup-type not provided\n" if !defined($type);
-    my $id = delete $opts->{id};
     die "backup-id not provided\n" if !defined($id);
-    my $root = delete $opts->{root};
-    die "root dir not provided\n" if !defined($root);
-    my $pxarname = delete $opts->{pxarname};
+    die "backup root dir not provided\n" if !defined($root);
     die "archive name not provided\n" if !defined($pxarname);
-    my $time = delete $opts->{time};
 
     my $param = [
 	"$pxarname.pxar:$root",
-	'--backup-type', $type,
+	'--backup-type', 'host',
 	'--backup-id', $id,
     ];
-    push @$param, '--backup-time', $time if defined($time);
 
-    return run_raw_client_cmd($self, 'backup', $param, %$opts);
+    $cmd_opts //= {};
+
+    return run_raw_client_cmd($self, 'backup', $param, %$cmd_opts);
 };
 
 sub restore_pxar {
