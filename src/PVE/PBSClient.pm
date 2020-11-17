@@ -37,7 +37,7 @@ my sub password_file_name {
 sub set_password {
     my ($self, $password) = @_;
 
-    my $pwfile = $self->password_file_name();
+    my $pwfile = password_file_name($self);
     mkdir $self->{secret_dir};
 
     PVE::Tools::file_set_contents($pwfile, "$password\n", 0600);
@@ -46,15 +46,15 @@ sub set_password {
 sub delete_password {
     my ($self) = @_;
 
-    my $pwfile = $self->password_file_name();
+    my $pwfile = password_file_name($self);
 
-    unlink $pwfile;
+    unlink $pwfile or die "deleting password file failed - $!\n";
 };
 
 sub get_password {
     my ($self) = @_;
 
-    my $pwfile = $self->password_file_name();
+    my $pwfile = password_file_name($self);
 
     return PVE::Tools::file_read_firstline($pwfile);
 }
@@ -131,7 +131,7 @@ my sub do_raw_client_cmd {
     # This must live in the top scope to not get closed before the `run_command`
     my $keyfd;
     if ($use_crypto) {
-	if (defined($keyfd = $self->open_encryption_key())) {
+	if (defined($keyfd = open_encryption_key($self))) {
 	    my $flags = fcntl($keyfd, F_GETFD, 0)
 		// die "failed to get file descriptor flags: $!\n";
 	    fcntl($keyfd, F_SETFD, $flags & ~FD_CLOEXEC)
@@ -163,7 +163,7 @@ my sub do_raw_client_cmd {
 
 my sub run_raw_client_cmd {
     my ($self, $client_cmd, $param, %opts) = @_;
-    return $self->do_raw_client_cmd($client_cmd, $param, %opts);
+    return do_raw_client_cmd($self, $client_cmd, $param, %opts);
 }
 
 my sub run_client_cmd {
@@ -177,7 +177,8 @@ my sub run_client_cmd {
 
     $param = [@$param, '--output-format=json'] if !$no_output;
 
-    $self->do_raw_client_cmd(
+    do_raw_client_cmd(
+        $self,
         $client_cmd,
         $param,
         outfunc => $outfunc,
@@ -207,7 +208,7 @@ sub get_snapshots {
     my $param = [];
     push @$param, $opts->{group} if defined($opts->{group});
 
-    return $self->run_client_cmd("snapshots", $param);
+    return run_client_cmd($self, "snapshots", $param);
 };
 
 sub backup_tree {
@@ -230,7 +231,7 @@ sub backup_tree {
     ];
     push @$param, '--backup-time', $time if defined($time);
 
-    return $self->run_raw_client_cmd('backup', $param, %$opts);
+    return run_raw_client_cmd($self, 'backup', $param, %$opts);
 };
 
 sub restore_pxar {
@@ -248,7 +249,7 @@ sub restore_pxar {
     ];
     $cmd_opts //= {};
 
-    return $self->run_raw_client_cmd('restore', $param, %$cmd_opts);
+    return run_raw_client_cmd($self, 'restore', $param, %$cmd_opts);
 };
 
 sub forget_snapshot {
@@ -256,7 +257,7 @@ sub forget_snapshot {
 
     die "snapshot not provided\n" if !defined($snapshot);
 
-    return $self->run_raw_client_cmd('forget', ["$snapshot"]);
+    return run_raw_client_cmd($self, 'forget', ["$snapshot"]);
 };
 
 sub prune_group {
@@ -280,7 +281,7 @@ sub prune_group {
     }
     push @$param, "$group";
 
-    return $self->run_client_cmd('prune', $param);
+    return run_client_cmd($self, 'prune', $param);
 };
 
 sub status {
@@ -292,7 +293,7 @@ sub status {
     my $active = 0;
 
     eval {
-	my $res = $self->run_client_cmd("status");
+	my $res = run_client_cmd($self, "status");
 
 	$active = 1;
 	$total = $res->{total};
