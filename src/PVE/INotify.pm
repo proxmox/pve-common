@@ -960,6 +960,7 @@ sub __read_etc_network_interfaces {
 			'bond_miimon' => 1,
 			'bond_xmit_hash_policy' => 1,
 			'bond-primary' => 1,
+			'link-type'   => 1,
 			'uplink-id' => 1,
 			'vlan-protocol' => 1,
 			'vlan-raw-device' => 1,
@@ -1106,6 +1107,8 @@ sub __read_etc_network_interfaces {
 		    my $tag = &$extract_ovs_option($d, 'tag');
 		    $d->{ovs_tag} = $tag if defined($tag);
 		}
+	    } elsif (defined($d->{'link-type'})) {
+		$d->{type} = $d->{'link-type'} if $d->{'link-type'} eq 'dummy';
 	    }
 	}
 
@@ -1660,6 +1663,7 @@ NETWORKDOC
 
     my $if_type_hash = {
 	loopback => 100000,
+	dummy => 100000,
 	eth => 200000,
 	OVSPort => 200000,
 	OVSIntPort => 300000,
