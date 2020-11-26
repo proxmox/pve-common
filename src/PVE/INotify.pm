@@ -1554,6 +1554,8 @@ sub __write_etc_network_interfaces {
 		$p = $1;
 		$vlanid = $2;
 		delete $d->{'vlan-raw-device'} if $d->{'vlan-raw-device'};
+		delete $d->{'vlan-id'} if $d->{'vlan-id'};
+
 	    } else {
 		die "missing vlan-raw-device option" if !$d->{'vlan-raw-device'};
 		$p = $d->{'vlan-raw-device'};
