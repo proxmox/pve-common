@@ -1,3 +1,12 @@
+libpve-common-perl (6.3-1) pve pmg; urgency=medium
+
+  * subscription: use more specific machine repo definition for Proxmox VE and
+    Proxmox Mail Gateway, to improve co-installability of all products.
+
+  * network: ignore vlan-id if already specified by "iface.X" notation
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 27 Nov 2020 15:30:18 +0100
+
 libpve-common-perl (6.2-6) pve pmg; urgency=medium
 
   * rest: register method: allow minus in path template parameter names
