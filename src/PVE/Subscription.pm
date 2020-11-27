@@ -188,7 +188,23 @@ sub read_subscription {
 sub update_apt_auth {
     my ($key, $server_id) = @_;
 
-    my $auth = { 'enterprise.proxmox.com' => { login => $key, password => $server_id } };
+    my $repo;
+    if ($key =~ /^pmg/) {
+	$repo = 'pmg';
+    } elsif ($key =~ /^pve/) {
+	$repo = 'pve';
+    } else {
+	warn "unknown key format for '$key', defaulting to pve\n";
+	$repo = 'pve';
+    }
+
+    my $auth = {
+	"enterprise.proxmox.com" => undef, # for dropping the older, to generic match
+	"enterprise.proxmox.com/debian/$repo" => {
+	    login => $key,
+	    password => $server_id,
+	},
+    };
     PVE::INotify::update_file('apt-auth', $auth);
 }
 
