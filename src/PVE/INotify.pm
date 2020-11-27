@@ -1778,8 +1778,11 @@ my $format_apt_auth_data = sub {
 
     my $raw = '';
 
-    foreach my $machine (sort keys %$data) {
+    # sort longer entries first, so machine definitions with higher granularity are preferred
+    for my $machine (sort { length($b) <=> length($a) || $a cmp $b} keys %$data) {
 	my $d = $data->{$machine};
+	next if !defined($d); # allow "deleting" set entries
+
 	$raw .= "machine $machine\n";
 	$raw .= " login $d->{login}\n" if $d->{login};
 	$raw .= " password $d->{password}\n" if $d->{password};
@@ -1792,7 +1795,7 @@ my $format_apt_auth_data = sub {
 sub write_apt_auth {
     my ($filename, $fh, $data) = @_;
 
-    my $raw = &$format_apt_auth_data($data);
+    my $raw = $format_apt_auth_data->($data);
 
     die "write failed: $!" unless print $fh "$raw\n";
 
@@ -1808,11 +1811,16 @@ sub update_apt_auth {
 	$orig->{$machine} = $data->{$machine};
     }
 
-    return &$format_apt_auth_data($orig);
+    return $format_apt_auth_data->($orig);
 }
 
-register_file('apt-auth', "/etc/apt/auth.conf",
-	      \&read_apt_auth, \&write_apt_auth,
-	      \&update_apt_auth, perm => 0640);
+register_file(
+    'apt-auth',
+    "/etc/apt/auth.conf",
+    \&read_apt_auth,
+    \&write_apt_auth,
+    \&update_apt_auth,
+    perm => 0640,
+);
 
 1;
