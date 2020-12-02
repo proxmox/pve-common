@@ -48,6 +48,7 @@ template_replace
 safe_print
 trim
 extract_param
+extract_sensitive_params
 file_copy
 get_host_arch
 O_PATH
@@ -805,6 +806,29 @@ sub extract_param {
     delete $param->{$key};
 
     return $res;
+}
+
+sub extract_sensitive_params :prototype($$$) {
+    my ($param, $sensitive_list, $delete_list) = @_;
+
+    my $sensitive;
+
+    my %delete = map { $_ => 1 } ($delete_list || [])->@*;
+
+    # always extract sensitive keys, so they don't get written to the www-data readable scfg
+    for my $opt (@$sensitive_list) {
+	# First handle deletions as explicitly setting `undef`, afterwards new values may override
+	# it.
+	if (exists($delete{$opt})) {
+	    $sensitive->{$opt} = undef;
+	}
+
+	if (defined(my $value = extract_param($param, $opt))) {
+	    $sensitive->{$opt} = $value;
+	}
+    }
+
+    return $sensitive;
 }
 
 # Note: we use this to wait until vncterm/spiceterm is ready
