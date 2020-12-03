@@ -1,3 +1,11 @@
+libpve-common-perl (6.3-2) pve pmg; urgency=medium
+
+  * PBS client: add helper method to get a repository url easier
+
+  * tools: add extract_sensitive_params
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 03 Dec 2020 16:53:17 +0100
+
 libpve-common-perl (6.3-1) pve pmg; urgency=medium
 
   * subscription: use more specific machine repo definition for Proxmox VE and
