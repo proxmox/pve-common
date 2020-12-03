@@ -808,17 +808,16 @@ sub extract_param {
     return $res;
 }
 
+# For extracting sensitive keys (e.g. password), to avoid writing them to www-data owned configs
 sub extract_sensitive_params :prototype($$$) {
     my ($param, $sensitive_list, $delete_list) = @_;
 
-    my $sensitive;
-
     my %delete = map { $_ => 1 } ($delete_list || [])->@*;
 
-    # always extract sensitive keys, so they don't get written to the www-data readable scfg
+    my $sensitive = {};
     for my $opt (@$sensitive_list) {
-	# First handle deletions as explicitly setting `undef`, afterwards new values may override
-	# it.
+	# handle deletions as explicitly setting `undef`, so subs which only have $param but not
+	# $delete_list available can recognize them. Afterwards new values  may override.
 	if (exists($delete{$opt})) {
 	    $sensitive->{$opt} = undef;
 	}
