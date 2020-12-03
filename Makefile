@@ -37,7 +37,7 @@ ${DSC}: ${BUILDDIR}
 .PHONY: clean distclean
 distclean: clean
 clean:
-	rm -rf *~ *.deb *.changes ${BUILDDIR} *.buildinfo *.dsc *.tar.gz
+	rm -rf *~ *.deb *.changes ${PACKAGE}-*/ *.buildinfo *.dsc *.tar.gz
 
 .PHONY: check
 check:
