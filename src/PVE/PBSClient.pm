@@ -10,7 +10,35 @@ use JSON;
 use POSIX qw(strftime ENOENT);
 
 use PVE::JSONSchema qw(get_standard_option);
-use PVE::Tools qw(run_command file_set_contents file_get_contents file_read_firstline);
+use PVE::Tools qw(run_command file_set_contents file_get_contents file_read_firstline $IPV6RE);
+
+# returns a repository string suitable for proxmox-backup-client, pbs-restore, etc.
+# $scfg must have the following structure:
+# {
+#     datastore
+#     server
+#     port        (optional defaults to 8007)
+#     username    (optional defaults to 'root@pam')
+# }
+sub get_repository {
+    my ($scfg) = @_;
+
+    my $server = $scfg->{server};
+    die "no server given\n" if !defined($server);
+
+    $server = "[$server]" if $server =~ /^$IPV6RE$/;
+
+    if (my $port = $scfg->{port}) {
+	$server .= ":$port" if $port != 8007;
+    }
+
+    my $datastore = $scfg->{datastore};
+    die "no datastore given\n" if !defined($datastore);
+
+    my $username = $scfg->{username} // 'root@pam';
+
+    return "$username\@$server:$datastore";
+}
 
 sub new {
     my ($class, $scfg, $storeid, $sdir) = @_;
@@ -116,9 +144,7 @@ my sub do_raw_client_cmd {
 	if ! -x $client_exe;
 
     my $scfg = $self->{scfg};
-    my $server = $scfg->{server};
-    my $datastore = $scfg->{datastore};
-    my $username = $scfg->{username} // 'root@pam';
+    my $repo = get_repository($scfg);
 
     my $userns_cmd = delete $opts{userns_cmd};
 
@@ -144,7 +170,7 @@ my sub do_raw_client_cmd {
 
     push @$cmd, @$param if defined($param);
 
-    push @$cmd, "--repository", "$username\@$server:$datastore";
+    push @$cmd, "--repository", $repo;
 
     local $ENV{PBS_PASSWORD} = $self->get_password();
 
