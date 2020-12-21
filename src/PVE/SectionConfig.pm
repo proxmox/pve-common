@@ -311,6 +311,7 @@ sub parse_config {
 	}
     };
 
+    my $errors = [];
     while (@lines) {
 	my $line = $nextline->();
 	next if !$line;
@@ -349,7 +350,15 @@ sub parse_config {
 			die "duplicate attribute\n" if defined($config->{$k});
 			$config->{$k} = $plugin->check_value($type, $k, $v, $sectionId);
 		    };
-		    warn "$errprefix (section '$sectionId') - unable to parse value of '$k': $@" if $@;
+		    if (my $err = $@) {
+			warn "$errprefix (section '$sectionId') - unable to parse value of '$k': $err";
+			push @$errors, {
+			    context => $errprefix,
+			    section => $sectionId,
+			    key => $k,
+			    err => $err,
+			};
+		    }
 
 		} else {
 		    warn "$errprefix (section '$sectionId') - ignore config line: $line\n";
@@ -368,8 +377,12 @@ sub parse_config {
 	}
     }
 
-
-    my $cfg = { ids => $ids, order => $order, digest => $digest};
+    my $cfg = {
+	ids => $ids,
+	order => $order,
+	digest => $digest
+    };
+    $cfg->{errors} = $errors if scalar(@$errors) > 0;
 
     return $cfg;
 }
