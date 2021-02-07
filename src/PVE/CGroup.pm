@@ -365,6 +365,48 @@ sub get_memory_stat {
     return $res;
 }
 
+sub get_pressure_stat {
+    my ($self) = @_;
+
+    my $res = {
+	cpu => {
+	    some => { avg10 => 0, avg60 => 0, avg300 => 0 }
+	},
+	memory => {
+	    some => { avg10 => 0, avg60 => 0, avg300 => 0 },
+	    full => { avg10 => 0, avg60 => 0, avg300 => 0 }
+	},
+	io => {
+	    some => { avg10 => 0, avg60 => 0, avg300 => 0 },
+	    full => { avg10 => 0, avg60 => 0, avg300 => 0 }
+	},
+    };
+
+    my ($path, $ver) = $self->get_path(undef, 1);
+    if (!defined($path)) {
+	# container or VM most likely isn't running
+	return undef;
+    } elsif ($ver == 2) {
+
+	foreach my $type (qw(cpu memory io)) {
+	    if (my $fh = IO::File->new ("$path/$type.pressure", "r")) {
+		while (defined (my $line = <$fh>)) {
+		    if ($line =~ /^(some|full)\s+avg10\=(\d+\.\d+)\s+avg60\=(\d+\.\d+)\s+avg300\=(\d+\.\d+)\s+total\=(\d+)/) {
+			$res->{$type}->{$1}->{avg10} = $2;
+			$res->{$type}->{$1}->{avg60} = $3;
+			$res->{$type}->{$1}->{avg300} = $4;
+		    }
+		}
+		$fh->close;
+	    }
+	}
+    } else {
+	die "bad cgroup version: $ver\n";
+    }
+
+    return $res;
+}
+
 # Change the memory limit for this container.
 #
 # Dies on error (including a not-running or currently-shutting-down guest).
