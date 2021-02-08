@@ -387,18 +387,9 @@ sub get_pressure_stat {
 	# container or VM most likely isn't running
 	return undef;
     } elsif ($ver == 2) {
-
-	foreach my $type (qw(cpu memory io)) {
-	    if (my $fh = IO::File->new ("$path/$type.pressure", "r")) {
-		while (defined (my $line = <$fh>)) {
-		    if ($line =~ /^(some|full)\s+avg10\=(\d+\.\d+)\s+avg60\=(\d+\.\d+)\s+avg300\=(\d+\.\d+)\s+total\=(\d+)/) {
-			$res->{$type}->{$1}->{avg10} = $2;
-			$res->{$type}->{$1}->{avg60} = $3;
-			$res->{$type}->{$1}->{avg300} = $4;
-		    }
-		}
-		$fh->close;
-	    }
+	for my $type (qw(cpu memory io)) {
+	    my $stats = PVE::ProcFSTools::parse_pressure("$path/$type.pressure");
+	    $res->{$type} = $stats if $stats;
 	}
     } else {
 	die "bad cgroup version: $ver\n";

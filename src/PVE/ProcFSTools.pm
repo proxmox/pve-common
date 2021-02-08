@@ -132,20 +132,29 @@ sub read_loadavg {
     return wantarray ? (0, 0, 0) : 0;
 }
 
-sub read_pressure {
+sub parse_pressure {
+    my ($path) = @_;
 
     my $res = {};
-    foreach my $type (qw(cpu memory io)) {
-	if (my $fh = IO::File->new ("/proc/pressure/$type", "r")) {
-	    while (defined (my $line = <$fh>)) {
-		if ($line =~ /^(some|full)\s+avg10\=(\d+\.\d+)\s+avg60\=(\d+\.\d+)\s+avg300\=(\d+\.\d+)\s+total\=(\d+)/) {
-		    $res->{$type}->{$1}->{avg10} = $2;
-		    $res->{$type}->{$1}->{avg60} = $3;
-		    $res->{$type}->{$1}->{avg300} = $4;
-	        }
-	    }
-	    $fh->close;
+    my $v = qr/\d+\.\d+/;
+    my $fh = IO::File->new($path, "r") or return undef;
+    while (defined (my $line = <$fh>)) {
+	if ($line =~ /^(some|full)\s+avg10\=($v)\s+avg60\=($v)\s+avg300\=($v)\s+total\=(\d+)/) {
+	    $res->{$1}->{avg10} = $2;
+	    $res->{$1}->{avg60} = $3;
+	    $res->{$1}->{avg300} = $4;
+	    $res->{$1}->{total} = $4;
 	}
+    }
+    $fh->close;
+    return $res;
+}
+
+sub read_pressure {
+    my $res = {};
+    foreach my $type (qw(cpu memory io)) {
+	my $stats = parse_pressure("/proc/pressure/$type");
+	$res->{$type} = $stats if $stats;
     }
     return $res;
 }
