@@ -382,17 +382,18 @@ sub get_pressure_stat {
 	},
     };
 
-    my ($path, $ver) = $self->get_path(undef, 1);
+    my ($path, $version) = $self->get_path(undef, 1);
     if (!defined($path)) {
-	# container or VM most likely isn't running
-	return undef;
-    } elsif ($ver == 2) {
+	return $res; # container or VM most likely isn't running, retrun zero stats
+    } elsif ($version == 1) {
+	return undef; # v1 controller does not provides pressure stat
+    } elsif ($version == 2) {
 	for my $type (qw(cpu memory io)) {
 	    my $stats = PVE::ProcFSTools::parse_pressure("$path/$type.pressure");
 	    $res->{$type} = $stats if $stats;
 	}
     } else {
-	die "bad cgroup version: $ver\n";
+	die "bad cgroup version: $version\n";
     }
 
     return $res;
