@@ -16,6 +16,7 @@ LIB_SOURCES = \
 	CGroup.pm \
 	Daemon.pm \
 	Exception.pm \
+	Format.pm \
 	INotify.pm \
 	JSONSchema.pm \
 	LDAP.pm \
