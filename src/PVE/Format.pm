@@ -3,7 +3,7 @@ package PVE::Format;
 use strict;
 use warnings;
 
-use POSIX qw(strftime);
+use POSIX qw(strftime round);
 use PVE::JSONSchema;
 
 use base 'Exporter';
@@ -33,7 +33,9 @@ sub render_duration {
     my ($duration_in_seconds) = @_;
 
     my $text = '';
-    my $rest = $duration_in_seconds;
+    my $rest = round($duration_in_seconds // 0);
+
+    return "0s" if !$rest;
 
     my $step = sub {
 	my ($unit, $unitlength) = @_;
