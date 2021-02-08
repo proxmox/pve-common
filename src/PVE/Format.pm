@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use POSIX qw(strftime round);
-use PVE::JSONSchema;
 
 use base 'Exporter';
 our @EXPORT_OK = qw(
