@@ -1,3 +1,13 @@
+libpve-common-perl (6.3-3) pve pmg; urgency=medium
+
+  * SectionConfig: parse_config: add errors to result
+
+  * extract PVE::Format from PVE::CLIFormatter for reuse
+
+  * add CGroup CPU/IO/Memory pressure stats helpers
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 08 Feb 2021 16:09:09 +0100
+
 libpve-common-perl (6.3-2) pve pmg; urgency=medium
 
   * PBS client: add helper method to get a repository url easier
