@@ -199,10 +199,8 @@ my $read_certificate = sub {
 	or $ssl_die->("unable to read '$cert_path' - $!\n");
 
     my $cert = Net::SSLeay::PEM_read_bio_X509($bio);
-    if (!$cert) {
-	Net::SSLeay::BIO_free($bio);
-	die "unable to read certificate from '$cert_path'\n";
-    }
+    Net::SSLeay::BIO_free($bio);
+    die "unable to read certificate from '$cert_path'\n" if !$cert;
 
     return $cert;
 };
