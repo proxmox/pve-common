@@ -478,6 +478,18 @@ sub pve_verify_email {
     return $email;
 }
 
+register_format('email-or-username', \&pve_verify_email_or_username);
+sub pve_verify_email_or_username {
+    my ($email, $noerr) = @_;
+
+    if ($email !~ /^$PVE::Tools::EMAIL_RE$/ &&
+	$email !~ /^$PVE::Tools::EMAIL_USER_RE$/) {
+	   return undef if $noerr;
+	   die "value does not look like a valid email address or user name\n";
+    }
+    return $email;
+}
+
 register_format('dns-name', \&pve_verify_dns_name);
 sub pve_verify_dns_name {
     my ($name, $noerr) = @_;
