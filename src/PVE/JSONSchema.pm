@@ -471,7 +471,7 @@ register_format('email', \&pve_verify_email);
 sub pve_verify_email {
     my ($email, $noerr) = @_;
 
-    if ($email !~ /^[\w\+\-\~]+(\.[\w\+\-\~]+)*@[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+)*$/) {
+    if ($email !~ /^$PVE::Tools::EMAIL_RE$/) {
 	   return undef if $noerr;
 	   die "value does not look like a valid email address\n";
     }

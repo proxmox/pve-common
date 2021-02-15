@@ -87,6 +87,9 @@ our $IPV6RE = "(?:" .
 
 our $IPRE = "(?:$IPV4RE|$IPV6RE)";
 
+our $EMAIL_USER_RE = qr/[\w\+\-\~]+(\.[\w\+\-\~]+)*/;
+our $EMAIL_RE = qr/$EMAIL_USER_RE@[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+)*/;
+
 use constant {CLONE_NEWNS   => 0x00020000,
               CLONE_NEWUTS  => 0x04000000,
               CLONE_NEWIPC  => 0x08000000,
@@ -1469,23 +1472,27 @@ sub sync_mountpoint {
 # mailto may be a single email string or an array of receivers
 sub sendmail {
     my ($mailto, $subject, $text, $html, $mailfrom, $author) = @_;
-    my $mail_re = qr/[^-a-zA-Z0-9+._@]/;
 
     $mailto = [ $mailto ] if !ref($mailto);
 
+    my $mailto_quoted = [];
     for my $to (@$mailto) {
-	die "illegal character in mailto address\n" if $to =~ $mail_re;
+	die "mailto does not look like a valid email address or username\n"
+	    if $to !~ /^$EMAIL_RE$/ && $to !~ /^$EMAIL_USER_RE$/;
+	push @$mailto_quoted, shellquote($to);
     }
 
     my $rcvrtxt = join (', ', @$mailto);
 
     $mailfrom = $mailfrom || "root";
-    die "illegal character in mailfrom address\n" if $mailfrom =~ $mail_re;
+    die "mailfrom does not look like a valid email address or username\n"
+	    if $mailfrom !~ /^$EMAIL_RE$/ && $mailfrom !~ /^$EMAIL_USER_RE$/;
+    my $mailfrom_quoted = shellquote($mailfrom);
 
     $author = $author // 'Proxmox VE';
 
-    open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom, "--", @$mailto) ||
-	die "unable to open 'sendmail' - $!";
+    open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom_quoted,
+	"--", @$mailto_quoted) || die "unable to open 'sendmail' - $!";
 
     my $date = time2str('%a, %d %b %Y %H:%M:%S %z', time());
 
