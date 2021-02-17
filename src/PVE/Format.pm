@@ -64,6 +64,8 @@ sub render_fraction_as_percentage {
 sub render_bytes {
     my ($value, $precision) = @_;
 
+    $precision = $precision->{precision} if ref($precision) eq 'HASH';
+
     my @units = qw(B KiB MiB GiB TiB PiB);
 
     my $max_unit = 0;
