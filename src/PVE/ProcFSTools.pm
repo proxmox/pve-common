@@ -378,6 +378,7 @@ sub decode_mount {
 
 sub parse_mounts {
     my ($mounts) = @_;
+
     my $mntent = [];
     while ($mounts =~ /^\s*([^#].*)$/gm) {
 	# lines from the file are encoded so we can just split at spaces
@@ -386,11 +387,14 @@ sub parse_mounts {
 	# in glibc's parser frequency and pass seem to be optional
 	$freq = $1 if $opts =~ s/\s+(\d+)$//;
 	$passno = $1 if $opts =~ s/\s+(\d+)$//;
-	push @$mntent, [decode_mount($what),
-			decode_mount($dir),
-			decode_mount($fstype),
-			decode_mount($opts),
-			$freq, $passno];
+	push @$mntent, [
+	    decode_mount($what),
+	    decode_mount($dir),
+	    decode_mount($fstype),
+	    decode_mount($opts),
+	    $freq,
+	    $passno,
+	];
     }
     return $mntent;
 }
