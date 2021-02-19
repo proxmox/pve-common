@@ -1,3 +1,13 @@
+libpve-common-perl (6.3-4) pve pmg; urgency=medium
+
+  * sendmail: use more complete email regex and shellquote
+
+  * register email-or-username format
+
+  * fix #3259: always free certificate file after reading it
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 19 Feb 2021 15:50:16 +0100
+
 libpve-common-perl (6.3-3) pve pmg; urgency=medium
 
   * SectionConfig: parse_config: add errors to result
