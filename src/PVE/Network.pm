@@ -600,13 +600,14 @@ sub get_local_ip_from_cidr {
     my ($cidr) = @_;
 
     my $IPs = {};
+    my $i = 1;
     run_command(['/sbin/ip', 'address', 'show', 'to', $cidr, 'up'], outfunc => sub {
 	if ($_[0] =~ m!^\s*inet(?:6)?\s+($PVE::Tools::IPRE)(?:/\d+|\s+peer\s+)!) {
-	    $IPs->{$1} = 1;
+	    $IPs->{$1} = $i++ if !exists($IPs->{$1});
 	}
     });
 
-    return [ keys %{$IPs} ];
+    return [ sort { $IPs->{$a} <=> $IPs->{$b} } keys %{$IPs} ];
 }
 
 sub addr_to_ip {
