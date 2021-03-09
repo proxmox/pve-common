@@ -1,3 +1,11 @@
+libpve-common-perl (6.3-5) pve pmg; urgency=medium
+
+  * network: get_local_ip_from_cidr: filter to only return unique IPs
+
+  * format: fix render_bytes with CLIFormatter
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 09 Mar 2021 08:35:04 +0100
+
 libpve-common-perl (6.3-4) pve pmg; urgency=medium
 
   * sendmail: use more complete email regex and shellquote
