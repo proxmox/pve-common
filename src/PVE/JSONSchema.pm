@@ -1640,11 +1640,15 @@ sub get_options {
 		if (!@$args) {
 		    # check if all left-over arg_param are optional, else we
 		    # must die as the mapping is then ambigious
-		    for (my $j = $i; $j < scalar(@$arg_param); $j++) {
-			my $prop = $arg_param->[$j];
+		    for (; $i < scalar(@$arg_param); $i++) {
+			my $prop = $arg_param->[$i];
 			raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
 			    if !$schema->{properties}->{$prop}->{optional};
 		    }
+		    if ($arg_param->[-1] eq 'extra-args') {
+			$opts->{'extra-args'} = [];
+		    }
+		    last;
 		}
 		$opts->{$arg_name} = shift @$args;
 	    }
