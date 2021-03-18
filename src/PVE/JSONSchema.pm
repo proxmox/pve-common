@@ -714,9 +714,10 @@ sub check_format {
 	if $format_type ne 'none' && ref($registered) ne 'CODE';
 
     if ($format_type eq 'list') {
+	$parsed = [];
 	# Note: we allow empty lists
 	foreach my $v (split_list($value)) {
-	    $parsed = $registered->($v);
+	    push @{$parsed}, $registered->($v);
 	}
     } elsif ($format_type eq 'opt') {
 	$parsed = $registered->($value) if $value;
