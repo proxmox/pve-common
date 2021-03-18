@@ -720,7 +720,7 @@ sub check_format {
 	}
     } elsif ($format_type eq 'opt') {
 	$parsed = $registered->($value) if $value;
-   } else {
+    } else {
 	if (ref($registered) eq 'HASH') {
 	    # Note: this is the only case where a validator function could be
 	    # attached, hence it's safe to handle that in parse_property_string.
