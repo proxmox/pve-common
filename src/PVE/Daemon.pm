@@ -799,7 +799,7 @@ sub register_status_command {
 # some useful helper
 
 sub create_reusable_socket {
-    my ($self, $port, $host, $family) = @_;
+    my ($self, $port, $host) = @_;
 
     die "no port specifed" if !$port;
 
@@ -820,10 +820,10 @@ sub create_reusable_socket {
     } else {
 
 	$socket = IO::Socket::IP->new(
-	    LocalAddr => $host,
+	    Domain => PF_INET6,
+	    LocalHost => $host,
 	    LocalPort => $port,
 	    Listen => SOMAXCONN,
-	    Family => $family,
 	    Proto  => 'tcp',
 	    GetAddrInfoFlags => 0,
 	    ReuseAddr => 1) ||
