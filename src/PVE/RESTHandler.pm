@@ -431,8 +431,7 @@ sub handle {
     my $func = $info->{code};
 
     if (!($info->{name} && $func)) {
-	raise("Method lookup failed ('$info->{name}')\n",
-	      code => HTTP_INTERNAL_SERVER_ERROR);
+	raise("Method lookup failed ('$info->{name}')\n", code => HTTP_INTERNAL_SERVER_ERROR);
     }
 
     if (my $schema = $info->{parameters}) {
