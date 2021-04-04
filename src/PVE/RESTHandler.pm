@@ -426,7 +426,7 @@ sub find_handler {
 }
 
 sub handle {
-    my ($self, $info, $param) = @_;
+    my ($self, $info, $param, $result_verification) = @_;
 
     my $func = $info->{code};
 
@@ -449,13 +449,13 @@ sub handle {
 	$param->{'extra-args'} = [map { /^(.*)$/ } @$extra] if $extra;
     }
 
-    my $result = &$func($param);
+    my $result = $func->($param); # the actual API code execution call
 
-    # todo: this is only to be safe - disable?
-    if (my $schema = $info->{returns}) {
+    if ($result_verification && (my $schema = $info->{returns})) {
+	# return validation is rather lose-lose, as it can require quite a bit of time and lead to
+	# false-positive errors, any HTTP API handler should avoid enabling it by default.
 	PVE::JSONSchema::validate($result, $schema, "Result verification failed\n");
     }
-
     return $result;
 }
 
@@ -861,7 +861,7 @@ sub cli_handler {
 	    $replace_file_names_with_contents->($param, $param_map);
 	}
 
-	$res = $self->handle($info, $param);
+	$res = $self->handle($info, $param, 1);
     };
     if (my $err = $@) {
 	my $ec = ref($err);
