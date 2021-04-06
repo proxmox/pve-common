@@ -1388,8 +1388,10 @@ sub unpack_sockaddr_in46 {
 
 sub getaddrinfo_all {
     my ($hostname, @opts) = @_;
-    my %hints = ( flags => AI_V4MAPPED | AI_ALL,
-                  @opts );
+    my %hints = (
+	flags => AI_V4MAPPED | AI_ALL,
+	@opts,
+    );
     my ($err, @res) = Socket::getaddrinfo($hostname, '0', \%hints);
     die "failed to get address info for: $hostname: $err\n" if $err;
     return @res;
