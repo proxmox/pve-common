@@ -1156,6 +1156,8 @@ sub upid_read_status {
 	    return 'OK';
 	} elsif ($line =~ m/^TASK ERROR: (.+)$/) {
 	    return $1;
+	} elsif ($line =~ m/^TASK (WARNINGS: \d+)$/) {
+	    return $1;
 	} else {
 	    return "unexpected status";
 	}

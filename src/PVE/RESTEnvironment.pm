@@ -115,7 +115,10 @@ sub init {
     # priv ... access from private server (pvedaemon)
     # ha   ... access from HA resource manager agent (pve-ha-manager)
 
-    my $self = { type => $type };
+    my $self = {
+	type => $type,
+	warning_count => 0,
+    };
 
     bless $self, $class;
 
@@ -448,13 +451,15 @@ my $tee_worker = sub {
 	    }
 	}
 
-	# get status (error or OK)
 	POSIX::read($ctrlfd, $readbuf, 4096);
 	if ($readbuf =~ m/^TASK OK\n?$/) {
 	    # skip printing to stdout
 	    print $taskfh $readbuf;
 	} elsif ($readbuf =~ m/^TASK ERROR: (.*)\n?$/) {
 	    print STDERR "$1\n";
+	    print $taskfh "\n$readbuf"; # ensure start on new line for webUI
+	} elsif ($readbuf =~ m/^TASK WARNINGS: (\d+)\n?$/) {
+	    print STDERR "Task finished with $1 warning(s)!\n";
 	    print $taskfh "\n$readbuf"; # ensure start on new line for webUI
 	} else {
 	    die "got unexpected control message: $readbuf\n";
@@ -617,6 +622,9 @@ sub fork_worker {
 	    syslog('err', $err);
 	    $msg = "TASK ERROR: $err\n";
 	    $exitcode = -1;
+	} elsif (my $warnings = $self->{warning_count}) {
+	    $msg = "TASK WARNINGS: $warnings\n";
+	    $exitcode = 0;
 	} else {
 	    $msg = "TASK OK\n";
 	    $exitcode = 0;
@@ -701,6 +709,16 @@ sub fork_worker {
     }
 
     return wantarray ? ($upid, $res) : $upid;
+}
+
+sub warn {
+    my ($self, $message) = @_;
+
+    chomp($message);
+
+    print STDERR "WARN: $message\n";
+
+    $self->{warning_count}++;
 }
 
 # Abstract function
