@@ -1078,10 +1078,14 @@ sub __read_etc_network_interfaces {
 		$ifaces->{$1}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
-	} elsif ($iface =~ m/^(\S+)\.\d+$/ || $d->{'vlan-raw-device'}) {
+	} elsif ($iface =~ m/^(\S+)\.(\d+)$/ || $d->{'vlan-raw-device'}) {
 	    $d->{type} = 'vlan';
 
-	    my $raw_iface = $d->{'vlan-raw-device'} ? $d->{'vlan-raw-device'} : $1;
+	    $d->{'vlan-raw-device'} = $1 if $1 && !$d->{'vlan-raw-device'};
+	    $d->{'vlan-id'} = $2 if $2;
+
+	    my $raw_iface = $d->{'vlan-raw-device'};
+
 	    if (defined ($ifaces->{$raw_iface})) {
 		$d->{exists} = $ifaces->{$raw_iface}->{exists};
 	    } else {
