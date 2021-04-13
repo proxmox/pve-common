@@ -273,20 +273,26 @@ sub parse_idmap {
     return $map;
 }
 
-register_format('storagepair', \&verify_storagepair);
-sub verify_storagepair {
-    my ($storagepair, $noerr) = @_;
+my $verify_idpair = sub {
+    my ($input, $noerr, $format) = @_;
 
-    # note: this only checks a single list entry
-    # when using a storagepair-list map, you need to pass the full
-    # parameter to parse_idmap
-    eval { parse_idmap($storagepair, 'pve-storage-id') };
+    eval { parse_idmap($input, $format) };
     if ($@) {
 	return undef if $noerr;
 	die "$@\n";
     }
 
-    return $storagepair;
+    return $input;
+};
+
+# note: this only checks a single list entry
+# when using a storagepair-list map, you need to pass the full parameter to
+# parse_idmap
+register_format('storagepair', \&verify_storagepair);
+sub verify_storagepair {
+    my ($storagepair, $noerr) = @_;
+    return $verify_idpair->($storagepair, $noerr, 'pve-storage-id');
+}
 }
 
 register_format('mac-addr', \&pve_verify_mac_addr);
