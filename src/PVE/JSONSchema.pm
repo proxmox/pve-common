@@ -293,7 +293,6 @@ sub verify_storagepair {
     my ($storagepair, $noerr) = @_;
     return $verify_idpair->($storagepair, $noerr, 'pve-storage-id');
 }
-}
 
 register_format('mac-addr', \&pve_verify_mac_addr);
 sub pve_verify_mac_addr {
