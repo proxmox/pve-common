@@ -1183,7 +1183,10 @@ sub validate {
     # we can disable that in the final release
     # todo: is there a better/faster way to detect cycles?
     my $cycles = 0;
-    find_cycle($instance, sub { $cycles = 1 });
+    # 'download' responses can contain a filehandle, don't cycle-check that as
+    # it produces a warning
+    my $is_download = ref($instance) eq 'HASH' && exists($instance->{download});
+    find_cycle($instance, sub { $cycles = 1 }) if !$is_download;
     if ($cycles) {
 	add_error($errors, undef, "data structure contains recursive cycles");
     } elsif ($schema) {
