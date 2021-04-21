@@ -139,8 +139,9 @@ my sub do_raw_client_cmd {
 
     my $use_crypto = $USE_CRYPT_PARAMS->{$client_cmd};
 
-    my $client_exe = '/usr/bin/proxmox-backup-client';
-    die "executable not found '$client_exe'! Proxmox backup client not installed?\n"
+    my $client_exe = (delete $opts{binary}) || 'proxmox-backup-client';
+    $client_exe = "/usr/bin/$client_exe";
+    die "executable not found '$client_exe'! Proxmox backup client or file restore not installed?\n"
 	if ! -x $client_exe;
 
     my $scfg = $self->{scfg};
@@ -193,10 +194,12 @@ my sub run_raw_client_cmd {
 }
 
 my sub run_client_cmd {
-    my ($self, $client_cmd, $param, $no_output) = @_;
+    my ($self, $client_cmd, $param, $no_output, $binary) = @_;
 
     my $json_str = '';
     my $outfunc = sub { $json_str .= "$_[0]\n" };
+
+    $binary //= 'proxmox-backup-client';
 
     $param = [] if !defined($param);
     $param = [ $param ] if !ref($param);
@@ -204,11 +207,12 @@ my sub run_client_cmd {
     $param = [@$param, '--output-format=json'] if !$no_output;
 
     do_raw_client_cmd(
-        $self,
-        $client_cmd,
-        $param,
-        outfunc => $outfunc,
-        errmsg => 'proxmox-backup-client failed'
+	$self,
+	$client_cmd,
+	$param,
+	outfunc => $outfunc,
+	errmsg => "$binary failed",
+	binary => $binary,
     );
 
     return undef if $no_output;
