@@ -335,4 +335,15 @@ sub status {
     return ($total, $free, $used, $active);
 };
 
+sub file_restore_list {
+    my ($self, $snapshot, $filepath, $base64) = @_;
+    return run_client_cmd(
+	$self,
+	"list",
+	[ $snapshot, $filepath, "--base64", $base64 ? 1 : 0 ],
+	0,
+	"proxmox-file-restore",
+    );
+}
+
 1;
