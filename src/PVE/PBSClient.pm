@@ -133,6 +133,8 @@ my $USE_CRYPT_PARAMS = {
     backup => 1,
     restore => 1,
     'upload-log' => 1,
+    list => 1,
+    extract => 1,
 };
 
 my sub do_raw_client_cmd {
