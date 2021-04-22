@@ -141,7 +141,7 @@ my sub do_raw_client_cmd {
 
     my $client_exe = (delete $opts{binary}) || 'proxmox-backup-client';
     $client_exe = "/usr/bin/$client_exe";
-    die "executable not found '$client_exe'! Proxmox backup client or file restore not installed?\n"
+    die "executable not found '$client_exe'! proxmox-backup-client or proxmox-backup-file-restore not installed?\n"
 	if ! -x $client_exe;
 
     my $scfg = $self->{scfg};
