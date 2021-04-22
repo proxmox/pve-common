@@ -5,9 +5,10 @@ use strict;
 use warnings;
 
 use Fcntl qw(F_GETFD F_SETFD FD_CLOEXEC);
+use File::Temp qw(tempdir);
 use IO::File;
 use JSON;
-use POSIX qw(strftime ENOENT);
+use POSIX qw(mkfifo strftime ENOENT);
 
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::Tools qw(run_command file_set_contents file_get_contents file_read_firstline $IPV6RE);
@@ -344,6 +345,59 @@ sub file_restore_list {
 	0,
 	"proxmox-file-restore",
     );
+}
+
+# call sync from API, returns a fifo path for streaming data to clients,
+# pass it to file_restore_extract to start transfering data
+sub file_restore_extract_prepare {
+    my ($self) = @_;
+
+    my $tmpdir = tempdir();
+    mkfifo("$tmpdir/fifo", 0600)
+	or die "creating file download fifo '$tmpdir/fifo' failed: $!\n";
+
+    # allow reading data for proxy user
+    my $wwwid = getpwnam('www-data') ||
+	die "getpwnam failed";
+    chown $wwwid, -1, "$tmpdir"
+	or die "changing permission on fifo dir '$tmpdir' failed: $!\n";
+    chown $wwwid, -1, "$tmpdir/fifo"
+	or die "changing permission on fifo '$tmpdir/fifo' failed: $!\n";
+
+    return "$tmpdir/fifo";
+}
+
+# this blocks while data is transfered, call this from a background worker
+sub file_restore_extract {
+    my ($self, $output_file, $snapshot, $filepath, $base64) = @_;
+
+    my $ret = eval {
+	local $SIG{ALRM} = sub { die "got timeout\n" };
+	alarm(30);
+	sysopen(my $fh, "$output_file", O_WRONLY)
+	    or die "open target '$output_file' for writing failed: $!\n";
+	alarm(0);
+
+	my $fn = fileno($fh);
+	my $errfunc = sub { print $_[0], "\n"; };
+
+	return run_raw_client_cmd(
+	    $self,
+            "extract",
+	    [ $snapshot, $filepath, "-", "--base64", $base64 ? 1 : 0 ],
+	    binary => "proxmox-file-restore",
+	    errfunc => $errfunc,
+	    output => ">&$fn",
+	);
+    };
+    my $err = $@;
+
+    unlink($output_file);
+    $output_file =~ s/fifo$//;
+    rmdir($output_file) if -d $output_file;
+
+    die "file restore task failed: $err" if $err;
+    return $ret;
 }
 
 1;
