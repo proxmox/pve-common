@@ -1,3 +1,18 @@
+libpve-common-perl (6.4-1) pve pmg; urgency=medium
+
+  * cli: get options: don't set optional positional params to `undef`
+
+  * JSONSchema: don't cycle-check 'download' responses
+
+  * daemon: create_reusable_socket: listen on IPv6 and IPv4
+
+  * PBS client: add file-restore helper
+
+  * allow workers to log and count warnings, providing the WARNING finish-state
+    for tasks which encounered some non-fatal problems
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 23 Apr 2021 14:59:51 +0200
+
 libpve-common-perl (6.3-5) pve pmg; urgency=medium
 
   * network: get_local_ip_from_cidr: filter to only return unique IPs
