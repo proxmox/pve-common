@@ -140,12 +140,11 @@ my $USE_CRYPT_PARAMS = {
 my sub do_raw_client_cmd {
     my ($self, $client_cmd, $param, %opts) = @_;
 
+    my $client_bin = (delete $opts{binary}) || 'proxmox-backup-client';
     my $use_crypto = $USE_CRYPT_PARAMS->{$client_cmd};
 
-    my $client_exe = (delete $opts{binary}) || 'proxmox-backup-client';
-    $client_exe = "/usr/bin/$client_exe";
-    die "executable not found '$client_exe'! proxmox-backup-client or proxmox-backup-file-restore not installed?\n"
-	if ! -x $client_exe;
+    my $client_exe = "/usr/bin/$client_bin";
+    die "executable not found '$client_exe'! $client_bin not installed?\n" if ! -x $client_exe;
 
     my $scfg = $self->{scfg};
     my $repo = get_repository($scfg);
