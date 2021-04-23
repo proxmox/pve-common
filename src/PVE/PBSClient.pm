@@ -130,18 +130,22 @@ my sub open_encryption_key {
 }
 
 my $USE_CRYPT_PARAMS = {
-    backup => 1,
-    restore => 1,
-    'upload-log' => 1,
-    list => 1,
-    extract => 1,
+    'proxmox-backup-client' => {
+	backup => 1,
+	restore => 1,
+	'upload-log' => 1,
+    },
+    'proxmox-file-restore' => {
+	list => 1,
+	extract => 1,
+    },
 };
 
 my sub do_raw_client_cmd {
     my ($self, $client_cmd, $param, %opts) = @_;
 
     my $client_bin = (delete $opts{binary}) || 'proxmox-backup-client';
-    my $use_crypto = $USE_CRYPT_PARAMS->{$client_cmd};
+    my $use_crypto = $USE_CRYPT_PARAMS->{$client_bin}->{$client_cmd} // 0;
 
     my $client_exe = "/usr/bin/$client_bin";
     die "executable not found '$client_exe'! $client_bin not installed?\n" if ! -x $client_exe;
