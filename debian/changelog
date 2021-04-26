@@ -1,3 +1,15 @@
+libpve-common-perl (6.4-2) pve pmg; urgency=medium
+
+  * INotify: add support for a loopback like "dummy" interfaces type required
+    for bgp with multipath/ecmp to have a unique src ip
+
+  * REST handler: make potentially resource intensive API return validation
+    opt-in, enable it only in the CLI handler by default. It was not really
+    useful anyway, and most of the time we had false positives due to the
+    schema missing some optional property.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 26 Apr 2021 19:34:21 +0200
+
 libpve-common-perl (6.4-1) pve pmg; urgency=medium
 
   * cli: get options: don't set optional positional params to `undef`
