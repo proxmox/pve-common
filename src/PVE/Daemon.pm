@@ -820,7 +820,6 @@ sub create_reusable_socket {
     } else {
 
 	$socket = IO::Socket::IP->new(
-	    Domain => PF_INET6,
 	    LocalHost => $host,
 	    LocalPort => $port,
 	    Listen => SOMAXCONN,
