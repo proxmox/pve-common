@@ -819,14 +819,23 @@ sub create_reusable_socket {
 	$socket->fcntl(Fcntl::F_SETFD(), Fcntl::FD_CLOEXEC);
     } else {
 
-	$socket = IO::Socket::IP->new(
-	    LocalHost => $host,
+	my %sockargs = (
 	    LocalPort => $port,
 	    Listen => SOMAXCONN,
 	    Proto  => 'tcp',
 	    GetAddrInfoFlags => 0,
-	    ReuseAddr => 1) ||
-	    die "unable to create socket - $@\n";
+	    ReuseAddr => 1,
+	);
+	if (defined($host)) {
+	    $socket = IO::Socket::IP->new( LocalHost => $host, %sockargs) ||
+		die "unable to create socket - $@\n";
+	} else {
+	    # disabling AF_INET6 (by adding ipv6.disable=1 to the kernel cmdline)
+	    # causes bind on :: to fail, try 0.0.0.0 in that case
+	    $socket = IO::Socket::IP->new( LocalHost => '::', %sockargs) //
+		IO::Socket::IP->new( LocalHost => '0.0.0.0', %sockargs);
+	    die "unable to create socket - $@\n" if !$socket;
+	}
 
 	# we often observe delays when using Nagle algorithm,
 	# so we disable that to maximize performance
