@@ -799,7 +799,7 @@ sub register_status_command {
 # some useful helper
 
 sub create_reusable_socket {
-    my ($self, $port, $host) = @_;
+    my ($self, $port, $host, $family) = @_;
 
     die "no port specifed" if !$port;
 
@@ -818,7 +818,6 @@ sub create_reusable_socket {
 
 	$socket->fcntl(Fcntl::F_SETFD(), Fcntl::FD_CLOEXEC);
     } else {
-
 	my %sockargs = (
 	    LocalPort => $port,
 	    Listen => SOMAXCONN,
@@ -826,7 +825,16 @@ sub create_reusable_socket {
 	    GetAddrInfoFlags => 0,
 	    ReuseAddr => 1,
 	);
-	if (defined($host)) {
+
+	# FIXME: drop this if clause and the $family parameter with 7.0:
+	# compat code for pmgproxy
+	if (defined($family)) {
+	    $socket = IO::Socket::IP->new(
+		Family => $family,
+		LocalHost => $host,
+		%sockargs) ||
+		die "unable to create socket - $@\n";
+	} elsif (defined($host)) {
 	    $socket = IO::Socket::IP->new( LocalHost => $host, %sockargs) ||
 		die "unable to create socket - $@\n";
 	} else {
