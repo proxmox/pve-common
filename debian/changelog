@@ -1,3 +1,11 @@
+libpve-common-perl (6.4-3) pve pmg; urgency=medium
+
+  * daemon: explicitly bind to the general wildcard address and fall back to
+    the IPv4 one if socket creation fails, as then IPv6 is highly probable
+    disabled for the setup
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 07 May 2021 16:24:29 +0200
+
 libpve-common-perl (6.4-2) pve pmg; urgency=medium
 
   * INotify: add support for a loopback like "dummy" interfaces type required
