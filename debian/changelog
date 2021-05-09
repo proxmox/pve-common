@@ -1,3 +1,9 @@
+libpve-common-perl (7.0-1) bullseye; urgency=medium
+
+  * re-build for Debian 11 Bullseye based releases
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 09 May 2021 17:29:22 +0200
+
 libpve-common-perl (6.4-3) pve pmg; urgency=medium
 
   * daemon: explicitly bind to the general wildcard address and fall back to
