@@ -10,6 +10,7 @@ use PVE::Tools qw(run_command lock_file);
 use File::Basename;
 use IO::Socket::IP;
 use Net::IP;
+use NetAddr::IP qw(:lower);
 use POSIX qw(ECONNREFUSED);
 use Socket qw(NI_NUMERICHOST NI_NUMERICSERV);
 
@@ -653,6 +654,15 @@ sub lock_network {
     my $res = lock_file('/var/lock/pve-network.lck', 10, $code, @param);
     die $@ if $@;
     return $res;
+}
+
+# the canonical form of the given IP, i.e. dotted quad for IPv4 and RFC 5952 for IPv6
+sub canonical_ip {
+    my ($ip) = @_;
+
+    my $ip_obj = NetAddr::IP->new($ip) or die "invalid IP string '$ip'\n";
+
+    return $ip_obj->canon();
 }
 
 1;
