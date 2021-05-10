@@ -665,4 +665,24 @@ sub canonical_ip {
     return $ip_obj->canon();
 }
 
+# List of unique, canonical IPs in the provided list.
+# Keeps the original order, filtering later duplicates.
+sub unique_ips {
+    my ($ips) = @_;
+
+    my $res = [];
+    my $seen = {};
+
+    for my $ip (@{$ips}) {
+	$ip = canonical_ip($ip);
+
+	next if $seen->{$ip};
+
+	$seen->{$ip} = 1;
+	push @{$res}, $ip;
+    }
+
+    return $res;
+}
+
 1;
