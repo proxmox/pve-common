@@ -592,7 +592,9 @@ sub is_ip_in_cidr {
     my $ip_obj = Net::IP->new($ip, $version);
     return undef if !$ip_obj;
 
-    return $cidr_obj->overlaps($ip_obj) == $Net::IP::IP_B_IN_A_OVERLAP;
+    my $overlap = $cidr_obj->overlaps($ip_obj);
+
+    return $overlap == $Net::IP::IP_B_IN_A_OVERLAP || $overlap == $Net::IP::IP_IDENTICAL;
 }
 
 
