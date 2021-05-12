@@ -1171,6 +1171,14 @@ sub upid_read_status {
     return "unable to read tail (got $br bytes)";
 }
 
+# Check if the status returned by upid_read_status is an error status.
+# If the status could not be parsed it's also treated as an error.
+sub upid_status_is_error {
+    my ($status) = @_;
+
+    return !($status eq 'OK' || $status =~ m/^WARNINGS: \d+$/);
+}
+
 # useful functions to store comments in config files
 sub encode_text {
     my ($text) = @_;
