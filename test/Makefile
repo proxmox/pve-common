@@ -10,7 +10,7 @@ check: lock_file.test calendar_event_test.test convert_size_test.test procfs_tes
 	for d in $(SUBDIRS); do $(MAKE) -C $$d check; done
 
 %.test: %.pl
-	./$<
+	TZ=UTC-1 ./$<
 
 distclean: clean
 clean:
