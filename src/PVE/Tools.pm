@@ -105,6 +105,11 @@ use constant {O_PATH    => 0x00200000,
 use constant {AT_EMPTY_PATH => 0x1000,
               AT_FDCWD => -100};
 
+# from <linux/fs.h>
+use constant {RENAME_NOREPLACE => (1 << 0),
+              RENAME_EXCHANGE  => (1 << 1),
+              RENAME_WHITEOUT  => (1 << 2)};
+
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
 
@@ -1460,6 +1465,11 @@ sub syncfs($) {
 sub fsync($) {
     my ($fileno) = @_;
     return 0 == syscall(PVE::Syscall::fsync, $fileno);
+}
+
+sub renameat2($$$$$) {
+    my ($olddirfd, $oldpath, $newdirfd, $newpath, $flags) = @_;
+    return 0 == syscall(PVE::Syscall::renameat2, $olddirfd, $oldpath, $newdirfd, $newpath, $flags);
 }
 
 sub sync_mountpoint {

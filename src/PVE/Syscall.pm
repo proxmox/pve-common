@@ -17,6 +17,7 @@ BEGIN {
 	setresuid => &SYS_setresuid,
 	fchownat => &SYS_fchownat,
 	mount => &SYS_mount,
+	renameat2 => &SYS_renameat2,
 
 	# These use asm-generic, so they're the same across (sane) architectures. We use numbers
 	# since they're not in perl's syscall.ph yet...
