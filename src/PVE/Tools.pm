@@ -1829,52 +1829,43 @@ sub safe_compare {
 }
 
 
-# opts
-#  -> hash_required
-#       if 1, at least one checksum has to be specified otherwise an error will be thrown
-#  -> http_proxy
-#  -> https_proxy
-#  -> verify_certificates
-#  -> sha(1|224|256|384|512)sum
-#  -> md5sum
+# opts is a hash ref with the following known properties
+#  hash_required - if 1, at least one checksum has to be specified otherwise an error will be thrown
+#  http_proxy
+#  https_proxy
+#  verify_certificates - if 0 (false) we tell wget to ignore untrusted TLS certs. Default to true
+#  md5sum|sha(1|224|256|384|512)sum - the respective expected checksum string
 sub download_file_from_url {
     my ($dest, $url, $opts) = @_;
 
-    my $tmpdest = "$dest.tmp.$$";
-
-    my $algorithm;
-    my $expected;
-
+    my ($checksum_algorithm, $checksum_expected);
     for ('sha512', 'sha384', 'sha256', 'sha224', 'sha1', 'md5') {
 	if (defined($opts->{"${_}sum"})) {
-	    $algorithm = $_;
-	    $expected = $opts->{"${_}sum"};
+	    $checksum_algorithm = $_;
+	    $checksum_expected = $opts->{"${_}sum"};
 	    last;
 	}
     }
+    die "checksum required but not specified\n" if ($opts->{hash_required} && !$checksum_algorithm);
 
-    die "checksum required but not specified\n" if ($opts->{hash_required} && !$algorithm);
+    print "downloading $url to $dest\n";
 
-    my $worker = sub  {
-	my $upid = shift;
+    my $tmpdest = "$dest.tmp.$$";
+    eval {
+	if (-f $dest && $checksum_algorithm) {
+	    print "calculating checksum of existing file...";
+	    my $checksum_got = get_file_hash($checksum_algorithm, $dest);
 
-	print "downloading $url to $dest\n";
-
-	eval {
-	    if (-f $dest && $algorithm) {
-		print "calculating checksum of existing file...\n";
-		my $correct = check_file_hash($algorithm, $expected, $dest);
-
-		if ($correct) {
-		    print "file already exists, no need to download\n";
-		    return;
-		} else {
-		    print "mismatch, downloading\n";
-		}
+	    if (lc($checksum_got) eq lc($checksum_expected)) {
+		print "OK, got correct file already, no need to download\n";
+		return;
+	    } else {
+		# we could re-download, but may not be safe so just abort for now..
+		die "mismatch (got '$checksum_got' != expect '$checksum_expected'), aborting\n";
 	    }
+	}
 
-	    my @cmd = ('/usr/bin/wget', '--progress=dot:mega', '-O', $tmpdest, $url);
-
+	{ # limit the scope of the ENV change
 	    local %ENV;
 	    if ($opts->{http_proxy}) {
 		$ENV{http_proxy} = $opts->{http_proxy};
@@ -1883,55 +1874,39 @@ sub download_file_from_url {
 		$ENV{https_proxy} = $opts->{https_proxy};
 	    }
 
-	    my $verify = $opts->{verify_certificates} // 1;
-	    if (!$verify) {
-		push @cmd, '--no-check-certificate';
+	    my $cmd = ['wget', '--progress=dot:giga', '-O', $tmpdest, $url];
+
+	    if (!($opts->{verify_certificates} // 1)) { # default to true
+		push @$cmd, '--no-check-certificate';
 	    }
 
-	    if (run_command([[@cmd]]) != 0) {
-		die "download failed: $!\n";
-	    }
-
-	    if ($algorithm) {
-		print "calculating checksum...\n";
-
-		my $correct = check_file_hash($algorithm, $expected, $tmpdest);
-
-		if ($correct) {
-		    print "checksum verified\n";
-		} else {
-		    die "checksum mismatch\n";
-		}
-	    } else {
-		print "no checksum for verification specified\n";
-	    }
-
-	    if (!rename($tmpdest, $dest)) {
-		die "unable to save file: $!\n";
-	    }
-	};
-	my $err = $@;
-
-	unlink $tmpdest;
-
-	if ($err) {
-	    print "\n";
-	    die $err;
+	    run_command($cmd, errmsg => "download failed");
 	}
 
-	print "download finished\n";
+	if ($checksum_algorithm) {
+	    print "calculating checksum...";
+
+	    my $checksum_got = get_file_hash($checksum_algorithm, $tmpdest);
+
+	    if (lc($checksum_got) eq lc($checksum_expected)) {
+		print "OK, checksum verified\n";
+	    } else {
+		die "ERRROR, checksum mismatch: got '$checksum_got' != expect '$checksum_expected'\n";
+	    }
+	}
+
+	rename($tmpdest, $dest) or die "unable to rename temporary file: $!\n";
     };
+    if (my $err = $@) {
+	unlink $tmpdest or warn "could not cleanup temporary file: $!";
+	die $err;
+    }
 
-    my $rpcenv = PVE::RPCEnvironment::get();
-    my $user = $rpcenv->get_user();
-
-    (my $filename = $dest) =~ s!.*/([^/]*)$!$1!;
-
-    return $rpcenv->fork_worker('download', $filename, $user, $worker);
+    print "download of '$url' to '$dest' finished\n";
 }
 
-sub check_file_hash {
-    my ($algorithm, $expected, $filename) = @_;
+sub get_file_hash {
+    my ($algorithm, $filename) = @_;
 
     my $algorithm_map = {
 	'md5' => sub { Digest::MD5->new },
@@ -1949,7 +1924,7 @@ sub check_file_hash {
 
     my $digest = $digester->addfile($fh)->hexdigest;
 
-    return lc($digest) eq lc($expected);
+    return lc($digest);
 }
 
 1;
