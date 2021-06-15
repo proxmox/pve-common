@@ -1908,7 +1908,7 @@ sub download_file_from_url {
 	    if (lc($checksum_got) eq lc($checksum_expected)) {
 		print "OK, checksum verified\n";
 	    } else {
-		die "ERRROR, checksum mismatch: got '$checksum_got' != expect '$checksum_expected'\n";
+		die "ERROR, checksum mismatch: got '$checksum_got' != expect '$checksum_expected'\n";
 	    }
 	}
 
