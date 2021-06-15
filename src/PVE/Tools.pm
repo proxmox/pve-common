@@ -2,6 +2,7 @@ package PVE::Tools;
 
 use strict;
 use warnings;
+
 use POSIX qw(EINTR EEXIST EOPNOTSUPP);
 use IO::Socket::IP;
 use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED AI_CANONNAME SOCK_DGRAM IPPROTO_TCP);
@@ -25,6 +26,8 @@ use String::ShellQuote;
 use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
 use Scalar::Util 'weaken';
 use Date::Format qw(time2str);
+use Digest::SHA;
+use Digest::MD5;
 
 use PVE::Syscall;
 
