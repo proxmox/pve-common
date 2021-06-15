@@ -1865,6 +1865,11 @@ sub download_file_from_url {
 	    }
 	}
 
+	local $SIG{INT} = sub {
+	    unlink $tmpdest or warn "could not cleanup temporary file: $!";
+	    die "got interrupted by signal\n";
+	};
+
 	{ # limit the scope of the ENV change
 	    local %ENV;
 	    if ($opts->{http_proxy}) {
