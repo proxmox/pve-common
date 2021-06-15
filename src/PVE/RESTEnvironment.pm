@@ -7,17 +7,18 @@ package PVE::RESTEnvironment;
 
 use strict;
 use warnings;
-use POSIX qw(:sys_wait_h EINTR);
-use IO::Handle;
-use IO::File;
-use IO::Select;
+
 use Fcntl qw(:flock);
+use IO::File;
+use IO::Handle;
+use IO::Select;
+use POSIX qw(:sys_wait_h EINTR);
+
 use PVE::Exception qw(raise raise_perm_exc);
-use PVE::SafeSyslog;
-use PVE::Tools;
 use PVE::INotify;
 use PVE::ProcFSTools;
-
+use PVE::SafeSyslog;
+use PVE::Tools;
 
 my $rest_env;
 

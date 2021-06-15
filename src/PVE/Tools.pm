@@ -3,31 +3,30 @@ package PVE::Tools;
 use strict;
 use warnings;
 
-use POSIX qw(EINTR EEXIST EOPNOTSUPP);
-use IO::Socket::IP;
-use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED AI_CANONNAME SOCK_DGRAM IPPROTO_TCP);
-use IO::Select;
+use Date::Format qw(time2str);
+use Digest::MD5;
+use Digest::SHA;
+use Encode;
+use Fcntl qw(:DEFAULT :flock);
 use File::Basename;
 use File::Path qw(make_path);
 use Filesys::Df (); # don't overwrite our df()
-use IO::Pipe;
-use IO::File;
 use IO::Dir;
+use IO::File;
 use IO::Handle;
+use IO::Pipe;
+use IO::Select;
+use IO::Socket::IP;
 use IPC::Open3;
-use Fcntl qw(:DEFAULT :flock);
-use base 'Exporter';
-use URI::Escape;
-use Encode;
-use Digest::SHA;
 use JSON;
-use Text::ParseWords;
-use String::ShellQuote;
-use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
+use POSIX qw(EINTR EEXIST EOPNOTSUPP);
 use Scalar::Util 'weaken';
-use Date::Format qw(time2str);
-use Digest::SHA;
-use Digest::MD5;
+use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED AI_CANONNAME SOCK_DGRAM IPPROTO_TCP);
+use String::ShellQuote;
+use Text::ParseWords;
+use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
+use URI::Escape;
+use base 'Exporter';
 
 use PVE::Syscall;
 
