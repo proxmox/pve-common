@@ -1862,22 +1862,22 @@ sub download_file_from_url {
 
     print "downloading $url to $dest\n";
 
+    if (-f $dest && $checksum_algorithm) {
+	print "calculating checksum of existing file...";
+	my $checksum_got = get_file_hash($checksum_algorithm, $dest);
+
+	if (lc($checksum_got) eq lc($checksum_expected)) {
+	    print "OK, got correct file already, no need to download\n";
+	    return;
+	} else {
+	    # we could re-download, but may not be safe so just abort for now..
+	    print "\n";  # the front end expects the error to reside at the last line without any noise
+	    die "checksum mismatch: got '$checksum_got' != expect '$checksum_expected', aborting\n";
+	}
+    }
+
     my $tmpdest = "$dest.tmp.$$";
     eval {
-	if (-f $dest && $checksum_algorithm) {
-	    print "calculating checksum of existing file...";
-	    my $checksum_got = get_file_hash($checksum_algorithm, $dest);
-
-	    if (lc($checksum_got) eq lc($checksum_expected)) {
-		print "OK, got correct file already, no need to download\n";
-		return;
-	    } else {
-		# we could re-download, but may not be safe so just abort for now..
-		print "\n";  # the front end expects the error to reside at the last line without any noise
-		die "checksum mismatch: got '$checksum_got' != expect '$checksum_expected', aborting\n";
-	    }
-	}
-
 	local $SIG{INT} = sub {
 	    unlink $tmpdest or warn "could not cleanup temporary file: $!";
 	    die "got interrupted by signal\n";
