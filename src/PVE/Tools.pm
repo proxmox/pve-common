@@ -1873,7 +1873,8 @@ sub download_file_from_url {
 		return;
 	    } else {
 		# we could re-download, but may not be safe so just abort for now..
-		die "mismatch (got '$checksum_got' != expect '$checksum_expected'), aborting\n";
+		print "\n";  # the front end expects the error to reside at the last line without any noise
+		die "checksum mismatch: got '$checksum_got' != expect '$checksum_expected', aborting\n";
 	    }
 	}
 
@@ -1908,7 +1909,8 @@ sub download_file_from_url {
 	    if (lc($checksum_got) eq lc($checksum_expected)) {
 		print "OK, checksum verified\n";
 	    } else {
-		die "ERROR, checksum mismatch: got '$checksum_got' != expect '$checksum_expected'\n";
+		print "\n";  # the front end expects the error to reside at the last line without any noise
+		die "checksum mismatch: got '$checksum_got' != expect '$checksum_expected'\n";
 	    }
 	}
 
