@@ -1,3 +1,17 @@
+libpve-common-perl (7.0-2) bullseye; urgency=medium
+
+  * inotify: read network interfaces: add vlan-id and vlan-raw-device on dot
+    notation vlan interfaces
+
+  * network: is_ip_in_cidr: correctly handle the CIDR being a singleton range
+    (e.g. /32 for IPv4)
+
+  * network: add canonical_ip abd unique_ips helper
+
+  * tools: add download_file_from_url, upid_status_is_error and renameat2 helper
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 17 Jun 2021 16:41:53 +0200
+
 libpve-common-perl (7.0-1) bullseye; urgency=medium
 
   * re-build for Debian 11 Bullseye based releases
