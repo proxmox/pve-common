@@ -197,20 +197,22 @@ sub file_write {
 }
 
 sub pci_device_info {
-    my ($name) = @_;
+    my ($name, $verbose) = @_;
 
     my $res;
 
     return undef if $name !~ m/^${pciregex}$/;
     my ($domain, $bus, $slot, $func) = ($1, $2, $3, $4);
 
-    my $irq = file_read_firstline("$pcisysfs/devices/$name/irq");
+    my $devdir = "$pcisysfs/devices/$name";
+
+    my $irq = file_read_firstline("$devdir/irq");
     return undef if !defined($irq) || $irq !~ m/^\d+$/;
 
-    my $vendor = file_read_firstline("$pcisysfs/devices/$name/vendor");
+    my $vendor = file_read_firstline("$devdir/vendor");
     return undef if !defined($vendor) || $vendor !~ s/^0x//;
 
-    my $product = file_read_firstline("$pcisysfs/devices/$name/device");
+    my $product = file_read_firstline("$devdir/device");
     return undef if !defined($product) || $product !~ s/^0x//;
 
     $res = {
@@ -224,6 +226,25 @@ sub pci_device_info {
 	irq => $irq,
 	has_fl_reset => -f "$pcisysfs/devices/$name/reset" || 0,
     };
+
+    if ($verbose) {
+	my $sub_vendor = file_read_firstline("$devdir/subsystem_vendor");
+	$sub_vendor =~ s/^0x// if defined($sub_vendor);
+	my $sub_device = file_read_firstline("$devdir/subsystem_device");
+	$sub_device =~ s/^0x// if defined($sub_device);
+
+	$res->{subsystem_vendor} = $sub_vendor if defined($sub_vendor);
+	$res->{subsystem_device} = $sub_device if defined($sub_device);
+
+	if (-e "$devdir/iommu_group") {
+	    my ($iommugroup) = (readlink("$devdir/iommu_group") =~ m/\/(\d+)$/);
+	    $res->{iommugroup} = int($iommugroup);
+	}
+
+	if (-d "$devdir/mdev_supported_types") {
+	    $res->{mdev} = 1;
+	}
+    }
 
     return $res;
 }
