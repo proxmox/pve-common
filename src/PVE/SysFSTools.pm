@@ -218,7 +218,7 @@ sub pci_device_info {
     $res = {
 	name => $name,
 	vendor => $vendor,
-	product => $product,
+	device => $product,
 	domain => $domain,
 	bus => $bus,
 	slot => $slot,
@@ -274,7 +274,7 @@ sub pci_dev_bind_to_vfio {
     my $testdir = "$vfio_basedir/$name";
     return 1 if -d $testdir;
 
-    my $data = "$dev->{vendor} $dev->{product}";
+    my $data = "$dev->{vendor} $dev->{device}";
     return undef if !file_write("$vfio_basedir/new_id", $data);
 
     my $fn = "$pcisysfs/devices/$name/driver/unbind";
