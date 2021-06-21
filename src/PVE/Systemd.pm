@@ -3,7 +3,7 @@ package PVE::Systemd;
 use strict;
 use warnings;
 
-use Net::DBus qw(dbus_uint32 dbus_uint64);
+use Net::DBus qw(dbus_uint32 dbus_uint64 dbus_boolean);
 use Net::DBus::Callback;
 use Net::DBus::Reactor;
 
@@ -107,7 +107,9 @@ sub enter_systemd_scope {
     foreach my $key (keys %extra) {
 	if ($key eq 'Slice' || $key eq 'KillMode') {
 	    push @{$properties}, [$key, $extra{$key}];
-	} elsif ($key eq 'CPUShares' || $key eq 'CPUWeight') {
+	} elsif ($key eq 'SendSIGKILL') {
+	    push @{$properties}, [$key, dbus_boolean($extra{$key})];
+	} elsif ($key eq 'CPUShares' || $key eq 'CPUWeight' || $key eq 'TimeoutStopUSec') {
 	    push @{$properties}, [$key, dbus_uint64($extra{$key})];
 	} elsif ($key eq 'CPUQuota') {
 	    push @{$properties}, ['CPUQuotaPerSecUSec',
