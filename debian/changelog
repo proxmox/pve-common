@@ -1,3 +1,11 @@
+libpve-common-perl (7.0-3) bullseye; urgency=medium
+
+  * SysFSTools: add verbose flag to pci_device_info
+
+  * systemd: allow setting SendSIGKILL and TimeoutStopUSec dbus properties
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 23 Jun 2021 12:07:55 +0200
+
 libpve-common-perl (7.0-2) bullseye; urgency=medium
 
   * inotify: read network interfaces: add vlan-id and vlan-raw-device on dot
