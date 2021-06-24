@@ -689,6 +689,18 @@ sub pve_verify_tfa_secret {
     die "unable to decode TFA secret\n";
 }
 
+
+PVE::JSONSchema::register_format('pve-task-status-type', \&verify_task_status_type);
+sub verify_task_status_type {
+    my ($value, $noerr) = @_;
+
+    return $value if $value =~ m/^(ok|error|warning|unknown)$/i;
+
+    return undef if $noerr;
+
+    die "invalid status '$value'\n";
+}
+
 sub check_format {
     my ($format, $value, $path) = @_;
 
