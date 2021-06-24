@@ -723,14 +723,15 @@ register_file('active', "/var/log/pve/tasks/active",
 	      \&write_active_workers);
 
 
-our $bond_modes = { 'balance-rr' => 0,
-		   'active-backup' => 1,
-		   'balance-xor' => 2,
-		   'broadcast' => 3,
-		   '802.3ad' => 4,
-		   'balance-tlb' => 5,
-		   'balance-alb' => 6,
-	       };
+our $bond_modes = {
+    'balance-rr' => 0,
+    'active-backup' => 1,
+    'balance-xor' => 2,
+    'broadcast' => 3,
+    '802.3ad' => 4,
+    'balance-tlb' => 5,
+    'balance-alb' => 6,
+};
 
 my $ovs_bond_modes = {
     'active-backup' => 1,
