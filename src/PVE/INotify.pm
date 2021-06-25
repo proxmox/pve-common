@@ -1156,6 +1156,10 @@ sub __read_etc_network_interfaces {
 	$d->{method} = 'manual' if !$d->{method};
 	$d->{method6} = 'manual' if !$d->{method6};
 
+	if (my $comments6 = delete $d->{comments6}) {
+	    $d->{comments} = ($d->{comments} // '') . $comments6;
+	}
+
 	$d->{families} ||= ['inet'];
     }
 
@@ -1242,7 +1246,7 @@ sub __interface_to_string {
     my $done = { type => 1, priority => 1, method => 1, active => 1, exists => 1,
 		 comments => 1, autostart => 1, options => 1,
 		 address => 1, netmask => 1, gateway => 1, broadcast => 1,
-		 method6 => 1, families => 1, options6 => 1,
+		 method6 => 1, families => 1, options6 => 1, comments6 => 1,
 		 address6 => 1, netmask6 => 1, gateway6 => 1, broadcast6 => 1, 'uplink-id' => 1 };
 
     if (!$first_block) {
@@ -1731,6 +1735,11 @@ NETWORKDOC
 	    } else {
 		$raw .= "auto $iface\n";
 	    }
+	}
+
+	# if 'inet6' is the only family
+	if (scalar($d->{families}->@*) == 1 && $d->{families}[0] eq 'inet6') {
+	    $d->{comments6} = delete $d->{comments};
 	}
 
 	my $i = 0; # some options should be printed only once
