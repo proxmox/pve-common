@@ -1179,16 +1179,13 @@ sub upid_status_is_error {
     return !($status eq 'OK' || $status =~ m/^WARNINGS: \d+$/);
 }
 
-# takes the parsed status and returns the type,
-# either ok, warning, error or unknown
-sub upid_get_status_type {
+# takes the parsed status and returns the type, either ok, warning, error or unknown
+sub upid_normalize_status_type {
     my ($status) = @_;
 
     if (!$status) {
 	return 'unknown';
-    }
-
-    if ($status eq 'OK') {
+    } elsif ($status eq 'OK') {
 	return 'ok';
     } elsif ($status =~ m/^WARNINGS: \d+$/) {
 	return 'warning';
