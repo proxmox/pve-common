@@ -1,3 +1,14 @@
+libpve-common-perl (7.0-4) bullseye; urgency=medium
+
+  * tools: add upid_normalize_status_type helper
+
+  * JSON schema: add pve-task-status-type format
+
+  * fix #3153: INotify: adding comment of interface to inet6 section when this
+    is the only section
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 28 Jun 2021 14:57:20 +0200
+
 libpve-common-perl (7.0-3) bullseye; urgency=medium
 
   * SysFSTools: add verbose flag to pci_device_info
