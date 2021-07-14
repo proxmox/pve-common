@@ -341,13 +341,11 @@ sub get_memory_stat {
     } elsif ($ver == 2) {
 	my $mem = file_get_contents("$path/memory.current");
 	my $swap = file_get_contents("$path/memory.swap.current");
+	my $stat = parse_flat_keyed_file(file_get_contents("$path/memory.stat"));
 
 	chomp ($mem, $swap);
 
-	# FIXME: For the cgv1 equivalent of `total_cache` we may need to sum up
-	# the values in `memory.stat`...
-
-	$res->{mem} = $mem;
+	$res->{mem} = $mem - $stat->{file};
 	$res->{swap} = $swap;
     } elsif ($ver == 1) {
 	# cgroupv1 environment:
