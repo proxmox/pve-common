@@ -1,3 +1,9 @@
+libpve-common-perl (7.0-5) bullseye; urgency=medium
+
+  * fix #3527: cgroup: drop file buffers from memory usage
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 14 Jul 2021 11:50:46 +0200
+
 libpve-common-perl (7.0-4) bullseye; urgency=medium
 
   * tools: add upid_normalize_status_type helper
