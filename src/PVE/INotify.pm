@@ -1214,12 +1214,9 @@ sub __interface_to_string {
 
     return '' if !($d && $d->{"method$suffix"});
 
-    my $raw = '';
-
-    $raw .= "iface $iface $family " . $d->{"method$suffix"} . "\n";
+    my $raw = "iface $iface $family " . $d->{"method$suffix"} . "\n";
 
     if (my $addr = $d->{"address$suffix"}) {
-
 	if ($addr !~ /\/\d+$/ && $d->{"netmask$suffix"}) {
 	    if ($d->{"netmask$suffix"} =~ m/^\d+$/) {
 		$addr .= "/" . $d->{"netmask$suffix"};
@@ -1227,8 +1224,7 @@ sub __interface_to_string {
 		$addr .= "/" . $mask;
 	    }
 	}
-
-	$raw .= "\taddress " . $addr . "\n";
+	$raw .= "\taddress ${addr}\n";
     }
 
     $raw .= "\tgateway " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
@@ -1248,25 +1244,25 @@ sub __interface_to_string {
 	$raw .= "\tbridge-ports $ports\n";
 	$done->{bridge_ports} = 1;
 
-	my $v = defined($d->{bridge_stp}) ? $d->{bridge_stp} : 'off';
-	my $no_stp = $v eq 'off';
+	my $br_stp = defined($d->{bridge_stp}) ? $d->{bridge_stp} : 'off';
+	my $no_stp = $br_stp eq 'off';
 
-	$raw .= "\tbridge-stp $v\n";
+	$raw .= "\tbridge-stp $br_stp\n";
 	$done->{bridge_stp} = 1;
 
-	$v = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
+	my $br_fd = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
 	# 0 is only allowed when STP is disabled
-	if ($no_stp || ($v >= 2 && $v <= 30)) {
-	    $raw .= "\tbridge-fd $v\n";
+	if ($no_stp || ($br_fd >= 2 && $br_fd <= 30)) {
+	    $raw .= "\tbridge-fd $br_fd\n";
 	} else {
-	    warn "'$iface': not setting 'bridge_fd' to value '$v' outside of allowed range 2-30\n";
+	    warn "'$iface': ignoring 'bridge_fd' value '$br_fd', outside of allowed range 2-30\n";
 	}
 	$done->{bridge_fd} = 1;
 
 	if( defined($d->{bridge_vlan_aware})) {
 	    $raw .= "\tbridge-vlan-aware yes\n";
-	    $v = defined($d->{bridge_vids}) ? $d->{bridge_vids} : "2-4094";
-	    $raw .= "\tbridge-vids $v\n";
+	    my $vlans = defined($d->{bridge_vids}) ? $d->{bridge_vids} : "2-4094";
+	    $raw .= "\tbridge-vids $vlans\n";
 	}
 	$done->{bridge_vlan_aware} = 1;
 	$done->{bridge_vids} = 1;
