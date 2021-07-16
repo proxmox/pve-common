@@ -1061,12 +1061,11 @@ sub __read_etc_network_interfaces {
 	} elsif ($iface =~ m/^vmbr\d+$/) {
 	    if (!$d->{ovs_type}) {
 		$d->{type} = 'bridge';
-
-		if (!defined ($d->{bridge_fd})) {
-		    $d->{bridge_fd} = 0;
-		}
 		if (!defined ($d->{bridge_stp})) {
 		    $d->{bridge_stp} = 'off';
+		}
+		if (!defined($d->{bridge_fd}) && $d->{bridge_stp} eq 'off') {
+		    $d->{bridge_fd} = 0;
 		}
 	    } elsif ($d->{ovs_type} eq 'OVSBridge') {
 		$d->{type} = $d->{ovs_type};
@@ -1250,11 +1249,16 @@ sub __interface_to_string {
 	$done->{bridge_ports} = 1;
 
 	my $v = defined($d->{bridge_stp}) ? $d->{bridge_stp} : 'off';
+	my $no_stp = $v eq 'off';
+
 	$raw .= "\tbridge-stp $v\n";
 	$done->{bridge_stp} = 1;
 
 	$v = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
-	$raw .= "\tbridge-fd $v\n";
+	# 0 is only allowed when STP is disabled
+	if ($v || $no_stp) {
+	    $raw .= "\tbridge-fd $v\n";
+	}
 	$done->{bridge_fd} = 1;
 
 	if( defined($d->{bridge_vlan_aware})) {
