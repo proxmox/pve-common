@@ -1256,8 +1256,10 @@ sub __interface_to_string {
 
 	$v = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
 	# 0 is only allowed when STP is disabled
-	if ($v || $no_stp) {
+	if ($no_stp || ($v >= 2 && $v <= 30)) {
 	    $raw .= "\tbridge-fd $v\n";
+	} else {
+	    warn "'$iface': not setting 'bridge_fd' to value '$v' outside of allowed range 2-30\n";
 	}
 	$done->{bridge_fd} = 1;
 
