@@ -1259,12 +1259,16 @@ sub __interface_to_string {
 	$raw .= "\tbridge-stp $br_stp\n";
 	$done->{bridge_stp} = 1;
 
-	my $br_fd = defined($d->{bridge_fd}) ? $d->{bridge_fd} : 0;
-	# 0 is only allowed when STP is disabled
-	if ($no_stp || ($br_fd >= 2 && $br_fd <= 30)) {
-	    $raw .= "\tbridge-fd $br_fd\n";
-	} else {
-	    warn "'$iface': ignoring 'bridge_fd' value '$br_fd', outside of allowed range 2-30\n";
+	# NOTE: forwarding delay must be 2 <= FD <= 30 if STP is enabled
+	if (defined(my $br_fd = $d->{bridge_fd})) {
+	    if ($no_stp || ($br_fd >= 2 && $br_fd <= 30)) {
+		$raw .= "\tbridge-fd $br_fd\n";
+	    } else {
+		# only complain if the user actually set a value, but not for default fallback below
+		warn "'$iface': ignoring 'bridge_fd' value '$br_fd', outside of allowed range 2-30\n";
+	    }
+	} elsif ($no_stp) {
+	    $raw .= "\tbridge-fd 0\n";
 	}
 	$done->{bridge_fd} = 1;
 
