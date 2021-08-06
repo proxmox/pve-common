@@ -1,3 +1,11 @@
+libpve-common-perl (7.0-6) bullseye; urgency=medium
+
+  * fix #2831: never set bridge_fd to 0 with STP on
+
+  * ProcFSTools: read_proc_stat: add more cpu stats from /proc/stat
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 6 Aug 2021 13:52:37 +0200
+
 libpve-common-perl (7.0-5) bullseye; urgency=medium
 
   * fix #3527: cgroup: drop file buffers from memory usage
