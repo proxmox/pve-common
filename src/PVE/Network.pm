@@ -9,6 +9,7 @@ use PVE::Tools qw(run_command lock_file);
 
 use File::Basename;
 use IO::Socket::IP;
+use JSON;
 use Net::IP;
 use NetAddr::IP qw(:lower);
 use POSIX qw(ECONNREFUSED);
@@ -600,6 +601,37 @@ sub is_ip_in_cidr {
     return $overlap == $Net::IP::IP_B_IN_A_OVERLAP || $overlap == $Net::IP::IP_IDENTICAL;
 }
 
+# get all currently configured addresses that have a global scope, i.e., are reachable from the
+# outside of the host and thus are neither loopback nor link-local ones
+# returns an array ref of: { addr => "IP", cidr => "IP/PREFIXLEN", family => "inet|inet6" }
+sub get_reachable_networks {
+    my $raw = '';
+    run_command([qw(ip -j addr show up scope global)], outfunc => sub { $raw .= shift });
+    my $addrs = decode_json($raw);
+
+    # sort by family (IPv4/IPv6) and then by addr, just for some stability
+    my $addrs_sorter = sub {
+	my ($a, $b) = @_;
+	my $family = $a->{family} cmp $b->{family};
+	return $family if $family != 0;
+	return $a->{local} cmp $b->{local};
+    };
+
+    my $res = [];
+    for my $addr ($addrs->@*) {
+	next if !exists $addr->{addr_info};
+	next if grep { $_ eq 'LOOPBACK' } $addr->{flags}->@*;
+	for my $info (sort $addrs_sorter grep { $_ && $_->{local}} $addr->{addr_info}->@*) {
+	    push $res->@*, {
+		addr => $info->{local},
+		cidr => "$info->{local}/$info->{prefixlen}",
+		family => $info->{family},
+	    };
+	}
+    }
+
+    return $res;
+}
 
 sub get_local_ip_from_cidr {
     my ($cidr) = @_;
