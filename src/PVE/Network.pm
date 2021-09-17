@@ -632,21 +632,15 @@ sub get_ip_from_hostname {
 	return undef;
     }
 
-    my ($ip, $family);
     for my $ai (@res) {
-	$family = $ai->{family};
-	my $tmpip = addr_to_ip($ai->{addr});
-	if ($tmpip !~ m/^127\.|^::1$/) {
-	    $ip = $tmpip;
-	    last;
+	my $ip = addr_to_ip($ai->{addr});
+	if ($ip !~ m/^127\.|^::1$/) {
+	    return wantarray ? ($ip, $ai->{family}) : $ip;
 	}
     }
-    if (!defined($ip) ) {
-	die "address lookup for '$hostname' did not find any IP address\n" if !$noerr;
-	return undef;
-    }
-
-    return wantarray ? ($ip, $family) : $ip;
+    # NOTE: we only get here if no WAN/LAN IP was found, so this is now the error path!
+    die "address lookup for '$hostname' did not find any IP address\n" if !$noerr;
+    return undef;
 }
 
 sub lock_network {
