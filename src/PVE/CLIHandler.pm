@@ -208,7 +208,7 @@ sub generate_usage_str {
 	my $str = '';
 	if (ref($def) eq 'HASH') {
 	    my $oldclass = undef;
-	    foreach my $cmd (&$sortfunc($def)) {
+	    foreach my $cmd ($sortfunc->($def)) {
 
 		if (ref($def->{$cmd}) eq 'ARRAY') {
 		    my ($class, $name, $arg_param, $fixed_param, undef, $formatter_properties) = @{$def->{$cmd}};

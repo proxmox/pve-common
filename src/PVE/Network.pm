@@ -607,27 +607,20 @@ sub is_ip_in_cidr {
 sub get_reachable_networks {
     my $raw = '';
     run_command([qw(ip -j addr show up scope global)], outfunc => sub { $raw .= shift });
-    my $addrs = decode_json($raw);
+    my $decoded = decode_json($raw);
 
-    # sort by family (IPv4/IPv6) and then by addr, just for some stability
-    my $addrs_sorter = sub {
-	my ($a, $b) = @_;
-	my $family = $a->{family} cmp $b->{family};
-	return $family if $family != 0;
-	return $a->{local} cmp $b->{local};
-    };
-
+    my $addrs = []; # filter/transform first so that we can sort correctly more easily below
+    for my $e ($decoded->@*) {
+	next if !$e->{addr_info} || grep { $_ eq 'LOOPBACK' } $e->{flags}->@*;
+	push $addrs->@*, grep { scalar(keys $_->%*) } $e->{addr_info}->@*
+    }
     my $res = [];
-    for my $addr ($addrs->@*) {
-	next if !exists $addr->{addr_info};
-	next if grep { $_ eq 'LOOPBACK' } $addr->{flags}->@*;
-	for my $info (sort $addrs_sorter grep { $_ && $_->{local}} $addr->{addr_info}->@*) {
-	    push $res->@*, {
-		addr => $info->{local},
-		cidr => "$info->{local}/$info->{prefixlen}",
-		family => $info->{family},
-	    };
-	}
+    for my $info (sort { $a->{family} cmp $b->{family} || $a->{local} cmp $b->{local} } $addrs->@*) {
+	push $res->@*, {
+	    addr => $info->{local},
+	    cidr => "$info->{local}/$info->{prefixlen}",
+	    family => $info->{family},
+	};
     }
 
     return $res;
