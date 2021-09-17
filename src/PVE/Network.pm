@@ -642,7 +642,7 @@ sub get_ip_from_hostname {
 	}
     }
     if (!defined($ip) ) {
-	die "hostname lookup '$hostname' failed - got local IP address '$ip'\n" if !$noerr;
+	die "address lookup for '$hostname' did not find any IP address\n" if !$noerr;
 	return undef;
     }
 
