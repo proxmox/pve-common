@@ -626,6 +626,60 @@ sub get_reachable_networks {
     return $res;
 }
 
+# get one or all local IPs that are not loopback ones, able to pick up the following ones (in order)
+# - the hostname primary resolves too, follows gai.conf (admin controlled) and will be prioritised
+# - all configured in the interfaces configuration
+# - all currently networks known to the kernel in the current (root) namespace
+# returns a single address if no parameter is passed, and all found, grouped by type, if `all => 1`
+# is passed.
+sub get_local_ip {
+    my (%param) = @_;
+
+    my $nodename = PVE::INotify::nodename();
+    my $resolved_host = eval { get_ip_from_hostname($nodename) };
+
+    return $resolved_host if defined($resolved_host) && !$param{all};
+
+    my $all = { v4 => {}, v6 => {} }; # hash to avoid duplicates and group by type
+
+    my $ifaces = PVE::INotify::read_file('interfaces', 1)->{data}->{ifaces};
+    for my $if (values $ifaces->%*) {
+	next if $if->{type} eq 'loopback' || (!defined($if->{address}) && !defined($if->{address6}));
+	my ($v4, $v6) = ($if->{address}, $if->{address6});
+
+	return ($v4 // $v6) if !$param{all}; # prefer v4, admin can override $resolved_host via hosts/gai.conf
+
+	$all->{v4}->{$v4} = 1 if defined($v4);
+	$all->{v6}->{$v6} = 1 if defined($v6);
+    }
+
+    my $live = get_reachable_networks();
+    for my $info ($live->@*) {
+	my $addr = $info->{addr};
+
+	return $addr if !$param{all};
+
+	if ($info->{family} eq 'inet') {
+	    $all->{v4}->{$addr} = 1;
+	} else {
+	    $all->{v6}->{$addr} = 1;
+	}
+    }
+
+    return undef if !$param{all}; # getting here means no early return above triggered -> no IPs
+
+    my $res = []; # order gai.conf controlled first, then group v4 and v6, simply lexically sorted
+    if ($resolved_host) {
+	push $res->@*, $resolved_host;
+	delete $all->{v4}->{$resolved_host};
+	delete $all->{v6}->{$resolved_host};
+    }
+    push $res->@*, sort { $a cmp $b } keys $all->{v4}->%*;
+    push $res->@*, sort { $a cmp $b } keys $all->{v6}->%*;
+
+    return $res;
+}
+
 sub get_local_ip_from_cidr {
     my ($cidr) = @_;
 
