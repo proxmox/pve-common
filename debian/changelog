@@ -1,12 +1,12 @@
-libpve-common-perl (7.0-8) bullseye; urgency=medium
+libpve-common-perl (7.0-9) bullseye; urgency=medium
 
   * fix #2368: network: extend infiniband recognition in regex
 
   * net: ip from host: avoid using an undefined variable in error message
 
-  * net: add helper to get all reachable networks
+  * net: add helpers to get all reachable networks
 
- -- Proxmox Support Team <support@proxmox.com>  Fri, 17 Sep 2021 17:47:50 +0200
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 18 Sep 2021 14:51:44 +0200
 
 libpve-common-perl (7.0-6) bullseye; urgency=medium
 
