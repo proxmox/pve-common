@@ -653,7 +653,7 @@ sub get_local_ip {
 	$all->{v6}->{$v6} = 1 if defined($v6);
     }
 
-    my $live = get_reachable_networks();
+    my $live = eval { get_reachable_networks() } // [];
     for my $info ($live->@*) {
 	my $addr = $info->{addr};
 
