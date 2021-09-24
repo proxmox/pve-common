@@ -884,7 +884,7 @@ sub __read_etc_network_interfaces {
 	'bridge-fd' => 'bridge_fd',
 	'bridge-stp' => 'bridge_stp',
 	'bridge-ports' => 'bridge_ports',
-	'bridge-vids' => 'bridge_vids'
+	'bridge-vids' => 'bridge_vids',
     };
 
     my $line;
@@ -953,6 +953,7 @@ sub __read_etc_network_interfaces {
 			'bridge-arp-nd-suppress' => 1,
 			'bridge-unicast-flood' => 1,
 			'bridge-multicast-flood' => 1,
+			'bridge-disable-mac-learning' => 1,
 			'bond_miimon' => 1,
 			'bond_xmit_hash_policy' => 1,
 			'bond-primary' => 1,
@@ -1280,6 +1281,7 @@ sub __interface_to_string {
 
 	$raw .= "\tmtu $d->{mtu}\n" if $d->{mtu};
 	$done->{mtu} = 1;
+	$done->{'bridge-disable-mac-learning'} = 1;
 
     } elsif ($d->{type} eq 'bond') {
 
