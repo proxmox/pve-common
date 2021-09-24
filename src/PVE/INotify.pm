@@ -907,11 +907,8 @@ sub __read_etc_network_interfaces {
 	next if $line =~ m/^\s*(allow-hotplug)\s+(.*)$/;
 
 	if ($line =~ m/^\s*(auto|allow-ovs)\s+(.*)$/) {
-	    my @aa = split (/\s+/, $2);
 
-	    foreach my $a (@aa) {
-		$ifaces->{$a}->{autostart} = 1;
-	    }
+	    $ifaces->{$_}->{autostart} = 1 for split (/\s+/, $2);
 
 	} elsif ($line =~ m/^\s*iface\s+(\S+)\s+(inet6?)\s+(\S+)\s*$/) {
 	    my $i = $1;
@@ -930,13 +927,7 @@ sub __read_etc_network_interfaces {
 		    $f->{comments} = '' if !$f->{comments};
 		    my $comment = decode('UTF-8', $1);
 		    $f->{comments} .= "$comment\n";
-		} elsif ($line =~ m/^\s*(?:iface\s
-                                          |mapping\s
-                                          |auto\s
-                                          |allow-
-                                          |source\s
-                                          |source-directory\s
-                                        )/x) {
+		} elsif ($line =~ m/^\s*(?:(?:iface|mapping|auto|source|source-directory)\s|allow-)/) {
 		    last;
 		} elsif ($line =~ m/^\s*((\S+)\s+(.+))$/) {
 		    my $option = $1;
@@ -969,9 +960,10 @@ sub __read_etc_network_interfaces {
 			'vxlan-id' => 1,
 			'vxlan-svcnodeip' => 1,
 			'vxlan-physdev' => 1,
-			'vxlan-local-tunnelip' => 1 };
+			'vxlan-local-tunnelip' => 1,
+		    };
 
-		    if (($id eq 'address') || ($id eq 'netmask') || ($id eq 'broadcast') || ($id eq 'gateway')) {
+		    if ($id eq 'address' || $id eq 'netmask' || $id eq 'broadcast' || $id eq 'gateway') {
 			$f->{$id} = $value;
 		    } elsif ($simple_options->{$id}) {
 			$d->{$id} = $value;
@@ -998,8 +990,7 @@ sub __read_etc_network_interfaces {
 		    } elsif ($id eq 'bond_mode') {
 			# always use names
 			foreach my $bm (keys %$bond_modes) {
-			    my $id = $bond_modes->{$bm};
-			    if ($id eq $value) {
+			    if ($bond_modes->{$bm} eq $value) {
 				$value = $bm;
 				last;
 			    }
@@ -1014,7 +1005,7 @@ sub __read_etc_network_interfaces {
 		    last;
 		}
 	    }
-	    $d->{"$_$suffix"} = $f->{$_} foreach (keys %$f);
+	    $d->{"$_$suffix"} = $f->{$_} for keys $f->%*;
 	    last SECTION if !defined($line);
 	    redo SECTION;
 	} elsif ($line =~ /\w/) {
@@ -1029,10 +1020,12 @@ sub __read_etc_network_interfaces {
     }
 
     if (!$ifaces->{lo}) {
-	$ifaces->{lo}->{priority} = 1;
-	$ifaces->{lo}->{method} = 'loopback';
-	$ifaces->{lo}->{type} = 'loopback';
-	$ifaces->{lo}->{autostart} = 1;
+	$ifaces->{lo} = {
+	    priority => 1,
+	    method => 'loopback',
+	    type => 'loopback',
+	    autostart => 1,
+	};
     }
 
     foreach my $iface (keys %$ifaces) {
@@ -1229,11 +1222,12 @@ sub __interface_to_string {
 
     $raw .= "\tgateway " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
 
-    my $done = { type => 1, priority => 1, method => 1, active => 1, exists => 1,
-		 comments => 1, autostart => 1, options => 1,
-		 address => 1, netmask => 1, gateway => 1, broadcast => 1,
-		 method6 => 1, families => 1, options6 => 1, comments6 => 1,
-		 address6 => 1, netmask6 => 1, gateway6 => 1, broadcast6 => 1, 'uplink-id' => 1 };
+    my $done = {
+	type => 1, priority => 1, method => 1, active => 1, exists => 1, comments => 1,
+	autostart => 1, options => 1, address => 1, netmask => 1, gateway => 1, broadcast => 1,
+	method6 => 1, families => 1, options6 => 1, comments6 => 1, address6 => 1,
+	netmask6 => 1, gateway6 => 1, broadcast6 => 1, 'uplink-id' => 1,
+     };
 
     if (!$first_block) {
 	# not printing out options
@@ -1335,8 +1329,7 @@ sub __interface_to_string {
 	$raw .= "\tovs_mtu $d->{mtu}\n" if $d->{mtu};
 	$done->{mtu} = 1;
 
-    } elsif ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' ||
-	     $d->{type} eq 'OVSBond') {
+    } elsif ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' || $d->{type} eq 'OVSBond') {
 
 	$d->{autostart} = 0; # started by the bridge
 
@@ -1447,8 +1440,7 @@ sub __write_etc_network_interfaces {
     # delete unused OVS ports
     foreach my $iface (keys %$ifaces) {
 	my $d = $ifaces->{$iface};
-	if ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' ||
-	    $d->{type} eq 'OVSBond') {
+	if ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' || $d->{type} eq 'OVSBond') {
 	    my $brname = $used_ports->{$iface};
 	    if (!$brname || !$ifaces->{$brname}) {
 		if ($iface =~ /^$PVE::Network::PHYSICAL_NIC_RE/) {
@@ -1477,8 +1469,7 @@ sub __write_etc_network_interfaces {
 	if ($d->{type} eq 'OVSBridge' && $d->{ovs_ports}) {
 	    foreach my $p (split (/\s+/, $d->{ovs_ports})) {
 		my $n = $ifaces->{$p};
-		die "OVS bridge '$iface' - unable to find port '$p'\n"
-		    if !$n;
+		die "OVS bridge '$iface' - unable to find port '$p'\n" if !$n;
 		$n->{autostart} = 0;
 		if ($n->{type} eq 'eth') {
 		    $n->{type} = 'OVSPort';
@@ -1502,10 +1493,9 @@ sub __write_etc_network_interfaces {
 	    foreach my $p (split (/\s+/, $d->{ovs_bonds})) {
 		my $n = $ifaces->{$p};
 		$n->{autostart} = 1;
-		die "OVS bond '$iface' - unable to find slave '$p'\n"
-		    if !$n;
-		die "OVS bond '$iface' - wrong interface type on slave '$p' " .
-		    "('$n->{type}' != 'eth')\n" if $n->{type} ne 'eth';
+		die "OVS bond '$iface' - unable to find slave '$p'\n" if !$n;
+		die "OVS bond '$iface' - wrong interface type on slave '$p' ('$n->{type}' != 'eth')\n"
+		    if $n->{type} ne 'eth';
 		&$check_mtu($ifaces, $iface, $p);
 	    }
 	}
