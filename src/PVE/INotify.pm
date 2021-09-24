@@ -906,7 +906,7 @@ sub __read_etc_network_interfaces {
 	next if $line =~ m/^\s*#/;
 	next if $line =~ m/^\s*(allow-hotplug)\s+(.*)$/;
 
-	if ($line =~ m/^\s*(auto|allow-ovs)\s+(.*)$/) {
+	if ($line =~ m/^\s*(allow-auto|auto|allow-ovs)\s+(.*)$/) {
 
 	    $ifaces->{$_}->{autostart} = 1 for split (/\s+/, $2);
 
