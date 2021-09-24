@@ -904,10 +904,14 @@ sub __read_etc_network_interfaces {
     SECTION: while (defined ($line = <$fh>)) {
 	chomp ($line);
 	next if $line =~ m/^\s*#/;
-	next if $line =~ m/^\s*(allow-hotplug)\s+(.*)$/;
 
 	if ($line =~ m/^\s*(allow-auto|auto|allow-ovs)\s+(.*)$/) {
 
+	    $ifaces->{$_}->{autostart} = 1 for split (/\s+/, $2);
+
+	} elsif ($line =~ m/^\s*(allow-hotplug)\s+(.*)$/) {
+
+	    # FIXME: handle those differently? auto makes it required on-boot, vs. best-effort
 	    $ifaces->{$_}->{autostart} = 1 for split (/\s+/, $2);
 
 	} elsif ($line =~ m/^\s*iface\s+(\S+)\s+(inet6?)\s+(\S+)\s*$/) {
