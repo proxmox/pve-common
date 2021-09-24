@@ -9,6 +9,7 @@ use Carp;
 use POSIX;
 use IO::Handle;
 use Storable qw(dclone);
+use JSON; # allows simple debug-dumping of variables  `print to_json($foo, {pretty => 1}) ."\n"`
 
 use PVE::INotify;
 
