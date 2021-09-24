@@ -208,6 +208,14 @@ sub disable_ipv6 {
     close($fh);
 }
 
+my $bridge_disable_interface_learning = sub {
+    my ($iface) = @_;
+
+    PVE::ProcFSTools::write_proc_entry("/sys/class/net/$iface/brport/unicast_flood", "0");
+    PVE::ProcFSTools::write_proc_entry("/sys/class/net/$iface/brport/learning", "0");
+
+};
+
 my $bridge_add_interface = sub {
     my ($bridge, $iface, $tag, $trunks) = @_;
 
@@ -269,6 +277,43 @@ my $activate_interface = sub {
     die "can't activate interface '$iface' - $@\n" if $@;
 };
 
+sub add_bridge_fdb {
+    my ($iface, $mac) = @_;
+
+    my $learning = PVE::Tools::file_read_firstline("/sys/class/net/$iface/brport/learning");
+    return if $learning;
+
+    my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
+    return if !defined($vmid);
+
+    PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $iface, 'master', 'static']);
+
+    my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
+
+    if (-d "/sys/class/net/$vethfwpeer") {
+	PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $vethfwpeer, 'master', 'static']);
+    }
+
+}
+
+sub del_bridge_fdb {
+    my ($iface, $mac) = @_;
+
+    my $learning = PVE::Tools::file_read_firstline("/sys/class/net/$iface/brport/learning");
+    return if $learning;
+
+    my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
+    return if !defined($vmid);
+
+    PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $iface, 'master', 'static']);
+
+    my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
+
+    if (-d "/sys/class/net/$vethfwpeer") {
+	PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $vethfwpeer, 'master', 'static']);
+    }
+}
+
 sub tap_create {
     my ($iface, $bridge) = @_;
 
@@ -323,7 +368,7 @@ sub veth_delete {
 }
 
 my $create_firewall_bridge_linux = sub {
-    my ($iface, $bridge, $tag, $trunks) = @_;
+    my ($iface, $bridge, $tag, $trunks, $disablelearning) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
@@ -334,14 +379,15 @@ my $create_firewall_bridge_linux = sub {
     copy_bridge_config($bridge, $fwbr);
     veth_create($vethfw, $vethfwpeer, $bridge);
 
-    &$bridge_add_interface($fwbr, $vethfw);
     &$bridge_add_interface($bridge, $vethfwpeer, $tag, $trunks);
+    &$bridge_disable_interface_learning($vethfwpeer) if $disablelearning;
+    &$bridge_add_interface($fwbr, $vethfw);
 
     &$bridge_add_interface($fwbr, $iface);
 };
 
 my $create_firewall_bridge_ovs = sub {
-    my ($iface, $bridge, $tag, $trunks) = @_;
+    my ($iface, $bridge, $tag, $trunks, $disablelearning) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, undef, undef, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
@@ -360,6 +406,7 @@ my $create_firewall_bridge_ovs = sub {
     PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $ovsintport, 'mtu', $bridgemtu]);
 
     &$bridge_add_interface($fwbr, $ovsintport);
+    &$bridge_disable_interface_learning($ovsintport) if $disablelearning;
 };
 
 my $cleanup_firewall_bridge = sub {
@@ -384,7 +431,7 @@ my $cleanup_firewall_bridge = sub {
 };
 
 sub tap_plug {
-    my ($iface, $bridge, $tag, $firewall, $trunks, $rate) = @_;
+    my ($iface, $bridge, $tag, $firewall, $trunks, $rate, $disablelearning) = @_;
 
     #cleanup old port config from any openvswitch bridge
     eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
@@ -403,16 +450,17 @@ sub tap_plug {
 	}
 
 	if ($firewall) {
-	    &$create_firewall_bridge_linux($iface, $bridge, $tag, $trunks);
+	    &$create_firewall_bridge_linux($iface, $bridge, $tag, $trunks, $disablelearning);
 	} else {
 	    &$bridge_add_interface($bridge, $iface, $tag, $trunks);
 	}
+	&$bridge_disable_interface_learning($iface) if $disablelearning;
 
     } else {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
 
 	if ($firewall) {
-	    &$create_firewall_bridge_ovs($iface, $bridge, $tag, $trunks);
+	    &$create_firewall_bridge_ovs($iface, $bridge, $tag, $trunks, $disablelearning);
 	} else {
 	    &$ovs_bridge_add_port($bridge, $iface, $tag, undef, $trunks);
 	}
