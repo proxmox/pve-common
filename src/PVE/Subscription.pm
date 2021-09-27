@@ -68,7 +68,7 @@ sub check_fields {
 sub check_subscription {
     my ($key, $server_id, $proxy) = @_;
 
-    my $whmcsurl = "https://shop.maurer-it.com";
+    my $whmcsurl = "https://shop.proxmox.com";
 
     my $uri = "$whmcsurl/modules/servers/licensing/verify.php";
 
