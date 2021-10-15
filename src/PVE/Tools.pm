@@ -459,7 +459,7 @@ sub run_command {
 	    # to avoid that we open /dev/null
 	    if (!ref($writer) && !defined(fileno(STDIN))) {
 		POSIX::close(0);
-		open(STDIN, "</dev/null");
+		open(STDIN, '<', '/dev/null');
 	    }
 	};
 
@@ -484,7 +484,7 @@ sub run_command {
 	    close $writer;
 	}
 
-	my $select = new IO::Select;
+	my $select = IO::Select->new();
 	$select->add($reader) if ref($reader);
 	$select->add($error);
 
@@ -1530,8 +1530,8 @@ sub sendmail {
 
     $author = $author // 'Proxmox VE';
 
-    open (MAIL, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom_quoted,
-	"--", @$mailto_quoted) || die "unable to open 'sendmail' - $!";
+    open (my $mail, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom_quoted, "--", @$mailto_quoted)
+	or die "unable to open 'sendmail' - $!";
 
     my $date = time2str('%a, %d %b %Y %H:%M:%S %z', time());
 
@@ -1545,48 +1545,48 @@ sub sendmail {
     }
 
     if ($subject =~ /[^[:ascii:]]/ || $is_multipart) {
-	print MAIL "MIME-Version: 1.0\n";
+	print $mail "MIME-Version: 1.0\n";
     }
-    print MAIL "From: $author <$mailfrom>\n";
-    print MAIL "To: $rcvrtxt\n";
-    print MAIL "Date: $date\n";
-    print MAIL "Subject: $subject\n";
+    print $mail "From: $author <$mailfrom>\n";
+    print $mail "To: $rcvrtxt\n";
+    print $mail "Date: $date\n";
+    print $mail "Subject: $subject\n";
 
     if ($is_multipart) {
-	print MAIL "Content-Type: multipart/alternative;\n";
-	print MAIL "\tboundary=\"$boundary\"\n";
-	print MAIL "\n";
-	print MAIL "This is a multi-part message in MIME format.\n\n";
-	print MAIL "--$boundary\n";
+	print $mail "Content-Type: multipart/alternative;\n";
+	print $mail "\tboundary=\"$boundary\"\n";
+	print $mail "\n";
+	print $mail "This is a multi-part message in MIME format.\n\n";
+	print $mail "--$boundary\n";
     }
 
     if (defined($text)) {
-	print MAIL "Content-Type: text/plain;\n";
-	print MAIL "\tcharset=\"UTF-8\"\n";
-	print MAIL "Content-Transfer-Encoding: 8bit\n";
-	print MAIL "\n";
+	print $mail "Content-Type: text/plain;\n";
+	print $mail "\tcharset=\"UTF-8\"\n";
+	print $mail "Content-Transfer-Encoding: 8bit\n";
+	print $mail "\n";
 
 	# avoid 'remove extra line breaks' issue (MS Outlook)
 	my $fill = '  ';
 	$text =~ s/^/$fill/gm;
 
-	print MAIL $text;
+	print $mail $text;
 
-	print MAIL "\n--$boundary\n" if $is_multipart;
+	print $mail "\n--$boundary\n" if $is_multipart;
     }
 
     if (defined($html)) {
-	print MAIL "Content-Type: text/html;\n";
-	print MAIL "\tcharset=\"UTF-8\"\n";
-	print MAIL "Content-Transfer-Encoding: 8bit\n";
-	print MAIL "\n";
+	print $mail "Content-Type: text/html;\n";
+	print $mail "\tcharset=\"UTF-8\"\n";
+	print $mail "Content-Transfer-Encoding: 8bit\n";
+	print $mail "\n";
 
-	print MAIL $html;
+	print $mail $html;
 
-	print MAIL "\n--$boundary--\n" if $is_multipart;
+	print $mail "\n--$boundary--\n" if $is_multipart;
     }
 
-    close(MAIL);
+    close($mail);
 }
 
 sub tempfile {
