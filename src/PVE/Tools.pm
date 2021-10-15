@@ -1581,6 +1581,13 @@ sub sendmail {
     close($mail);
 }
 
+# creates a temporary file that does not shows up on the file system hierarchy.
+#
+# Uses O_TMPFILE if available, which makes it just an anon inode that never shows up in the FS.
+# If O_TMPFILE is not available, which unlikely nowadays (added in 3.11 kernel and all FS relevant
+# for us support it) back to open-create + immediate unlink while still holding the file  handle.
+#
+# TODO: to avoid FS dependent features we could (transparently) switch to memfd_create as backend
 sub tempfile {
     my ($perm, %opts) = @_;
 
@@ -1611,6 +1618,7 @@ sub tempfile {
     return $fh;
 }
 
+# create an (ideally) anon file with the $data as content and return its FD-path and FH
 sub tempfile_contents {
     my ($data, $perm, %opts) = @_;
 
