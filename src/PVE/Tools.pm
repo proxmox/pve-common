@@ -1507,6 +1507,12 @@ sub sync_mountpoint {
     die "syncfs '$path' failed - $syncfs_err\n" if defined $syncfs_err;
 }
 
+my sub check_mail_addr {
+    my ($addr) = @_;
+    die "'$addr' does not look like a valid email address or username\n"
+	if $addr !~ /^$EMAIL_RE$/ && $addr !~ /^$EMAIL_USER_RE$/;
+}
+
 # support sending multi-part mail messages with a text and or a HTML part
 # mailto may be a single email string or an array of receivers
 sub sendmail {
@@ -1514,42 +1520,28 @@ sub sendmail {
 
     $mailto = [ $mailto ] if !ref($mailto);
 
-    my $mailto_quoted = [];
-    for my $to (@$mailto) {
-	die "mailto does not look like a valid email address or username\n"
-	    if $to !~ /^$EMAIL_RE$/ && $to !~ /^$EMAIL_USER_RE$/;
-	push @$mailto_quoted, shellquote($to);
-    }
-
-    my $rcvrtxt = join (', ', @$mailto);
+    check_mail_addr($_) for $mailto->@*;
+    my $to_quoted = [ map { shellquote($_) } $mailto->@* ];
 
     $mailfrom = $mailfrom || "root";
-    die "mailfrom does not look like a valid email address or username\n"
-	    if $mailfrom !~ /^$EMAIL_RE$/ && $mailfrom !~ /^$EMAIL_USER_RE$/;
-    my $mailfrom_quoted = shellquote($mailfrom);
+    check_mail_addr($mailfrom);
+    my $from_quoted = shellquote($mailfrom);
 
     $author = $author // 'Proxmox VE';
 
-    open (my $mail, "|-", "sendmail", "-B", "8BITMIME", "-f", $mailfrom_quoted, "--", @$mailto_quoted)
+    open (my $mail, "|-", "sendmail", "-B", "8BITMIME", "-f", $from_quoted, "--", $to_quoted->@*)
 	or die "unable to open 'sendmail' - $!";
 
-    my $date = time2str('%a, %d %b %Y %H:%M:%S %z', time());
-
     my $is_multipart = $text && $html;
+    my $boundary = "----_=_NextPart_001_" . int(time()) . $$; # multipart spec, see rfc 1521
 
-    # multipart spec see https://www.ietf.org/rfc/rfc1521.txt
-    my $boundary = "----_=_NextPart_001_".int(time).$$;
+    $subject = Encode::encode('MIME-Header', $subject) if $subject =~ /[^[:ascii:]]/;
 
-    if ($subject =~ /[^[:ascii:]]/) {
-	$subject = Encode::encode('MIME-Header', $subject);
-    }
+    print $mail "MIME-Version: 1.0\n" if $subject =~ /[^[:ascii:]]/ || $is_multipart;
 
-    if ($subject =~ /[^[:ascii:]]/ || $is_multipart) {
-	print $mail "MIME-Version: 1.0\n";
-    }
     print $mail "From: $author <$mailfrom>\n";
-    print $mail "To: $rcvrtxt\n";
-    print $mail "Date: $date\n";
+    print $mail "To: " . join(', ', @$mailto) ."\n";
+    print $mail "Date: " . time2str('%a, %d %b %Y %H:%M:%S %z', time()) . "\n";
     print $mail "Subject: $subject\n";
 
     if ($is_multipart) {
