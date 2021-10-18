@@ -18,15 +18,15 @@ BEGIN {
 	fchownat => &SYS_fchownat,
 	mount => &SYS_mount,
 	renameat2 => &SYS_renameat2,
+	open_tree => &SYS_open_tree,
+	move_mount => &SYS_move_mount,
+	fsopen => &SYS_fsopen,
+	fsconfig => &SYS_fsconfig,
+	fsmount => &SYS_fsmount,
+	fspick => &SYS_fspick,
 
-	# These use asm-generic, so they're the same across (sane) architectures. We use numbers
-	# since they're not in perl's syscall.ph yet...
-	open_tree => 428,
-	move_mount => 429,
-	fsopen => 430,
-	fsconfig => 431,
-	fsmount => 432,
-	fspick => 433,
+	# Below aren't yet in perl's syscall.ph but use asm-generic, so the same across (sane) archs
+	# -> none unknown currently, yay
     );
 
     %fsmount_constants = (
