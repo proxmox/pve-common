@@ -304,15 +304,14 @@ sub pci_dev_group_bind_to_vfio {
 
     # get IOMMU group devices
     opendir(my $D, "$pcisysfs/devices/$pciid/iommu_group/devices/") || die "Cannot open iommu_group: $!\n";
-      my @devs = grep /^[0-9a-f]{4}:/, readdir($D);
+    my @devs = grep /^[0-9a-f]{4}:/, readdir($D);
     closedir($D);
 
     foreach my $pciid (@devs) {
 	$pciid =~ m/^([:\.0-9a-f]+)$/ or die "PCI ID $pciid not valid!\n";
 
-        # pci bridges, switches or root ports are not supported
-        # they have a pci_bus subdirectory so skip them
-        next if (-e "$pcisysfs/devices/$pciid/pci_bus");
+	# PCI bridges, switches or root-ports aren't supported and all have a pci_bus dir we can test
+	next if (-e "$pcisysfs/devices/$pciid/pci_bus");
 
 	my $info = pci_device_info($1);
 	pci_dev_bind_to_vfio($info) || die "Cannot bind $pciid to vfio\n";
