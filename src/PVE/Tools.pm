@@ -1878,7 +1878,6 @@ sub getxattr($$;$) {
 	$xattr_size = syscall(&PVE::Syscall::getxattr, $path_or_handle, $name, $buf, $size);
     }
     if ($xattr_size < 0) {
-	warn "$xattr_size <0 - $!";
 	return undef;
     } elsif ($xattr_size > $size) {
 	$! = POSIX::ENOBUFS;
