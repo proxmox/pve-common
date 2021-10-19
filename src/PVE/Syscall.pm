@@ -24,6 +24,10 @@ BEGIN {
 	fsconfig => &SYS_fsconfig,
 	fsmount => &SYS_fsmount,
 	fspick => &SYS_fspick,
+	getxattr => &SYS_getxattr,
+	setxattr => &SYS_setxattr,
+	fgetxattr => &SYS_fgetxattr,
+	fsetxattr => &SYS_fsetxattr,
 
 	# Below aren't yet in perl's syscall.ph but use asm-generic, so the same across (sane) archs
 	# -> none unknown currently, yay

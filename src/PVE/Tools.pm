@@ -1864,6 +1864,40 @@ sub mount($$$$$) {
     );
 }
 
+# size is optional and defaults to 256, note that xattr limits are FS specific and that xattrs can
+# get arbitrary long. NOTE: $! is set to ENOBUFS if the xattr is longer than the buffer size used.
+sub getxattr($$;$) {
+    my ($path_or_handle, $name, $size) = @_;
+    $size //= 256;
+    my $buf = pack("x${size}");
+
+    my $xattr_size = -1; # the actual size of the xattr, can be zero
+    if (defined(my $fd = fileno($path_or_handle))) {
+	$xattr_size = syscall(&PVE::Syscall::fgetxattr, $fd, $name, $buf, $size);
+    } else {
+	$xattr_size = syscall(&PVE::Syscall::getxattr, $path_or_handle, $name, $buf, $size);
+    }
+    if ($xattr_size < 0) {
+	warn "$xattr_size <0 - $!";
+	return undef;
+    } elsif ($xattr_size > $size) {
+	$! = POSIX::ENOBUFS;
+    }
+    return wantarray ? ($buf, $xattr_size) : $buf;
+}
+
+# NOTE: can take either a path or an open file handle, i.e., its multiplexing setxattr and fsetxattr
+sub setxattr($$$;$) {
+    my ($path_or_handle, $name, $value, $flags) = @_;
+    my $size = length($value); # NOTE: seems to get correct length also for wide-characters in text..
+
+    if (defined(my $fd = fileno($path_or_handle))) {
+	return 0 == syscall(&PVE::Syscall::fsetxattr, $fd, $name, $value, $size, $flags // 0);
+    } else {
+	return 0 == syscall(&PVE::Syscall::setxattr, $path_or_handle, $name, $value, $size, $flags // 0);
+    }
+}
+
 sub safe_compare {
     my ($left, $right, $cmp) = @_;
 
