@@ -1,3 +1,13 @@
+libpve-common-perl (7.0-11) bullseye; urgency=medium
+
+  * tempfile: improve base path selection, use user-specific rundir if
+    available, fallback to `/tmp` if that's not the case and the process
+    doesn't run under the root UID
+
+  * tools: add set/get xattr methods to expose the syscalls with the same name
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 19 Oct 2021 09:35:38 +0200
+
 libpve-common-perl (7.0-10) bullseye; urgency=medium
 
   * net: get local ip: catch any error from get_reachable_networks
