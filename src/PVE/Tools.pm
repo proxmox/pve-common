@@ -1865,7 +1865,7 @@ sub mount($$$$$) {
 }
 
 # size is optional and defaults to 256, note that xattr limits are FS specific and that xattrs can
-# get arbitrary long. NOTE: $! is set to ENOBUFS if the xattr is longer than the buffer size used.
+# get arbitrary long. pass `0` for $size in array context to get the actual size of a value
 sub getxattr($$;$) {
     my ($path_or_handle, $name, $size) = @_;
     $size //= 256;
@@ -1879,8 +1879,6 @@ sub getxattr($$;$) {
     }
     if ($xattr_size < 0) {
 	return undef;
-    } elsif ($xattr_size > $size) {
-	$! = POSIX::ENOBUFS;
     }
     return wantarray ? ($buf, $xattr_size) : $buf;
 }
