@@ -467,8 +467,8 @@ sub change_cpu_quota {
 	    PVE::ProcFSTools::write_proc_entry("$path/cpu.max", 'max');
 	}
     } elsif ($ver == 1) {
-	$quota //= -1; # unlimited
-	$period //= -1;
+	$quota //= -1; # default (unlimited)
+	$period //= 100_000; # default (100 ms)
 	PVE::ProcFSTools::write_proc_entry("$path/cpu.cfs_period_us", $period);
 	PVE::ProcFSTools::write_proc_entry("$path/cpu.cfs_quota_us", $quota);
     } else {
