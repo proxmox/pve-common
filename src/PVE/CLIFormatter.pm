@@ -104,8 +104,8 @@ sub print_text_table {
     $terminal_opts //= query_terminal_options({});
 
     my $sort_key = $options->{sort_key};
-    my $border = !$options->{noborder};
-    my $header = !$options->{noheader};
+    my $show_border = !$options->{noborder};
+    my $show_header = !$options->{noheader};
 
     my $columns = $terminal_opts->{columns};
     my $utf8 = $terminal_opts->{utf8};
@@ -128,10 +128,7 @@ sub print_text_table {
 
     my $colopts = {};
 
-    my $borderstring_m = '';
-    my $borderstring_b = '';
-    my $borderstring_t = '';
-    my $borderstring_h = '';
+    my $border = { m => '', b => '', t => '', h => '' };
     my $formatstring = '';
 
     my $column_count = scalar(@$props_to_print);
@@ -196,54 +193,54 @@ sub print_text_table {
 	    cutoff => $cutoff,
 	};
 
-	if ($border) {
+	if ($show_border) {
 	    if ($i == 0 && ($column_count == 1)) {
 		if ($utf8) {
 		    $formatstring .= "│ %$alignstr${cutoff}s │";
-		    $borderstring_t .= "┌─" . ('─' x $cutoff) . "─┐";
-		    $borderstring_h .= "╞═" . ('═' x $cutoff) . '═╡';
-		    $borderstring_m .= "├─" . ('─' x $cutoff) . "─┤";
-		    $borderstring_b .= "└─" . ('─' x $cutoff) . "─┘";
+		    $border->{t} .= "┌─" . ('─' x $cutoff) . "─┐";
+		    $border->{h} .= "╞═" . ('═' x $cutoff) . '═╡';
+		    $border->{m} .= "├─" . ('─' x $cutoff) . "─┤";
+		    $border->{b} .= "└─" . ('─' x $cutoff) . "─┘";
 		} else {
 		    $formatstring .= "| %$alignstr${cutoff}s |";
-		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+";
-		    $borderstring_h .= "+=" . ('=' x $cutoff) . '=';
+		    $border->{m} .= "+-" . ('-' x $cutoff) . "-+";
+		    $border->{h} .= "+=" . ('=' x $cutoff) . '=';
 		}
 	    } elsif ($i == 0) {
 		if ($utf8) {
 		    $formatstring .= "│ %$alignstr${cutoff}s ";
-		    $borderstring_t .= "┌─" . ('─' x $cutoff) . '─';
-		    $borderstring_h .= "╞═" . ('═' x $cutoff) . '═';
-		    $borderstring_m .= "├─" . ('─' x $cutoff) . '─';
-		    $borderstring_b .= "└─" . ('─' x $cutoff) . '─';
+		    $border->{t} .= "┌─" . ('─' x $cutoff) . '─';
+		    $border->{h} .= "╞═" . ('═' x $cutoff) . '═';
+		    $border->{m} .= "├─" . ('─' x $cutoff) . '─';
+		    $border->{b} .= "└─" . ('─' x $cutoff) . '─';
 		} else {
 		    $formatstring .= "| %$alignstr${cutoff}s ";
-		    $borderstring_m .= "+-" . ('-' x $cutoff) . '-';
-		    $borderstring_h .= "+=" . ('=' x $cutoff) . '=';
+		    $border->{m} .= "+-" . ('-' x $cutoff) . '-';
+		    $border->{h} .= "+=" . ('=' x $cutoff) . '=';
 		}
 	    } elsif ($i == ($column_count - 1)) {
 		if ($utf8) {
 		    $formatstring .= "│ %$alignstr${cutoff}s │";
-		    $borderstring_t .= "┬─" . ('─' x $cutoff) . "─┐";
-		    $borderstring_h .= "╪═" . ('═' x $cutoff) . '═╡';
-		    $borderstring_m .= "┼─" . ('─' x $cutoff) . "─┤";
-		    $borderstring_b .= "┴─" . ('─' x $cutoff) . "─┘";
+		    $border->{t} .= "┬─" . ('─' x $cutoff) . "─┐";
+		    $border->{h} .= "╪═" . ('═' x $cutoff) . '═╡';
+		    $border->{m} .= "┼─" . ('─' x $cutoff) . "─┤";
+		    $border->{b} .= "┴─" . ('─' x $cutoff) . "─┘";
 		} else {
 		    $formatstring .= "| %$alignstr${cutoff}s |";
-		    $borderstring_m .= "+-" . ('-' x $cutoff) . "-+";
-		    $borderstring_h .= "+=" . ('=' x $cutoff) . "=+";
+		    $border->{m} .= "+-" . ('-' x $cutoff) . "-+";
+		    $border->{h} .= "+=" . ('=' x $cutoff) . "=+";
 		}
 	    } else {
 		if ($utf8) {
 		    $formatstring .= "│ %$alignstr${cutoff}s ";
-		    $borderstring_t .= "┬─" . ('─' x $cutoff) . '─';
-		    $borderstring_h .= "╪═" . ('═' x $cutoff) . '═';
-		    $borderstring_m .= "┼─" . ('─' x $cutoff) . '─';
-		    $borderstring_b .= "┴─" . ('─' x $cutoff) . '─';
+		    $border->{t} .= "┬─" . ('─' x $cutoff) . '─';
+		    $border->{h} .= "╪═" . ('═' x $cutoff) . '═';
+		    $border->{m} .= "┼─" . ('─' x $cutoff) . '─';
+		    $border->{b} .= "┴─" . ('─' x $cutoff) . '─';
 		} else {
 		    $formatstring .= "| %$alignstr${cutoff}s ";
-		    $borderstring_m .= "+-" . ('-' x $cutoff) . '-';
-		    $borderstring_h .= "+=" . ('=' x $cutoff) . '=';
+		    $border->{m} .= "+-" . ('-' x $cutoff) . '-';
+		    $border->{h} .= "+=" . ('=' x $cutoff) . '=';
 		}
 	    }
 	} else {
@@ -252,8 +249,8 @@ sub print_text_table {
 	}
     }
 
-    $borderstring_t = $borderstring_m if !length($borderstring_t);
-    $borderstring_b = $borderstring_m if !length($borderstring_b);
+    $border->{t} = $border->{m} if !length($border->{t});
+    $border->{b} = $border->{m} if !length($border->{b});
 
     my $writeln = sub {
 	my ($text) = @_;
@@ -265,27 +262,25 @@ sub print_text_table {
 	}
     };
 
-    $writeln->($borderstring_t) if $border;
+    $writeln->($border->{t}) if $show_border;
 
-    my $borderstring_sep;
-    if ($header) {
+    if ($show_header) {
 	my $text = sprintf $formatstring, map { $colopts->{$_}->{title} } @$props_to_print;
 	$writeln->($text);
-	$borderstring_sep = $borderstring_h;
+	$border->{sep} = $border->{h};
     } else {
-	$borderstring_sep = $borderstring_m;
+	$border->{sep} = $border->{m};
     }
 
     for (my $i = 0; $i < scalar(@$tabledata); $i++) {
 	my $coldata = $tabledata->[$i];
 
-	if ($border && ($i != 0 || $header)) {
-	    $writeln->($borderstring_sep);
-	    $borderstring_sep = $borderstring_m;
+	if ($show_border && ($i != 0 || $show_header)) {
+	    $writeln->($border->{sep});
+	    $border->{sep} = $border->{m};
 	}
 
 	for (my $i = 0; $i < $coldata->{height}; $i++) {
-
 	    my $text = sprintf $formatstring, map {
 		substr($coldata->{rowdata}->{$_}->{lines}->[$i] // '', 0, $colopts->{$_}->{cutoff});
 	    } @$props_to_print;
@@ -294,7 +289,7 @@ sub print_text_table {
 	}
     }
 
-    $writeln->($borderstring_b) if $border;
+    $writeln->($border->{b}) if $show_border;
 }
 
 sub extract_properties_to_print {
