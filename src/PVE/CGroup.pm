@@ -263,7 +263,7 @@ sub get_io_stats {
 		$res->{diskread} += $b;
 	    }
 	    if (my $b = $dev->{wbytes}) {
-		$res->{diskread} += $b;
+		$res->{diskwrite} += $b;
 	    }
 	}
 
