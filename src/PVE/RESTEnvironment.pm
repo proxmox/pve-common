@@ -8,6 +8,7 @@ package PVE::RESTEnvironment;
 use strict;
 use warnings;
 
+use Exporter qw(import);
 use Fcntl qw(:flock);
 use IO::File;
 use IO::Handle;
@@ -19,6 +20,8 @@ use PVE::INotify;
 use PVE::ProcFSTools;
 use PVE::SafeSyslog;
 use PVE::Tools;
+
+our @EXPORT_OK = qw(log_warn);
 
 my $rest_env;
 
