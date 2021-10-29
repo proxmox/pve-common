@@ -715,6 +715,17 @@ sub fork_worker {
     return wantarray ? ($upid, $res) : $upid;
 }
 
+sub log_warn {
+    my ($message) = @_;
+
+    if ($rest_env) {
+	$rest_env->warn($message);
+    } else {
+	chomp($message);
+	print STDERR "WARN: $message\n";
+    }
+}
+
 sub warn {
     my ($self, $message) = @_;
 
