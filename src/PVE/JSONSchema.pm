@@ -653,6 +653,33 @@ register_standard_option('bwlimit', {
     format => $bwlimit_format,
 });
 
+my $remote_format = {
+    host => {
+	type => 'string',
+	format_description => 'Remote Proxmox hostname or IP',
+    },
+    port => {
+	type => 'integer',
+	optional => 1,
+    },
+    apitoken => {
+	type => 'string',
+	format_description => 'A full Proxmox API token including the secret value.',
+    },
+    fingerprint => get_standard_option(
+	'fingerprint-sha256',
+	{
+	    optional => 1,
+	    format_description => 'Remote host\'s certificate fingerprint, if not trusted by system store.',
+	}
+    ),
+};
+register_format('proxmox-remote', $remote_format);
+register_standard_option('proxmox-remote', {
+    description => "Specification of a remote endpoint.",
+    type => 'string', format => 'proxmox-remote',
+});
+
 # used for pve-tag-list in e.g., guest configs
 register_format('pve-tag', \&pve_verify_tag);
 sub pve_verify_tag {
