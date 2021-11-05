@@ -82,6 +82,12 @@ register_standard_option('pve-storage-id', {
     type => 'string', format => 'pve-storage-id',
 });
 
+register_standard_option('pve-bridge-id', {
+    description => "Bridge to attach guest network devices to.",
+    type => 'string', format => 'pve-bridge-id',
+    format_description => 'bridge',
+});
+
 register_standard_option('pve-config-digest', {
     description => 'Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.',
     type => 'string',
@@ -193,6 +199,17 @@ sub parse_storage_id {
     return parse_id($storeid, 'storage', $noerr);
 }
 
+PVE::JSONSchema::register_format('pve-bridge-id', \&parse_bridge_id);
+sub parse_bridge_id {
+    my ($id, $noerr) = @_;
+
+    if ($id !~ m/^[-_.\w\d]+$/) {
+	return undef if $noerr;
+	die "invalid bridge ID '$id'\n";
+    }
+    return $id;
+}
+
 PVE::JSONSchema::register_format('acme-plugin-id', \&parse_acme_plugin_id);
 sub parse_acme_plugin_id {
     my ($pluginid, $noerr) = @_;
@@ -292,6 +309,15 @@ register_format('storage-pair', \&verify_storagepair);
 sub verify_storagepair {
     my ($storagepair, $noerr) = @_;
     return $verify_idpair->($storagepair, $noerr, 'pve-storage-id');
+}
+
+# note: this only checks a single list entry
+# when using a bridge-pair-list map, you need to pass the full parameter to
+# parse_idmap
+register_format('bridge-pair', \&verify_bridgepair);
+sub verify_bridgepair {
+    my ($bridgepair, $noerr) = @_;
+    return $verify_idpair->($bridgepair, $noerr, 'pve-bridge-id');
 }
 
 register_format('mac-addr', \&pve_verify_mac_addr);
