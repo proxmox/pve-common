@@ -286,9 +286,9 @@ my $verify_idpair = sub {
 };
 
 # note: this only checks a single list entry
-# when using a storagepair-list map, you need to pass the full parameter to
+# when using a storage-pair-list map, you need to pass the full parameter to
 # parse_idmap
-register_format('storagepair', \&verify_storagepair);
+register_format('storage-pair', \&verify_storagepair);
 sub verify_storagepair {
     my ($storagepair, $noerr) = @_;
     return $verify_idpair->($storagepair, $noerr, 'pve-storage-id');
