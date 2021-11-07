@@ -1,3 +1,13 @@
+libpve-common-perl (7.0-12) bullseye; urgency=medium
+
+  * safe_read_from: bump default size limit to 1 MiB to match pmxcfs
+
+  * cgroup: cpu quota: fix resetting period length for v1
+
+  * cgroup v2: io stats: fix parsing disk writes
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 07 Nov 2021 21:36:08 +0100
+
 libpve-common-perl (7.0-11) bullseye; urgency=medium
 
   * tempfile: improve base path selection, use user-specific rundir if
