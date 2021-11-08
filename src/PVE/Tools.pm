@@ -1880,6 +1880,7 @@ sub getxattr($$;$) {
     if ($xattr_size < 0) {
 	return undef;
     }
+    $buf = substr($buf, 0, $xattr_size);
     return wantarray ? ($buf, $xattr_size) : $buf;
 }
 
