@@ -8,6 +8,7 @@ use Crypt::OpenSSL::RSA;
 use MIME::Base64;
 use Digest::SHA;
 use Time::HiRes qw(gettimeofday);
+use URI::Escape;
 
 use PVE::Exception qw(raise);
 
@@ -60,7 +61,10 @@ sub assemble_rsa_ticket {
 
     my $plain = "$prefix:";
 
-    $plain .= "$data:" if defined($data);
+    if (defined($data)) {
+	$data = uri_escape($data, ':');
+	$plain .= "$data:";
+    }
 
     $plain .= $timestamp;
 
@@ -87,6 +91,10 @@ sub verify_rsa_ticket {
 		my $ttime = hex($timestamp);
 
 		my $age = time() - $ttime;
+
+		if (defined($data)) {
+		    $data = uri_unescape($data);
+		}
 
 		if (($age > $min_age) && ($age < $max_age)) {
 		    if (defined($data)) {
