@@ -1,3 +1,13 @@
+libpve-common-perl (7.0-14) bullseye; urgency=medium
+
+  * schema: rename 'storagepair' format to 'storage-pair'
+
+  * schema: add 'pve-bridge-id' option, format and pair
+
+  * schema: add 'proxmox-remote' format and option
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 11 Nov 2021 12:33:48 +0100
+
 libpve-common-perl (7.0-13) bullseye; urgency=medium
 
   * getxattr: trim the returned buffer to the correct size
