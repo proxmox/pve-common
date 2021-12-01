@@ -18,7 +18,7 @@ my $alldays = [0,1,2,3,4,5,6];
 my $tests = [
     [
      '*',
-     { h => '*', m => '*', dow => $alldays },
+     undef,
      [
       [0, 60],
       [30, 60],
@@ -28,7 +28,7 @@ my $tests = [
     ],
     [
      '*/10',
-     { h => '*', m => [0, 10, 20, 30, 40, 50], dow => $alldays },
+     undef,
      [
       [0, 600],
       [599, 600],
@@ -38,7 +38,7 @@ my $tests = [
     ],
     [
      '*/12:0' ,
-     { h => [0, 12], m => [0], dow => $alldays },
+     undef,
      [
       [ 10, 43200],
       [ 13*3600, 24*3600],
@@ -46,7 +46,7 @@ my $tests = [
     ],
     [
      '1/12:0/15' ,
-     { h => [1, 13], m => [0, 15, 30, 45], dow => $alldays },
+     undef,
      [
       [0, 3600],
       [3600, 3600+15*60],
@@ -61,7 +61,7 @@ my $tests = [
     ],
     [
      '1,4,6',
-     { h => '*', m => [1, 4, 6], dow => $alldays},
+     undef,
      [
       [0, 60],
       [60, 4*60],
@@ -71,15 +71,15 @@ my $tests = [
     ],
     [
      '0..3',
-     { h => '*', m => [ 0, 1, 2, 3 ], dow => $alldays },
+     undef,
     ],
     [
      '23..23:0..3',
-     { h => [ 23 ], m => [ 0, 1, 2, 3 ], dow => $alldays },
+     undef,
     ],
     [
      'Mon',
-     { h => [0], m => [0], dow => [1] },
+     undef,
      [
       [0, 4*86400], # Note: Epoch 0 is Thursday, 1. January 1970
       [4*86400, 11*86400],
@@ -88,7 +88,7 @@ my $tests = [
     ],
     [
      'sat..sun',
-     { h => [0], m => [0], dow => [0, 6] },
+     undef,
      [
       [0, 2*86400],
       [2*86400, 3*86400],
@@ -97,7 +97,7 @@ my $tests = [
     ],
     [
      'sun..sat',
-     { h => [0], m => [0], dow => $alldays },
+     undef,
     ],
     [
      'Fri..Mon',
@@ -105,15 +105,15 @@ my $tests = [
     ],
     [
      'wed,mon..tue,fri',
-     { h => [0], m => [0], dow => [ 1, 2, 3, 5] },
+     undef,
     ],
     [
      'mon */15',
-     { h => '*', m =>  [0, 15, 30, 45], dow => [1]},
+     undef,
     ],
     [
     '22/1:0',
-     { h => [22, 23], m => [0], dow => $alldays },
+    undef,
      [
 	[0, 22*60*60],
 	[22*60*60, 23*60*60],
@@ -122,7 +122,7 @@ my $tests = [
     ],
     [
      '*/2:*',
-     { h => [0,2,4,6,8,10,12,14,16,18,20,22], m => '*', dow => $alldays },
+     undef,
      [
 	[0, 60],
 	[60*60, 2*60*60],
@@ -131,7 +131,7 @@ my $tests = [
     ],
     [
      '20..22:*/30',
-     { h => [20,21,22], m => [0,30], dow => $alldays },
+     undef,
      [
 	[0, 20*60*60],
 	[20*60*60, 20*60*60 + 30*60],
@@ -164,7 +164,7 @@ my $tests = [
     ],
     [
      '0,1,3..5',
-     { h => '*', m => [0,1,3,4,5], dow => $alldays },
+     undef,
      [
 	[0, 60],
 	[60, 3*60],
@@ -173,7 +173,7 @@ my $tests = [
     ],
     [
      '2,4:0,1,3..5',
-     { h => [2,4], m => [0,1,3,4,5], dow => $alldays },
+     undef,
      [
 	[0, 2*60*60],
 	[2*60*60 + 60, 2*60*60 + 3*60],
@@ -185,18 +185,16 @@ my $tests = [
 foreach my $test (@$tests) {
     my ($t, $expect, $nextsync) = @$test;
 
+    $expect //= {};
+
     my $timespec;
     eval { $timespec = PVE::CalendarEvent::parse_calendar_event($t); };
     my $err = $@;
-    delete $timespec->{utc};
 
     if ($expect->{error}) {
 	chomp $err if $err;
-	$timespec = { error => $err } if $err;
-	is_deeply($timespec, $expect, "expect parse error on '$t' - $expect->{error}");
+	ok(defined($err) == defined($expect->{error}), "parsing '$t' failed expectedly");
 	die "unable to execute nextsync tests" if $nextsync;
-    } else {
-	is_deeply($timespec, $expect, "parse '$t'");
     }
 
     next if !$nextsync;
