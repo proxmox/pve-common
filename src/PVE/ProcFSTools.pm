@@ -169,8 +169,8 @@ sub read_proc_stat {
     if (my $fh = IO::File->new ("/proc/stat", "r")) {
 	while (defined (my $line = <$fh>)) {
 	    if ($line =~ m|^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)|) {
-		$res->{user} = $1;
-		$res->{nice} = $2;
+		$res->{user} = $1 - $9;
+		$res->{nice} = $2 - $10;
 		$res->{system} = $3;
 		$res->{idle} = $4;
 		$res->{used} = $1+$2+$3;
@@ -191,7 +191,7 @@ sub read_proc_stat {
 
     my $ctime = gettimeofday; # floating point time in seconds
 
-    # the sum of all (non-guest) fields
+    # the sum of all fields
     $res->{total} = $res->{user}
 	+ $res->{nice}
 	+ $res->{system}
@@ -199,7 +199,9 @@ sub read_proc_stat {
 	+ $res->{irq}
 	+ $res->{softirq}
 	+ $res->{steal}
-	+ $res->{idle};
+	+ $res->{idle}
+	+ $res->{guest}
+	+ $res->{guest_nice};
 
     $res->{ctime} = $ctime;
     $res->{cpu} = 0;
