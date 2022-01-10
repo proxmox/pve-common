@@ -173,7 +173,7 @@ sub read_proc_stat {
 		$res->{nice} = $2 - $10;
 		$res->{system} = $3;
 		$res->{idle} = $4;
-		$res->{used} = $1+$2+$3;
+		$res->{used} = $1+$2+$3+$6+$7+$8;
 		$res->{iowait} = $5;
 		$res->{irq} = $6;
 		$res->{softirq} = $7;
