@@ -214,11 +214,15 @@ sub read_proc_stat {
     if ($diff > 1000) { # don't update too often
 	my $useddiff =  $res->{used} - $last_proc_stat->{used};
 	$useddiff = $diff if $useddiff > $diff;
-	$res->{cpu} = $useddiff/$diff;
+
+	my $totaldiff = $res->{total} - $last_proc_stat->{total};
+	$totaldiff = $diff if $totaldiff > $diff;
+
+	$res->{cpu} = $useddiff/$totaldiff;
 
 	my $waitdiff =  $res->{iowait} - $last_proc_stat->{iowait};
 	$waitdiff = $diff if $waitdiff > $diff;
-	$res->{wait} = $waitdiff/$diff;
+	$res->{wait} = $waitdiff/$totaldiff;
 
 	$last_proc_stat = $res;
     } else {
