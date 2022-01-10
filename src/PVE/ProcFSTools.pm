@@ -162,7 +162,7 @@ sub read_pressure {
 my $last_proc_stat;
 
 sub read_proc_stat {
-    my $res = { user => 0, nice => 0, system => 0, idle => 0 , sum => 0};
+    my $res = { user => 0, nice => 0, system => 0, idle => 0 , iowait => 0, irq => 0, softirq => 0, steal => 0, guest => 0, guest_nice => 0, sum => 0};
 
     my $cpucount = 0;
 
