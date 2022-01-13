@@ -1,3 +1,16 @@
+libpve-common-perl (7.1-1) bullseye; urgency=medium
+
+  * calendar event: base on more capable rust implementation via perlmod
+
+  * procfs statistics:
+    + initialize all fields to 0
+    + substract guest && guest_nice from user && nice time similar to other
+      metric tools like htop or telegraf
+    + add irq/softirq/steal to total used cpu
+    + use total of all non-idle fields to compute percentage
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 13 Jan 2022 16:31:27 +0100
+
 libpve-common-perl (7.0-14) bullseye; urgency=medium
 
   * schema: rename 'storagepair' format to 'storage-pair'
