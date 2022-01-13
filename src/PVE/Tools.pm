@@ -1210,8 +1210,7 @@ sub decode_text {
     return Encode::decode("utf8", uri_unescape($data));
 }
 
-# depreciated - do not use!
-# we now decode all parameters by default
+# NOTE: deprecated - do not use! we now decode all parameters by default
 sub decode_utf8_parameters {
     my ($param) = @_;
 

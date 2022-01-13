@@ -69,8 +69,7 @@ sub api_clone_schema {
 		}
 	    }
 	    my $tmp = ref($pd) ? clone($pd) : $pd;
-	    # NOTE: add typetext property for more complex types, to
-	    # make the web api viewer code simpler
+	    # NOTE: add typetext property for complexer types, to make the web api-viewer code simpler
 	    if (!$no_typetext && !(defined($tmp->{enum}) || defined($tmp->{pattern}))) {
 		my $typetext = PVE::JSONSchema::schema_get_type_text($tmp);
 		if ($tmp->{type} && ($tmp->{type} ne $typetext)) {

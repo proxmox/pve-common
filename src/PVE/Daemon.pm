@@ -243,8 +243,7 @@ sub setup {
 
     initlog($self->{name});
 
-    my $restart = $ENV{RESTART_PVE_DAEMON};
-    delete $ENV{RESTART_PVE_DAEMON};
+    my $restart = delete $ENV{RESTART_PVE_DAEMON};
     $self->{env_restart_pve_daemon} = $restart;
 
     my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
@@ -573,7 +572,6 @@ my $read_pid = sub {
 
 # checks if the process was started by systemd
 my $init_ppid = sub {
-
     if (getppid() == 1) {
        return 1;
     } else {
