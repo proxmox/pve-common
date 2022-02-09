@@ -249,6 +249,21 @@ sub pve_verify_node_name {
     return $node;
 }
 
+# maps source to target ID using an ID map
+sub map_id {
+    my ($map, $source) = @_;
+
+    return $source if !defined($map);
+
+    return $map->{entries}->{$source}
+	if $map->{entries} && defined($map->{entries}->{$source});
+
+    return $map->{default} if $map->{default};
+
+    # identity (fallback)
+    return $source;
+}
+
 sub parse_idmap {
     my ($idmap, $idformat) = @_;
 
