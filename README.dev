@@ -1,7 +1,7 @@
 = Setup PVE Development Environment =
 
 0.  Read https://pve.proxmox.com/wiki/Developer_Documentation
-1.  Install Debian 9 'stretch' (you can also start from a PVE installation and
+1.  Install Debian 11 Bullseye (you can also start from a PVE installation and
     skip step 2 - 5, 7 - 11)
 2.  Configure the network interface(s)
 3.  Change the IP address of your hostname for proper name resolution
@@ -19,11 +19,11 @@
 
 6.  Configure 'pvetest' repository in /etc/apt/sources.list.d/:
 
-    run: echo "deb http://download.proxmox.com/debian stretch pvetest" > /etc/apt/sources.list.d/pve-development.list
+    run: echo "deb http://download.proxmox.com/debian bullseye pvetest" > /etc/apt/sources.list.d/pve-development.list
 
-7.  Add the repository key:
+7.  Add the repository key, run:
 
-    run: wget -O- "http://download.proxmox.com/debian/proxmox-ve-release-5.x.gpg" | apt-key add -
+    wget -O- "https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg" | apt-key add -
 
 8.  run: apt-get update && apt-get dist-upgrade
 9.  run: apt-get install proxmox-ve
