@@ -6,7 +6,7 @@ use Data::Dumper;
 use Time::Local;
 use PVE::JSONSchema;
 use PVE::Tools qw(trim);
-use PVE::RS::CalendarEvent;
+use Proxmox::RS::CalendarEvent;
 
 # Note: This class implements a parser/utils for systemd like calendar exents
 # Date specification is currently not implemented
@@ -44,7 +44,7 @@ sub parse_calendar_event {
 	die "unable to parse calendar event - event is empty\n";
     }
 
-    return PVE::RS::CalendarEvent->new($event);
+    return Proxmox::RS::CalendarEvent->new($event);
 }
 
 sub compute_next_event {
