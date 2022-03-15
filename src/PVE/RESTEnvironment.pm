@@ -492,7 +492,8 @@ sub fork_worker {
     $dtype = 'unknown' if !defined ($dtype);
     $id = '' if !defined ($id);
 
-    $user = 'root@pve' if !defined ($user);
+    # note: below is only used for the task log entry
+    $user = $self->get_user(1) // 'root@pam' if !defined($user);
 
     my $sync = ($self->{type} eq 'cli' && !$background) ? 1 : 0;
 
