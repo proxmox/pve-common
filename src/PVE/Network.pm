@@ -286,12 +286,12 @@ sub add_bridge_fdb {
     my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
     return if !defined($vmid);
 
-    PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $iface, 'master', 'static']);
+    run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $iface, 'master', 'static']);
 
     my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
 
     if (-d "/sys/class/net/$vethfwpeer") {
-	PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $vethfwpeer, 'master', 'static']);
+	run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $vethfwpeer, 'master', 'static']);
     }
 
 }
@@ -305,12 +305,12 @@ sub del_bridge_fdb {
     my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
     return if !defined($vmid);
 
-    PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $iface, 'master', 'static']);
+    run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $iface, 'master', 'static']);
 
     my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
 
     if (-d "/sys/class/net/$vethfwpeer") {
-	PVE::Tools::run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $vethfwpeer, 'master', 'static']);
+	run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $vethfwpeer, 'master', 'static']);
     }
 }
 
@@ -323,7 +323,7 @@ sub tap_create {
 
     eval {
 	disable_ipv6($iface);
-	PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $iface, 'up', 'promisc', 'on', 'mtu', $bridgemtu]);
+	run_command(['/sbin/ip', 'link', 'set', $iface, 'up', 'promisc', 'on', 'mtu', $bridgemtu]);
     };
     die "interface activation failed\n" if $@;
 }
@@ -403,7 +403,7 @@ my $create_firewall_bridge_ovs = sub {
     &$activate_interface($ovsintport);
 
     # set the same mtu for ovs int port
-    PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $ovsintport, 'mtu', $bridgemtu]);
+    run_command(['/sbin/ip', 'link', 'set', $ovsintport, 'mtu', $bridgemtu]);
 
     &$bridge_add_interface($fwbr, $ovsintport);
     &$bridge_disable_interface_learning($ovsintport) if $no_learning;
@@ -497,8 +497,10 @@ sub copy_bridge_config {
 
     return if $br0 eq $br1;
 
-    my $br_configs = [ 'ageing_time', 'stp_state', 'priority', 'forward_delay',
-		       'hello_time', 'max_age', 'multicast_snooping', 'multicast_querier'];
+    my $br_configs = [
+	'ageing_time', 'stp_state', 'priority', 'forward_delay',
+	'hello_time', 'max_age', 'multicast_snooping', 'multicast_querier',
+    ];
 
     foreach my $sysname (@$br_configs) {
 	eval {
