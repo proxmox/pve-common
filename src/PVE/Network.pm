@@ -368,7 +368,7 @@ sub veth_delete {
 }
 
 my $create_firewall_bridge_linux = sub {
-    my ($iface, $bridge, $tag, $trunks, $disablelearning) = @_;
+    my ($iface, $bridge, $tag, $trunks, $no_learning) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
@@ -380,14 +380,14 @@ my $create_firewall_bridge_linux = sub {
     veth_create($vethfw, $vethfwpeer, $bridge);
 
     &$bridge_add_interface($bridge, $vethfwpeer, $tag, $trunks);
-    &$bridge_disable_interface_learning($vethfwpeer) if $disablelearning;
+    &$bridge_disable_interface_learning($vethfwpeer) if $no_learning;
     &$bridge_add_interface($fwbr, $vethfw);
 
     &$bridge_add_interface($fwbr, $iface);
 };
 
 my $create_firewall_bridge_ovs = sub {
-    my ($iface, $bridge, $tag, $trunks, $disablelearning) = @_;
+    my ($iface, $bridge, $tag, $trunks, $no_learning) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, undef, undef, $ovsintport) = &$compute_fwbr_names($vmid, $devid);
@@ -406,7 +406,7 @@ my $create_firewall_bridge_ovs = sub {
     PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $ovsintport, 'mtu', $bridgemtu]);
 
     &$bridge_add_interface($fwbr, $ovsintport);
-    &$bridge_disable_interface_learning($ovsintport) if $disablelearning;
+    &$bridge_disable_interface_learning($ovsintport) if $no_learning;
 };
 
 my $cleanup_firewall_bridge = sub {
@@ -431,10 +431,16 @@ my $cleanup_firewall_bridge = sub {
 };
 
 sub tap_plug {
-    my ($iface, $bridge, $tag, $firewall, $trunks, $rate, $disablelearning) = @_;
+    my ($iface, $bridge, $tag, $firewall, $trunks, $rate, $opts) = @_;
 
-    #cleanup old port config from any openvswitch bridge
-    eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
+    $opts = {} if !defined($opts);
+
+    my $no_learning = !$opts->{learning};
+
+    # cleanup old port config from any openvswitch bridge
+    eval {
+	run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {});
+    };
 
     if (-d "/sys/class/net/$bridge/bridge") {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
@@ -450,17 +456,17 @@ sub tap_plug {
 	}
 
 	if ($firewall) {
-	    &$create_firewall_bridge_linux($iface, $bridge, $tag, $trunks, $disablelearning);
+	    &$create_firewall_bridge_linux($iface, $bridge, $tag, $trunks, $no_learning);
 	} else {
 	    &$bridge_add_interface($bridge, $iface, $tag, $trunks);
 	}
-	&$bridge_disable_interface_learning($iface) if $disablelearning;
+	$bridge_disable_interface_learning->($iface) if $no_learning;
 
     } else {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
 
 	if ($firewall) {
-	    &$create_firewall_bridge_ovs($iface, $bridge, $tag, $trunks, $disablelearning);
+	    &$create_firewall_bridge_ovs($iface, $bridge, $tag, $trunks, $no_learning);
 	} else {
 	    &$ovs_bridge_add_port($bridge, $iface, $tag, undef, $trunks);
 	}
