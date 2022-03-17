@@ -8,7 +8,8 @@ use IO::File;
 use PVE::Tools qw(file_read_firstline dir_glob_foreach);
 
 my $pcisysfs = "/sys/bus/pci";
-my $pciregex = "([a-f0-9]{4,}):([a-f0-9]{2}):([a-f0-9]{2})\.([a-f0-9])";
+my $domainregex = "[a-f0-9]{4,}";
+my $pciregex = "($domainregex):([a-f0-9]{2}):([a-f0-9]{2})\.([a-f0-9])";
 
 my $parse_pci_ids = sub {
     my $ids = {};
@@ -31,6 +32,14 @@ my $parse_pci_ids = sub {
     }
 
     return $ids;
+};
+
+my $fixup_missing_domain = sub {
+    my ($id) = @_;
+
+    $id = "0000:$id" if $id !~ m/^${domainregex}:/;
+
+    return $id;
 };
 
 # returns a list of pci devices
@@ -148,14 +157,11 @@ sub lspci {
 sub get_mdev_types {
     my ($id) = @_;
 
-    my $fullid = $id;
-    if ($id !~ m/^[0-9a-fA-f]{4,}:/) {
-	$fullid = "0000:$id";
-    }
+    $id = $fixup_missing_domain->($id);
 
     my $types = [];
 
-    my $mdev_path = "$pcisysfs/devices/$fullid/mdev_supported_types";
+    my $mdev_path = "$pcisysfs/devices/$id/mdev_supported_types";
     if (!-d $mdev_path) {
 	return $types;
     }
@@ -300,11 +306,11 @@ sub pci_dev_group_bind_to_vfio {
     }
     die "Cannot find vfio-pci module!\n" if !-d $vfio_basedir;
 
-    $pciid = "0000:$pciid" if $pciid !~ m/^[0-9a-f]{4,}:/;
+    $pciid = $fixup_missing_domain->($pciid);
 
     # get IOMMU group devices
     opendir(my $D, "$pcisysfs/devices/$pciid/iommu_group/devices/") || die "Cannot open iommu_group: $!\n";
-    my @devs = grep /^[0-9a-f]{4,}:/, readdir($D);
+    my @devs = grep /^${domainregex}:/, readdir($D);
     closedir($D);
 
     foreach my $pciid (@devs) {
@@ -323,7 +329,7 @@ sub pci_dev_group_bind_to_vfio {
 sub pci_create_mdev_device {
     my ($pciid, $uuid, $type) = @_;
 
-    $pciid = "0000:$pciid" if $pciid !~ m/^[0-9a-f]{4,}:/;
+    $pciid = $fixup_missing_domain->($pciid);
 
     my $basedir = "$pcisysfs/devices/$pciid";
     my $mdev_dir = "$basedir/mdev_supported_types";
@@ -360,7 +366,7 @@ sub pci_create_mdev_device {
 sub pci_cleanup_mdev_device {
     my ($pciid, $uuid) = @_;
 
-    $pciid = "0000:$pciid" if $pciid !~ m/^[0-9a-f]{4,}:/;
+    $pciid = $fixup_missing_domain->($pciid);
 
     my $basedir = "$pcisysfs/devices/$pciid/$uuid";
 
