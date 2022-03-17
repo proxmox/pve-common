@@ -1823,8 +1823,8 @@ sub get_options {
 }
 
 # A way to parse configuration data by giving a json schema
-sub parse_config {
-    my ($schema, $filename, $raw) = @_;
+sub parse_config : prototype($$$;$) {
+    my ($schema, $filename, $raw, $comment_key) = @_;
 
     # do fast check (avoid validate_schema($schema))
     die "got strange schema" if !$schema->{type} ||
@@ -1832,10 +1832,24 @@ sub parse_config {
 
     my $cfg = {};
 
+    my $comment_data;
+    my $handle_comment = sub { $_[0] =~ /^#/ };
+    if (defined($comment_key)) {
+	$comment_data = '';
+	my $comment_re = qr/^\Q$comment_key\E:\s*(.*\S)\s*$/;
+	$handle_comment = sub {
+	    if ($_[0] =~ /^\#(.*)\s*$/ || $_[0] =~ $comment_re) {
+		$comment_data .= PVE::Tools::decode_text($1) . "\n";
+		return 1;
+	    }
+	    return undef;
+	};
+    }
+
     while ($raw =~ /^\s*(.+?)\s*$/gm) {
 	my $line = $1;
 
-	next if $line =~ /^#/;
+	next if $handle_comment->($line);
 
 	if ($line =~ m/^(\S+?):\s*(.*)$/) {
 	    my $key = $1;
@@ -1849,6 +1863,10 @@ sub parse_config {
 	} else {
 	    warn "ignore config line: $line\n"
 	}
+    }
+
+    if (defined($comment_data)) {
+	$cfg->{$comment_key} = $comment_data;
     }
 
     my $errors = {};
