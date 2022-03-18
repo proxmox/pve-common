@@ -1,3 +1,9 @@
+libpve-common-perl (7.1-5) bullseye; urgency=medium
+
+  * network: fix default of new bridge learning flag
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 18 Mar 2022 10:13:48 +0100
+
 libpve-common-perl (7.1-4) bullseye; urgency=medium
 
   * REST environment: allow export of log_warn
