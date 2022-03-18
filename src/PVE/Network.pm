@@ -435,7 +435,7 @@ sub tap_plug {
 
     $opts = {} if !defined($opts);
 
-    my $no_learning = !$opts->{learning};
+    my $no_learning = defined($opts->{learning}) && !$opts->{learning}; # default to learning on
 
     # cleanup old port config from any openvswitch bridge
     eval {
