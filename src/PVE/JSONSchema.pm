@@ -16,9 +16,10 @@ use Data::Dumper;
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
+register_standard_option
 get_standard_option
 parse_property_string
-register_standard_option
+print_property_string
 );
 
 our $CONFIGID_RE = qr/[a-z][a-z0-9_-]+/i;
