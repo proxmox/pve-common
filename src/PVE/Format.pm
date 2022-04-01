@@ -29,7 +29,7 @@ sub render_timestamp_gmt {
 }
 
 sub render_duration {
-    my ($duration_in_seconds) = @_;
+    my ($duration_in_seconds, $auto_limit_accuracy) = @_;
 
     my $text = '';
     my $rest = round($duration_in_seconds // 0);
@@ -39,18 +39,20 @@ sub render_duration {
     my $step = sub {
 	my ($unit, $unitlength) = @_;
 
-	if ((my $v = int($rest/$unitlength)) > 0) {
+	if ((my $v = int($rest / $unitlength)) > 0) {
 	    $text .= " " if length($text);
 	    $text .= "${v}${unit}";
 	    $rest -= $v * $unitlength;
+	    return 1;
 	}
+	return undef;
     };
 
-    $step->('w', 7*24*3600);
-    $step->('d', 24*3600);
+    my $weeks = $step->('w', 7 * 24 * 3600);
+    my $days = $step->('d', 24 * 3600) || $weeks;
     $step->('h', 3600);
-    $step->('m', 60);
-    $step->('s', 1);
+    $step->('m', 60) if !$auto_limit_accuracy || !$weeks;
+    $step->('s', 1) if !$auto_limit_accuracy || !$days;
 
     return $text;
 }
