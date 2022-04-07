@@ -517,6 +517,9 @@ my $get_property_description = sub {
 	chomp $wdescr;
 	$wdescr =~ s/^$/+/mg;
 
+	$wdescr =~ s/{/\\{/g;
+	$wdescr =~ s/}/\\}/g;
+
 	$res .= $wdescr . "\n";
 
 	if (my $req = $phash->{requires}) {
