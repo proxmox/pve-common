@@ -168,9 +168,9 @@ sub read_proc_stat {
 
     if (my $fh = IO::File->new ("/proc/stat", "r")) {
 	while (defined (my $line = <$fh>)) {
-	    if ($line =~ m|^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)|) {
-		$res->{user} = $1 - $9;
-		$res->{nice} = $2 - $10;
+	    if ($line =~ m|^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)(?:\s+(\d+)\s+(\d+))?|) {
+		$res->{user} = $1 - ($9 // 0);
+		$res->{nice} = $2 - ($10 // 0);
 		$res->{system} = $3;
 		$res->{idle} = $4;
 		$res->{used} = $1+$2+$3+$6+$7+$8;
@@ -178,8 +178,8 @@ sub read_proc_stat {
 		$res->{irq} = $6;
 		$res->{softirq} = $7;
 		$res->{steal} = $8;
-		$res->{guest} = $9;
-		$res->{guest_nice} = $10;
+		$res->{guest} = $9 // 0;
+		$res->{guest_nice} = $10 // 0;
 	    } elsif ($line =~ m|^cpu\d+\s|) {
 		$cpucount++;
 	    }
