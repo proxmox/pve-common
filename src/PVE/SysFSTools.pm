@@ -34,11 +34,9 @@ my $parse_pci_ids = sub {
     return $ids;
 };
 
-my $fixup_missing_domain = sub {
+my sub normalize_pci_id {
     my ($id) = @_;
-
     $id = "0000:$id" if $id !~ m/^${domainregex}:/;
-
     return $id;
 };
 
@@ -157,7 +155,7 @@ sub lspci {
 sub get_mdev_types {
     my ($id) = @_;
 
-    $id = $fixup_missing_domain->($id);
+    $id = normalize_pci_id($id);
 
     my $types = [];
 
@@ -306,7 +304,7 @@ sub pci_dev_group_bind_to_vfio {
     }
     die "Cannot find vfio-pci module!\n" if !-d $vfio_basedir;
 
-    $pciid = $fixup_missing_domain->($pciid);
+    $pciid = normalize_pci_id($pciid);
 
     # get IOMMU group devices
     opendir(my $D, "$pcisysfs/devices/$pciid/iommu_group/devices/") || die "Cannot open iommu_group: $!\n";
@@ -329,7 +327,7 @@ sub pci_dev_group_bind_to_vfio {
 sub pci_create_mdev_device {
     my ($pciid, $uuid, $type) = @_;
 
-    $pciid = $fixup_missing_domain->($pciid);
+    $pciid = normalize_pci_id($pciid);
 
     my $basedir = "$pcisysfs/devices/$pciid";
     my $mdev_dir = "$basedir/mdev_supported_types";
@@ -366,7 +364,7 @@ sub pci_create_mdev_device {
 sub pci_cleanup_mdev_device {
     my ($pciid, $uuid) = @_;
 
-    $pciid = $fixup_missing_domain->($pciid);
+    $pciid = normalize_pci_id($pciid);
 
     my $basedir = "$pcisysfs/devices/$pciid/$uuid";
 
