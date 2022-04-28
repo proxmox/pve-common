@@ -1,3 +1,15 @@
+libpve-common-perl (7.1-6) bullseye; urgency=medium
+
+  * json schema: allow to export print_property_string
+
+  * formatter: render duration: support autolimiting accurarcy
+
+  * SysFSTools: factor out normalizing the PCI domain
+
+  * REST handler: get property description: escape curly braces for asciidoc
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 28 Apr 2022 16:40:34 +0200
+
 libpve-common-perl (7.1-5) bullseye; urgency=medium
 
   * network: fix default of new bridge learning flag
