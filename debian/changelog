@@ -1,3 +1,20 @@
+libpve-common-perl (6.4-5) buster; urgency=medium
+
+  * network: is_ip_in_cidr: correctly handle the CIDR being a singleton
+    range
+
+  * fix #3153: INotify: adding comment of interface to inet6 section
+    when this is the only section
+
+  * fix #2831: never set bridge_fd to 0 with STP on
+
+  * fix #2368: network: extend infiniband recognition in regex
+
+  * inotify: network: detect "allow-auto" as "auto" synonym, even if it isn't
+    1:1 the same semantically its still better than just dropping it.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 05 May 2022 12:27:57 +0200
+
 libpve-common-perl (6.4-4) buster; urgency=medium
 
   * subscription: switch verification domain over to shop.proxmox.com
