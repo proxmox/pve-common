@@ -178,6 +178,9 @@ my sub do_raw_client_cmd {
     push @$cmd, @$param if defined($param);
 
     push @$cmd, "--repository", $repo;
+    if (defined(my $ns = delete($opts{namespace}))) {
+	push @$cmd, '--ns', $ns;
+    }
 
     local $ENV{PBS_PASSWORD} = $self->get_password();
 
@@ -194,13 +197,13 @@ my sub do_raw_client_cmd {
     run_command($cmd, %opts);
 }
 
-my sub run_raw_client_cmd {
+my sub run_raw_client_cmd : prototype($$$%) {
     my ($self, $client_cmd, $param, %opts) = @_;
     return do_raw_client_cmd($self, $client_cmd, $param, %opts);
 }
 
-my sub run_client_cmd {
-    my ($self, $client_cmd, $param, $no_output, $binary) = @_;
+my sub run_client_cmd : prototype($$;$$$$) {
+    my ($self, $client_cmd, $param, $no_output, $binary, $namespace) = @_;
 
     my $json_str = '';
     my $outfunc = sub { $json_str .= "$_[0]\n" };
@@ -219,6 +222,7 @@ my sub run_client_cmd {
 	outfunc => $outfunc,
 	errmsg => "$binary failed",
 	binary => $binary,
+	namespace => $namespace,
     );
 
     return undef if $no_output;
@@ -238,20 +242,35 @@ sub autogen_encryption_key {
     return file_get_contents($encfile);
 };
 
+# Snapshot or group parameters can be either just a string and will then refer to the root
+# namespace, or a tuple of `[namespace, snapshot]`.
+my sub split_namespaced_parameter : prototype($) {
+    my ($snapshot) = @_;
+    return (undef, $snapshot) if !ref($snapshot);
+
+    (my $namespace, $snapshot) = @$snapshot;
+    return ($namespace, $snapshot);
+}
+
 # lists all snapshots, optionally limited to a specific group
 sub get_snapshots {
     my ($self, $group) = @_;
 
+    my $namespace;
+    if (defined($group)) {
+	($namespace, $group) = split_namespaced_parameter($group);
+    }
+
     my $param = [];
     push @$param, $group if defined($group);
 
-    return run_client_cmd($self, "snapshots", $param);
+    return run_client_cmd($self, "snapshots", $param, undef, undef, $namespace);
 };
 
 # create a new PXAR backup of a FS directory tree - doesn't cross FS boundary
 # by default.
 sub backup_fs_tree {
-    my ($self, $root, $id, $pxarname, $cmd_opts) = @_;
+    my ($self, $root, $id, $pxarname, $cmd_opts, $namespace) = @_;
 
     die "backup-id not provided\n" if !defined($id);
     die "backup root dir not provided\n" if !defined($root);
@@ -265,6 +284,8 @@ sub backup_fs_tree {
 
     $cmd_opts //= {};
 
+    $cmd_opts->{namespace} = $namespace if defined($namespace);
+
     return run_raw_client_cmd($self, 'backup', $param, %$cmd_opts);
 };
 
@@ -275,6 +296,8 @@ sub restore_pxar {
     die "archive name not provided\n" if !defined($pxarname);
     die "restore-target not provided\n" if !defined($target);
 
+    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+
     my $param = [
 	"$snapshot",
 	"$pxarname.pxar",
@@ -282,6 +305,8 @@ sub restore_pxar {
 	"--allow-existing-dirs", 0,
     ];
     $cmd_opts //= {};
+
+    $cmd_opts->{namespace} = $namespace;
 
     return run_raw_client_cmd($self, 'restore', $param, %$cmd_opts);
 };
@@ -291,13 +316,17 @@ sub forget_snapshot {
 
     die "snapshot not provided\n" if !defined($snapshot);
 
-    return run_raw_client_cmd($self, 'forget', ["$snapshot"]);
+    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+
+    return run_raw_client_cmd($self, 'forget', ["$snapshot"], namespace => $namespace);
 };
 
 sub prune_group {
     my ($self, $opts, $prune_opts, $group) = @_;
 
     die "group not provided\n" if !defined($group);
+
+    (my $namespace, $group) = split_namespaced_parameter($group);
 
     # do nothing if no keep options specified for remote
     return [] if scalar(keys %$prune_opts) == 0;
@@ -315,7 +344,7 @@ sub prune_group {
     }
     push @$param, "$group";
 
-    return run_client_cmd($self, 'prune', $param);
+    return run_client_cmd($self, 'prune', $param, undef, undef, $namespace);
 };
 
 sub status {
@@ -343,12 +372,16 @@ sub status {
 
 sub file_restore_list {
     my ($self, $snapshot, $filepath, $base64) = @_;
+
+    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+
     return run_client_cmd(
 	$self,
 	"list",
 	[ $snapshot, $filepath, "--base64", $base64 ? 1 : 0 ],
 	0,
 	"proxmox-file-restore",
+	$namespace,
     );
 }
 
@@ -376,6 +409,8 @@ sub file_restore_extract_prepare {
 sub file_restore_extract {
     my ($self, $output_file, $snapshot, $filepath, $base64) = @_;
 
+    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+
     my $ret = eval {
 	local $SIG{ALRM} = sub { die "got timeout\n" };
 	alarm(30);
@@ -391,6 +426,7 @@ sub file_restore_extract {
             "extract",
 	    [ $snapshot, $filepath, "-", "--base64", $base64 ? 1 : 0 ],
 	    binary => "proxmox-file-restore",
+	    namespace => $namespace,
 	    errfunc => $errfunc,
 	    output => ">&$fn",
 	);
