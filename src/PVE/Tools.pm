@@ -1468,32 +1468,39 @@ sub parse_host_and_port {
 
 sub setresuid($$$) {
     my ($ruid, $euid, $suid) = @_;
-    return 0 == syscall(PVE::Syscall::setresuid, $ruid, $euid, $suid);
+    return 0 == syscall(PVE::Syscall::setresuid, int($ruid), int($euid), int($suid));
 }
 
 sub unshare($) {
     my ($flags) = @_;
-    return 0 == syscall(PVE::Syscall::unshare, $flags);
+    return 0 == syscall(PVE::Syscall::unshare, int($flags));
 }
 
 sub setns($$) {
     my ($fileno, $nstype) = @_;
-    return 0 == syscall(PVE::Syscall::setns, $fileno, $nstype);
+    return 0 == syscall(PVE::Syscall::setns, int($fileno), int($nstype));
 }
 
 sub syncfs($) {
     my ($fileno) = @_;
-    return 0 == syscall(PVE::Syscall::syncfs, $fileno);
+    return 0 == syscall(PVE::Syscall::syncfs, int($fileno));
 }
 
 sub fsync($) {
     my ($fileno) = @_;
-    return 0 == syscall(PVE::Syscall::fsync, $fileno);
+    return 0 == syscall(PVE::Syscall::fsync, int($fileno));
 }
 
 sub renameat2($$$$$) {
     my ($olddirfd, $oldpath, $newdirfd, $newpath, $flags) = @_;
-    return 0 == syscall(PVE::Syscall::renameat2, $olddirfd, $oldpath, $newdirfd, $newpath, $flags);
+    return 0 == syscall(
+	PVE::Syscall::renameat2,
+	int($olddirfd),
+	$oldpath,
+	int($newdirfd),
+	$newpath,
+	int($flags),
+    );
 }
 
 sub sync_mountpoint {
@@ -1652,7 +1659,11 @@ sub validate_ssh_public_keys {
 
 sub openat($$$;$) {
     my ($dirfd, $pathname, $flags, $mode) = @_;
-    my $fd = syscall(PVE::Syscall::openat, $dirfd, $pathname, $flags, $mode//0);
+    $dirfd = int($dirfd);
+    $flags = int($flags);
+    $mode = int($mode // 0);
+
+    my $fd = syscall(PVE::Syscall::openat, $dirfd, $pathname, $flags, $mode);
     return undef if $fd < 0;
     # sysopen() doesn't deal with numeric file descriptors apparently
     # so we need to convert to a mode string for IO::Handle->new_from_fd
@@ -1667,12 +1678,19 @@ sub openat($$$;$) {
 
 sub mkdirat($$$) {
     my ($dirfd, $name, $mode) = @_;
-    return syscall(PVE::Syscall::mkdirat, $dirfd, $name, $mode) == 0;
+    return syscall(PVE::Syscall::mkdirat, int($dirfd), $name, int($mode)) == 0;
 }
 
 sub fchownat($$$$$) {
     my ($dirfd, $pathname, $owner, $group, $flags) = @_;
-    return syscall(PVE::Syscall::fchownat, $dirfd, $pathname, $owner, $group, $flags) == 0;
+    return syscall(
+	PVE::Syscall::fchownat,
+	int($dirfd),
+	$pathname,
+	int($owner),
+	int($group),
+	int($flags),
+    ) == 0;
 }
 
 my $salt_starter = time();
@@ -1802,9 +1820,9 @@ sub open_tree($$$) {
     my ($dfd, $pathname, $flags) = @_;
     return PVE::Syscall::file_handle_result(syscall(
 	&PVE::Syscall::open_tree,
-	$dfd,
+	int($dfd),
 	$pathname,
-	$flags,
+	int($flags),
     ));
 }
 
@@ -1812,26 +1830,26 @@ sub move_mount($$$$$) {
     my ($from_dirfd, $from_pathname, $to_dirfd, $to_pathname, $flags) = @_;
     return 0 == syscall(
 	&PVE::Syscall::move_mount,
-	$from_dirfd,
+	int($from_dirfd),
 	$from_pathname,
-	$to_dirfd,
+	int($to_dirfd),
 	$to_pathname,
-	$flags,
+	int($flags),
     );
 }
 
 sub fsopen($$) {
     my ($fsname, $flags) = @_;
-    return PVE::Syscall::file_handle_result(syscall(&PVE::Syscall::fsopen, $fsname, $flags));
+    return PVE::Syscall::file_handle_result(syscall(&PVE::Syscall::fsopen, $fsname, int($flags)));
 }
 
 sub fsmount($$$) {
     my ($fd, $flags, $mount_attrs) = @_;
     return PVE::Syscall::file_handle_result(syscall(
 	&PVE::Syscall::fsmount,
-	$fd,
-	$flags,
-	$mount_attrs,
+	int($fd),
+	int($flags),
+	int($mount_attrs),
     ));
 }
 
@@ -1839,15 +1857,22 @@ sub fspick($$$) {
     my ($dirfd, $pathname, $flags) = @_;
     return PVE::Syscall::file_handle_result(syscall(
 	&PVE::Syscall::fspick,
-	$dirfd,
+	int($dirfd),
 	$pathname,
-	$flags,
+	int($flags),
     ));
 }
 
 sub fsconfig($$$$$) {
     my ($fd, $command, $key, $value, $aux) = @_;
-    return 0 == syscall(&PVE::Syscall::fsconfig, $fd, $command, $key, $value, $aux);
+    return 0 == syscall(
+	&PVE::Syscall::fsconfig,
+	int($fd),
+	int($command),
+	$key,
+	$value,
+	int($aux),
+    );
 }
 
 # "raw" mount, old api, not for generic use (as it does not invoke any helpers).
@@ -1859,7 +1884,7 @@ sub mount($$$$$) {
 	$source,
 	$target,
 	$filesystemtype,
-	$mountflags,
+	int($mountflags),
 	$data,
     );
 }
@@ -1873,9 +1898,9 @@ sub getxattr($$;$) {
 
     my $xattr_size = -1; # the actual size of the xattr, can be zero
     if (defined(my $fd = fileno($path_or_handle))) {
-	$xattr_size = syscall(&PVE::Syscall::fgetxattr, $fd, $name, $buf, $size);
+	$xattr_size = syscall(&PVE::Syscall::fgetxattr, $fd, $name, $buf, int($size));
     } else {
-	$xattr_size = syscall(&PVE::Syscall::getxattr, $path_or_handle, $name, $buf, $size);
+	$xattr_size = syscall(&PVE::Syscall::getxattr, $path_or_handle, $name, $buf, int($size));
     }
     if ($xattr_size < 0) {
 	return undef;
@@ -1890,9 +1915,23 @@ sub setxattr($$$;$) {
     my $size = length($value); # NOTE: seems to get correct length also for wide-characters in text..
 
     if (defined(my $fd = fileno($path_or_handle))) {
-	return 0 == syscall(&PVE::Syscall::fsetxattr, $fd, $name, $value, $size, $flags // 0);
+	return 0 == syscall(
+	    &PVE::Syscall::fsetxattr,
+	    $fd,
+	    $name,
+	    $value,
+	    int($size),
+	    int($flags // 0),
+	);
     } else {
-	return 0 == syscall(&PVE::Syscall::setxattr, $path_or_handle, $name, $value, $size, $flags // 0);
+	return 0 == syscall(
+	    &PVE::Syscall::setxattr,
+	    $path_or_handle,
+	    $name,
+	    $value,
+	    int($size),
+	    int($flags // 0),
+	);
     }
 }
 
