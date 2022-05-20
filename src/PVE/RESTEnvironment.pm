@@ -258,20 +258,17 @@ sub is_worker {
     return $WORKER_FLAG;
 }
 
-# read/update list of active workers
-# we move all finished tasks to the archive index,
-# but keep aktive and most recent task in the active file.
-# $nocheck ... consider $new_upid still running (avoid that
-# we try to read the reult to early.
-sub active_workers  {
+# read/update list of active workers.
+#
+# we move all finished tasks to the archive index, but keep active, and most recent tasks in the
+# active file.
+# $nocheck ... consider $new_upid still running (avoid that we try to read the result to early).
+sub active_workers {
     my ($self, $new_upid, $nocheck) = @_;
-
-    my $lkfn = "/var/log/pve/tasks/.active.lock";
 
     my $timeout = 10;
 
-    my $code = sub {
-
+    my $res = PVE::Tools::lock_file("/var/log/pve/tasks/.active.lock", $timeout, sub {
 	my $tasklist = PVE::INotify::read_file('active');
 
 	my @ta;
@@ -297,8 +294,8 @@ sub active_workers  {
 	    &$check_task($task);
 	}
 
-	if ($new_upid && !(my $task = $thash->{$new_upid})) {
-	    $task = PVE::Tools::upid_decode($new_upid);
+	if ($new_upid && !$thash->{$new_upid}) {
+	    my $task = PVE::Tools::upid_decode($new_upid);
 	    $task->{upid} = $new_upid;
 	    $thash->{$new_upid} = $task;
 	    &$check_task($task, $nocheck);
@@ -351,10 +348,9 @@ sub active_workers  {
 	    }
 	}
 
-	# we try to reduce the amount of data
-	# list all running tasks and task and a few others
-	# try to limit to 25 tasks
-	my $max = 25 - scalar(@$tlist);
+	# we try to reduce the amount of data list all running tasks and task and a few others
+	my $MAX_FINISHED = 25;
+	my $max = $MAX_FINISHED - scalar(@$tlist);
         foreach my $task (@ta) {
 	    last if $max <= 0;
 	    push @$tlist, $task;
@@ -364,9 +360,7 @@ sub active_workers  {
 	PVE::INotify::write_file('active', $tlist) if $save;
 
 	return $tlist;
-    };
-
-    my $res = PVE::Tools::lock_file($lkfn, $timeout, $code);
+    });
     die $@ if $@;
 
     return $res;
