@@ -1022,6 +1022,7 @@ sub run_fork_with_timeout {
     warn $@ if $@;
     $pipe_out->close();
     kill('KILL', $child);
+    # FIXME: hangs if $child doesn't exits?! (D state)
     waitpid($child, 0);
 
     alarm $prev_alarm;
