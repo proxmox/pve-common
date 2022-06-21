@@ -696,12 +696,14 @@ register_standard_option('proxmox-remote', {
     type => 'string', format => 'proxmox-remote',
 });
 
+our $PVE_TAG_RE = qr/[a-z0-9_][a-z0-9_\-\+\.]*/i;
+
 # used for pve-tag-list in e.g., guest configs
 register_format('pve-tag', \&pve_verify_tag);
 sub pve_verify_tag {
     my ($value, $noerr) = @_;
 
-    return $value if $value =~ m/^[a-z0-9_][a-z0-9_\-\+\.]*$/i;
+    return $value if $value =~ m/^${PVE_TAG_RE}$/i;
 
     return undef if $noerr;
 
