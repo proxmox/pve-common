@@ -242,6 +242,8 @@ sub autogen_encryption_key {
     return file_get_contents($encfile);
 };
 
+# TODO remove support for namespaced parameters. Needs Breaks for pmg-api and libpve-storage-perl.
+# Deprecated! The namespace should be passed in as part of the config in new().
 # Snapshot or group parameters can be either just a string and will then default to the namespace
 # that's part of the initial configuration in new(), or a tuple of `[namespace, snapshot]`.
 my sub split_namespaced_parameter : prototype($$) {
