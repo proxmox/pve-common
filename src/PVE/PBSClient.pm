@@ -274,7 +274,7 @@ sub get_snapshots {
 # create a new PXAR backup of a FS directory tree - doesn't cross FS boundary
 # by default.
 sub backup_fs_tree {
-    my ($self, $root, $id, $pxarname, $cmd_opts, $namespace) = @_;
+    my ($self, $root, $id, $pxarname, $cmd_opts) = @_;
 
     die "backup-id not provided\n" if !defined($id);
     die "backup root dir not provided\n" if !defined($root);
@@ -288,7 +288,7 @@ sub backup_fs_tree {
 
     $cmd_opts //= {};
 
-    $cmd_opts->{namespace} = $namespace if defined($namespace);
+    $cmd_opts->{namespace} = $self->{scfg}->{namespace} if defined($self->{scfg}->{namespace});
 
     return run_raw_client_cmd($self, 'backup', $param, %$cmd_opts);
 };
