@@ -77,7 +77,7 @@ sub delete_password {
 
     my $pwfile = password_file_name($self);
 
-    unlink $pwfile or die "deleting password file failed - $!\n";
+    unlink $pwfile or $! == ENOENT or die "deleting password file failed - $!\n";
 };
 
 sub get_password {
