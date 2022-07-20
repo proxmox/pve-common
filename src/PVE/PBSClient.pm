@@ -242,11 +242,11 @@ sub autogen_encryption_key {
     return file_get_contents($encfile);
 };
 
-# Snapshot or group parameters can be either just a string and will then refer to the root
-# namespace, or a tuple of `[namespace, snapshot]`.
-my sub split_namespaced_parameter : prototype($) {
-    my ($snapshot) = @_;
-    return (undef, $snapshot) if !ref($snapshot);
+# Snapshot or group parameters can be either just a string and will then default to the namespace
+# that's part of the initial configuration in new(), or a tuple of `[namespace, snapshot]`.
+my sub split_namespaced_parameter : prototype($$) {
+    my ($self, $snapshot) = @_;
+    return ($self->{scfg}->{namespace}, $snapshot) if !ref($snapshot);
 
     (my $namespace, $snapshot) = @$snapshot;
     return ($namespace, $snapshot);
@@ -258,7 +258,9 @@ sub get_snapshots {
 
     my $namespace;
     if (defined($group)) {
-	($namespace, $group) = split_namespaced_parameter($group);
+	($namespace, $group) = split_namespaced_parameter($self, $group);
+    } else {
+	$namespace = $self->{scfg}->{namespace};
     }
 
     my $param = [];
@@ -296,7 +298,7 @@ sub restore_pxar {
     die "archive name not provided\n" if !defined($pxarname);
     die "restore-target not provided\n" if !defined($target);
 
-    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+    (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
     my $param = [
 	"$snapshot",
@@ -316,7 +318,7 @@ sub forget_snapshot {
 
     die "snapshot not provided\n" if !defined($snapshot);
 
-    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+    (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
     return run_client_cmd($self, 'forget', ["$snapshot"], 1, undef, $namespace)
 };
@@ -326,7 +328,7 @@ sub prune_group {
 
     die "group not provided\n" if !defined($group);
 
-    (my $namespace, $group) = split_namespaced_parameter($group);
+    (my $namespace, $group) = split_namespaced_parameter($self, $group);
 
     # do nothing if no keep options specified for remote
     return [] if scalar(keys %$prune_opts) == 0;
@@ -373,7 +375,7 @@ sub status {
 sub file_restore_list {
     my ($self, $snapshot, $filepath, $base64) = @_;
 
-    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+    (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
     return run_client_cmd(
 	$self,
@@ -409,7 +411,7 @@ sub file_restore_extract_prepare {
 sub file_restore_extract {
     my ($self, $output_file, $snapshot, $filepath, $base64) = @_;
 
-    (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
+    (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
     my $ret = eval {
 	local $SIG{ALRM} = sub { die "got timeout\n" };
