@@ -318,7 +318,7 @@ sub forget_snapshot {
 
     (my $namespace, $snapshot) = split_namespaced_parameter($snapshot);
 
-    return run_raw_client_cmd($self, 'forget', ["$snapshot"], namespace => $namespace);
+    return run_client_cmd($self, 'forget', ["$snapshot"], 1, undef, $namespace)
 };
 
 sub prune_group {
