@@ -172,11 +172,16 @@ sub get_mdev_types {
 	my $available = int(file_read_firstline("$type_path/available_instances"));
 	my $description = PVE::Tools::file_get_contents("$type_path/description");
 
-	push @$types, {
+	my $entry = {
 	    type => $type,
 	    description => $description,
 	    available => $available,
 	};
+
+	my $name = file_read_firstline("$type_path/name");
+	$entry->{name} = $name if defined($name);
+
+	push @$types, $entry;
     });
 
     return $types;
