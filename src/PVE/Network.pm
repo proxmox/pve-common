@@ -219,6 +219,11 @@ my $bridge_disable_interface_learning = sub {
 my $bridge_add_interface = sub {
     my ($bridge, $iface, $tag, $trunks) = @_;
 
+    my $bridgemtu = read_bridge_mtu($bridge);
+    eval {
+       PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $iface, 'mtu', $bridgemtu]);
+    };
+
     # drop link local address (it can't be used when on a bridge anyway)
     disable_ipv6($iface);
     iface_set_master($iface, $bridge);
@@ -259,6 +264,9 @@ my $ovs_bridge_add_port = sub {
     push @$cmd, "trunks=". join(',', $trunks) if $trunks;
     push @$cmd, "vlan_mode=native-untagged" if $tag && $trunks;
 
+    my $bridgemtu = read_bridge_mtu($bridge);
+    push @$cmd, '--', 'set', 'Interface', $iface, "mtu_request=$bridgemtu";
+
     if ($internal) {
 	# second command
 	push @$cmd, '--', 'set', 'Interface', $iface, 'type=internal';
@@ -271,9 +279,12 @@ my $ovs_bridge_add_port = sub {
 };
 
 my $activate_interface = sub {
-    my ($iface) = @_;
+    my ($iface, $mtu) = @_;
 
-    eval { run_command(['/sbin/ip', 'link', 'set', $iface, 'up']) };
+    my $cmd = ['/sbin/ip', 'link', 'set', $iface, 'up'];
+    push (@$cmd, ('mtu', $mtu)) if $mtu;
+
+    eval { run_command($cmd) };
     die "can't activate interface '$iface' - $@\n" if $@;
 };
 
@@ -354,8 +365,9 @@ sub veth_create {
     # up vethpair
     disable_ipv6($veth);
     disable_ipv6($vethpeer);
-    &$activate_interface($veth);
-    &$activate_interface($vethpeer);
+    &$activate_interface($veth, $bridgemtu);
+    &$activate_interface($vethpeer, $bridgemtu);
+
 }
 
 sub veth_delete {
@@ -373,8 +385,10 @@ my $create_firewall_bridge_linux = sub {
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
 
+    my $bridgemtu = read_bridge_mtu($bridge);
+
     &$cond_create_bridge($fwbr);
-    &$activate_interface($fwbr);
+    &$activate_interface($fwbr, $bridgemtu);
 
     copy_bridge_config($bridge, $fwbr);
     veth_create($vethfw, $vethfwpeer, $bridge);
@@ -395,15 +409,12 @@ my $create_firewall_bridge_ovs = sub {
     my $bridgemtu = read_bridge_mtu($bridge);
 
     &$cond_create_bridge($fwbr);
-    &$activate_interface($fwbr);
+    &$activate_interface($fwbr, $bridgemtu);
 
     &$bridge_add_interface($fwbr, $iface);
 
     &$ovs_bridge_add_port($bridge, $ovsintport, $tag, 1, $trunks);
-    &$activate_interface($ovsintport);
-
-    # set the same mtu for ovs int port
-    run_command(['/sbin/ip', 'link', 'set', $ovsintport, 'mtu', $bridgemtu]);
+    &$activate_interface($ovsintport, $bridgemtu);
 
     &$bridge_add_interface($fwbr, $ovsintport);
     &$bridge_disable_interface_learning($ovsintport) if $no_learning;
