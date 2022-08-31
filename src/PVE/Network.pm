@@ -102,10 +102,10 @@ sub setup_tc_rate_limit {
 		"htb rate ${rate}bps burst ${burst}b");
 
     run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
-    run_command("/sbin/tc filter add dev $iface parent ffff: " .
-		"prio 50 basic " .
-		"police rate ${rate}bps burst ${burst}b mtu 64kb " .
-		"drop");
+    run_command(
+        "/sbin/tc filter add dev $iface parent ffff: prio 50 basic police rate ${rate}bps burst ${burst}b mtu 64kb drop");
+
+    return;
 }
 
 sub tap_rate_limit {
@@ -115,6 +115,8 @@ sub tap_rate_limit {
     my $burst = 1024*1024;
 
     setup_tc_rate_limit($iface, $rate, $burst);
+
+    return;
 }
 
 sub read_bridge_mtu {
@@ -130,7 +132,7 @@ sub read_bridge_mtu {
     }
 
     return $mtu;
-};
+}
 
 my $parse_tap_device_name = sub {
     my ($iface, $noerr) = @_;
@@ -144,7 +146,7 @@ my $parse_tap_device_name = sub {
 	$vmid = $1;
 	$devid = $2;
     } else {
-	return undef if $noerr;
+	return if $noerr;
 	die "can't create firewall bridge for random interface name '$iface'\n";
     }
 
@@ -163,26 +165,29 @@ my $compute_fwbr_names = sub {
     return ($fwbr, $vethfw, $vethfwpeer, $ovsintport);
 };
 
-sub iface_delete($) {
+sub iface_delete :prototype($) {
     my ($iface) = @_;
     run_command(['/sbin/ip', 'link', 'delete', 'dev', $iface], noerr => 1)
 	== 0 or die "failed to delete interface '$iface'\n";
+    return;
 }
 
-sub iface_create($$@) {
+sub iface_create :prototype($$@) {
     my ($iface, $type, @args) = @_;
     run_command(['/sbin/ip', 'link', 'add', $iface, 'type', $type, @args], noerr => 1)
 	== 0 or die "failed to create interface '$iface'\n";
+    return;
 }
 
-sub iface_set($@) {
+sub iface_set :prototype($@) {
     my ($iface, @opts) = @_;
     run_command(['/sbin/ip', 'link', 'set', $iface, @opts], noerr => 1)
 	== 0 or die "failed to set interface options for '$iface' (".join(' ', @opts).")\n";
+    return;
 }
 
 # helper for nicer error messages:
-sub iface_set_master($$) {
+sub iface_set_master :prototype($$) {
     my ($iface, $master) = @_;
     if (defined($master)) {
 	eval { iface_set($iface, 'master', $master) };
@@ -191,6 +196,7 @@ sub iface_set_master($$) {
 	eval { iface_set($iface, 'nomaster') };
 	die "can't unenslave '$iface'\n" if $@;
     }
+    return;
 }
 
 my $cond_create_bridge = sub {
@@ -209,6 +215,7 @@ sub disable_ipv6 {
     open(my $fh, '>', $file) or die "failed to open $file for writing: $!\n";
     print {$fh} "1\n" or die "failed to disable link-local ipv6 for $iface\n";
     close($fh);
+    return;
 }
 
 my $bridge_disable_interface_learning = sub {
@@ -306,6 +313,7 @@ sub add_bridge_fdb {
 	run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $vethfwpeer, 'master', 'static']);
     }
 
+    return;
 }
 
 sub del_bridge_fdb {
@@ -324,6 +332,8 @@ sub del_bridge_fdb {
     if (-d "/sys/class/net/$vethfwpeer") {
 	run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $vethfwpeer, 'master', 'static']);
     }
+
+    return;
 }
 
 sub tap_create {
@@ -338,6 +348,7 @@ sub tap_create {
 	run_command(['/sbin/ip', 'link', 'set', $iface, 'up', 'promisc', 'on', 'mtu', $bridgemtu]);
     };
     die "interface activation failed\n" if $@;
+    return;
 }
 
 sub veth_create {
@@ -369,6 +380,7 @@ sub veth_create {
     &$activate_interface($veth, $bridgemtu);
     &$activate_interface($vethpeer, $bridgemtu);
 
+    return;
 }
 
 sub veth_delete {
@@ -378,6 +390,7 @@ sub veth_delete {
 	iface_delete($veth);
     }
     eval { tap_unplug($veth) };
+    return;
 }
 
 my $create_firewall_bridge_linux = sub {
@@ -485,6 +498,8 @@ sub tap_plug {
     }
 
     tap_rate_limit($iface, $rate);
+
+    return;
 }
 
 sub tap_unplug {
@@ -501,7 +516,9 @@ sub tap_unplug {
 
     &$cleanup_firewall_bridge($iface);
     #cleanup old port config from any openvswitch bridge
-    eval {run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
+    eval { run_command("/usr/bin/ovs-vsctl del-port $iface", outfunc => sub {}, errfunc => sub {}) };
+
+    return;
 }
 
 sub copy_bridge_config {
@@ -524,6 +541,7 @@ sub copy_bridge_config {
 	};
 	warn $@ if $@;
     }
+    return;
 }
 
 sub activate_bridge_vlan_slave {
@@ -562,6 +580,7 @@ sub activate_bridge_vlan_slave {
 
     # add $ifacevlan to the bridge
     &$bridge_add_interface($bridgevlan, $ifacevlan);
+    return;
 }
 
 sub activate_bridge_vlan {
@@ -656,13 +675,12 @@ sub is_ip_in_cidr {
     my ($ip, $cidr, $version) = @_;
 
     my $cidr_obj = IP_from_cidr($cidr, $version);
-    return undef if !$cidr_obj;
+    return if !$cidr_obj;
 
     my $ip_obj = Net::IP->new($ip, $version);
-    return undef if !$ip_obj;
+    return if !$ip_obj;
 
     my $overlap = $cidr_obj->overlaps($ip_obj);
-
     return if !defined($overlap);
 
     return $overlap == $Net::IP::IP_B_IN_A_OVERLAP || $overlap == $Net::IP::IP_IDENTICAL;
@@ -733,7 +751,7 @@ sub get_local_ip {
 	}
     }
 
-    return undef if !$param{all}; # getting here means no early return above triggered -> no IPs
+    return if !$param{all}; # getting here means no early return above triggered -> no IPs
 
     my $res = []; # order gai.conf controlled first, then group v4 and v6, simply lexically sorted
     if ($resolved_host) {
@@ -775,7 +793,7 @@ sub get_ip_from_hostname {
     my @res = eval { PVE::Tools::getaddrinfo_all($hostname) };
     if ($@) {
 	die "hostname lookup '$hostname' failed - $@" if !$noerr;
-	return undef;
+	return;
     }
 
     for my $ai (@res) {
@@ -786,7 +804,7 @@ sub get_ip_from_hostname {
     }
     # NOTE: we only get here if no WAN/LAN IP was found, so this is now the error path!
     die "address lookup for '$hostname' did not find any IP address\n" if !$noerr;
-    return undef;
+    return;
 }
 
 sub lock_network {
