@@ -122,9 +122,12 @@ sub read_bridge_mtu {
 
     my $mtu = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/mtu");
     die "bridge '$bridge' does not exist\n" if !$mtu;
-    # avoid insecure dependency;
-    die "unable to parse mtu value" if $mtu !~ /^(\d+)$/;
-    $mtu = int($1);
+
+    if ($mtu =~ /^(\d+)$/) { # avoid insecure dependency (untaint)
+	$mtu = int($1);
+    } else {
+	die "unexpeted error: unable to parse mtu value '$mtu' as integer\n";
+    }
 
     return $mtu;
 };
@@ -220,9 +223,7 @@ my $bridge_add_interface = sub {
     my ($bridge, $iface, $tag, $trunks) = @_;
 
     my $bridgemtu = read_bridge_mtu($bridge);
-    eval {
-       PVE::Tools::run_command(['/sbin/ip', 'link', 'set', $iface, 'mtu', $bridgemtu]);
-    };
+    eval { run_command(['/sbin/ip', 'link', 'set', $iface, 'mtu', $bridgemtu]) };
 
     # drop link local address (it can't be used when on a bridge anyway)
     disable_ipv6($iface);
@@ -282,7 +283,7 @@ my $activate_interface = sub {
     my ($iface, $mtu) = @_;
 
     my $cmd = ['/sbin/ip', 'link', 'set', $iface, 'up'];
-    push (@$cmd, ('mtu', $mtu)) if $mtu;
+    push @$cmd, ('mtu', $mtu) if $mtu;
 
     eval { run_command($cmd) };
     die "can't activate interface '$iface' - $@\n" if $@;
@@ -636,8 +637,7 @@ sub tcp_ping {
 sub IP_from_cidr {
     my ($cidr, $version) = @_;
 
-    return if $cidr !~ m!^(\S+?)/(\S+)$!;
-    my ($ip, $prefix) = ($1, $2);
+    my ($ip, $prefix) = $cidr =~ m!^(\S+?)/(\S+)$! or return;
 
     my $ipobj = Net::IP->new($ip, $version);
     return if !$ipobj;
