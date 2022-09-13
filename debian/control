@@ -40,9 +40,9 @@ Depends: libclone-perl,
          ${misc:Depends},
          ${perl:Depends},
 Breaks: ifupdown2 (<< 2.0.1-1+pve5),
-        pmg-api (<< 6.1-7),
+        pmg-api (<< 7.1-5),
         pve-container (<< 3.0-9),
-        pve-manager (<< 5.2-5),
+        pve-manager (<< 7.2-9),
         qemu-server (<< 7.0-19),
 Description: Proxmox VE base library
  This package contains the base library used by other Proxmox VE components.
