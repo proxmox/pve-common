@@ -40,9 +40,7 @@ sub new {
 #
 # Returns a set (hash mapping names to `1`) of cgroupv1 controllers, and an
 # optional boolean whether a unified (cgroupv2) hierarchy exists.
-#
-# Deprecated: Use `get_cgroup_controllers()` instead.
-sub get_v1_controllers {
+my sub get_v1_controllers {
     my $v1 = {};
     my $v2 = 0;
     my $data = PVE::Tools::file_get_contents('/proc/self/cgroup');
