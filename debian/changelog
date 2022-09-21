@@ -1,3 +1,19 @@
+libpve-common-perl (7.2-3) bullseye; urgency=medium
+
+  * proc fs tools: handle proc/stat without guest values
+
+  * sysfs: get name from mediated device types, if any
+
+  * network: improve setting MTU of TAP devices if re-plugged on a different
+    bridge or if used with OVS
+
+  * remove PVE::Subscription and friends, replaced by common rust
+    implementation
+
+  * cgroup: get mode by checking /sys/fs/cgroup mount point
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 19 Sep 2022 11:30:30 +0200
+
 libpve-common-perl (7.2-2) bullseye; urgency=medium
 
   * tools: use int() on all integer syscall parameters to avoid that
