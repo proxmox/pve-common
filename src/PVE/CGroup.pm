@@ -86,21 +86,30 @@ sub get_cgroup_controllers() {
 my $CGROUP_MODE = undef;
 # Figure out which cgroup mode we're operating under:
 #
-# Returns 1 if cgroupv1 controllers exist (hybrid or legacy mode), and 2 in a
-# cgroupv2-only environment.
+# For this we check the file system type of `/sys/fs/cgroup` as it may well be possible that some
+# additional cgroupv1 mount points have been created by tools such as `systemd-nspawn`, or
+# manually.
+#
+# Returns 1 for what we consider the hybrid layout, 2 for what we consider the unified layout.
 #
 # NOTE: To fully support a hybrid layout it is better to use functions like
-# `cpuset_controller_path`.
+# `cpuset_controller_path` and not rely on this value for anything involving paths.
 #
 # This is a function, not a method!
 sub cgroup_mode() {
     if (!defined($CGROUP_MODE)) {
-	my ($v1, $v2) = get_cgroup_controllers();
-	if (keys %$v1) {
-	    # hybrid or legacy mode
-	    $CGROUP_MODE = 1;
-	} elsif ($v2) {
-	    $CGROUP_MODE = 2;
+	my $mounts = PVE::ProcFSTools::parse_proc_mounts();
+	for my $entry (@$mounts) {
+	    my ($what, $dir, $fstype, $opts) = @$entry;
+	    if ($dir eq '/sys/fs/cgroup') {
+		if ($fstype eq 'cgroup2') {
+		    $CGROUP_MODE = 2;
+		    last;
+		} else {
+		    $CGROUP_MODE = 1;
+		    last;
+		}
+	    }
 	}
     }
 
