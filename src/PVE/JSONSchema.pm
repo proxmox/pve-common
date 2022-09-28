@@ -318,6 +318,13 @@ my $verify_idpair = sub {
     return $input;
 };
 
+PVE::JSONSchema::register_standard_option('pve-targetstorage', {
+    description => "Mapping from source to target storages. Providing only a single storage ID maps all source storages to that storage. Providing the special value '1' will map each source storage to itself.",
+    type => 'string',
+    format => 'storage-pair-list',
+    optional => 1,
+});
+
 # note: this only checks a single list entry
 # when using a storage-pair-list map, you need to pass the full parameter to
 # parse_idmap
