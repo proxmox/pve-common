@@ -518,7 +518,7 @@ sub clamp_cpu_shares {
 #
 # Dies on error (including a not-running or currently-shutting-down guest).
 sub change_cpu_shares {
-    my ($self, $shares, $cgroupv1_default) = @_;
+    my ($self, $shares) = @_;
 
     my ($path, $ver) = $self->get_path('cpu', 1);
     if (!defined($path)) {
@@ -530,7 +530,7 @@ sub change_cpu_shares {
 	PVE::ProcFSTools::write_proc_entry("$path/cpu.weight", $shares);
     } elsif ($ver == 1) {
 	$shares //= 1024;
-	PVE::ProcFSTools::write_proc_entry("$path/cpu.shares", $shares // $cgroupv1_default);
+	PVE::ProcFSTools::write_proc_entry("$path/cpu.shares", $shares);
     } else {
 	die "bad cgroup version: $ver\n";
     }
