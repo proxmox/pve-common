@@ -486,6 +486,24 @@ sub change_cpu_quota {
     return 1;
 }
 
+# Clamp an integer to the supported range of CPU shares from the booted CGroup version
+#
+# Returns the default if called with an undefined value.
+sub clamp_cpu_shares {
+    my ($shares) = @_;
+
+    my $is_cgroupv2 = cgroup_mode() == 2;
+
+    return $is_cgroupv2 ? 100 : 1024 if !defined($shares);
+
+    if ($is_cgroupv2) {
+	$shares = 10000 if $shares >= 10000; # v1 can be higher, so clamp v2 there
+    } else {
+	$shares = 2 if $shares < 2; # v2 can be lower, so clamp v1 there
+    }
+    return $shares;
+}
+
 # Change the cpu "shares" for a container.
 #
 # In cgroupv1 we used a value in `[0..500000]` with a default of 1024.
