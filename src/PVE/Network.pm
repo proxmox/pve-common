@@ -210,8 +210,8 @@ my $cond_create_bridge = sub {
 
 sub disable_ipv6 {
     my ($iface) = @_;
-    return if !-d '/proc/sys/net/ipv6'; # ipv6 might be completely disabled
     my $file = "/proc/sys/net/ipv6/conf/$iface/disable_ipv6";
+    return if !-e $file; # ipv6 might be completely disabled
     open(my $fh, '>', $file) or die "failed to open $file for writing: $!\n";
     print {$fh} "1\n" or die "failed to disable link-local ipv6 for $iface\n";
     close($fh);
