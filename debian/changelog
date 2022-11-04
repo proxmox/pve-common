@@ -1,3 +1,21 @@
+libpve-common-perl (7.2-4) bullseye; urgency=medium
+
+  * pbs client: drop namespace parameter in backup_fs_tree
+
+  * pbs client: deprecate explicit namespace parameters in favor of requiring
+    it to be configured on instantiation
+
+  * pbs client: use the configured namespace as default instead of the root
+    namespace where the namespace parameter is optional
+
+  * pbs client: suppress meaningless "data: null" output when removing snapshots
+
+  * pbs client: do not consider deleting a non-existent password an error
+
+  * cgroup: move get_cpuunits helper from qemu-server as clamp_cpu_shares
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 04 Nov 2022 14:06:28 +0100
+
 libpve-common-perl (7.2-3) bullseye; urgency=medium
 
   * proc fs tools: handle proc/stat without guest values
