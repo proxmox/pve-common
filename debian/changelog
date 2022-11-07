@@ -1,3 +1,11 @@
+libpve-common-perl (7.2-5) bullseye; urgency=medium
+
+  * schema: take over 'pve-targetstorage' option
+
+  * cgroup: change cpu shares: drop ignored $cgroupv1_default parameter
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 07 Nov 2022 16:05:10 +0100
+
 libpve-common-perl (7.2-4) bullseye; urgency=medium
 
   * pbs client: drop namespace parameter in backup_fs_tree
