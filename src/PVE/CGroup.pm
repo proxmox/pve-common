@@ -517,6 +517,10 @@ sub clamp_cpu_shares {
 # It is left to the user to figure this out for now.
 #
 # Dies on error (including a not-running or currently-shutting-down guest).
+#
+# NOTE: if you add a new param during 7.x you need to break older pve-container/qemu-server versions
+#  that previously passed a `$cgroupv1_default`, which got removed due to being ignored anyway.
+#  otherwise you risk that a old module bogusly passes some cgroup default as your new param.
 sub change_cpu_shares {
     my ($self, $shares) = @_;
 
