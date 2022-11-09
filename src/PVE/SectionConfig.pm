@@ -289,7 +289,7 @@ sub format_section_header {
 
 
 sub parse_config {
-    my ($class, $filename, $raw) = @_;
+    my ($class, $filename, $raw, $allow_unknown) = @_;
 
     my $pdata = $class->private();
 
@@ -320,26 +320,31 @@ sub parse_config {
 
 	my ($type, $sectionId, $errmsg, $config) = $class->parse_section_header($line);
 	if ($config) {
-	    my $ignore = 0;
+	    my $skip = 0;
+	    my $unknown = 0;
 
 	    my $plugin;
 
 	    if ($errmsg) {
-		$ignore = 1;
+		$skip = 1;
 		chomp $errmsg;
 		warn "$errprefix (skip section '$sectionId'): $errmsg\n";
 	    } elsif (!$type) {
-		$ignore = 1;
+		$skip = 1;
 		warn "$errprefix (skip section '$sectionId'): missing type - internal error\n";
 	    } else {
 		if (!($plugin = $pdata->{plugins}->{$type})) {
-		    $ignore = 1;
-		    warn "$errprefix (skip section '$sectionId'): unsupported type '$type'\n";
+		    if ($allow_unknown) {
+			$unknown = 1;
+		    } else {
+			$skip = 1;
+			warn "$errprefix (skip section '$sectionId'): unsupported type '$type'\n";
+		    }
 		}
 	    }
 
 	    while ($line = $nextline->()) {
-		next if $ignore; # skip
+		next if $skip; # skip
 
 		$errprefix = "file $filename line $lineno";
 
@@ -348,7 +353,10 @@ sub parse_config {
 
 		    eval {
 			die "duplicate attribute\n" if defined($config->{$k});
-			$config->{$k} = $plugin->check_value($type, $k, $v, $sectionId);
+			if (!$unknown) {
+			    $v = $plugin->check_value($type, $k, $v, $sectionId);
+			}
+			$config->{$k} = $v;
 		    };
 		    if (my $err = $@) {
 			warn "$errprefix (section '$sectionId') - unable to parse value of '$k': $err";
@@ -365,10 +373,17 @@ sub parse_config {
 		}
 	    }
 
-	    if (!$ignore && $type && $plugin && $config) {
+	    if ($unknown) {
 		$config->{type} = $type;
-		eval { $ids->{$sectionId} = $plugin->check_config($sectionId, $config, 1, 1); };
-		warn "$errprefix (skip section '$sectionId'): $@" if $@;
+		$ids->{$sectionId} = $config;
+		$order->{$sectionId} = $pri++;
+	    } elsif (!$skip && $type && $plugin && $config) {
+		$config->{type} = $type;
+		if (!$unknown) {
+		    $config = eval { $config = $plugin->check_config($sectionId, $config, 1, 1); };
+		    warn "$errprefix (skip section '$sectionId'): $@" if $@;
+		}
+		$ids->{$sectionId} = $config;
 		$order->{$sectionId} = $pri++;
 	    }
 
@@ -439,7 +454,7 @@ my $format_config_line = sub {
 };
 
 sub write_config {
-    my ($class, $filename, $cfg) = @_;
+    my ($class, $filename, $cfg, $allow_unknown) = @_;
 
     my $pdata = $class->private();
     my $propertyList = $pdata->{propertyList};
@@ -465,11 +480,26 @@ sub write_config {
 	my $type = $scfg->{type};
 	my $opts = $pdata->{options}->{$type};
 
-	die "unknown section type '$type'\n" if !$opts;
+	die "unknown section type '$type'\n" if !$opts && !$allow_unknown;
 
 	my $done_hash = {};
 
 	my $data = $class->format_section_header($type, $sectionId, $scfg, $done_hash);
+
+	if (!$opts && $allow_unknown) {
+	    $done_hash->{type} = 1;
+	    my @first = exists($scfg->{comment}) ? ('comment') : ();
+	    for my $k (@first, sort keys %$scfg) {
+		next if defined($done_hash->{$k});
+		$done_hash->{$k} = 1;
+		my $v = $scfg->{$k};
+		$data .= "\t$k $v\n";
+	    }
+	    $out .= "$data\n";
+	    next;
+	}
+
+
 	if ($scfg->{comment} && !$done_hash->{comment}) {
 	    my $k = 'comment';
 	    my $v = $class->encode_value($type, $k, $scfg->{$k});
