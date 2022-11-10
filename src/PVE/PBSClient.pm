@@ -375,14 +375,19 @@ sub status {
 };
 
 sub file_restore_list {
-    my ($self, $snapshot, $filepath, $base64) = @_;
+    my ($self, $snapshot, $filepath, $base64, $extra_params) = @_;
 
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
+    my $cmd = [ $snapshot, $filepath, "--base64", $base64 ? 1 : 0];
+
+    if (my $timeout = $extra_params->{timeout}) {
+	push $cmd->@*, '--timeout', $timeout;
+    }
 
     return run_client_cmd(
 	$self,
 	"list",
-	[ $snapshot, $filepath, "--base64", $base64 ? 1 : 0 ],
+	$cmd,
 	0,
 	"proxmox-file-restore",
 	$namespace,
