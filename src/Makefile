@@ -8,12 +8,12 @@ PERLDIR=${PREFIX}/share/perl5
 
 LIB_SOURCES = \
 	AtomicFile.pm \
-	Certificate.pm \
+	CGroup.pm \
 	CLIFormatter.pm \
 	CLIHandler.pm \
 	CalendarEvent.pm \
+	Certificate.pm \
 	CpuSet.pm \
-	CGroup.pm \
 	Daemon.pm \
 	Exception.pm \
 	Format.pm \
@@ -30,8 +30,8 @@ LIB_SOURCES = \
 	SafeSyslog.pm \
 	SectionConfig.pm \
 	Subscription.pm \
-	Syscall.pm \
 	SysFSTools.pm \
+	Syscall.pm \
 	Systemd.pm \
 	Ticket.pm \
 	Tools.pm
