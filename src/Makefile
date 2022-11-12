@@ -37,8 +37,7 @@ LIB_SOURCES = \
 
 all:
 
-.PHONY: install
-install:
+install: $(addprefix PVE/,${LIB_SOURCES})
 	install -d -m 0755 ${DESTDIR}${PERLDIR}/PVE
 	for i in ${LIB_SOURCES}; do install -D -m 0644 PVE/$$i ${DESTDIR}${PERLDIR}/PVE/$$i; done
 
