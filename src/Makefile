@@ -29,7 +29,6 @@ LIB_SOURCES = \
 	RESTHandler.pm \
 	SafeSyslog.pm \
 	SectionConfig.pm \
-	Subscription.pm \
 	SysFSTools.pm \
 	Syscall.pm \
 	Systemd.pm \
