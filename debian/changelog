@@ -1,3 +1,14 @@
+libpve-common-perl (7.2-6) bullseye; urgency=medium
+
+  * section config: optionally support unknown types so that a local plugin
+    can edit their own entries without needing to understand all possible
+    types in a configuration backed by the section config format.
+
+  * move the scheduled job base config & registry over from pve-manager as
+    PVE::Job::Registry for better reuse
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 12 Nov 2022 16:04:59 +0100
+
 libpve-common-perl (7.2-5) bullseye; urgency=medium
 
   * schema: take over 'pve-targetstorage' option
