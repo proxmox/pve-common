@@ -459,8 +459,15 @@ sub tap_plug {
     my ($iface, $bridge, $tag, $firewall, $trunks, $rate, $opts) = @_;
 
     $opts = {} if !defined($opts);
+    $opts = { learning => $opts } if !ref($opts); # FIXME: backward compat, drop with PVE 8.0
 
-    my $no_learning = defined($opts->{learning}) && !$opts->{learning}; # default to learning on
+    if (!defined($opts->{learning})) { # auto-detect
+	$opts = {} if !defined($opts);
+	my $interfaces_config = PVE::INotify::read_file('interfaces');
+	my $bridge = $interfaces_config->{ifaces}->{$bridge};
+	$opts->{learning} = !($bridge && $bridge->{'bridge-disable-mac-learning'}); # default learning to on
+    }
+    my $no_learning = !$opts->{learning};
 
     # cleanup old port config from any openvswitch bridge
     eval {
