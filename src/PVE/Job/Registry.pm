@@ -18,6 +18,8 @@ use base qw(PVE::SectionConfig);
 my $defaultData = {
     propertyList => {
 	type => { description => "Section type." },
+	# FIXME: remove below? this is the section ID, schema would only be checked if a plugin
+	# declares this as explicit option, which isn't really required as its available anyway..
 	id => {
 	    description => "The ID of the job.",
 	    type => 'string',
@@ -60,10 +62,15 @@ sub parse_config {
 
     my $cfg = $class->SUPER::parse_config($filename, $raw, $allow_unknown);
 
-    foreach my $id (sort keys %{$cfg->{ids}}) {
+    for my $id (keys %{$cfg->{ids}}) {
 	my $data = $cfg->{ids}->{$id};
+	my $type = $data->{type};
 
-	$data->{id} = $id;
+	# FIXME: below id injection is gross, guard to avoid breaking plugins that don't declare id
+	# as option; *iff* we want this it should be handled by section config directly.
+	if ($defaultData->{options}->{$type} && exists $defaultData->{options}->{$type}->{id}) {
+	    $data->{id} = $id;
+	}
 	$data->{enabled}  //= 1;
 
 	$data->{comment} = PVE::Tools::decode_text($data->{comment}) if defined($data->{comment});
