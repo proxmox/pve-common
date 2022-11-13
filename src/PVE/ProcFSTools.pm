@@ -352,10 +352,10 @@ sub read_proc_net_dev {
 sub write_proc_entry {
     my ($filename, $data) = @_;#
 
-    my $fh = IO::File->new($filename,  O_WRONLY);
+    my $fh = IO::File->new($filename, O_WRONLY);
     die "unable to open file '$filename' - $!\n" if !$fh;
-    die "unable to write '$filename' - $!\n" unless print $fh $data;
-    die "closing file '$filename' failed - $!\n" unless close $fh;
+    print $fh $data or die "unable to write '$filename' - $!\n";
+    close $fh or die "closing file '$filename' failed - $!\n";
     $fh->close();
 }
 
