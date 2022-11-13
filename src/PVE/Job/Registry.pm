@@ -55,13 +55,6 @@ sub private {
     return $defaultData;
 }
 
-sub get_job {
-    my ($class, $cfg, $id) = @_;
-
-    return {
-    }
-}
-
 sub parse_config {
     my ($class, $filename, $raw, $allow_unknown) = @_;
 
