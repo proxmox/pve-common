@@ -127,6 +127,7 @@ Conf::One->register();
 Conf::Two->register();
 Conf->init();
 
+# FIXME: allow development debug warnings?!
 local $SIG{__WARN__} = sub { die @_; };
 
 my sub enum {
