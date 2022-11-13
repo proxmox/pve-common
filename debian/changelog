@@ -1,3 +1,15 @@
+libpve-common-perl (7.2-7) bullseye; urgency=medium
+
+  * job registry: avoid injecting the section id unconditionally in
+    configs
+
+  * network: tap plug: auto-disable learning if `bridge-disable-mac-
+    learning` option is set on the underlying Linux bridge; modern VM/CT
+    management stack adds the MAC then manually to the forwarding DB (FDB) on
+    start or (migration-)resume.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 13 Nov 2022 15:53:53 +0100
+
 libpve-common-perl (7.2-6) bullseye; urgency=medium
 
   * section config: optionally support unknown types so that a local plugin
