@@ -25,7 +25,7 @@ use PVE::Tools;
 
 use base 'Exporter';
 
-our @EXPORT_OK = qw(read_file write_file register_file);
+our @EXPORT_OK = qw(read_file write_file register_file nodename);
 
 my $ccache;
 my $ccachemap;
@@ -500,13 +500,10 @@ sub inotify_init {
 }
 
 my $cached_nodename;
-
 sub nodename {
-
     return $cached_nodename if $cached_nodename;
 
     my ($sysname, $nodename) = POSIX::uname();
-
     $nodename =~ s/\..*$//; # strip domain part, if any
 
     die "unable to read node name\n" if !$nodename;
