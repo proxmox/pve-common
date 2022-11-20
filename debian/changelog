@@ -1,3 +1,11 @@
+libpve-common-perl (7.2-8) bullseye; urgency=medium
+
+  * pbs client: use 25s timeout and add extra-params
+
+  * network: support adding fdb directly in tap_plug
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 20 Nov 2022 16:26:19 +0100
+
 libpve-common-perl (7.2-7) bullseye; urgency=medium
 
   * job registry: avoid injecting the section id unconditionally in
