@@ -512,7 +512,7 @@ sub tap_plug {
 sub tap_unplug {
     my ($iface) = @_;
 
-    my $path= "/sys/class/net/$iface/brport/bridge";
+    my $path = "/sys/class/net/$iface/brport/bridge";
     if (-l $path) {
 	my $bridge = basename(readlink($path));
 	#avoid insecure dependency;
