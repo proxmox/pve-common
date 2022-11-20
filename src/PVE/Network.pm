@@ -492,7 +492,10 @@ sub tap_plug {
 	} else {
 	    &$bridge_add_interface($bridge, $iface, $tag, $trunks);
 	}
-	$bridge_disable_interface_learning->($iface) if $no_learning;
+	if ($no_learning) {
+	    $bridge_disable_interface_learning->($iface);
+	    add_bridge_fdb($iface, $opts->{mac}) if defined($opts->{mac});
+	}
 
     } else {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
