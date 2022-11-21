@@ -300,7 +300,7 @@ sub add_bridge_fdb {
     my ($iface, $mac) = @_;
 
     my $learning = PVE::Tools::file_read_firstline("/sys/class/net/$iface/brport/learning");
-    return if $learning;
+    return if !defined($learning) || $learning == 1;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
     return if !defined($vmid);
@@ -320,7 +320,7 @@ sub del_bridge_fdb {
     my ($iface, $mac) = @_;
 
     my $learning = PVE::Tools::file_read_firstline("/sys/class/net/$iface/brport/learning");
-    return if $learning;
+    return if !defined($learning) || $learning == 1;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface, 1);
     return if !defined($vmid);
