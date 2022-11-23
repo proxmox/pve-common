@@ -1278,9 +1278,10 @@ sub dump_logfile {
 	return ($count, $lines);
     }
 
-    $start = 0 if !$start;
-    $limit = 50 if !$limit;
+    $start = $start // 0;
+    $limit = $limit // 50;
 
+    my $read_until_end = ($limit == 0) ? 1 : 0;
     my $line;
 
     if ($filter) {
@@ -1288,18 +1289,22 @@ sub dump_logfile {
 	while (defined($line = <$fh>)) {
 	    next if $line !~ m/$filter/;
 	    next if $count++ < $start;
-	    next if $limit <= 0;
+	    if (!$read_until_end) {
+		next if $limit <= 0;
+		$limit--;
+	    }
 	    chomp $line;
 	    push @$lines, { n => $count, t => $line};
-	    $limit--;
 	}
     } else {
 	while (defined($line = <$fh>)) {
 	    next if $count++ < $start;
-	    next if $limit <= 0;
+	    if (!$read_until_end) {
+		next if $limit <= 0;
+		$limit--;
+	    }
 	    chomp $line;
 	    push @$lines, { n => $count, t => $line};
-	    $limit--;
 	}
     }
 
