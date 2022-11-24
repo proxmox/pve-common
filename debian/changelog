@@ -1,3 +1,11 @@
+libpve-common-perl (7.3-1) bullseye; urgency=medium
+
+  * network: fix learning-on check for adding and deleting FDB entries
+
+  * dump logfile: return whole log file if `limit` parameter is `0`
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 24 Nov 2022 17:12:56 +0100
+
 libpve-common-perl (7.2-8) bullseye; urgency=medium
 
   * pbs client: use 25s timeout and add extra-params
