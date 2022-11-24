@@ -1281,7 +1281,7 @@ sub dump_logfile {
     $start = $start // 0;
     $limit = $limit // 50;
 
-    my $read_until_end = ($limit == 0) ? 1 : 0;
+    my $read_until_end = $limit == 0;
     my $line;
 
     if ($filter) {
