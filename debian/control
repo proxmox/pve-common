@@ -10,8 +10,11 @@ Build-Depends: debhelper (>= 12~),
                libjson-perl,
                liblinux-inotify2-perl,
                libnet-ip-perl,
+               libnetaddr-ip-perl,
+               libproxmox-rs-perl,
                libstring-shellquote-perl,
                libtest-mockmodule-perl,
+               libyaml-libyaml-perl,
 Standards-Version: 3.9.8
 
 Package: libpve-common-perl
