@@ -63,7 +63,7 @@ subtest 'test kernel_version parser' => sub {
 
 	my $res = [ PVE::ProcFSTools::kernel_version() ];
 
-	is_deeply($res, $test->{expect}, "got verison <". $res->[4] ."> same as expected");
+	is_deeply($res, $test->{expect}, "got version <". $res->[4] ."> same as expected");
     }
 };
 
