@@ -1265,29 +1265,25 @@ sub split_args {
     return $str ? [ Text::ParseWords::shellwords($str) ] : [];
 }
 
-sub dump_logfile {
-    my ($filename, $start, $limit, $filter) = @_;
+sub dump_logfile_by_filehandle {
+    my ($fh, $filter, $state) = @_;
 
-    my $lines = [];
-    my $count = 0;
+    my $count = ($state->{count} //= 0);
+    my $lines = ($state->{lines} //= []);
+    my $start = ($state->{start} //= 0);
+    my $limit = ($state->{limit} //= 50);
+    my $final = ($state->{final} //= 1);
+    my $read_until_end = ($state->{read_until_end} //= $limit == 0);
 
-    my $fh = IO::File->new($filename, "r");
-    if (!$fh) {
-	$count++;
-	push @$lines, { n => $count, t => "unable to open file - $!"};
-	return ($count, $lines);
-    }
-
-    $start = $start // 0;
-    $limit = $limit // 50;
-
-    my $read_until_end = $limit == 0;
     my $line;
-
     if ($filter) {
 	# duplicate code, so that we do not slow down normal path
 	while (defined($line = <$fh>)) {
-	    next if $line !~ m/$filter/;
+	    if (ref($filter) eq 'CODE') {
+		next if !$filter->($line);
+	    } else {
+		next if $line !~ m/$filter/;
+	    }
 	    next if $count++ < $start;
 	    if (!$read_until_end) {
 		next if $limit <= 0;
@@ -1308,16 +1304,37 @@ sub dump_logfile {
 	}
     }
 
-    close($fh);
-
     # HACK: ExtJS store.guaranteeRange() does not like empty array
     # so we add a line
-    if (!$count) {
+    if (!$count && $final) {
 	$count++;
 	push @$lines, { n => $count, t => "no content"};
     }
 
-    return ($count, $lines);
+    $state->{count} = $count;
+    $state->{limit} = $limit;
+}
+
+sub dump_logfile {
+    my ($filename, $start, $limit, $filter) = @_;
+
+    my $fh = IO::File->new($filename, "r");
+    if (!$fh) {
+	return (1, { n => 1, t => "unable to open file - $!"});
+    }
+
+    my %state = (
+	'count' => 0,
+	'lines' => [],
+	'start' => $start,
+	'limit' => $limit,
+    );
+
+    dump_logfile_by_filehandle($fh, $filter, \%state);
+
+    close($fh);
+
+    return ($state{'count'}, $state{'lines'});
 }
 
 sub dump_journal {
