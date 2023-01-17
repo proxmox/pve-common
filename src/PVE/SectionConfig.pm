@@ -543,4 +543,19 @@ sub assert_if_modified {
     PVE::Tools::assert_if_modified($cfg->{digest}, $digest);
 }
 
+sub delete_from_config {
+    my ($config, $option_schema, $new_options, $to_delete) = @_;
+
+    for my $k ($to_delete->@*) {
+	my $d = $option_schema->{$k} || die "no such option '$k'\n";
+	die "unable to delete required option '$k'\n" if !$d->{optional};
+	die "unable to delete fixed option '$k'\n" if $d->{fixed};
+	die "cannot set and delete property '$k' at the same time!\n"
+	    if defined($new_options->{$k});
+	delete $config->{$k};
+    }
+
+    return $config;
+}
+
 1;
