@@ -1,3 +1,13 @@
+libpve-common-perl (7.3-2) bullseye; urgency=medium
+
+  * fix #4299: check full path to 'disable_ipv6' file in case ipv6 is disabled
+    but the directory for it exists
+
+  * add callback based filtering for dump_logfile and add a stateful variant
+    usable for multiple files via handles
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 27 Jan 2023 10:28:32 +0100
+
 libpve-common-perl (7.3-1) bullseye; urgency=medium
 
   * network: fix learning-on check for adding and deleting FDB entries
