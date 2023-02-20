@@ -14,6 +14,7 @@ use IO::File;
 use IO::Handle;
 use IO::Select;
 use POSIX qw(:sys_wait_h EINTR);
+use AnyEvent;
 
 use PVE::Exception qw(raise raise_perm_exc);
 use PVE::INotify;
@@ -111,7 +112,17 @@ sub init {
     die "unknown environment type"
 	if !$type || $type !~ m/^(cli|pub|priv|ha)$/;
 
-    $SIG{CHLD} = $worker_reaper;
+    my $has_anyevent = $type eq 'pub' || $type eq 'priv';
+
+    $SIG{CHLD} = sub {
+	# when we're in an api server, we have to postpone the call to worker_reaper, otherwise it
+	# might interfere with running api calls
+	if ($has_anyevent) {
+	    AnyEvent::postpone { $worker_reaper->() };
+	} else {
+	    $worker_reaper->();
+	}
+    };
 
     # environment types
     # cli  ... command started fron command line

@@ -3,6 +3,7 @@ Section: perl
 Priority: optional
 Maintainer: Proxmox Support Team <support@proxmox.com>
 Build-Depends: debhelper (>= 12~),
+               libanyevent-perl,
                libclone-perl,
                libdevel-cycle-perl,
                libfilesys-df-perl,
