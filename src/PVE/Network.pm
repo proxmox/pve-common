@@ -620,6 +620,9 @@ sub activate_bridge_vlan {
 	    iface_create($bridgevlan, 'bridge');
 	}
 
+	my $bridgemtu = read_bridge_mtu($bridge);
+	eval { run_command(['/sbin/ip', 'link', 'set', $bridgevlan, 'mtu', $bridgemtu]) };
+
 	# for each physical interface (eth or bridge) bind them to bridge vlan
 	foreach my $iface (@ifaces) {
 	    activate_bridge_vlan_slave($bridgevlan, $iface, $tag);
