@@ -228,6 +228,47 @@ sub get_certificate_fingerprint {
     return $fp;
 }
 
+sub certificate_matches_key {
+    my ($cert_path, $key_path) = @_;
+
+    die "No certificate path given!\n" if !$cert_path;
+    die "No certificate key path given!\n" if !$key_path;
+
+    die "Certificate at '$cert_path' does not exist!\n" if ! -e $cert_path;
+    die "Certificate key '$key_path' does not exist!\n" if ! -e $key_path;
+
+    my $ctx = Net::SSLeay::CTX_new()
+	or $ssl_die->(
+	    "Failed to create SSL context in order to verify private key"
+	);
+
+    eval {
+	my $filetype = &Net::SSLeay::FILETYPE_PEM;
+
+	Net::SSLeay::CTX_use_PrivateKey_file($ctx, $key_path, $filetype)
+	    or $ssl_die->(
+		"Failed to load private key from '$key_path' into SSL context"
+	    );
+
+	Net::SSLeay::CTX_use_certificate_file($ctx, $cert_path, $filetype)
+	    or $ssl_die->(
+		"Failed to load certificate from '$cert_path' into SSL context"
+	    );
+
+	Net::SSLeay::CTX_check_private_key($ctx)
+	    or $ssl_die->(
+		"Failed to validate private key and certificate"
+	    );
+    };
+    my $err = $@;
+
+    Net::SSLeay::CTX_free($ctx);
+
+    die $err if $err;
+
+    return 1;
+}
+
 sub get_certificate_info {
     my ($cert_path) = @_;
 
