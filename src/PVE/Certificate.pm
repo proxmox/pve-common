@@ -400,19 +400,22 @@ sub generate_csr {
     $ssl_die->("Failed to allocate X509_NAME object\n") if !$name;
     my $add_name_entry = sub {
 	my ($k, $v) = @_;
-	if (!Net::SSLeay::X509_NAME_add_entry_by_txt($name,
-	                                             $k,
-	                                             &Net::SSLeay::MBSTRING_UTF8,
-	                                             encode('utf-8', $v))) {
-	    $cleanup->(1, "Failed to add '$k'='$v' to DN\n");
-	}
+
+	my $res = Net::SSLeay::X509_NAME_add_entry_by_txt(
+	    $name,
+	    $k,
+	    &Net::SSLeay::MBSTRING_UTF8,
+	    encode('utf-8', $v),
+	);
+
+	$cleanup->(1, "Failed to add '$k'='$v' to DN\n") if !$res;
     };
 
     $add_name_entry->('CN', $common_name);
     for (qw(C ST L O OU)) {
-        if (defined(my $v = $attr{$_})) {
+	if (defined(my $v = $attr{$_})) {
 	    $add_name_entry->($_, $v);
-        }
+	}
     }
 
     if (defined($pem_key)) {
@@ -445,13 +448,13 @@ sub generate_csr {
     $cleanup->(1, "Failed to set subject name\n")
 	if (!Net::SSLeay::X509_REQ_set_subject_name($req, $name));
 
-    $cleanup->(1, "Failed to add extensions to CSR\n")
-	if !Net::SSLeay::P_X509_REQ_add_extensions($req,
-	        &Net::SSLeay::NID_key_usage => 'digitalSignature,keyEncipherment',
-	        &Net::SSLeay::NID_basic_constraints => 'CA:FALSE',
-	        &Net::SSLeay::NID_ext_key_usage => 'serverAuth,clientAuth',
-	        &Net::SSLeay::NID_subject_alt_name => join(',', map { "DNS:$_" } @$san),
-	);
+    Net::SSLeay::P_X509_REQ_add_extensions(
+	$req,
+	&Net::SSLeay::NID_key_usage => 'digitalSignature,keyEncipherment',
+	&Net::SSLeay::NID_basic_constraints => 'CA:FALSE',
+	&Net::SSLeay::NID_ext_key_usage => 'serverAuth,clientAuth',
+	&Net::SSLeay::NID_subject_alt_name => join(',', map { "DNS:$_" } @$san),
+    ) or $cleanup->(1, "Failed to add extensions to CSR\n");
 
     $cleanup->(1, "Failed to set public key\n")
 	if !Net::SSLeay::X509_REQ_set_pubkey($req, $pk);
