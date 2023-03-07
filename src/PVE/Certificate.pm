@@ -181,7 +181,7 @@ sub der_to_pem {
 
 my sub ssl_die {
     my ($msg) = @_;
-    Net::SSLeay::die_now($msg);
+    Net::SSLeay::die_now("$msg\n");
 };
 
 my $ssl_warn = sub {
@@ -196,7 +196,7 @@ my $read_certificate = sub {
     die "'$cert_path' does not exist!\n" if ! -e $cert_path;
 
     my $bio = Net::SSLeay::BIO_new_file($cert_path, 'r')
-	or ssl_die("unable to read '$cert_path' - $!\n");
+	or ssl_die("unable to read '$cert_path' - $!");
 
     my $cert = Net::SSLeay::PEM_read_bio_X509($bio);
     Net::SSLeay::BIO_free($bio);
@@ -208,9 +208,9 @@ my $read_certificate = sub {
 sub convert_asn1_to_epoch {
     my ($asn1_time) = @_;
 
-    ssl_die("invalid ASN1 time object\n") if !$asn1_time;
+    ssl_die("invalid ASN1 time object") if !$asn1_time;
     my $iso_time = Net::SSLeay::P_ASN1_TIME_get_isotime($asn1_time);
-    ssl_die("unable to parse ASN1 time\n") if $iso_time eq '';
+    ssl_die("unable to parse ASN1 time") if $iso_time eq '';
     return Date::Parse::str2time($iso_time);
 }
 
@@ -389,7 +389,7 @@ sub generate_csr {
     # this unfortunately causes a small memory leak, since there is no
     # X509_NAME_free() (yet)
     my $name = Net::SSLeay::X509_NAME_new();
-    ssl_die("Failed to allocate X509_NAME object\n") if !$name;
+    ssl_die("Failed to allocate X509_NAME object") if !$name;
     my $add_name_entry = sub {
 	my ($k, $v) = @_;
 
