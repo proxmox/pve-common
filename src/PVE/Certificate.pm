@@ -173,6 +173,7 @@ sub der_to_pem {
 
 my sub ssl_die {
     my ($msg) = @_;
+    warn Net::SSLeay::print_errs();
     Net::SSLeay::die_now("$msg\n");
 };
 
