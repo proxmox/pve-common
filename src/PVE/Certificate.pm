@@ -134,22 +134,15 @@ sub split_pem {
 sub check_pem {
     my ($content, %opts) = @_;
 
-    my $label = $opts{label} // 'CERTIFICATE';
-    my $multiple = $opts{multiple};
-    my $noerr = $opts{noerr};
-
     $content = strip_leading_text($content);
 
-    my $re = $pem_re->($label);
+    my $re = $pem_re->($opts{label} // 'CERTIFICATE');
+    $re = qr/($re\n+)*$re/ if $opts{multiple};
 
-    $re = qr/($re\n+)*$re/ if $multiple;
+    return $content if $content =~ /^$re$/; # OK
 
-    if ($content =~ /^$re$/) {
-	return $content;
-    } else {
-	return undef if $noerr;
-	die "not a valid PEM-formatted string.\n";
-    }
+    return undef if $opts{noerr};
+    die "not a valid PEM-formatted string.\n";
 }
 
 sub pem_to_der {
