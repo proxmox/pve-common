@@ -228,7 +228,7 @@ sub get_certificate_fingerprint {
     return $fp;
 }
 
-sub certificate_matches_key {
+sub check_certificate_matches_key {
     my ($cert_path, $key_path) = @_;
 
     die "No certificate path given!\n" if !$cert_path;
