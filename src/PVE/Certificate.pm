@@ -91,8 +91,6 @@ PVE::JSONSchema::register_standard_option('pve-certificate-info', {
     },
 });
 
-# see RFC 7468
-my $b64_char_re = qr![0-9A-Za-z\+/]!;
 my $header_re = sub {
     my ($label) = @_;
     return qr!-----BEGIN\ $label-----(?:\s|\n)*!;
@@ -104,6 +102,7 @@ my $footer_re = sub {
 my $pem_re = sub {
     my ($label) = @_;
 
+    my $b64_char_re = qr![0-9A-Za-z\+/]!; # see RFC 7468
     my $header = $header_re->($label);
     my $footer = $footer_re->($label);
 
