@@ -222,7 +222,7 @@ sub get_certificate_fingerprint {
     return $fp;
 }
 
-sub check_certificate_matches_key {
+sub assert_certificate_matches_key {
     my ($cert_path, $key_path) = @_;
 
     die "No certificate path given!\n" if !$cert_path;
@@ -291,13 +291,11 @@ sub get_certificate_info {
 
     $info->{fingerprint} = Net::SSLeay::X509_get_fingerprint($cert, 'sha256');
 
-    my $subject = Net::SSLeay::X509_get_subject_name($cert);
-    if ($subject) {
+    if (my $subject = Net::SSLeay::X509_get_subject_name($cert)) {
 	$info->{subject} = Net::SSLeay::X509_NAME_oneline($subject);
     }
 
-    my $issuer = Net::SSLeay::X509_get_issuer_name($cert);
-    if ($issuer) {
+    if (my $issuer = Net::SSLeay::X509_get_issuer_name($cert)) {
 	$info->{issuer} = Net::SSLeay::X509_NAME_oneline($issuer);
     }
 
