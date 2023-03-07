@@ -370,8 +370,8 @@ sub generate_csr {
     my ($bio, $pk, $req);
 
     my $cleanup = sub {
-	my ($warn, $die_msg) = @_;
-	Net::SSLeay::print_errs() if $warn;
+	my ($die_msg, $no_warn) = @_;
+	Net::SSLeay::print_errs() if !$no_warn;
 
 	Net::SSLeay::X509_REQ_free($req) if  $req;
 	Net::SSLeay::EVP_PKEY_free($pk) if $pk;
@@ -388,13 +388,9 @@ sub generate_csr {
 	my ($k, $v) = @_;
 
 	my $res = Net::SSLeay::X509_NAME_add_entry_by_txt(
-	    $name,
-	    $k,
-	    &Net::SSLeay::MBSTRING_UTF8,
-	    encode('utf-8', $v),
-	);
+	    $name, $k, &Net::SSLeay::MBSTRING_UTF8, encode('utf-8', $v));
 
-	$cleanup->(1, "Failed to add '$k'='$v' to DN\n") if !$res;
+	$cleanup->("Failed to add '$k'='$v' to DN\n") if !$res;
     };
 
     $add_name_entry->('CN', $common_name);
@@ -406,32 +402,31 @@ sub generate_csr {
 
     if (defined($pem_key)) {
 	my $bio_s_mem = Net::SSLeay::BIO_s_mem();
-	$cleanup->(1, "Failed to allocate BIO_s_mem for private key\n")
-	    if !$bio_s_mem;
+	$cleanup->("Failed to allocate BIO_s_mem for private key\n") if !$bio_s_mem;
 
 	$bio = Net::SSLeay::BIO_new($bio_s_mem);
-	$cleanup->(1, "Failed to allocate BIO for private key\n") if !$bio;
+	$cleanup->("Failed to allocate BIO for private key\n") if !$bio;
 
-	$cleanup->(1, "Failed to write PEM-encoded key to BIO\n")
+	$cleanup->("Failed to write PEM-encoded key to BIO\n")
 	    if Net::SSLeay::BIO_write($bio, $pem_key) <= 0;
 
 	$pk = Net::SSLeay::PEM_read_bio_PrivateKey($bio);
-	$cleanup->(1, "Failed to read private key into EVP_PKEY\n") if !$pk;
+	$cleanup->("Failed to read private key into EVP_PKEY\n") if !$pk;
     } else {
 	$pk = Net::SSLeay::EVP_PKEY_new();
-	$cleanup->(1, "Failed to allocate EVP_PKEY for private key\n") if !$pk;
+	$cleanup->("Failed to allocate EVP_PKEY for private key\n") if !$pk;
 
 	my $rsa = Net::SSLeay::RSA_generate_key($bits, 65537);
-	$cleanup->(1, "Failed to generate RSA key pair\n") if !$rsa;
+	$cleanup->("Failed to generate RSA key pair\n") if !$rsa;
 
-	$cleanup->(1, "Failed to assign RSA key to EVP_PKEY\n")
+	$cleanup->("Failed to assign RSA key to EVP_PKEY\n")
 	    if !Net::SSLeay::EVP_PKEY_assign_RSA($pk, $rsa);
     }
 
     $req = Net::SSLeay::X509_REQ_new();
-    $cleanup->(1, "Failed to allocate X509_REQ\n") if !$req;
+    $cleanup->("Failed to allocate X509_REQ\n") if !$req;
 
-    $cleanup->(1, "Failed to set subject name\n")
+    $cleanup->("Failed to set subject name\n")
 	if (!Net::SSLeay::X509_REQ_set_subject_name($req, $name));
 
     Net::SSLeay::P_X509_REQ_add_extensions(
@@ -440,21 +435,18 @@ sub generate_csr {
 	&Net::SSLeay::NID_basic_constraints => 'CA:FALSE',
 	&Net::SSLeay::NID_ext_key_usage => 'serverAuth,clientAuth',
 	&Net::SSLeay::NID_subject_alt_name => join(',', map { "DNS:$_" } @$san),
-    ) or $cleanup->(1, "Failed to add extensions to CSR\n");
+    ) or $cleanup->("Failed to add extensions to CSR\n");
 
-    $cleanup->(1, "Failed to set public key\n")
-	if !Net::SSLeay::X509_REQ_set_pubkey($req, $pk);
+    $cleanup->("Failed to set public key\n") if !Net::SSLeay::X509_REQ_set_pubkey($req, $pk);
 
-    $cleanup->(1, "Failed to set CSR version\n")
-	if !Net::SSLeay::X509_REQ_set_version($req, 2);
+    $cleanup->("Failed to set CSR version\n") if !Net::SSLeay::X509_REQ_set_version($req, 2);
 
-    $cleanup->(1, "Failed to sign CSR\n")
-	if !Net::SSLeay::X509_REQ_sign($req, $pk, $md);
+    $cleanup->("Failed to sign CSR\n") if !Net::SSLeay::X509_REQ_sign($req, $pk, $md);
 
     my $pk_pem = Net::SSLeay::PEM_get_string_PrivateKey($pk);
     my $req_pem = Net::SSLeay::PEM_get_string_X509_REQ($req);
 
-    $cleanup->();
+    $cleanup->(undef, 1);
 
     return wantarray ? ($req_pem, $pk_pem) : $req_pem;
 }
