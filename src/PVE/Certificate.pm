@@ -184,12 +184,6 @@ my sub ssl_die {
     Net::SSLeay::die_now("$msg\n");
 };
 
-my $ssl_warn = sub {
-    my ($msg) = @_;
-    Net::SSLeay::print_errs();
-    warn $msg if $msg;
-};
-
 my $read_certificate = sub {
     my ($cert_path) = @_;
 
@@ -377,7 +371,7 @@ sub generate_csr {
 
     my $cleanup = sub {
 	my ($warn, $die_msg) = @_;
-	$ssl_warn->() if $warn;
+	Net::SSLeay::print_errs() if $warn;
 
 	Net::SSLeay::X509_REQ_free($req) if  $req;
 	Net::SSLeay::EVP_PKEY_free($pk) if $pk;
