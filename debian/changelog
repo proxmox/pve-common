@@ -1,3 +1,20 @@
+libpve-common-perl (7.3-3) bullseye; urgency=medium
+
+  * fix #4299: network: check the interface specific sysfs path to detect if
+    IPv6 is disabled, as the global one might be available either way
+
+  * certificate: add helper to check if cert and key match
+
+  * API REST environment: postpone worker process collection on SIGCHLD if
+    it's likely that the process runs in an AnyEvent loop to avoid a race
+    resulting in failure to update the active task list
+
+  * section config: add helper for deleting keys from a entry
+
+  * certificate: actually print openssl errors
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 16 Mar 2023 16:35:39 +0100
+
 libpve-common-perl (7.3-2) bullseye; urgency=medium
 
   * fix #4299: check full path to 'disable_ipv6' file in case ipv6 is disabled
