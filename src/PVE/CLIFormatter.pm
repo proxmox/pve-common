@@ -399,7 +399,12 @@ sub print_api_result {
 	    my $schema = { type => 'array', items => { type => 'object' }};
 	    print_api_list($kvstore, $schema, ['key', 'value'], $options, $terminal_opts);
 	} elsif ($type eq 'array') {
-	    return if !scalar(@$data);
+	    if (ref($data) eq 'ARRAY') {
+		return if !scalar(@$data);
+	    } elsif (ref($data) eq 'HASH') {
+		return if !scalar($data->%*);
+		die "got hash object, but result schema specified array!\n"
+	    }
 	    my $item_type = $result_schema->{items}->{type};
 	    if ($item_type eq 'object') {
 		print_api_list($data, $result_schema, $props_to_print, $options, $terminal_opts);
