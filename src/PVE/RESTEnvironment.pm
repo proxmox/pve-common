@@ -112,12 +112,10 @@ sub init {
     die "unknown environment type"
 	if !$type || $type !~ m/^(cli|pub|priv|ha)$/;
 
-    my $has_anyevent = $type eq 'pub' || $type eq 'priv';
-
     $SIG{CHLD} = sub {
-	# when we're in an api server, we have to postpone the call to worker_reaper, otherwise it
+	# when we're using AnyEvent, we have to postpone the call to worker_reaper, otherwise it
 	# might interfere with running api calls
-	if ($has_anyevent) {
+	if (defined($AnyEvent::MODEL)) {
 	    AnyEvent::postpone { $worker_reaper->() };
 	} else {
 	    $worker_reaper->();
