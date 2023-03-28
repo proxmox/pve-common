@@ -283,6 +283,7 @@ sub read_meminfo {
 	swaptotal => 0,
 	swapfree => 0,
 	swapused => 0,
+	arcsize => 0,
     };
 
     my $fh = IO::File->new ("/proc/meminfo", "r");
@@ -306,6 +307,11 @@ sub read_meminfo {
 
     my $spages = PVE::Tools::file_read_firstline("/sys/kernel/mm/ksm/pages_sharing") // 0 ;
     $res->{memshared} = int($spages) * 4096;
+
+    my $arcstats = PVE::Tools::file_get_contents("/proc/spl/kstat/zfs/arcstats");
+    if ($arcstats && $arcstats =~ m/size\s+\d+\s+(\d+)/m) {
+	$res->{arcsize} = int ($1);
+    }
 
     return $res;
 }
