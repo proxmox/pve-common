@@ -670,7 +670,7 @@ my $bwlimit_format = {
 };
 register_format('bwlimit', $bwlimit_format);
 register_standard_option('bwlimit', {
-    description => "Set bandwidth/io limits various operations.",
+    description => "Set I/O bandwidth limit for various operations (in KiB/s).",
     optional => 1,
     type => 'string',
     format => $bwlimit_format,
