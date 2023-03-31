@@ -430,7 +430,7 @@ sub generate_csr {
 
     $cleanup->("Failed to set public key\n") if !Net::SSLeay::X509_REQ_set_pubkey($req, $pk);
 
-    $cleanup->("Failed to set CSR version\n") if !Net::SSLeay::X509_REQ_set_version($req, 2);
+    $cleanup->("Failed to set CSR version\n") if !Net::SSLeay::X509_REQ_set_version($req, 0);
 
     $cleanup->("Failed to sign CSR\n") if !Net::SSLeay::X509_REQ_sign($req, $pk, $md);
 
