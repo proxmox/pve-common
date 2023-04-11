@@ -1,5 +1,8 @@
 package PVE::Syscall;
 
+use strict;
+use warnings;
+
 my %syscalls;
 my %fsmount_constants;
 BEGIN {

@@ -131,7 +131,8 @@ sub has {
 sub members {
     my ($self) = @_;
 
-    return sort { $a <=> $b } keys %{$self->{members}};
+    my @sorted_members = sort { $a <=> $b } keys %{$self->{members}};
+    return @sorted_members;
 }
 
 sub size {

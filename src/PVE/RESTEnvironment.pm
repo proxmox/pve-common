@@ -431,7 +431,7 @@ my $tee_worker = sub {
 	};
 	local $SIG{PIPE} = sub { die "broken pipe\n"; };
 
-	my $select = new IO::Select;
+	my $select = IO::Select->new();
 	my $fh = IO::Handle->new_from_fd($childfd, 'r');
 	$select->add($fh);
 
@@ -509,7 +509,7 @@ sub fork_worker {
 
     my @psync = POSIX::pipe();
     my @csync = POSIX::pipe();
-    my @ctrlfd = POSIX::pipe() if $sync;
+    my @ctrlfd = $sync ? POSIX::pipe() : ();
 
     my $node = $self->{nodename};
 
@@ -571,8 +571,7 @@ sub fork_worker {
 		close STDIN;
 		POSIX::close(0) if $fd != 0;
 
-		die "unable to redirect STDIN - $!"
-		    if !open(STDIN, "</dev/null");
+		open(STDIN, '<', '/dev/null') or die "unable to redirect STDIN - $!";
 
 		$outfh = PVE::Tools::upid_open($upid);
 		$resfh = fileno($outfh);
@@ -584,8 +583,7 @@ sub fork_worker {
 	    close STDOUT;
 	    POSIX::close (1) if $fd != 1;
 
-	    die "unable to redirect STDOUT - $!"
-		if !open(STDOUT, ">&", $outfh);
+	    open(STDOUT, ">&", $outfh) or die "unable to redirect STDOUT - $!";
 
 	    STDOUT->autoflush (1);
 
@@ -594,8 +592,7 @@ sub fork_worker {
 	    close STDERR;
 	    POSIX::close(2) if $fd != 2;
 
-	    die "unable to redirect STDERR - $!"
-		if !open(STDERR, ">&1");
+	    open(STDERR, '>&', '1') or die "unable to redirect STDERR - $!";
 
 	    STDERR->autoflush(1);
 	};

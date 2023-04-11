@@ -115,7 +115,7 @@ sub updateSchema {
 
     my $props = {};
 
-    my $filter_type = $class->type() if $single_class;
+    my $filter_type = $single_class ? $class->type() : undef;
 
     foreach my $p (keys %$propertyList) {
 	next if $p eq 'type';

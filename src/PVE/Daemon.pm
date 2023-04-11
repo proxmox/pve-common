@@ -114,10 +114,10 @@ my $writepidfile = sub {
 
     my $pidfile = $self->{pidfile};
 
-    die "can't open pid file '$pidfile' - $!\n" if !open (PIDFH, ">$pidfile");
+    open (my $PID_FH, '>', "$pidfile") or die "can't open pid file '$pidfile' - $!\n";
 
-    print PIDFH "$$\n";
-    close (PIDFH);
+    print $PID_FH "$$\n";
+    close ($PID_FH);
 };
 
 my $server_cleanup = sub {
@@ -310,8 +310,8 @@ my $server_run = sub {
     $self->init();
 
     if (!$debug) {
-	open STDIN,  '</dev/null' || die "can't read /dev/null";
-	open STDOUT, '>/dev/null' || die "can't write /dev/null";
+	open STDIN,  '<', '/dev/null' or die "can't read /dev/null - $!";
+	open STDOUT, '>', '/dev/null' or die "can't write /dev/null - $!";
     }
 
     if (!$self->{env_restart_pve_daemon} && !$debug) {
