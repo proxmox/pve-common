@@ -350,7 +350,7 @@ sub print_usage_short {
 
     print {$fd} generate_usage_str('short', $cmd, ' ' x 7, $cmd ? '' : "\n", sub {
 	my ($h) = @_;
-	return sort {
+	my @sorted_commands = sort {
 	    if (ref($h->{$a}) eq 'ARRAY' && ref($h->{$b}) eq 'ARRAY') {
 		# $a and $b are both real commands order them by their class
 		return $h->{$a}->[0] cmp $h->{$b}->[0] || $a cmp $b;
@@ -362,6 +362,7 @@ sub print_usage_short {
 		return $a cmp $b;
 	    }
 	} keys %$h;
+	return @sorted_commands;
     });
 }
 
