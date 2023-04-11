@@ -538,11 +538,12 @@ sub generate_asciidoc_synopsis {
 
     $exename = &$get_exe_name($class);
 
-    no strict 'refs';
-    my $def = ${"${class}::cmddef"};
-    $cmddef = $def;
+    {
+	no strict 'refs'; ## no critic (ProhibitNoStrict)
+	$cmddef = ${"${class}::cmddef"};
+    }
 
-    if (ref($def) eq 'ARRAY') {
+    if (ref($cmddef) eq 'ARRAY') {
 	print_simple_asciidoc_synopsis();
     } else {
 	$cmddef->{help} = [ __PACKAGE__, 'help', ['cmd'] ];
@@ -660,8 +661,10 @@ sub run_cli_handler {
     my $logid = $ENV{PVE_LOG_ID} || $exename;
     initlog($logid);
 
-    no strict 'refs';
-    $cmddef = ${"${class}::cmddef"};
+    {
+	no strict 'refs'; ## no critic (ProhibitNoStrict)
+	$cmddef = ${"${class}::cmddef"};
+    }
 
     if (ref($cmddef) eq 'ARRAY') {
 	$handle_simple_cmd->(\@ARGV, $preparefunc, $param_cb);
