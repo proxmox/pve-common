@@ -1,7 +1,6 @@
 package PVE::RESTHandler;
 
 use strict;
-no strict 'refs'; # our autoload requires this
 use warnings;
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise raise_param_exc);
@@ -329,10 +328,13 @@ sub AUTOLOAD {
 
     my $info = $this->map_method_by_name($method);
 
-    *{$sub} = sub {
-	my $self = shift;
-	return $self->handle($info, @_);
-    };
+    {
+	no strict 'refs'; ## no critic (ProhibitNoStrict)
+	*{$sub} = sub {
+	    my $self = shift;
+	    return $self->handle($info, @_);
+	};
+    }
     goto &$AUTOLOAD;
 }
 
