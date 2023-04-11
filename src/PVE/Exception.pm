@@ -6,9 +6,9 @@ package PVE::Exception;
 
 use strict;
 use warnings;
-use Storable qw(dclone);
-use HTTP::Status qw(:constants);
 
+use HTTP::Status qw(:constants);
+use Storable qw(dclone);
 
 use overload '""' => sub {local $@; shift->stringify};
 use overload 'cmp' => sub {
@@ -35,7 +35,7 @@ sub new {
 	$self->{$p} = ref($v) ? dclone($v) : $v;
     }
 
-    return bless $self;
+    return bless $self, $class;
 }
 
 sub raise {
