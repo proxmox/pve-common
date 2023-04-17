@@ -309,7 +309,7 @@ sub read_meminfo {
     $res->{memshared} = int($spages) * 4096;
 
     my $arc_stats = eval { PVE::Tools::file_get_contents("/proc/spl/kstat/zfs/arcstats") };
-    if ($arc_stats && $arc_stats =~ m/size\s+\d+\s+(\d+)/m) {
+    if ($arc_stats && $arc_stats =~ m/^size\s+\d+\s+(\d+)$/m) {
 	$res->{arcsize} = int($1);
     }
 
