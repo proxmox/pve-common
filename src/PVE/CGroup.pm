@@ -408,7 +408,7 @@ sub get_pressure_stat {
 #
 # Dies on error (including a not-running or currently-shutting-down guest).
 sub change_memory_limit {
-    my ($self, $mem_bytes, $swap_bytes) = @_;
+    my ($self, $mem_bytes, $swap_bytes, $mem_high_bytes) = @_;
 
     my ($path, $ver) = $self->get_path('memory', 1);
     if (!defined($path)) {
@@ -416,8 +416,11 @@ sub change_memory_limit {
     } elsif ($ver == 2) {
 	PVE::ProcFSTools::write_proc_entry("$path/memory.swap.max", $swap_bytes)
 	    if defined($swap_bytes);
-	PVE::ProcFSTools::write_proc_entry("$path/memory.max", $mem_bytes)
-	    if defined($mem_bytes);
+	if (defined($mem_bytes)) {
+	    # 'max' is the hard-limit (triggers OOM), while 'high' throttles & adds reclaim pressure
+	    PVE::ProcFSTools::write_proc_entry("$path/memory.high", $mem_high_bytes // 'max');
+	    PVE::ProcFSTools::write_proc_entry("$path/memory.max", $mem_bytes);
+	}
     } elsif ($ver == 1) {
 	# With cgroupv1 we cannot control memory and swap limits separately.
 	# This also means that since the two values aren't independent, we need to handle
