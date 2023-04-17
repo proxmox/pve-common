@@ -308,9 +308,9 @@ sub read_meminfo {
     my $spages = PVE::Tools::file_read_firstline("/sys/kernel/mm/ksm/pages_sharing") // 0 ;
     $res->{memshared} = int($spages) * 4096;
 
-    my $arcstats = PVE::Tools::file_get_contents("/proc/spl/kstat/zfs/arcstats");
-    if ($arcstats && $arcstats =~ m/size\s+\d+\s+(\d+)/m) {
-	$res->{arcsize} = int ($1);
+    my $arc_stats = eval { PVE::Tools::file_get_contents("/proc/spl/kstat/zfs/arcstats") };
+    if ($arc_stats && $arc_stats =~ m/size\s+\d+\s+(\d+)/m) {
+	$res->{arcsize} = int($1);
     }
 
     return $res;
