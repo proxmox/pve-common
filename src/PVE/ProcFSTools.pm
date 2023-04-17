@@ -2,14 +2,15 @@ package PVE::ProcFSTools;
 
 use strict;
 use warnings;
-use POSIX;
-use Time::HiRes qw (gettimeofday);
+
+use Cwd qw();
 use IO::File;
 use List::Util qw(sum);
-use PVE::Tools;
-use Cwd qw();
-
+use POSIX;
 use Socket qw(PF_INET PF_INET6 SOCK_DGRAM IPPROTO_IP);
+use Time::HiRes qw (gettimeofday);
+
+use PVE::Tools;
 
 use constant IFF_UP => 1;
 use constant IFNAMSIZ => 16;
