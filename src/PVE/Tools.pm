@@ -100,7 +100,7 @@ use constant {CLONE_NEWNS   => 0x00020000,
 
 use constant {O_PATH    => 0x00200000,
               O_CLOEXEC => 0x00080000,
-              O_TMPFILE => 0x00410000}; # This includes O_DIRECTORY
+              O_TMPFILE => 0x00400000 | O_DIRECTORY};
 
 use constant {AT_EMPTY_PATH => 0x1000,
               AT_FDCWD => -100};
