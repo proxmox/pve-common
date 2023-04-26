@@ -1,3 +1,15 @@
+libpve-common-perl (7.4-1) bullseye; urgency=medium
+
+  * REST & CLI handler: minimize scope of no-strict-refs exemption
+
+  * cert: fix invalid CSR version
+
+  * partially fix #1454: meminfo: also return arcsize
+
+  * cgroup: allow one to set the memory.high CGv2 knob too
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 26 Apr 2023 12:23:26 +0200
+
 libpve-common-perl (7.3-4) bullseye; urgency=medium
 
   * fix #4615: REST environment: improve AnyEvent detectíon in child cleanup
