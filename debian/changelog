@@ -1,3 +1,9 @@
+libpve-common-perl (8.0.0) bookworm; urgency=medium
+
+  * re-build for Debian 12 Bookworm based release series
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 08 May 2023 15:12:53 +0200
+
 libpve-common-perl (7.4-1) bullseye; urgency=medium
 
   * REST & CLI handler: minimize scope of no-strict-refs exemption
