@@ -34,6 +34,9 @@ ${DSC}: ${BUILDDIR}
 	cd ${BUILDDIR}; dpkg-buildpackage -S -us -uc -d
 	lintian ${DSC}
 
+sbuild: $(DSC)
+	sbuild $(DSC)
+
 .PHONY: clean distclean
 distclean: clean
 clean:
