@@ -8,7 +8,6 @@ BUILDDIR ?= ${PACKAGE}-${DEB_VERSION_UPSTREAM}
 
 DEB=${PACKAGE}_${DEB_VERSION_UPSTREAM_REVISION}_${ARCH}.deb
 DSC=${PACKAGE}_${DEB_VERSION_UPSTREAM_REVISION}.dsc
-TARGZ=${PACKAGE}_${DEB_VERSION_UPSTREAM_REVISION}.tar.gz
 
 all:
 	${MAKE} -C src
@@ -30,9 +29,9 @@ ${DEB}: ${BUILDDIR}
 	lintian ${DEB}
 
 .PHONY: dsc
-dsc ${TARGZ}: ${DSC}
+dsc: ${DSC}
 ${DSC}: ${BUILDDIR}
-	cd ${BUILDDIR}; dpkg-buildpackage -S -us -uc -d -nc
+	cd ${BUILDDIR}; dpkg-buildpackage -S -us -uc -d
 	lintian ${DSC}
 
 .PHONY: clean distclean
