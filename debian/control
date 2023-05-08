@@ -16,7 +16,7 @@ Build-Depends: debhelper-compat (= 13),
                libstring-shellquote-perl,
                libtest-mockmodule-perl,
                libyaml-libyaml-perl,
-Standards-Version: 3.9.8
+Standards-Version: 4.6.2
 
 Package: libpve-common-perl
 Architecture: all
