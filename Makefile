@@ -40,7 +40,7 @@ sbuild: $(DSC)
 .PHONY: clean distclean
 distclean: clean
 clean:
-	rm -rf *~ *.deb *.changes ${PACKAGE}-*/ *.buildinfo *.dsc *.tar.gz
+	rm -rf *~ *.deb *.changes ${PACKAGE}-[0-9]*/ *.buildinfo *.build *.dsc *.tar.?z
 
 .PHONY: check
 check:
