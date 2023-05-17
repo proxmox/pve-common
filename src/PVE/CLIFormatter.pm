@@ -15,16 +15,11 @@ use JSON;
 use utf8;
 use Encode;
 
-PVE::JSONSchema::register_renderer('timestamp',
-    \&PVE::Format::render_timestamp);
-PVE::JSONSchema::register_renderer('timestamp_gmt',
-    \&PVE::Format::render_timestamp_gmt);
-PVE::JSONSchema::register_renderer('duration',
-    \&PVE::Format::render_duration);
-PVE::JSONSchema::register_renderer('fraction_as_percentage',
-    \&PVE::Format::render_fraction_as_percentage);
-PVE::JSONSchema::register_renderer('bytes',
-    \&PVE::Format::render_bytes);
+PVE::JSONSchema::register_renderer('timestamp', \&PVE::Format::render_timestamp);
+PVE::JSONSchema::register_renderer('timestamp_gmt', \&PVE::Format::render_timestamp_gmt);
+PVE::JSONSchema::register_renderer('duration', \&PVE::Format::render_duration);
+PVE::JSONSchema::register_renderer('fraction_as_percentage', \&PVE::Format::render_fraction_as_percentage);
+PVE::JSONSchema::register_renderer('bytes', \&PVE::Format::render_bytes);
 
 sub render_yaml {
     my ($value) = @_;

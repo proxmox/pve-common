@@ -215,8 +215,9 @@ sub generate_usage_str {
 
 		    $str .= $separator if $oldclass && $oldclass ne $class;
 		    $str .= $indent;
-		    $str .= $class->usage_str($name, "$prefix $cmd", $arg_param,
-		                              $fixed_param, $format, $param_cb, $formatter_properties);
+		    $str .= $class->usage_str(
+			$name, "$prefix $cmd", $arg_param, $fixed_param, $format, $param_cb, $formatter_properties);
+
 		    $oldclass = $class;
 
 		} elsif (defined($def->{$cmd}->{alias}) && ($format eq 'asciidoc')) {
