@@ -552,7 +552,6 @@ my $get_property_description = sub {
 	my $indend = "             ";
 
 	$res .= Text::Wrap::wrap('', $indend, ($tmp));
-	$res .= "\n",
 	$res .= Text::Wrap::wrap($indend, $indend, ($descr)) . "\n\n";
 
 	if (my $req = $phash->{requires}) {
@@ -735,7 +734,7 @@ sub getopt_usage {
 	    $out .= "\n$desc\n\n";
 	} elsif ($format eq 'full') {
 	    my $desc = Text::Wrap::wrap('  ', '  ', ($info->{description}));
-	    $out .= "\n$desc\n\n";
+	    $out .= "\n$desc\n";
 	}
     }
 
