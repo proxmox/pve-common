@@ -20,7 +20,8 @@ Standards-Version: 4.6.2
 
 Package: libpve-common-perl
 Architecture: all
-Depends: libclone-perl,
+Depends: libanyevent-perl,
+         libclone-perl,
          libcrypt-openssl-random-perl,
          libcrypt-openssl-rsa-perl,
          libdevel-cycle-perl,
