@@ -366,22 +366,6 @@ sub pci_create_mdev_device {
     return undef;
 }
 
-# FIXME: move over to qemu-server, drop after PVE 8.0 and break older (7.x) qemu-server
-sub pci_cleanup_mdev_device {
-    my ($pciid, $uuid) = @_;
-
-    # NOTE: PCI ID is actually not a requirement, /sys/bus/mdev/devices/$uuid is always available
-    $pciid = normalize_pci_id($pciid);
-
-    my $basedir = "$pcisysfs/devices/$pciid/$uuid";
-
-    if (! -e $basedir) {
-	return 1; # no cleanup necessary if it does not exist
-    }
-
-    return file_write("$basedir/remove", "1");
-}
-
 # encode the hostpci index and vmid into the uuid
 sub generate_mdev_uuid {
     my ($vmid, $index) = @_;
