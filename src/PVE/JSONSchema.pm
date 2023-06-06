@@ -795,7 +795,7 @@ sub check_format {
     return if $format eq 'regex';
 
     my $parsed;
-    $format =~ m/^(.*?)(?:-a?(list|opt))?$/;
+    $format =~ m/^(.*?)(?:-(list|opt))?$/;
     my ($format_name, $format_type) = ($1, $2 // 'none');
     my $registered = get_format($format_name);
     die "undefined format '$format'\n" if !$registered;
@@ -1707,7 +1707,7 @@ sub get_options {
 	} elsif ($pd->{type} eq 'boolean') {
 	    push @getopt, "$prop:s";
 	} else {
-	    if ($pd->{format} && $pd->{format} =~ m/-a?list/) {
+	    if ($pd->{format} && $pd->{format} =~ m/-list/) {
 		push @getopt, "$prop=s@";
 	    } elsif ($pd->{type} eq 'array') {
 		push @getopt, "$prop=s@";
@@ -1812,16 +1812,6 @@ sub get_options {
 		    # allow --vmid 100 --vmid 101 and --vmid 100,101
 		    # allow --dow mon --dow fri and --dow mon,fri
 		    $opts->{$p} = join(",", @{$opts->{$p}}) if ref($opts->{$p}) eq 'ARRAY';
-		} elsif ($pd->{format} =~ m/-alist/) {
-		    # we encode array as \0 separated strings
-		    # Note: CGI.pm also use this encoding
-		    if (scalar(@{$opts->{$p}}) != 1) {
-			$opts->{$p} = join("\0", @{$opts->{$p}});
-		    } else {
-			# st that split_list knows it is \0 terminated
-			my $v = $opts->{$p}->[0];
-			$opts->{$p} = "$v\0";
-		    }
 		}
 	    }
 	}
