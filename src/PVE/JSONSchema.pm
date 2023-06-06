@@ -1709,6 +1709,8 @@ sub get_options {
 	} else {
 	    if ($pd->{format} && $pd->{format} =~ m/-a?list/) {
 		push @getopt, "$prop=s@";
+	    } elsif ($pd->{type} eq 'array') {
+		push @getopt, "$prop=s@";
 	    } else {
 		push @getopt, "$prop=s";
 	    }
@@ -1868,6 +1870,15 @@ sub parse_config : prototype($$$;$) {
 		$schema->{properties}->{$key}->{type} eq 'boolean') {
 
 		$value = parse_boolean($value) // $value;
+	    }
+	    if (
+		$schema->{properties}->{$key}
+		&& $schema->{properties}->{$key}->{type} eq 'array'
+	    ) {
+
+		$cfg->{$key} //= [];
+		push $cfg->{$key}->@*, $value;
+		next;
 	    }
 	    $cfg->{$key} = $value;
 	} else {

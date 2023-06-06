@@ -426,6 +426,57 @@ sub find_handler {
     return ($handler_class, $method_info);
 }
 
+my sub untaint_recursive : prototype($) {
+    use feature 'current_sub';
+
+    my ($param) = @_;
+
+    my $ref = ref($param);
+    if ($ref eq 'HASH') {
+	$param->{$_} = __SUB__->($param->{$_}) for keys $param->%*;
+    } elsif ($ref eq 'ARRAY') {
+	for (my $i = 0; $i < scalar($param->@*); $i++) {
+	    $param->[$i] = __SUB__->($param->[$i]);
+	}
+    } else {
+	if (defined($param)) {
+	    my ($newval) = $param =~ /^(.*)$/s;
+	    $param = $newval;
+	}
+    }
+
+    return $param;
+};
+
+# convert arrays to strings where we expect a '-list' format and convert scalar
+# values to arrays when we expect an array (because of www-form-urlencoded)
+#
+# only on the top level, since www-form-urlencoded cannot be nested anyway
+#
+# FIXME: change gui/api calls to not rely on this during 8.x, mark the
+# behaviour deprecated with 9.x, and remove it with 10.x
+my $normalize_legacy_param_formats = sub {
+    my ($param, $schema) = @_;
+
+    return $param if !$schema->{properties};
+    return $param if (ref($param) // '') ne 'HASH';
+
+    for my $key (keys $schema->{properties}->%*) {
+	if (my $value = $param->{$key}) {
+	    my $type = $schema->{properties}->{$key}->{type} // '';
+	    my $format = $schema->{properties}->{$key}->{format} // '';
+	    my $ref = ref($value);
+	    if ($ref && $ref eq 'ARRAY' && $type eq 'string' && $format =~ m/-list$/) {
+		$param->{$key} = join(',', $value->@*);
+	    } elsif (!$ref && $type eq 'array') {
+		$param->{$key} = [$value];
+	    }
+	}
+    }
+
+    return $param;
+};
+
 sub handle {
     my ($self, $info, $param, $result_verification) = @_;
 
@@ -437,17 +488,10 @@ sub handle {
 
     if (my $schema = $info->{parameters}) {
 	# warn "validate ". Dumper($param}) . "\n" . Dumper($schema);
+	$param = $normalize_legacy_param_formats->($param, $schema);
 	PVE::JSONSchema::validate($param, $schema);
 	# untaint data (already validated)
-	my $extra = delete $param->{'extra-args'};
-	while (my ($key, $val) = each %$param) {
-	    if (defined($val)) {
-		($param->{$key}) = $val =~ /^(.*)$/s;
-	    } else {
-		$param->{$key} = undef;
-	    }
-	}
-	$param->{'extra-args'} = [map { /^(.*)$/ } @$extra] if $extra;
+	$param = untaint_recursive($param);
     }
 
     my $result = $func->($param); # the actual API code execution call
