@@ -254,7 +254,15 @@ sub check_value {
 
     if (!$skipSchemaCheck) {
 	my $errors = {};
-	PVE::JSONSchema::check_prop($value, $schema, '', $errors);
+
+	my $checkschema = $schema;
+
+	if ($ct eq 'array') {
+	    die "no item schema for array" if !defined($schema->{items});
+	    $checkschema = $schema->{items};
+	}
+
+	PVE::JSONSchema::check_prop($value, $checkschema, '', $errors);
 	if (scalar(keys %$errors)) {
 	    die "$errors->{$key}\n" if $errors->{$key};
 	    die "$errors->{_root}\n" if $errors->{_root};
@@ -311,6 +319,15 @@ sub parse_config {
 	}
     };
 
+    my $is_array = sub {
+	my ($type, $key) = @_;
+
+	my $schema = $pdata->{propertyList}->{$key};
+	die "unknown property type\n" if !$schema;
+
+	return $schema->{type} eq 'array';
+    };
+
     my $errors = [];
     while (@lines) {
 	my $line = $nextline->();
@@ -352,11 +369,19 @@ sub parse_config {
 		    my ($k, $v) = ($1, $3);
 
 		    eval {
-			die "duplicate attribute\n" if defined($config->{$k});
-			if (!$unknown) {
-			    $v = $plugin->check_value($type, $k, $v, $sectionId);
+			if ($is_array->($type, $k)) {
+			    if (!$unknown) {
+				$v = $plugin->check_value($type, $k, $v, $sectionId);
+			    }
+			    $config->{$k} = [] if !defined($config->{$k});
+			    push $config->{$k}->@*, $v;
+			} else {
+			    die "duplicate attribute\n" if defined($config->{$k});
+			    if (!$unknown) {
+				$v = $plugin->check_value($type, $k, $v, $sectionId);
+			    }
+			    $config->{$k} = $v;
 			}
-			$config->{$k} = $v;
 		    };
 		    if (my $err = $@) {
 			warn "$errprefix (section '$sectionId') - unable to parse value of '$k': $err";
@@ -448,6 +473,13 @@ my $format_config_line = sub {
     if ($ct eq 'boolean') {
 	return "\t$key " . ($value ? 1 : 0) . "\n"
 	    if defined($value);
+    } elsif ($ct eq 'array') {
+	die "property '$key' is not an array" if ref($value) ne 'ARRAY';
+	my $result = '';
+	for my $line ($value->@*) {
+	    $result .= "\t$key $line\n" if $value ne '';
+	}
+	return $result;
     } else {
 	return "\t$key $value\n" if "$value" ne '';
     }

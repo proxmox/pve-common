@@ -105,6 +105,25 @@ sub properties {
 	    minimum => 3,
 	    maximum => 9,
 	},
+	arrayfield => {
+	    description => "Array Field with property string",
+	    type => 'array',
+	    items => {
+		type => 'string',
+		description => 'a property string',
+		format => {
+		    subfield1 => {
+			type => 'string',
+			description => 'first subfield'
+		    },
+		    subfield2 => {
+			type => 'integer',
+			minimum => 0,
+			optional => 1,
+		    },
+		},
+	    },
+	},
     };
 }
 
@@ -113,6 +132,7 @@ sub options {
 	common => { optional => 1 },
 	field2 => {},
 	another => {},
+	arrayfield => { optional => 1 },
     };
 }
 
@@ -190,6 +210,10 @@ my $with_unknown_data = {
 	    type => 'two',
 	    field2 => 5,
 	    another => 'even more text',
+	    arrayfield => [
+		'subfield1=test,subfield2=2',
+		'subfield1=test2',
+	    ],
 	},
 	invalid => {
 	    type => 'bad',
@@ -214,6 +238,8 @@ bad: invalid
 two: t3
 	field2 5
 	another even more text
+	arrayfield subfield1=test,subfield2=2
+	arrayfield subfield1=test2
 EOF
 
 Conf->expect_fail('unknown-forbidden', $with_unknown_data, $with_unknown_text);
