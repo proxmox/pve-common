@@ -1,3 +1,13 @@
+libpve-common-perl (8.0.2) bookworm; urgency=medium
+
+  * schema: add support for array parameter in api calls, cli and config
+
+  * schema: improve description of bwlimit parameter
+
+  * remove unused SysFSTools::pci_cleanup_mdev_device
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 07 Jun 2023 13:12:18 +0200
+
 libpve-common-perl (8.0.1) bookworm; urgency=medium
 
   * cli usage: remove extra newlines before descriptions
