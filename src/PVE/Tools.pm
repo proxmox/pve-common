@@ -291,7 +291,10 @@ sub file_read_firstline {
     my ($filename) = @_;
 
     my $fh = IO::File->new ($filename, "r");
-    return undef if !$fh;
+    if (!$fh) {
+	return undef if $! == POSIX::ENOENT;
+	die "file '$filename' exists but open for reading failed - $!\n";
+    }
     my $res = <$fh>;
     chomp $res if $res;
     $fh->close;
