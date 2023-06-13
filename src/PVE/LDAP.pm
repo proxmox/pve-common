@@ -80,6 +80,12 @@ sub get_user_dn {
 
 sub auth_user_dn {
     my ($ldap, $dn, $pw, $noerr) = @_;
+
+    if (!$dn) {
+	return undef if $noerr;
+	die "user dn is empty\n";
+    }
+
     my $res = $ldap->bind($dn, password => $pw);
 
     my $code = $res->code;
