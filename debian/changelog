@@ -1,3 +1,9 @@
+libpve-common-perl (7.4-2) bullseye; urgency=medium
+
+  * ldap: fail authentication if dn is empty
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 13 Jun 2023 17:03:11 +0200
+
 libpve-common-perl (7.4-1) bullseye; urgency=medium
 
   * REST & CLI handler: minimize scope of no-strict-refs exemption
