@@ -18,7 +18,11 @@ my $log_tag = "unknown";
 # it corrupts the DBD database connection!
 
 sub syslog {
-    eval { Sys::Syslog::syslog (@_); }; # ignore errors
+    my ($level, @param) = @_;
+
+    $level = 'warning' if $level eq 'warn';
+
+    eval { Sys::Syslog::syslog ($level, @param); }; # ignore errors
 }
 
 sub initlog {
