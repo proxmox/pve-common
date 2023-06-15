@@ -10,6 +10,7 @@ use Devel::Cycle -quiet; # todo: remove?
 use PVE::Tools qw(split_list $IPV6RE $IPV4RE);
 use PVE::Exception qw(raise);
 use HTTP::Status qw(:constants);
+use JSON;
 use Net::IP qw(:PROC);
 use Data::Dumper;
 
@@ -1040,6 +1041,9 @@ sub check_type {
 	    return 1;
 	} else {
 	    if ($vt) {
+		if ($type eq 'boolean' && JSON::is_bool($value)) {
+		    return 1;
+		}
 		add_error($errors, $path, "type check ('$type') failed - got $vt");
 		return undef;
 	    } else {
