@@ -59,8 +59,10 @@ sub get_standard_option {
 
 register_standard_option('pve-vmid', {
     description => "The (unique) ID of the VM.",
-    type => 'integer', format => 'pve-vmid',
-    minimum => 1
+    type => 'integer',
+    format => 'pve-vmid',
+    minimum => 100,
+    maximum => 999_999_999,
 });
 
 register_standard_option('pve-node', {
