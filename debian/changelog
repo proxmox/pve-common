@@ -1,3 +1,21 @@
+libpve-common-perl (8.0.4) bookworm; urgency=medium
+
+  * read firstline helper: only map ENOENT to undef, raise error otherwise
+
+  * ldap: fail authentication if DN is emptyu
+
+  * syslog: map cut-off priority level 'warn' to 'warning' as convenience, we
+    use the former in quite some places already.
+
+  * fix #4778: fix recent regression with boolean type check for JSON
+    parameters over the API
+
+  * schema: explicitly set min/max for VMID option, which then propagates into
+    our API viewer tool, pointing our actual valid range out more prominently
+    to users and external developers.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 16 Jun 2023 10:29:19 +0200
+
 libpve-common-perl (8.0.3) bookworm; urgency=medium
 
   * implement array support for section configs
