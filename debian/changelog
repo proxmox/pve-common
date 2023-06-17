@@ -1,3 +1,9 @@
+libpve-common-perl (8.0.5) bookworm; urgency=medium
+
+  * api dump: ignore proxyto_callback code refs
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 17 Jun 2023 13:58:23 +0200
+
 libpve-common-perl (8.0.4) bookworm; urgency=medium
 
   * read firstline helper: only map ENOENT to undef, raise error otherwise
