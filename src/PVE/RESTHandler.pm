@@ -189,7 +189,7 @@ sub api_dump_remove_refs {
 	foreach my $k (keys %$tree) {
 	    if (my $itemclass = ref($tree->{$k})) {
 		if ($itemclass eq 'CODE') {
-		    next if $k eq 'completion';
+		    next if $k eq 'completion' || $k eq 'proxyto_callback';
 		}
 		$res->{$k} = api_dump_remove_refs($tree->{$k});
 	    } else {
