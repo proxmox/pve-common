@@ -2,13 +2,15 @@ package PVE::RESTHandler;
 
 use strict;
 use warnings;
-use PVE::SafeSyslog;
-use PVE::Exception qw(raise raise_param_exc);
-use PVE::JSONSchema;
-use PVE::Tools;
+
+use Clone qw(clone);
 use HTTP::Status qw(:constants :is status_message);
 use Text::Wrap;
-use Clone qw(clone);
+
+use PVE::Exception qw(raise raise_param_exc);
+use PVE::JSONSchema;
+use PVE::SafeSyslog;
+use PVE::Tools;
 
 my $method_registry = {};
 my $method_by_name = {};
