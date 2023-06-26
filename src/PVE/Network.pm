@@ -740,8 +740,8 @@ sub get_local_ip {
 
     my $all = { v4 => {}, v6 => {} }; # hash to avoid duplicates and group by type
 
-    my $ifaces = PVE::INotify::read_file('interfaces', 1)->{data}->{ifaces};
-    for my $if (values $ifaces->%*) {
+    my $interaces_cfg = PVE::INotify::read_file('interfaces', 1) || {};
+    for my $if (values $interaces_cfg->{data}->{ifaces}->%*) {
 	next if $if->{type} eq 'loopback' || (!defined($if->{address}) && !defined($if->{address6}));
 	my ($v4, $v6) = ($if->{address}, $if->{address6});
 
