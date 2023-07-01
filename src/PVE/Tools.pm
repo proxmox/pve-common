@@ -118,11 +118,12 @@ sub run_with_timeout {
     my $prev_alarm = alarm 0; # suspend outer alarm early
 
     my $sigcount = 0;
+    my $got_timeout = 0;
 
     my $res;
 
     eval {
-	local $SIG{ALRM} = sub { $sigcount++; die "got timeout\n"; };
+	local $SIG{ALRM} = sub { $sigcount++; $got_timeout = 1;  die "got timeout\n"; };
 	local $SIG{PIPE} = sub { $sigcount++; die "broken pipe\n" };
 	local $SIG{__DIE__};   # see SA bug 4631
 
@@ -142,9 +143,9 @@ sub run_with_timeout {
     # this shouldn't happen anymore?
     die "unknown error" if $sigcount && !$err; # seems to happen sometimes
 
-    die $err if $err;
+    die $err if $err && !wantarray; # assume that user handles timeout err if called in list context
 
-    return $res;
+    return wantarray ? ($res, $got_timeout) : $res;
 }
 
 # flock: we use one file handle per process, so lock file
@@ -1015,9 +1016,10 @@ sub run_fork_with_timeout {
 	$res = $child_res->{result};
 	$error = $child_res->{error};
     };
+    my $got_timeout = 0;
     eval {
 	if (defined($timeout)) {
-	    run_with_timeout($timeout, $readvalues);
+	    (undef, $got_timeout) = run_with_timeout($timeout, $readvalues);
 	} else {
 	    $readvalues->();
 	}
@@ -1032,7 +1034,7 @@ sub run_fork_with_timeout {
     die "interrupted by unexpected signal\n" if $sig_received;
 
     die $error if $error;
-    return $res;
+    return wantarray ? ($res, $got_timeout) : $res;
 }
 
 sub run_fork {
