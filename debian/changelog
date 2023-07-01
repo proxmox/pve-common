@@ -1,3 +1,11 @@
+libpve-common-perl (8.0.6) bookworm; urgency=medium
+
+  * network: cope with non-existing interfaces config when getting local IPs
+
+  * run with timeout: return if timeout happened in list context
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 01 Jul 2023 19:24:06 +0200
+
 libpve-common-perl (8.0.5) bookworm; urgency=medium
 
   * api dump: ignore proxyto_callback code refs
