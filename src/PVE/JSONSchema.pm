@@ -93,10 +93,13 @@ register_standard_option('pve-bridge-id', {
 });
 
 register_standard_option('pve-config-digest', {
-    description => 'Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.',
+    description => 'Prevent changes if current configuration file has a different digest. '
+	. 'This can be used to prevent concurrent modifications.',
     type => 'string',
     optional => 1,
-    maxLength => 40, # sha1 hex digest length is 40
+    # sha1 hex digests are 40 characters long
+    # sha256 hex digests are 64 characters long (sha256 is used in our Rust code)
+    maxLength => 64,
 });
 
 register_standard_option('skiplock', {
