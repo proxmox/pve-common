@@ -1,3 +1,9 @@
+libpve-common-perl (8.0.7) bookworm; urgency=medium
+
+  * schema: increase pve-config-digest maxLength to 64
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 24 Jul 2023 11:55:39 +0200
+
 libpve-common-perl (8.0.6) bookworm; urgency=medium
 
   * network: cope with non-existing interfaces config when getting local IPs
