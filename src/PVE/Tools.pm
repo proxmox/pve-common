@@ -2013,10 +2013,13 @@ sub download_file_from_url {
 	}
     }
 
-    my $tmpdest = "$dest.tmp.$$";
+    my $tmp_download = "$dest.tmp_dwnl.$$";
+    my $tmp_decomp = "$dest.tmp_dcom.$$";
     eval {
 	local $SIG{INT} = sub {
-	    unlink $tmpdest or warn "could not cleanup temporary file: $!";
+	    unlink $tmp_download or warn "could not cleanup temporary file: $!";
+	    unlink $tmp_decomp or warn "could not cleanup temporary file: $!"
+		if $opts->{decompression_command};
 	    die "got interrupted by signal\n";
 	};
 
@@ -2029,7 +2032,7 @@ sub download_file_from_url {
 		$ENV{https_proxy} = $opts->{https_proxy};
 	    }
 
-	    my $cmd = ['wget', '--progress=dot:giga', '-O', $tmpdest, $url];
+	    my $cmd = ['wget', '--progress=dot:giga', '-O', $tmp_download, $url];
 
 	    if (!($opts->{verify_certificates} // 1)) { # default to true
 		push @$cmd, '--no-check-certificate';
@@ -2041,7 +2044,7 @@ sub download_file_from_url {
 	if ($checksum_algorithm) {
 	    print "calculating checksum...";
 
-	    my $checksum_got = get_file_hash($checksum_algorithm, $tmpdest);
+	    my $checksum_got = get_file_hash($checksum_algorithm, $tmp_download);
 
 	    if (lc($checksum_got) eq lc($checksum_expected)) {
 		print "OK, checksum verified\n";
@@ -2051,10 +2054,26 @@ sub download_file_from_url {
 	    }
 	}
 
-	rename($tmpdest, $dest) or die "unable to rename temporary file: $!\n";
+    if (my $cmd = $opts->{decompression_command}) {
+	push @$cmd, $tmp_download;
+    my $fh;
+    if (!open($fh, ">", "$tmp_decomp")) {
+	die "cant open temporary file $tmp_decomp for decompresson: $!\n";
+    }
+	print "decompressing $tmp_download to $tmp_decomp\n";
+	eval { run_command($cmd, output => '>&'.fileno($fh)); };
+	my $err = $@;
+	unlink $tmp_download;
+	die "$err\n" if $err;
+	rename($tmp_decomp, $dest) or die "unable to rename temporary file: $!\n";
+    } else {
+	rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
+    }
     };
     if (my $err = $@) {
-	unlink $tmpdest or warn "could not cleanup temporary file: $!";
+	unlink $tmp_download or warn "could not cleanup temporary file: $!";
+	unlink $tmp_decomp or warn "could not cleanup temporary file: $!"
+	    if $opts->{decompression_command};
 	die $err;
     }
 
