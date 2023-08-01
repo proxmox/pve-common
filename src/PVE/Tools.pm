@@ -579,7 +579,7 @@ sub run_command {
 	    }
 	}
 
-        alarm(0);
+	alarm(0);
     };
 
     my $err = $@;
@@ -1354,7 +1354,7 @@ sub dump_journal {
     my $parser = sub {
 	my $line = shift;
 
-        return if $count++ < $start;
+	return if $count++ < $start;
 	return if $limit <= 0;
 	push @$lines, { n => int($count), t => $line};
 	$limit--;
