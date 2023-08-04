@@ -2054,21 +2054,21 @@ sub download_file_from_url {
 	    }
 	}
 
-    if (my $cmd = $opts->{decompression_command}) {
-	push @$cmd, $tmp_download;
-    my $fh;
-    if (!open($fh, ">", "$tmp_decomp")) {
-	die "cant open temporary file $tmp_decomp for decompresson: $!\n";
-    }
-	print "decompressing $tmp_download to $tmp_decomp\n";
-	eval { run_command($cmd, output => '>&'.fileno($fh)); };
-	my $err = $@;
-	unlink $tmp_download;
-	die "$err\n" if $err;
-	rename($tmp_decomp, $dest) or die "unable to rename temporary file: $!\n";
-    } else {
-	rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
-    }
+	if (my $cmd = $opts->{decompression_command}) {
+	    push @$cmd, $tmp_download;
+	    my $fh;
+	    if (!open($fh, ">", "$tmp_decomp")) {
+		die "cant open temporary file $tmp_decomp for decompresson: $!\n";
+	    }
+	    print "decompressing $tmp_download to $tmp_decomp\n";
+	    eval { run_command($cmd, output => '>&'.fileno($fh)); };
+	    my $err = $@;
+	    unlink $tmp_download;
+	    die "$err\n" if $err;
+	    rename($tmp_decomp, $dest) or die "unable to rename temporary file: $!\n";
+	} else {
+	    rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
+	}
     };
     if (my $err = $@) {
 	unlink $tmp_download or warn "could not cleanup temporary file: $!";
