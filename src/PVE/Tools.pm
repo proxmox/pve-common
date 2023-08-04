@@ -2061,10 +2061,8 @@ sub download_file_from_url {
 		die "cant open temporary file $tmp_decomp for decompresson: $!\n";
 	    }
 	    print "decompressing $tmp_download to $tmp_decomp\n";
-	    eval { run_command($cmd, output => '>&'.fileno($fh)); };
-	    my $err = $@;
+	    run_command($cmd, output => '>&'.fileno($fh));
 	    unlink $tmp_download;
-	    die "$err\n" if $err;
 	    rename($tmp_decomp, $dest) or die "unable to rename temporary file: $!\n";
 	} else {
 	    rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
