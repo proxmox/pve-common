@@ -2017,9 +2017,10 @@ sub download_file_from_url {
     my $tmp_decomp = "$dest.tmp_dcom.$$";
     eval {
 	local $SIG{INT} = sub {
-	    unlink $tmp_download or warn "could not cleanup temporary file: $!";
+	    unlink $tmp_download or warn "could not cleanup temporary file: $!"
+		if -e $tmp_download;
 	    unlink $tmp_decomp or warn "could not cleanup temporary file: $!"
-		if $opts->{decompression_command};
+		if $opts->{decompression_command} && -e $tmp_decomp;
 	    die "got interrupted by signal\n";
 	};
 
@@ -2069,9 +2070,10 @@ sub download_file_from_url {
 	}
     };
     if (my $err = $@) {
-	unlink $tmp_download or warn "could not cleanup temporary file: $!";
+	unlink $tmp_download or warn "could not cleanup temporary file: $!"
+	    if -e $tmp_download;
 	unlink $tmp_decomp or warn "could not cleanup temporary file: $!"
-	    if $opts->{decompression_command};
+	    if $opts->{decompression_command} && -e $tmp_decomp;
 	die $err;
     }
 
