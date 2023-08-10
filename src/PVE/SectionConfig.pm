@@ -52,13 +52,13 @@ sub plugindata {
 }
 
 sub createSchema {
-    my ($class, $skip_type) = @_;
+    my ($class, $skip_type, $base) = @_;
 
     my $pdata = $class->private();
     my $propertyList = $pdata->{propertyList};
     my $plugins = $pdata->{plugins};
 
-    my $props = {};
+    my $props = $base || {};
 
     my $copy_property = sub {
 	my ($src) = @_;
@@ -107,13 +107,13 @@ sub createSchema {
 }
 
 sub updateSchema {
-    my ($class, $single_class) = @_;
+    my ($class, $single_class, $base) = @_;
 
     my $pdata = $class->private();
     my $propertyList = $pdata->{propertyList};
     my $plugins = $pdata->{plugins};
 
-    my $props = {};
+    my $props = $base || {};
 
     my $filter_type = $single_class ? $class->type() : undef;
 
