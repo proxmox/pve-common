@@ -22,7 +22,6 @@ sub ldap_connect {
 	scheme => $scheme,
 	port => $port,
 	timeout => 10,
-	onerror => 'die',
     );
 
     my $hosts = [];
@@ -41,7 +40,8 @@ sub ldap_connect {
     my $ldap = Net::LDAP->new($hosts, %ldap_opts) || die "$@\n";
 
     if ($start_tls) {
-	$ldap->start_tls(%$opts);
+	my $res = $ldap->start_tls(%$opts);
+	die $res->error . "\n" if $res->code;
     }
 
     return $ldap;
@@ -73,6 +73,7 @@ sub get_user_dn {
 	filter  => "$attr=$name",
 	attrs   => ['dn']
     );
+    die $result->error . "\n" if $result->code;
     return undef if !$result->entries;
     my @entries = $result->entries;
     return $entries[0]->dn;
@@ -93,7 +94,7 @@ sub auth_user_dn {
 
     if ($code) {
 	return undef if $noerr;
-	die $err;
+	die "$err\n";
     }
 
     return 1;
@@ -184,7 +185,7 @@ sub query_users {
 	$err = "LDAP user query unsuccessful" if !$err;
     }
 
-    die $err if $err;
+    die "$err\n" if $err;
 
     return $users;
 }
@@ -265,7 +266,7 @@ sub query_groups {
 	$err = "LDAP group query unsuccessful" if !$err;
     }
 
-    die $err if $err;
+    die "$err\n" if $err;
 
     return $groups;
 }
