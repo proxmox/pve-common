@@ -1,3 +1,15 @@
+libpve-common-perl (8.0.8) bookworm; urgency=medium
+
+  * fix #4849: download file from url: add opt parameter for a decompression
+    command
+
+  * ldap: handle errors explicitly to improve user visible error messages
+
+  * section config: allow base properties for 'createSchema' and
+    'updateSchema'
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 11 Aug 2023 13:25:04 +0200
+
 libpve-common-perl (8.0.7) bookworm; urgency=medium
 
   * schema: increase pve-config-digest maxLength to 64
