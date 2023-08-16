@@ -369,17 +369,22 @@ sub parse_config {
 		    my ($k, $v) = ($1, $3);
 
 		    eval {
-			if ($is_array->($type, $k)) {
-			    if (!$unknown) {
-				$v = $plugin->check_value($type, $k, $v, $sectionId);
+			if ($unknown) {
+			    if (!defined($config->{$k})) {
+				$config->{$k} = $v;
+			    } else {
+				if (!ref($config->{$k})) {
+				    $config->{$k} = [$config->{$k}];
+				}
+				push $config->{$k}->@*, $v;
 			    }
+			} elsif ($is_array->($type, $k)) {
+			    $v = $plugin->check_value($type, $k, $v, $sectionId);
 			    $config->{$k} = [] if !defined($config->{$k});
 			    push $config->{$k}->@*, $v;
 			} else {
 			    die "duplicate attribute\n" if defined($config->{$k});
-			    if (!$unknown) {
-				$v = $plugin->check_value($type, $k, $v, $sectionId);
-			    }
+			    $v = $plugin->check_value($type, $k, $v, $sectionId);
 			    $config->{$k} = $v;
 			}
 		    };
@@ -525,7 +530,12 @@ sub write_config {
 		next if defined($done_hash->{$k});
 		$done_hash->{$k} = 1;
 		my $v = $scfg->{$k};
-		$data .= "\t$k $v\n";
+		my $ref = ref($v);
+		if (defined($ref) && $ref eq 'ARRAY') {
+		    $data .= "\t$k $_\n" for $v->@*;
+		} else {
+		    $data .= "\t$k $v\n";
+		}
 	    }
 	    $out .= "$data\n";
 	    next;
