@@ -219,6 +219,7 @@ my $with_unknown_data = {
 	    type => 'bad',
 	    common => 'omg',
 	    unknownfield => 'shouldnotbehere',
+	    unknownarray => ['entry1', 'entry2'],
 	},
     },
     order => enum(qw(t1 t2 invalid t3)),
@@ -236,6 +237,8 @@ one: t2
 bad: invalid
 	common omg
 	unknownfield shouldnotbehere
+	unknownarray entry1
+	unknownarray entry2
 
 two: t3
 	field2 5
