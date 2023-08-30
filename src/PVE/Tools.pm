@@ -238,7 +238,7 @@ sub lock_file {
 }
 
 sub file_set_contents {
-    my ($filename, $data, $perm)  = @_;
+    my ($filename, $data, $perm, $force_utf8)  = @_;
 
     $perm = 0644 if !defined($perm);
 
@@ -253,6 +253,9 @@ sub file_set_contents {
 	    }
 	}
 	die "unable to open file '$tmpname' - $!\n" if !$fh;
+
+	binmode($fh, ":encoding(UTF-8)") if $force_utf8;
+
 	die "unable to write '$tmpname' - $!\n" unless print $fh $data;
 	die "closing file '$tmpname' failed - $!\n" unless close $fh;
     };
