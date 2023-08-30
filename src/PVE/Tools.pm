@@ -1017,10 +1017,16 @@ sub run_fork_with_timeout {
 	$res = $child_res->{result};
 	$error = $child_res->{error};
     };
+
     my $got_timeout = 0;
+    my $wantarray = wantarray; # so it can be queried inside eval
     eval {
 	if (defined($timeout)) {
-	    (undef, $got_timeout) = run_with_timeout($timeout, $readvalues);
+	    if ($wantarray) {
+		(undef, $got_timeout) = run_with_timeout($timeout, $readvalues);
+	    } else {
+		run_with_timeout($timeout, $readvalues);
+	    }
 	} else {
 	    $readvalues->();
 	}
