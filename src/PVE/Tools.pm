@@ -143,7 +143,8 @@ sub run_with_timeout {
     # this shouldn't happen anymore?
     die "unknown error" if $sigcount && !$err; # seems to happen sometimes
 
-    die $err if $err && !wantarray; # assume that user handles timeout err if called in list context
+    # assume that user handles timeout err if called in list context
+    die $err if $err && (!wantarray || !$got_timeout);
 
     return wantarray ? ($res, $got_timeout) : $res;
 }
