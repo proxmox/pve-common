@@ -1,3 +1,14 @@
+libpve-common-perl (8.0.9) bookworm; urgency=medium
+
+  * section config: fix handling unknown sections with arrays which
+    broke the jobs configuration when running 'qm destroy ID --purge'.
+
+  * tools: improve error handling for run with timeout helpers.
+
+  * tools: allow forcing UTF-8 encoding in file set contents helper.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 11 Sep 2023 13:46:15 +0200
+
 libpve-common-perl (8.0.8) bookworm; urgency=medium
 
   * fix #4849: download file from url: add opt parameter for a decompression
