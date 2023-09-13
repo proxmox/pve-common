@@ -23,7 +23,7 @@
 
 7.  Add the repository key, run:
 
-    wget -O- "https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg" | apt-key add -
+    wget -O /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg "https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg"
 
 8.  run: apt-get update && apt-get dist-upgrade
 9.  run: apt-get install proxmox-ve
