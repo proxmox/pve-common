@@ -1598,6 +1598,7 @@ sub sendmail {
 
     if (defined($text)) {
 	print $mail "Content-Type: text/plain;\n";
+	print $mail "Auto-Submitted: auto-generated;\n";
 	print $mail "\tcharset=\"UTF-8\"\n";
 	print $mail "Content-Transfer-Encoding: 8bit\n";
 	print $mail "\n";
@@ -1613,6 +1614,7 @@ sub sendmail {
 
     if (defined($html)) {
 	print $mail "Content-Type: text/html;\n";
+	print $mail "Auto-Submitted: auto-generated;\n";
 	print $mail "\tcharset=\"UTF-8\"\n";
 	print $mail "Content-Transfer-Encoding: 8bit\n";
 	print $mail "\n";
