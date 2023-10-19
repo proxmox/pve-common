@@ -416,7 +416,7 @@ sub file_restore_extract_prepare {
 
 # this blocks while data is transfered, call this from a background worker
 sub file_restore_extract {
-    my ($self, $output_file, $snapshot, $filepath, $base64) = @_;
+    my ($self, $output_file, $snapshot, $filepath, $base64, $tar) = @_;
 
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
@@ -430,10 +430,15 @@ sub file_restore_extract {
 	my $fn = fileno($fh);
 	my $errfunc = sub { print $_[0], "\n"; };
 
+	my $cmd = [ $snapshot, $filepath, "-", "--base64", $base64 ? 1 : 0];
+	if ($tar) {
+	    push @$cmd, '--format', 'tar', '--zstd', 1;
+	}
+
 	return run_raw_client_cmd(
 	    $self,
             "extract",
-	    [ $snapshot, $filepath, "-", "--base64", $base64 ? 1 : 0 ],
+	    $cmd,
 	    binary => "proxmox-file-restore",
 	    namespace => $namespace,
 	    errfunc => $errfunc,
