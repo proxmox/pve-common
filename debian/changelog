@@ -1,3 +1,11 @@
+libpve-common-perl (8.0.10) bookworm; urgency=medium
+
+  * pbs client: add 'tar' parameter to file_restore_extract
+
+  * fix #4162: added `Auto-Submitted` header to email body
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 07 Nov 2023 08:58:23 +0100
+
 libpve-common-perl (8.0.9) bookworm; urgency=medium
 
   * section config: fix handling unknown sections with arrays which
