@@ -1720,6 +1720,11 @@ sub mkdirat($$$) {
     return syscall(PVE::Syscall::mkdirat, int($dirfd), $name, int($mode)) == 0;
 }
 
+sub mknod($$$) {
+    my ($filename, $mode, $dev) = @_;
+    return syscall(PVE::Syscall::SYS_mknod, $filename, int($mode), int($dev)) == 0;
+}
+
 sub fchownat($$$$$) {
     my ($dirfd, $pathname, $owner, $group, $flags) = @_;
     return syscall(
