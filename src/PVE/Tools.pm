@@ -62,6 +62,20 @@ CLONE_NEWIPC
 CLONE_NEWUSER
 CLONE_NEWPID
 CLONE_NEWNET
+MS_RDONLY
+MS_NOSUID
+MS_NODEV
+MS_NOEXEC
+MS_SYNCHRONOUS
+MS_REMOUNT
+MS_MANDLOCK
+MS_DIRSYNC
+MS_NOSYMFOLLOW
+MS_NOATIME
+MS_NODIRATIME
+MS_BIND
+MS_MOVE
+MS_REC
 );
 
 my $pvelogdir = "/var/log/pve";
@@ -109,6 +123,23 @@ use constant {AT_EMPTY_PATH => 0x1000,
 use constant {RENAME_NOREPLACE => (1 << 0),
               RENAME_EXCHANGE  => (1 << 1),
               RENAME_WHITEOUT  => (1 << 2)};
+
+use constant {
+    MS_RDONLY      => (1),
+    MS_NOSUID      => (1 <<  1),
+    MS_NODEV       => (1 <<  2),
+    MS_NOEXEC      => (1 <<  3),
+    MS_SYNCHRONOUS => (1 <<  4),
+    MS_REMOUNT     => (1 <<  5),
+    MS_MANDLOCK    => (1 <<  6),
+    MS_DIRSYNC     => (1 <<  7),
+    MS_NOSYMFOLLOW => (1 <<  8),
+    MS_NOATIME     => (1 << 10),
+    MS_NODIRATIME  => (1 << 11),
+    MS_BIND        => (1 << 12),
+    MS_MOVE        => (1 << 13),
+    MS_REC         => (1 << 14),
+};
 
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
