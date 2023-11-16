@@ -8,6 +8,67 @@ use Digest::SHA;
 
 use PVE::Exception qw(raise_param_exc);
 use PVE::JSONSchema qw(get_standard_option);
+use PVE::Tools;
+
+# This package provides a way to have multiple (often similar) types of entries
+# in the same config file, each in its own section, thus "Section Config".
+#
+# The intended structure is to have a single 'base' plugin that inherits from
+# this class and provides meaningful defaults in its '$defaultData', e.g. a
+# default list of the core properties in its propertyList (most often only 'id'
+# and 'type')
+#
+# Each 'real' plugin then has it's own package that should inherit from the
+# 'base' plugin and returns it's specific properties in the 'properties' method,
+# its type in the 'type' method and all the known options, from both parent and
+# itself, in the 'options' method.
+# The options method can also be used to define if a property is 'optional' or
+# 'fixed' (only settable on config entity-creation), for example:
+#
+# ````
+# sub options {
+#     return {
+#         'some-optional-property' => { optional => 1 },
+#         'a-fixed-property' => { fixed => 1 },
+#         'a-required-but-not-fixed-property' => {},
+#     };
+# }
+# ```
+#
+# 'fixed' options can be set on create, but not changed afterwards.
+#
+# To actually use it, you have to first register all the plugins and then init
+# the 'base' plugin, like so:
+#
+# ```
+# use PVE::Dummy::Plugin1;
+# use PVE::Dummy::Plugin2;
+# use PVE::Dummy::BasePlugin;
+#
+# PVE::Dummy::Plugin1->register();
+# PVE::Dummy::Plugin2->register();
+# PVE::Dummy::BasePlugin->init();
+# ```
+#
+# There are two modes for how properties are exposed, the default 'unified'
+# mode and the 'isolated' mode.
+# In the default unified mode, there is only a global list of properties
+# which the plugins can use, so you cannot define the same property name twice
+# in different plugins. The reason for this is to force the use of identical
+# properties for multiple plugins.
+#
+# The second way is to use the 'isolated' mode, which can be achieved by
+# calling init with `1` as its parameter like this:
+#
+# ```
+# PVE::Dummy::BasePlugin->init(1);
+# ```
+#
+# With this, each plugin get's their own isolated list of properties which it
+# can use. Note that in this mode, you only have to specify the property in the
+# options method when it is either 'fixed' or comes from the global list of
+# properties. All locally defined ones get automatically added to the schema
+# for that plugin.
 
 my $defaultData = {
     options => {},
@@ -51,6 +112,62 @@ sub plugindata {
     return {};
 }
 
+sub has_isolated_properties {
+    my ($class) = @_;
+
+    my $isolatedPropertyList = $class->private()->{isolatedPropertyList};
+
+    return defined($isolatedPropertyList) && scalar(keys $isolatedPropertyList->%*) > 0;
+}
+
+my sub compare_property {
+    my ($a, $b, $skip_opts) = @_;
+
+    my $merged = {$a->%*, $b->%*};
+    delete $merged->{$_} for $skip_opts->@*;
+
+    for my $opt (keys $merged->%*) {
+	return 0 if !PVE::Tools::is_deeply($a->{$opt}, $b->{$opt});
+    }
+
+    return 1;
+};
+
+my sub add_property {
+    my ($props, $key, $prop, $type) = @_;
+
+    if (!defined($props->{$key})) {
+	$props->{$key} = $prop;
+	return;
+    }
+
+    if (!defined($props->{$key}->{oneOf})) {
+	if (compare_property($props->{$key}, $prop, ['instance-types'])) {
+	    push $props->{$key}->{'instance-types'}->@*, $type;
+	} else {
+	    my $new_prop = delete $props->{$key};
+	    delete $new_prop->{'type-property'};
+	    delete $prop->{'type-property'};
+	    $props->{$key} = {
+		'type-property' => 'type',
+		oneOf => [
+		    $new_prop,
+		    $prop,
+		],
+	    };
+	}
+    } else {
+	for my $existing_prop ($props->{$key}->{oneOf}->@*) {
+	    if (compare_property($existing_prop, $prop, ['instance-types', 'type-property'])) {
+		push $existing_prop->{'instance-types'}->@*, $type;
+		return;
+	    }
+	}
+
+	push $props->{$key}->{oneOf}->@*, $prop;
+    }
+};
+
 sub createSchema {
     my ($class, $skip_type, $base) = @_;
 
@@ -60,42 +177,61 @@ sub createSchema {
 
     my $props = $base || {};
 
-    my $copy_property = sub {
-	my ($src) = @_;
+    if (!$class->has_isolated_properties()) {
+	foreach my $p (keys %$propertyList) {
+	    next if $skip_type && $p eq 'type';
 
-	my $res = {};
-	foreach my $k (keys %$src) {
-	    $res->{$k} = $src->{$k};
+	    if (!$propertyList->{$p}->{optional}) {
+		$props->{$p} = $propertyList->{$p};
+		next;
+	    }
+
+	    my $required = 1;
+
+	    my $copts = $class->options();
+	    $required = 0 if defined($copts->{$p}) && $copts->{$p}->{optional};
+
+	    foreach my $t (keys %$plugins) {
+		my $opts = $pdata->{options}->{$t} || {};
+		$required = 0 if !defined($opts->{$p}) || $opts->{$p}->{optional};
+	    }
+
+	    if ($required) {
+		# make a copy, because we modify the optional property
+		my $res = {$propertyList->{$p}->%*}; # shallow copy
+		$res->{optional} = 0;
+		$props->{$p} = $res;
+	    } else {
+		$props->{$p} = $propertyList->{$p};
+	    }
 	}
+    } else {
+	for my $type (sort keys %$plugins) {
+	    my $opts = $pdata->{options}->{$type} || {};
+	    for my $key (sort keys $opts->%*) {
+		my $schema = $class->get_property_schema($type, $key);
+		my $prop = {$schema->%*};
+		$prop->{'instance-types'} = [$type];
+		$prop->{'type-property'} = 'type';
+		$prop->{optional} = 1 if $opts->{$key}->{optional};
 
-	return $res;
-    };
-
-    foreach my $p (keys %$propertyList) {
-	next if $skip_type && $p eq 'type';
-
-	if (!$propertyList->{$p}->{optional}) {
-	    $props->{$p} = $propertyList->{$p};
-	    next;
+		add_property($props, $key, $prop, $type);
+	    }
 	}
-
-	my $required = 1;
-
-	my $copts = $class->options();
-	$required = 0 if defined($copts->{$p}) && $copts->{$p}->{optional};
-
-	foreach my $t (keys %$plugins) {
-	    my $opts = $pdata->{options}->{$t} || {};
-	    $required = 0 if !defined($opts->{$p}) || $opts->{$p}->{optional};
+	# add remaining global properties
+	for my $opt (keys $propertyList->%*) {
+	    next if $props->{$opt};
+	    $props->{$opt} = {$propertyList->{$opt}->%*};
 	}
-
-	if ($required) {
-	    # make a copy, because we modify the optional property
-	    my $res = &$copy_property($propertyList->{$p});
-	    $res->{optional} = 0;
-	    $props->{$p} = $res;
-	} else {
-	    $props->{$p} = $propertyList->{$p};
+	for my $opt (keys $props->%*) {
+	    if (my $necessaryTypes = $props->{$opt}->{'instance-types'}) {
+		if ($necessaryTypes->@* == scalar(keys $plugins->%*)) {
+		    delete $props->{$opt}->{'instance-types'};
+		    delete $props->{$opt}->{'type-property'};
+		} else {
+		    $props->{$opt}->{optional} = 1;
+		}
+	    }
 	}
     }
 
@@ -117,30 +253,61 @@ sub updateSchema {
 
     my $filter_type = $single_class ? $class->type() : undef;
 
-    foreach my $p (keys %$propertyList) {
-	next if $p eq 'type';
+    if (!$class->has_isolated_properties()) {
+	foreach my $p (keys %$propertyList) {
+	    next if $p eq 'type';
 
-	my $copts = $class->options();
+	    my $copts = $class->options();
 
-	next if defined($filter_type) && !defined($copts->{$p});
+	    next if defined($filter_type) && !defined($copts->{$p});
 
-	if (!$propertyList->{$p}->{optional}) {
+	    if (!$propertyList->{$p}->{optional}) {
+		$props->{$p} = $propertyList->{$p};
+		next;
+	    }
+
+	    my $modifyable = 0;
+
+	    $modifyable = 1 if defined($copts->{$p}) && !$copts->{$p}->{fixed};
+
+	    foreach my $t (keys %$plugins) {
+		my $opts = $pdata->{options}->{$t} || {};
+		next if !defined($opts->{$p});
+		$modifyable = 1 if !$opts->{$p}->{fixed};
+	    }
+	    next if !$modifyable;
+
 	    $props->{$p} = $propertyList->{$p};
-	    next;
+	}
+    } else {
+	for my $type (sort keys %$plugins) {
+	    my $opts = $pdata->{options}->{$type} || {};
+	    for my $key (sort keys $opts->%*) {
+		next if $opts->{$key}->{fixed};
+
+		my $schema = $class->get_property_schema($type, $key);
+		my $prop = {$schema->%*};
+		$prop->{'instance-types'} = [$type];
+		$prop->{'type-property'} = 'type';
+		$prop->{optional} = 1;
+
+		add_property($props, $key, $prop, $type);
+	    }
 	}
 
-	my $modifyable = 0;
-
-	$modifyable = 1 if defined($copts->{$p}) && !$copts->{$p}->{fixed};
-
-	foreach my $t (keys %$plugins) {
-	    my $opts = $pdata->{options}->{$t} || {};
-	    next if !defined($opts->{$p});
-	    $modifyable = 1 if !$opts->{$p}->{fixed};
+	for my $opt (keys $propertyList->%*) {
+	    next if $props->{$opt};
+	    $props->{$opt} = {$propertyList->{$opt}->%*};
 	}
-	next if !$modifyable;
 
-	$props->{$p} = $propertyList->{$p};
+	for my $opt (keys $props->%*) {
+	    if (my $necessaryTypes = $props->{$opt}->{'instance-types'}) {
+		if ($necessaryTypes->@* == scalar(keys $plugins->%*)) {
+		    delete $props->{$opt}->{'instance-types'};
+		    delete $props->{$opt}->{'type-property'};
+		}
+	    }
+	}
     }
 
     $props->{digest} = get_standard_option('pve-config-digest');
@@ -160,22 +327,28 @@ sub updateSchema {
 }
 
 sub init {
-    my ($class) = @_;
+    my ($class, $property_isolation) = @_;
 
     my $pdata = $class->private();
 
-    foreach my $k (qw(options plugins plugindata propertyList)) {
+    foreach my $k (qw(options plugins plugindata propertyList isolatedPropertyList)) {
 	$pdata->{$k} = {} if !$pdata->{$k};
     }
 
     my $plugins = $pdata->{plugins};
     my $propertyList = $pdata->{propertyList};
+    my $isolatedPropertyList = $pdata->{isolatedPropertyList};
 
     foreach my $type (keys %$plugins) {
 	my $props = $plugins->{$type}->properties();
 	foreach my $p (keys %$props) {
-	    die "duplicate property '$p'" if defined($propertyList->{$p});
-	    my $res = $propertyList->{$p} = {};
+	    my $res;
+	    if ($property_isolation) {
+		$res = $isolatedPropertyList->{$type}->{$p} = {};
+	    } else {
+		die "duplicate property '$p'" if defined($propertyList->{$p});
+		$res = $propertyList->{$p} = {};
+	    }
 	    my $data = $props->{$p};
 	    for my $a (keys %$data) {
 		$res->{$a} = $data->{$a};
@@ -187,8 +360,23 @@ sub init {
     foreach my $type (keys %$plugins) {
 	my $opts = $plugins->{$type}->options();
 	foreach my $p (keys %$opts) {
-	    die "undefined property '$p'" if !$propertyList->{$p};
+	    my $prop;
+	    if ($property_isolation) {
+		$prop = $isolatedPropertyList->{$type}->{$p};
+	    }
+	    $prop //= $propertyList->{$p};
+	    die "undefined property '$p'" if !$prop;
 	}
+
+	# automatically the properties to options (if not specified explicitly)
+	if ($property_isolation) {
+	    foreach my $p (keys $isolatedPropertyList->{$type}->%*) {
+		next if $opts->{$p};
+		$opts->{$p} = {};
+		$opts->{$p}->{optional} = 1 if $isolatedPropertyList->{$type}->{$p}->{optional};
+	    }
+	}
+
 	$pdata->{options}->{$type} = $opts;
     }
 
@@ -241,7 +429,7 @@ sub check_value {
 
     die "unexpected property '$key'\n" if !defined($opts->{$key});
 
-    my $schema = $pdata->{propertyList}->{$key};
+    my $schema = $class->get_property_schema($type, $key);
     die "unknown property type\n" if !$schema;
 
     my $ct = $schema->{type};
@@ -295,6 +483,20 @@ sub format_section_header {
     return "$type: $sectionId\n";
 }
 
+sub get_property_schema {
+    my ($class, $type, $key) = @_;
+
+    my $pdata = $class->private();
+    my $opts = $pdata->{options}->{$type};
+
+    my $schema;
+    if ($class->has_isolated_properties()) {
+	$schema = $pdata->{isolatedPropertyList}->{$type}->{$key};
+    }
+    $schema //= $pdata->{propertyList}->{$key};
+
+    return $schema;
+}
 
 sub parse_config {
     my ($class, $filename, $raw, $allow_unknown) = @_;
@@ -322,7 +524,7 @@ sub parse_config {
     my $is_array = sub {
 	my ($type, $key) = @_;
 
-	my $schema = $pdata->{propertyList}->{$key};
+	my $schema = $class->get_property_schema($type, $key);
 	die "unknown property type\n" if !$schema;
 
 	return $schema->{type} eq 'array';
@@ -494,7 +696,6 @@ sub write_config {
     my ($class, $filename, $cfg, $allow_unknown) = @_;
 
     my $pdata = $class->private();
-    my $propertyList = $pdata->{propertyList};
 
     my $out = '';
 
@@ -516,6 +717,7 @@ sub write_config {
 	my $scfg = $ids->{$sectionId};
 	my $type = $scfg->{type};
 	my $opts = $pdata->{options}->{$type};
+	my $global_opts = $pdata->{options}->{__global};
 
 	die "unknown section type '$type'\n" if !$opts && !$allow_unknown;
 
@@ -545,7 +747,8 @@ sub write_config {
 	if ($scfg->{comment} && !$done_hash->{comment}) {
 	    my $k = 'comment';
 	    my $v = $class->encode_value($type, $k, $scfg->{$k});
-	    $data .= &$format_config_line($propertyList->{$k}, $k, $v);
+	    my $prop = $class->get_property_schema($type, $k);
+	    $data .= &$format_config_line($prop, $k, $v);
 	}
 
 	$data .= "\tdisable\n" if $scfg->{disable} && !$done_hash->{disable};
@@ -562,7 +765,8 @@ sub write_config {
 	    die "section '$sectionId' - missing value for required option '$k'\n"
 		if !defined ($v);
 	    $v = $class->encode_value($type, $k, $v);
-	    $data .= &$format_config_line($propertyList->{$k}, $k, $v);
+	    my $prop = $class->get_property_schema($type, $k);
+	    $data .= &$format_config_line($prop, $k, $v);
 	}
 
 	foreach my $k (@option_keys) {
@@ -570,7 +774,8 @@ sub write_config {
 	    my $v = $scfg->{$k};
 	    next if !defined($v);
 	    $v = $class->encode_value($type, $k, $v);
-	    $data .= &$format_config_line($propertyList->{$k}, $k, $v);
+	    my $prop = $class->get_property_schema($type, $k);
+	    $data .= &$format_config_line($prop, $k, $v);
 	}
 
 	$out .= "$data\n";
