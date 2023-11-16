@@ -1087,6 +1087,16 @@ sub check_type {
     return undef;
 }
 
+my sub get_instance_type {
+    my ($schema, $key, $value) = @_;
+
+    if (my $type_property = $schema->{$key}->{'type-property'}) {
+	return $value->{$type_property};
+    }
+
+    return undef;
+}
+
 sub check_object {
     my ($path, $schema, $value, $additional_properties, $errors) = @_;
 
@@ -1105,7 +1115,8 @@ sub check_object {
     }
 
     foreach my $k (keys %$schema) {
-	check_prop($value->{$k}, $schema->{$k}, $path ? "$path.$k" : $k, $errors);
+	my $instance_type = get_instance_type($schema, $k, $value);
+	check_prop($value->{$k}, $schema->{$k}, $path ? "$path.$k" : $k, $errors, $instance_type);
     }
 
     foreach my $k (keys %$value) {
@@ -1123,7 +1134,23 @@ sub check_object {
 		}
 	    }
 
-	    next; # value is already checked above
+	    # if it's a oneOf, check if there is a matching type
+	    my $matched_type = 1;
+	    if ($subschema->{oneOf}) {
+		my $instance_type = get_instance_type($schema, $k, $value);
+		$matched_type = 0;
+		for my $alternative ($subschema->{oneOf}->@*) {
+		    if (my $instance_types = $alternative->{'instance-types'}) {
+			if (!grep { $instance_type eq $_ } $instance_types->@*) {
+			    next;
+			}
+		    }
+		    $matched_type = 1;
+		    last;
+		}
+	    }
+
+	    next if $matched_type; # value is already checked above
 	}
 
 	if (defined ($additional_properties) && !$additional_properties) {
@@ -1150,7 +1177,7 @@ sub check_object_warn {
 }
 
 sub check_prop {
-    my ($value, $schema, $path, $errors) = @_;
+    my ($value, $schema, $path, $errors, $instance_type) = @_;
 
     die "internal error - no schema" if !$schema;
     die "internal error" if !$errors;
@@ -1163,6 +1190,58 @@ sub check_prop {
 	return;
     }
 
+    # must pass any of the given schemas
+    my $optional_for_type = 0;
+    if ($schema->{oneOf}) {
+	# in case we have an instance_type given, just check for that variant
+	if ($schema->{'type-property'}) {
+	    $optional_for_type = 1;
+	    for (my $i = 0; $i < scalar($schema->{oneOf}->@*); $i++) {
+		last if !$instance_type; # treat as optional if we don't have a type
+		my $inner_schema = $schema->{oneOf}->[$i];
+
+		if (!defined($inner_schema->{'instance-types'})) {
+		    add_error($errors, $path, "missing 'instance-types' in oneOf alternative");
+		    return;
+		}
+
+		next if !grep { $_ eq $instance_type } $inner_schema->{'instance-types'}->@*;
+		$optional_for_type = $inner_schema->{optional} // 0;
+		check_prop($value, $inner_schema, $path, $errors);
+	    }
+	} else {
+	    my $is_valid = 0;
+	    my $collected_errors = {};
+	    for (my $i = 0; $i < scalar($schema->{oneOf}->@*); $i++) {
+		my $inner_schema = $schema->{oneOf}->[$i];
+		my $inner_errors = {};
+		check_prop($value, $inner_schema, "$path.oneOf[$i]", $inner_errors);
+		if (!$inner_errors->%*) {
+		    $is_valid = 1;
+		    last;
+		}
+
+		for my $inner_path (keys $inner_errors->%*) {
+		    add_error($collected_errors, $inner_path, $inner_errors->{$path});
+		}
+	    }
+
+	    if (!$is_valid) {
+		for my $inner_path (keys $collected_errors->%*) {
+		    add_error($errors, $inner_path, $collected_errors->{$path});
+		}
+	    }
+	}
+    } elsif ($instance_type) {
+	if (!defined($schema->{'instance-types'})) {
+	    add_error($errors, $path, "missing 'instance-types'");
+	    return;
+	}
+	if (grep { $_ eq $instance_type} $schema->{'instance_types'}->@*) {
+	    $optional_for_type = 1;
+	}
+    }
+
     # if it extends another schema, it must pass that schema as well
     if($schema->{extends}) {
 	check_prop($value, $schema->{extends}, $path, $errors);
@@ -1170,7 +1249,7 @@ sub check_prop {
 
     if (!defined ($value)) {
 	return if $schema->{type} && $schema->{type} eq 'null';
-	if (!$schema->{optional} && !$schema->{alias} && !$schema->{group}) {
+	if (!$schema->{optional} && !$schema->{alias} && !$schema->{group} && !$optional_for_type) {
 	    add_error($errors, $path, "property is missing and it is not optional");
 	}
 	return;
@@ -1316,6 +1395,28 @@ my $default_schema_noref = {
 		enum => $schema_valid_types,
 	    },
 	    enum => $schema_valid_types,
+	},
+	oneOf => {
+	    type => 'array',
+	    description => "This represents the alternative options for this Schema instance.",
+	    optional => 1,
+	    items => {
+		type => 'object',
+		description => "A valid option of the properties",
+	    },
+	},
+	'instance-types' => {
+	    type => 'array',
+	    description => "Indicate to which type the parameter (or variant if inside a oneOf) belongs.",
+	    optional => 1,
+	    items => {
+		type => 'string',
+	    },
+	},
+	'type-property' => {
+	    type => 'string',
+	    description => "The property to check for instance types.",
+	    optional => 1,
 	},
 	optional => {
 	    type => "boolean",
@@ -1491,6 +1592,7 @@ my $default_schema = Storable::dclone($default_schema_noref);
 
 $default_schema->{properties}->{properties}->{additionalProperties} = $default_schema;
 $default_schema->{properties}->{additionalProperties}->{properties} = $default_schema->{properties};
+$default_schema->{properties}->{oneOf}->{items}->{properties} = $default_schema->{properties};
 
 $default_schema->{properties}->{items}->{properties} = $default_schema->{properties};
 $default_schema->{properties}->{items}->{additionalProperties} = 0;
@@ -1713,12 +1815,12 @@ sub get_options {
 	    # optional and call the mapping function afterwards.
 	    push @getopt, "$prop:s";
 	    push @interactive, [$prop, $mapping->{func}];
-	} elsif ($pd->{type} eq 'boolean') {
+	} elsif ($pd->{type} && $pd->{type} eq 'boolean') {
 	    push @getopt, "$prop:s";
 	} else {
 	    if ($pd->{format} && $pd->{format} =~ m/-list/) {
 		push @getopt, "$prop=s@";
-	    } elsif ($pd->{type} eq 'array') {
+	    } elsif ($pd->{type} && $pd->{type} eq 'array') {
 		push @getopt, "$prop=s@";
 	    } else {
 		push @getopt, "$prop=s";
@@ -1807,7 +1909,7 @@ sub get_options {
 
     foreach my $p (keys %$opts) {
 	if (my $pd = $schema->{properties}->{$p}) {
-	    if ($pd->{type} eq 'boolean') {
+	    if ($pd->{type} && $pd->{type} eq 'boolean') {
 		if ($opts->{$p} eq '') {
 		    $opts->{$p} = 1;
 		} elsif (defined(my $bool = parse_boolean($opts->{$p}))) {

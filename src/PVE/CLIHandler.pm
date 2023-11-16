@@ -433,7 +433,7 @@ my $print_bash_completion = sub {
 		my $res = $d->{completion}->($cmd, $pname, $cur, $args);
 		&$print_result(@$res);
 	    }
-	} elsif ($d->{type} eq 'boolean') {
+	} elsif ($d->{type} && $d->{type} eq 'boolean') {
 	    &$print_result('0', '1');
 	} elsif ($d->{enum}) {
 	    &$print_result(@{$d->{enum}});

@@ -725,11 +725,18 @@ sub getopt_usage {
     my $idx_param = {}; # -vlan\d+ -scsi\d+
 
     my $opts = '';
+
+    my $type_specific_opts = {};
+
     foreach my $k (sort keys %$prop) {
 	next if $arg_hash->{$k};
 	next if defined($fixed_param->{$k});
 
 	my $type_text = $prop->{$k}->{type} || 'string';
+
+	if ($prop->{$k}->{oneOf}) {
+	    $type_text = 'multiple';
+	}
 
 	my $param_map = {};
 
@@ -749,10 +756,51 @@ sub getopt_usage {
 	    }
 	}
 
+	my $is_optional = $prop->{$k}->{optional} // 0;
 
-	$opts .= $get_property_description->($base, 'arg', $prop->{$k}, $format, $param_map->{$k});
+	if (my $type_property = $prop->{$k}->{'type-property'}) {
+	    # save type specific descriptions for later
+	    my $type_schema = $prop->{$type_property};
+	    if ($prop->{$k}->{oneOf}) {
+		# it's optional if there are less options than types
+		$is_optional = 1 if scalar($type_schema->{enum}->@*) > scalar($prop->{$k}->{oneOf}->@*);
+		for my $alternative ($prop->{$k}->{oneOf}->@*) {
+		    # it's optional if at least one variant is optional
+		    $is_optional = 1 if $alternative->{optional};
+		    for my $type ($alternative->{'instance-types'}->@*) {
+			my $key = "${type_property}=${type}";
+			$type_specific_opts->{$key} //= "";
+			$type_specific_opts->{$key}
+			    .= $get_property_description->($base, 'arg', $alternative, $format, $param_map->{$k});
+		    }
+		}
+	    } elsif (my $types = $prop->{$k}->{'instance-types'}) {
+		# it's optional if not all types has that option
+		$is_optional = 1 if scalar($type_schema->{enum}->@*) > scalar($types->@*);
+		for my $type ($types->@*) {
+		    my $key = "${type_property}=${type}";
+		    $type_specific_opts->{$key} //= "";
+		    $type_specific_opts->{$key}
+			.= $get_property_description->($base, 'arg', $prop->{$k}, $format, $param_map->{$k});
+		}
+	    }
+	} elsif ($prop->{$k}->{oneOf}) {
+	    my $res = [];
+	    for my $alternative ($prop->{$k}->{oneOf}->@*) {
+		# it's optional if at least one variant is optional
+		$is_optional = 1 if $alternative->{optional};
+		push $res->@*, $get_property_description->($base, 'arg', $alternative, $format, $param_map->{$k});
+	    }
+	    if ($format eq 'asciidoc') {
+		$opts .= join("\n\nor\n\n", $res->@*);
+	    } else {
+		$opts .= join("  or\n\n", $res->@*);
+	    }
+	} else {
+	    $opts .= $get_property_description->($base, 'arg', $prop->{$k}, $format, $param_map->{$k});
+	}
 
-	if (!$prop->{$k}->{optional}) {
+	if (!$is_optional) {
 	    $args .= " " if $args;
 	    $args .= "--$base <$type_text>"
 	}
@@ -780,13 +828,30 @@ sub getopt_usage {
 	    $out .= "\n$desc\n\n";
 	} elsif ($format eq 'full') {
 	    my $desc = Text::Wrap::wrap('  ', '  ', ($info->{description}));
-	    $out .= "\n$desc\n";
+	    $out .= "\n$desc\n\n";
 	}
     }
 
     $out .= $argdescr if $argdescr;
 
     $out .= $opts if $opts;
+
+    if (scalar(keys $type_specific_opts->%*)) {
+	if ($format eq 'asciidoc') {
+	    $out .= "\n\n\n`Conditional options:`\n\n";
+	} else {
+	    $out .= " Conditional options:\n\n";
+	}
+    }
+
+    for my $type_opts (sort keys $type_specific_opts->%*) {
+	if ($format eq 'asciidoc') {
+	    $out .= "`[$type_opts]` ;;\n\n";
+	} else {
+	    $out .= " [$type_opts]\n\n";
+	}
+	$out .= $type_specific_opts->{$type_opts};
+    }
 
     return $out;
 }
@@ -825,7 +890,14 @@ sub dump_properties {
 	    }
 	}
 
-	$raw .= $get_property_description->($base, $style, $phash, $format);
+	if ($phash->{oneOf}) {
+	    for my $alternative ($phash->{oneOf}->@*) {
+		$raw .= $get_property_description->($base, $style, $alternative, $format);
+	    }
+	} else {
+	    $raw .= $get_property_description->($base, $style, $phash, $format);
+	}
+
 
 	next if $style ne 'config';
 
