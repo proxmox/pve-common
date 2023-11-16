@@ -6,6 +6,7 @@ TESTS = lock_file.test			\
 	format_test.test		\
 	section_config_test.test	\
 	api_parameter_test.test		\
+	is_deeply_test.test		\
 
 all:
 

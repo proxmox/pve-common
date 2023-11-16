@@ -2150,4 +2150,35 @@ sub get_file_hash {
     return lc($digest);
 }
 
+# compare two perl variables recursively, so this works for scalars, nested
+# hashes and nested arrays
+sub is_deeply {
+    my ($a, $b) = @_;
+
+    return 0 if defined($a) != defined($b);
+    return 1 if !defined($a); # both are undef
+
+    my ($ref_a, $ref_b) = (ref($a), ref($b));
+
+    # scalar case
+    return 0 if !$ref_a && !$ref_b && "$a" ne "$b";
+
+    # different types, ok because ref never returns undef, only empty string
+    return 0 if $ref_a ne $ref_b;
+
+    if ($ref_a eq 'HASH') {
+	return 0 if scalar(keys $a->%*) != scalar(keys $b->%*);
+	for my $opt (keys $a->%*) {
+	    return 0 if !is_deeply($a->{$opt}, $b->{$opt});
+	}
+    } elsif ($ref_a eq 'ARRAY') {
+	return 0 if scalar($a->@*) != scalar($b->@*);
+	for (my $i = 0; $i < $a->@*; $i++) {
+	    return 0 if !is_deeply($a->[$i], $b->[$i]);
+	}
+    }
+
+    return 1;
+}
+
 1;
