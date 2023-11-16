@@ -142,6 +142,7 @@ use strict;
 use warnings;
 
 use Test::More;
+use PVE::JSONSchema;
 
 Conf::One->register();
 Conf::Two->register();
@@ -250,6 +251,138 @@ EOF
 Conf->expect_fail('unknown-forbidden', $with_unknown_data, $with_unknown_text);
 Conf->expect_success('unknown-allowed', $with_unknown_data, $with_unknown_text, 1);
 
+# schema tests
+my $create_schema = Conf->createSchema();
+my $expected_create_schema = {
+    additionalProperties =>  0,
+    type => 'object',
+    properties =>  {
+	id => {
+	    description => 'ID',
+	    format => 'pve-configid',
+	    maxLength => 64,
+	    type => 'string',
+	},
+	type =>  {
+	    description => 'Section type.',
+	    enum => ['one', 'two'],
+	    type => 'string',
+	},
+	common => {
+	    type => 'string',
+	    description => 'common value',
+	    maxLength => 512,
+	},
+	field1 =>  {
+	    description =>  'Field One',
+	    maximum =>  9,
+	    minimum =>  3,
+	    optional =>  1,
+	    type =>  'integer',
+
+	},
+	'field2'=> {
+	    'description'=> 'Field Two',
+	    'maximum'=> 9,
+	    'minimum'=> 3,
+	    'optional'=> 1,
+	    'type'=> 'integer',
+	},
+	'arrayfield'=> {
+	    'description'=> 'Array Field with property string',
+	    'items'=> {
+		'description'=> 'a property string',
+		'format'=> {
+		    'subfield2'=> {
+			'optional'=> 1,
+			'type'=> 'integer',
+			'minimum'=> 0
+		    },
+		    'subfield1'=> {
+			'description'=> 'first subfield',
+			'type'=> 'string',
+		    },
+		},
+		'type'=> 'string'
+	    },
+	    'optional'=> 1,
+	    'type'=> 'array',
+	},
+	'another'=> {
+	    'description'=> 'Another field',
+	    'optional'=> 1,
+	    'type'=> 'string',
+	},
+    },
+};
+
+is_deeply($create_schema, $expected_create_schema, "create schema test");
+
+my $update_schema = Conf->updateSchema();
+my $expected_update_schema = {
+    additionalProperties => 0,
+    type => 'object',
+    properties => {
+	id => {
+	    description => 'ID',
+	    format => 'pve-configid',
+	    maxLength => 64,
+	    type => 'string',
+	},
+	delete => {
+	    type => 'string', format => 'pve-configid-list',
+	    description => "A list of settings you want to delete.",
+	    maxLength => 4096,
+	    optional => 1,
+	},
+	digest => PVE::JSONSchema::get_standard_option('pve-config-digest'),
+	common => {
+	    description => 'common value',
+	    maxLength => 512,
+	    type => 'string',
+	},
+	field1 => {
+	    description => 'Field One',
+	    maximum => 9,
+	    minimum => 3,
+	    optional => 1,
+	    type => 'integer'
+	},
+	field2 => {
+	    description => 'Field Two',
+	    maximum => 9,
+	    minimum => 3,
+	    optional => 1,
+	    type => 'integer',
+	},
+	arrayfield => {
+	    description => 'Array Field with property string',
+	    items => {
+		type => 'string',
+		description => 'a property string',
+		format => {
+		    subfield2 => {
+			type => 'integer',
+			minimum => 0,
+			optional => 1
+		    },
+		    subfield1 => {
+			description => 'first subfield',
+			type => 'string'
+		    }
+		}
+	    },
+	    optional => 1,
+	    type => 'array',
+	},
+	another => {
+	    description => 'Another field',
+	    optional => 1,
+	    type => 'string',
+	},
+    },
+};
+is_deeply($update_schema, $expected_update_schema, "update schema test");
 
 done_testing();
 
