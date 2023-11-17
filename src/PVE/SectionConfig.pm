@@ -61,7 +61,7 @@ use PVE::Tools;
 # calling init with `1` as its parameter like this:
 #
 # ```
-# PVE::Dummy::BasePlugin->init(1);
+# PVE::Dummy::BasePlugin->init(property_isolation => 1);
 # ```
 #
 # With this, each plugin get's their own isolated list of properties which it
@@ -326,8 +326,16 @@ sub updateSchema {
     };
 }
 
+# the %param hash controls some behavior of the section config, currently the following options are
+# understood:
+#
+# - property_isolation: if set, each child-plugin has a fully isolated property (schema) namespace.
+#   By default this is off, meaning all child-plugins share the schema of properties with the same
+#   name. Normally one wants to use oneOf schema's when enabling isolation.
 sub init {
-    my ($class, $property_isolation) = @_;
+    my ($class, %param) = @_;
+
+    my $property_isolation = $param{property_isolation};
 
     my $pdata = $class->private();
 

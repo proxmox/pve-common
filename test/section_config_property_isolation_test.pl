@@ -172,7 +172,7 @@ use Test::More;
 
 Conf::One->register();
 Conf::Two->register();
-Conf->init(1);
+Conf->init(property_isolation => 1);
 
 # FIXME: allow development debug warnings?!
 local $SIG{__WARN__} = sub { die @_; };
