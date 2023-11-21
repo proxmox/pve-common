@@ -1,3 +1,15 @@
+libpve-common-perl (8.1.0) bookworm; urgency=medium
+
+  * tools: Add mknod syscall
+
+  * tools: Add mount flag constants
+
+  * json schema: implement support for 'oneOf' schema
+
+  * section config: allow (opt-in) full property-isolation for plugins
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 21 Nov 2023 13:04:21 +0100
+
 libpve-common-perl (8.0.10) bookworm; urgency=medium
 
   * pbs client: add 'tar' parameter to file_restore_extract
