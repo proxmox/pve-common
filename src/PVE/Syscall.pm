@@ -32,6 +32,7 @@ BEGIN {
 	setxattr => &SYS_setxattr,
 	fgetxattr => &SYS_fgetxattr,
 	fsetxattr => &SYS_fsetxattr,
+	prctl => &SYS_prctl,
 
 	# Below aren't yet in perl's syscall.ph but use asm-generic, so the same across (sane) archs
 	# -> none unknown currently, yay
