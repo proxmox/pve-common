@@ -1073,16 +1073,27 @@ sub __read_etc_network_interfaces {
 		$ifaces->{$1}->{exists} = 0;
 		$d->{exists} = 0;
 	    }
-	} elsif ($iface =~ m/^(\S+)\.(\d+)$/ || $d->{'vlan-raw-device'}) {
+	} elsif ($iface =~ m/^(\S+)\.(\d+)$/) {
 	    $d->{type} = 'vlan';
 
 	    my ($dev, $id) = ($1, $2);
 	    $d->{'vlan-raw-device'} = $dev if defined($dev) && !$d->{'vlan-raw-device'};
+	    $d->{'vlan-id'} = $id if $id; # VLAN id 0 is not valid, so truthy check it is
 
-	    if (!$id && $iface =~ m/^vlan(\d+)$/) { # VLAN id 0 is not valid, so truthy check it is
-		$id = $1;
+	    my $raw_iface = $d->{'vlan-raw-device'};
+
+	    if (defined ($ifaces->{$raw_iface})) {
+		$d->{exists} = $ifaces->{$raw_iface}->{exists};
+	    } else {
+		$ifaces->{$raw_iface}->{exists} = 0;
+		$d->{exists} = 0;
 	    }
-	    $d->{'vlan-id'} = $id if $id;
+	} elsif ($d->{'vlan-raw-device'}) {
+	    $d->{type} = 'vlan';
+
+	    if ($iface =~ m/^vlan(\d+)$/) {
+		$d->{'vlan-id'} = $1 if $1; # VLAN id 0 is not valid, so truthy check it is
+	    }
 
 	    my $raw_iface = $d->{'vlan-raw-device'};
 
