@@ -37,7 +37,7 @@ iface eth2 inet manual
 
 iface eth3 inet manual
 
-allow-ovs vmbr0
+auto vmbr0
 iface vmbr0 inet static
 	address $ip
 	gateway $gw
@@ -52,19 +52,19 @@ expect load('loopback') . <<"/etc/network/interfaces";
 auto eth0
 iface eth0 inet manual
 
-allow-vmbr0 eth1
+auto eth1
 iface eth1 inet manual
 	ovs_type OVSPort
 	ovs_bridge vmbr0
 
-allow-vmbr0 eth2
+auto eth2
 iface eth2 inet manual
 	ovs_type OVSPort
 	ovs_bridge vmbr0
 
 iface eth3 inet manual
 
-allow-ovs vmbr0
+auto vmbr0
 iface vmbr0 inet static
 	address $ip
 	gateway $gw
@@ -89,7 +89,7 @@ expect load('loopback') . <<"/etc/network/interfaces";
 auto eth0
 iface eth0 inet manual
 
-allow-vmbr0 eth1
+auto eth1
 iface eth1 inet manual
 	ovs_type OVSPort
 	ovs_bridge vmbr0
@@ -98,7 +98,7 @@ iface eth3 inet manual
 
 iface eth2 inet manual
 
-allow-ovs vmbr0
+auto vmbr0
 iface vmbr0 inet static
 	address $ip
 	gateway $gw

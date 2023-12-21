@@ -78,7 +78,7 @@ sub r($;$$) {
 sub w() {
     # write shouldn't be able to change a previously parsed config
     my $config_clone = dclone($config);
-    return PVE::INotify::__write_etc_network_interfaces($config_clone);
+    return PVE::INotify::__write_etc_network_interfaces($config_clone, 1);
 }
 
 ##

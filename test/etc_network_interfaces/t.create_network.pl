@@ -420,7 +420,7 @@ auto eth1.100
 iface eth1.100 inet manual
 	mtu 1400
 
-allow-vmbr6 ovsintvlan
+auto ovsintvlan
 iface ovsintvlan inet manual
 	ovs_type OVSIntPort
 	ovs_bridge vmbr6
@@ -429,7 +429,7 @@ iface ovsintvlan inet manual
 
 $bond0_part
 
-allow-vmbr6 bond1
+auto bond1
 iface bond1 inet manual
 	ovs_bonds eth4 eth5
 	ovs_type OVSBond
@@ -464,7 +464,7 @@ iface vmbr5 inet manual
 	bridge-fd 0
 	mtu 1100
 
-allow-ovs vmbr6
+auto vmbr6
 iface vmbr6 inet manual
 	ovs_type OVSBridge
 	ovs_ports bond1 ovsintvlan
