@@ -1030,7 +1030,7 @@ sub __read_etc_network_interfaces {
 	};
     }
 
-    foreach my $iface (keys %$ifaces) {
+    foreach my $iface (sort keys %$ifaces) {
 	my $d = $ifaces->{$iface};
 	$d->{type} = 'unknown';
 	if ($iface =~ m/^bond\d+$/) {
