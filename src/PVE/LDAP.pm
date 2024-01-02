@@ -208,7 +208,7 @@ sub query_groups {
 
     my $page = Net::LDAP::Control::Paged->new(size => 100);
 
-    my $attrs = [ 'member', 'uniqueMember' ];
+    my $attrs = [ 'member', 'uniqueMember','memberUid' ]; #add memberUid to use with openldap and posix account
     push @$attrs, $group_name_attr if $group_name_attr;
     my @args = (
 	base     => $base_dn,
@@ -241,6 +241,10 @@ sub query_groups {
 	    if (!scalar(@$members)) {
 		$members = [$entry->get_value('uniqueMember')];
 	    }
+            foreach my $i ($entry->get_value('memberUid')){
+                push @$members , get_user_dn($ldap,$i,"uid",$base_dn);
+            } 
+	    ## for each uid we add the user dn
 	    $group->{members} = $members;
 	    if ($group_name_attr && (my $name = $entry->get_value($group_name_attr))) {
 		$group->{name} = $name;
