@@ -723,6 +723,7 @@ sub log_warn {
 	$rest_env->warn($message);
     } else {
 	chomp($message);
+	syslog('warning', "%s", $message);
 	print STDERR "WARN: $message\n";
     }
 }
@@ -732,6 +733,7 @@ sub warn {
 
     chomp($message);
 
+    syslog('warning', "%s", $message);
     print STDERR "WARN: $message\n";
 
     $self->{warning_count}++;
