@@ -167,6 +167,23 @@ sub wait_for_unit_removed($;$) {
     }, $timeout);
 }
 
+sub is_unit_active($;$) {
+    my ($unit) = @_;
+
+    my $bus = Net::DBus->system();
+    my $reactor = Net::DBus::Reactor->main();
+
+    my $service = $bus->get_service('org.freedesktop.systemd1');
+    my $if = $service->get_object('/org/freedesktop/systemd1', 'org.freedesktop.systemd1.Manager');
+
+    my $unit_path = eval { $if->GetUnit($unit) }
+	or return 0;
+    $if = $service->get_object($unit_path, 'org.freedesktop.systemd1.Unit')
+	or return 0;
+    my $state = $if->ActiveState;
+    return defined($state) && $state eq 'active';
+}
+
 sub read_ini {
     my ($filename) = @_;
 
