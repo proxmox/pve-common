@@ -34,13 +34,7 @@ sub verify_csrf_prevention_token {
 	my $timestamp = $1;
 	my $ttime = hex($timestamp);
 
-	my $digest;
-	if (length($sig) == 27) {
-	    # detected sha1 csrf token from older proxy, fallback. FIXME: remove with 7.0
-	    $digest = Digest::SHA::sha1_base64("$timestamp:$username", $secret);
-	} else {
-	    $digest = Digest::SHA::hmac_sha256_base64("$timestamp:$username", $secret);
-	}
+	my $digest = Digest::SHA::hmac_sha256_base64("$timestamp:$username", $secret);
 
 	my $age = time() - $ttime;
 	return 1 if ($digest eq $sig) && ($age > $min_age) &&
