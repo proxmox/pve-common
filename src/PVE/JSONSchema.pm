@@ -697,7 +697,7 @@ my $remote_format = {
     apitoken => {
 	type => 'string',
 	description => 'A full Proxmox API token including the secret value.',
-	format_description => 'user@realm!token=SECRET',
+	format_description => 'PVEAPIToken=user@realm!token=SECRET',
     },
     fingerprint => get_standard_option(
 	'fingerprint-sha256',
