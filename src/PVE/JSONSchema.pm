@@ -84,6 +84,7 @@ register_standard_option('pve-iface', {
 register_standard_option('pve-storage-id', {
     description => "The storage identifier.",
     type => 'string', format => 'pve-storage-id',
+    format_description => 'storage ID',
 });
 
 register_standard_option('pve-bridge-id', {
