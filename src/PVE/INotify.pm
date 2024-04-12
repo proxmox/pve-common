@@ -22,6 +22,7 @@ use PVE::Network;
 use PVE::ProcFSTools;
 use PVE::SafeSyslog;
 use PVE::Tools;
+use PVE::RESTEnvironment qw(log_warn);
 
 use base 'Exporter';
 
@@ -1033,7 +1034,17 @@ sub __read_etc_network_interfaces {
     foreach my $iface (sort keys %$ifaces) {
 	my $d = $ifaces->{$iface};
 	$d->{type} = 'unknown';
-	if ($iface =~ m/^bond\d+$/) {
+	if (defined $d->{'bridge_ports'}) {
+	    $d->{type} = 'bridge';
+	    if (!defined ($d->{bridge_stp})) {
+		$d->{bridge_stp} = 'off';
+	    }
+	    if (!defined($d->{bridge_fd}) && $d->{bridge_stp} eq 'off') {
+		$d->{bridge_fd} = 0;
+	    }
+	} elsif ($d->{ovs_type} && $d->{ovs_type} eq 'OVSBridge') {
+	    $d->{type} = $d->{ovs_type};
+	} elsif ($iface =~ m/^bond\d+$/) {
 	    if (!$d->{ovs_type}) {
 		$d->{type} = 'bond';
 	    } elsif ($d->{ovs_type} eq 'OVSBond') {
@@ -1052,18 +1063,6 @@ sub __read_etc_network_interfaces {
 		}
 		my $tag = &$extract_ovs_option($d, 'tag');
 		$d->{ovs_tag} = $tag if defined($tag);
-	    }
-	} elsif ($iface =~ m/^vmbr\d+$/) {
-	    if (!$d->{ovs_type}) {
-		$d->{type} = 'bridge';
-		if (!defined ($d->{bridge_stp})) {
-		    $d->{bridge_stp} = 'off';
-		}
-		if (!defined($d->{bridge_fd}) && $d->{bridge_stp} eq 'off') {
-		    $d->{bridge_fd} = 0;
-		}
-	    } elsif ($d->{ovs_type} eq 'OVSBridge') {
-		$d->{type} = $d->{ovs_type};
 	    }
 	} elsif ($iface =~ m/^(\S+):\d+$/) {
 	    $d->{type} = 'alias';
@@ -1126,6 +1125,9 @@ sub __read_etc_network_interfaces {
 		$d->{type} = $d->{'link-type'} if $d->{'link-type'} eq 'dummy';
 	    }
 	}
+
+	log_warn("detected a interface $iface that is not a bridge!")
+	    if !($d->{type} eq 'OVSBridge' || $d->{type} eq 'bridge') && $iface =~ m/^vmbr\d+$/;
 
 	# map address and netmask to cidr
 	if (my $addr = $d->{address}) {
