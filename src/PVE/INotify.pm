@@ -912,23 +912,29 @@ sub __read_etc_network_interfaces {
 	    # FIXME: handle those differently? auto makes it required on-boot, vs. best-effort
 	    $ifaces->{$_}->{autostart} = 1 for split (/\s+/, $2);
 
-	} elsif ($line =~ m/^\s*iface\s+(\S+)\s+(inet6?)\s+(\S+)\s*$/) {
+	} elsif ($line =~ m/^\s*iface\s+(\S+)(?:\s+(inet6?)\s+(\S+))?\s*$/) {
 	    my $i = $1;
 	    my $family = $2;
 	    my $f = { method => $3 }; # by family, merged to $d with a $suffix
-	    (my $suffix = $family) =~ s/^inet//;
+	    my $suffix = $family;
+	    $suffix =~ s/^inet// if defined $suffix;
 
 	    my $d = $ifaces->{$i} ||= {};
 	    $d->{priority} = $priority++ if !$d->{priority};
+
+	    # $family may be undef, an undef family means we have a stanza
+	    # without an `inet` or `inet6` section
 	    push @{$d->{families}}, $family;
+
 
 	    while (defined ($line = <$fh>)) {
 		$line =~ s/\s+$//; # drop trailing whitespaces
 
 		if ($line =~ m/^\s*#(.*?)\s*$/) {
-		    $f->{comments} = '' if !$f->{comments};
+		    my $pushto = defined($suffix) ? $f : $d;
+		    $pushto->{comments} = '' if !$pushto->{comments};
 		    my $comment = decode('UTF-8', $1);
-		    $f->{comments} .= "$comment\n";
+		    $pushto->{comments} .= "$comment\n";
 		} elsif ($line =~ m/^\s*(?:(?:iface|mapping|auto|source|source-directory)\s|allow-)/) {
 		    last;
 		} elsif ($line =~ m/^\s*((\S+)\s+(.+))$/) {
@@ -967,7 +973,17 @@ sub __read_etc_network_interfaces {
 		    };
 
 		    if ($id eq 'address' || $id eq 'netmask' || $id eq 'broadcast' || $id eq 'gateway') {
-			$f->{$id} = $value;
+			if (defined($suffix)) {
+			    $d->{$id.$suffix} = $value;
+			} elsif ($id ne 'netmask') {
+			    if ($value =~ /:/) {
+				$d->{$id.'6'} = $value;
+			    } else {
+				$d->{$id} = $value;
+			    }
+			} else {
+			    $d->{$id} = $value;
+			}
 		    } elsif ($simple_options->{$id}) {
 			$d->{$id} = $value;
 		    } elsif ($id eq 'slaves' || $id eq 'bridge_ports') {
@@ -1002,13 +1018,16 @@ sub __read_etc_network_interfaces {
 		    } elsif ($id eq 'vxlan-remoteip') {
 			push @{$d->{$id}}, $value;
 		    } else {
-			push @{$f->{options}}, $option;
+			my $pushto = defined($suffix) ? $f : $d;
+			push @{$pushto->{options}}, $option;
 		    }
 		} else {
 		    last;
 		}
 	    }
-	    $d->{"$_$suffix"} = $f->{$_} for keys $f->%*;
+	    if (defined($suffix)) {
+		$d->{"$_$suffix"} = $f->{$_} for keys $f->%*;
+	    }
 	    last SECTION if !defined($line);
 	    redo SECTION;
 	} elsif ($line =~ /\w/) {
@@ -1227,24 +1246,37 @@ sub _get_cidr {
 sub __interface_to_string {
     my ($iface, $d, $family, $first_block, $ifupdown2) = @_;
 
-    (my $suffix = $family) =~ s/^inet//;
+    my $suffix = $family;
+    $suffix =~ s/^inet// if defined($suffix);
 
-    return '' if !($d && $d->{"method$suffix"});
+    return '' if $family && !($d && $d->{"method$suffix"});
 
-    my $raw = "iface $iface $family " . $d->{"method$suffix"} . "\n";
+    my $raw = "iface $iface";
+    $raw .= " $family " . $d->{"method$suffix"} if defined $family;
+    $raw .= "\n";
 
-    if (my $addr = $d->{"address$suffix"}) {
-	if ($addr !~ /\/\d+$/ && $d->{"netmask$suffix"}) {
-	    if ($d->{"netmask$suffix"} =~ m/^\d+$/) {
-		$addr .= "/" . $d->{"netmask$suffix"};
-	    } elsif (my $mask = PVE::JSONSchema::get_netmask_bits($d->{"netmask$suffix"})) {
-		$addr .= "/" . $mask;
+    my $add_addr = sub {
+	my ($suffix) = @_;
+	if (my $addr = $d->{"address$suffix"}) {
+	    if ($addr !~ /\/\d+$/ && $d->{"netmask$suffix"}) {
+		if ($d->{"netmask$suffix"} =~ m/^\d+$/) {
+		    $addr .= "/" . $d->{"netmask$suffix"};
+		} elsif (my $mask = PVE::JSONSchema::get_netmask_bits($d->{"netmask$suffix"})) {
+		    $addr .= "/" . $mask;
+		}
 	    }
+	    $raw .= "\taddress ${addr}\n";
 	}
-	$raw .= "\taddress ${addr}\n";
-    }
 
-    $raw .= "\tgateway " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
+	$raw .= "\tgateway " . $d->{"gateway$suffix"} . "\n" if $d->{"gateway$suffix"};
+    };
+
+    if ($family) {
+	$add_addr->($suffix);
+    } else {
+	$add_addr->('');
+	$add_addr->('6');
+    }
 
     my $done = {
 	type => 1, priority => 1, method => 1, active => 1, exists => 1, comments => 1,
@@ -1413,14 +1445,25 @@ sub __interface_to_string {
 	}
     }
 
-    foreach my $option (@{$d->{"options$suffix"}}) {
-	$raw .= "\t$option\n";
-    }
+    my $add_options_comments = sub {
+	my ($suffix) = @_;
 
-    # add comments
-    my $comments = $d->{"comments$suffix"} || '';
-    foreach my $cl (split(/\n/, $comments)) {
-	$raw .= "#$cl\n";
+	foreach my $option (@{$d->{"options$suffix"}}) {
+	    $raw .= "\t$option\n";
+	}
+
+	# add comments
+	my $comments = $d->{"comments$suffix"} || '';
+	foreach my $cl (split(/\n/, $comments)) {
+	    $raw .= "#$cl\n";
+	}
+    };
+
+    if ($family) {
+	$add_options_comments->($suffix);
+    } else {
+	$add_options_comments->('');
+	$add_options_comments->('6');
     }
 
     $raw .= "\n";
@@ -1750,7 +1793,7 @@ NETWORKDOC
 	}
 
 	# if 'inet6' is the only family
-	if (scalar($d->{families}->@*) == 1 && $d->{families}[0] eq 'inet6') {
+	if (scalar($d->{families}->@*) == 1 && defined($d->{families}->[0]) && $d->{families}->[0] eq 'inet6') {
 	    $d->{comments6} = delete $d->{comments};
 	}
 
