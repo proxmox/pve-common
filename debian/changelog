@@ -1,3 +1,9 @@
+libpve-common-perl (8.2.1) bookworm; urgency=medium
+
+  * interfaces: support stanzas without types/methods, like ifupdown2 supports
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 23 Apr 2024 15:42:55 +0200
+
 libpve-common-perl (8.2.0) bookworm; urgency=medium
 
   * fix #545: interfaces: allow arbitrary bridge names in network config
