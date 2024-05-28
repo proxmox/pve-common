@@ -1246,8 +1246,8 @@ sub upid_normalize_status_type {
 sub encode_text {
     my ($text) = @_;
 
-    # all control and hi-bit characters, and ':'
-    my $unsafe = "^\x20-\x39\x3b-\x7e";
+    # all control and hi-bit characters, ':' and '%'
+    my $unsafe = "^\x20-\x24\x26-\x39\x3b-\x7e";
     return uri_escape(Encode::encode("utf8", $text), $unsafe);
 }
 
