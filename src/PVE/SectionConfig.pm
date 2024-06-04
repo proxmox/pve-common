@@ -422,7 +422,7 @@ sub createSchema {
     my $props = $base || {};
 
     if (!$class->has_isolated_properties()) {
-	foreach my $p (keys %$propertyList) {
+	for my $p (keys $propertyList->%*) {
 	    next if $skip_type && $p eq 'type';
 
 	    if (!$propertyList->{$p}->{optional}) {
@@ -435,7 +435,7 @@ sub createSchema {
 	    my $copts = $class->options();
 	    $required = 0 if defined($copts->{$p}) && $copts->{$p}->{optional};
 
-	    foreach my $t (keys %$plugins) {
+	    for my $t (keys $plugins->%*) {
 		my $opts = $pdata->{options}->{$t} || {};
 		$required = 0 if !defined($opts->{$p}) || $opts->{$p}->{optional};
 	    }
@@ -450,7 +450,7 @@ sub createSchema {
 	    }
 	}
     } else {
-	for my $type (sort keys %$plugins) {
+	for my $type (sort keys $plugins->%*) {
 	    my $opts = $pdata->{options}->{$type} || {};
 	    for my $key (sort keys $opts->%*) {
 		my $schema = $class->get_property_schema($type, $key);
@@ -510,7 +510,7 @@ sub updateSchema {
     my $filter_type = $single_class ? $class->type() : undef;
 
     if (!$class->has_isolated_properties()) {
-	foreach my $p (keys %$propertyList) {
+	for my $p (keys $propertyList->%*) {
 	    next if $p eq 'type';
 
 	    my $copts = $class->options();
@@ -526,7 +526,7 @@ sub updateSchema {
 
 	    $modifyable = 1 if defined($copts->{$p}) && !$copts->{$p}->{fixed};
 
-	    foreach my $t (keys %$plugins) {
+	    for my $t (keys $plugins->%*) {
 		my $opts = $pdata->{options}->{$t} || {};
 		next if !defined($opts->{$p});
 		$modifyable = 1 if !$opts->{$p}->{fixed};
@@ -536,7 +536,7 @@ sub updateSchema {
 	    $props->{$p} = $propertyList->{$p};
 	}
     } else {
-	for my $type (sort keys %$plugins) {
+	for my $type (sort keys $plugins->%*) {
 	    my $opts = $pdata->{options}->{$type} || {};
 	    for my $key (sort keys $opts->%*) {
 		next if $opts->{$key}->{fixed};
@@ -605,7 +605,7 @@ sub init {
 
     my $pdata = $class->private();
 
-    foreach my $k (qw(options plugins plugindata propertyList isolatedPropertyList)) {
+    for my $k (qw(options plugins plugindata propertyList isolatedPropertyList)) {
 	$pdata->{$k} = {} if !$pdata->{$k};
     }
 
@@ -613,9 +613,9 @@ sub init {
     my $propertyList = $pdata->{propertyList};
     my $isolatedPropertyList = $pdata->{isolatedPropertyList};
 
-    foreach my $type (keys %$plugins) {
+    for my $type (keys $plugins->%*) {
 	my $props = $plugins->{$type}->properties();
-	foreach my $p (keys %$props) {
+	for my $p (keys $props->%*) {
 	    my $res;
 	    if ($property_isolation) {
 		$res = $isolatedPropertyList->{$type}->{$p} = {};
@@ -624,16 +624,16 @@ sub init {
 		$res = $propertyList->{$p} = {};
 	    }
 	    my $data = $props->{$p};
-	    for my $a (keys %$data) {
+	    for my $a (keys $data->%*) {
 		$res->{$a} = $data->{$a};
 	    }
 	    $res->{optional} = 1;
 	}
     }
 
-    foreach my $type (keys %$plugins) {
+    for my $type (keys $plugins->%*) {
 	my $opts = $plugins->{$type}->options();
-	foreach my $p (keys %$opts) {
+	for my $p (keys $opts->%*) {
 	    my $prop;
 	    if ($property_isolation) {
 		$prop = $isolatedPropertyList->{$type}->{$p};
@@ -644,7 +644,7 @@ sub init {
 
 	# automatically the properties to options (if not specified explicitly)
 	if ($property_isolation) {
-	    foreach my $p (keys $isolatedPropertyList->{$type}->%*) {
+	    for my $p (keys $isolatedPropertyList->{$type}->%*) {
 		next if $opts->{$p};
 		$opts->{$p} = {};
 		$opts->{$p}->{optional} = 1 if $isolatedPropertyList->{$type}->{$p}->{optional};
@@ -655,7 +655,7 @@ sub init {
     }
 
     $propertyList->{type}->{type} = 'string';
-    $propertyList->{type}->{enum} = [sort keys %$plugins];
+    $propertyList->{type}->{enum} = [sort keys $plugins->%*];
 }
 
 =pod
@@ -796,7 +796,7 @@ sub check_value {
 	}
 
 	PVE::JSONSchema::check_prop($value, $checkschema, '', $errors);
-	if (scalar(keys %$errors)) {
+	if (scalar(keys $errors->%*)) {
 	    die "$errors->{$key}\n" if $errors->{$key};
 	    die "$errors->{_root}\n" if $errors->{_root};
 	    die "unknown error\n";
@@ -1076,7 +1076,7 @@ sub parse_config {
 	    }
 
 	    while ($line = $nextline->()) {
-		next if $skip; # skip
+		next if $skip;
 
 		$errprefix = "file $filename line $lineno";
 
@@ -1105,7 +1105,7 @@ sub parse_config {
 		    };
 		    if (my $err = $@) {
 			warn "$errprefix (section '$sectionId') - unable to parse value of '$k': $err";
-			push @$errors, {
+			push $errors->@*, {
 			    context => $errprefix,
 			    section => $sectionId,
 			    key => $k,
@@ -1142,7 +1142,7 @@ sub parse_config {
 	order => $order,
 	digest => $digest
     };
-    $cfg->{errors} = $errors if scalar(@$errors) > 0;
+    $cfg->{errors} = $errors if scalar($errors->@*) > 0;
 
     return $cfg;
 }
@@ -1173,7 +1173,7 @@ sub check_config {
 
     my $settings = { type => $type };
 
-    foreach my $k (keys %$config) {
+    for my $k (keys $config->%*) {
 	my $value = $config->{$k};
 
 	die "can't change value of fixed parameter '$k'\n"
@@ -1189,7 +1189,7 @@ sub check_config {
 
     if ($create) {
 	# check if we have a value for all required options
-	foreach my $k (keys %$opts) {
+	for my $k (keys $opts->%*) {
 	    next if $opts->{$k}->{optional};
 	    die "missing value for required option '$k'\n"
 		if !defined($config->{$k});
@@ -1199,7 +1199,7 @@ sub check_config {
     return $settings;
 }
 
-my $format_config_line = sub {
+my sub format_config_line {
     my ($schema, $key, $value) = @_;
 
     my $ct = $schema->{type};
@@ -1279,17 +1279,17 @@ sub write_config {
     my $order = $cfg->{order};
 
     my $maxpri = 0;
-    foreach my $sectionId (keys %$ids) {
+    for my $sectionId (keys $ids->%*) {
 	my $pri = $order->{$sectionId};
 	$maxpri = $pri if $pri && $pri > $maxpri;
     }
-    foreach my $sectionId (keys %$ids) {
+    for my $sectionId (keys $ids->%*) {
 	if (!defined ($order->{$sectionId})) {
 	    $order->{$sectionId} = ++$maxpri;
 	}
     }
 
-    foreach my $sectionId (sort {$order->{$a} <=> $order->{$b}} keys %$ids) {
+    for my $sectionId (sort {$order->{$a} <=> $order->{$b}} keys $ids->%*) {
 	my $scfg = $ids->{$sectionId};
 	my $type = $scfg->{type};
 	my $opts = $pdata->{options}->{$type};
@@ -1304,7 +1304,7 @@ sub write_config {
 	if (!$opts && $allow_unknown) {
 	    $done_hash->{type} = 1;
 	    my @first = exists($scfg->{comment}) ? ('comment') : ();
-	    for my $k (@first, sort keys %$scfg) {
+	    for my $k (@first, sort keys $scfg->%*) {
 		next if defined($done_hash->{$k});
 		$done_hash->{$k} = 1;
 		my $v = $scfg->{$k};
@@ -1324,7 +1324,7 @@ sub write_config {
 	    my $k = 'comment';
 	    my $v = $class->encode_value($type, $k, $scfg->{$k});
 	    my $prop = $class->get_property_schema($type, $k);
-	    $data .= &$format_config_line($prop, $k, $v);
+	    $data .= format_config_line($prop, $k, $v);
 	}
 
 	$data .= "\tdisable\n" if $scfg->{disable} && !$done_hash->{disable};
@@ -1332,8 +1332,8 @@ sub write_config {
 	$done_hash->{comment} = 1;
 	$done_hash->{disable} = 1;
 
-	my @option_keys = sort keys %$opts;
-	foreach my $k (@option_keys) {
+	my @option_keys = sort keys $opts->%*;
+	for my $k (@option_keys) {
 	    next if defined($done_hash->{$k});
 	    next if $opts->{$k}->{optional};
 	    $done_hash->{$k} = 1;
@@ -1342,16 +1342,16 @@ sub write_config {
 		if !defined ($v);
 	    $v = $class->encode_value($type, $k, $v);
 	    my $prop = $class->get_property_schema($type, $k);
-	    $data .= &$format_config_line($prop, $k, $v);
+	    $data .= format_config_line($prop, $k, $v);
 	}
 
-	foreach my $k (@option_keys) {
+	for my $k (@option_keys) {
 	    next if defined($done_hash->{$k});
 	    my $v = $scfg->{$k};
 	    next if !defined($v);
 	    $v = $class->encode_value($type, $k, $v);
 	    my $prop = $class->get_property_schema($type, $k);
-	    $data .= &$format_config_line($prop, $k, $v);
+	    $data .= format_config_line($prop, $k, $v);
 	}
 
 	$out .= "$data\n";
