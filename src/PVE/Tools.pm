@@ -1753,7 +1753,7 @@ sub mkdirat($$$) {
 
 sub mknod($$$) {
     my ($filename, $mode, $dev) = @_;
-    return syscall(PVE::Syscall::SYS_mknod, $filename, int($mode), int($dev)) == 0;
+    return syscall(PVE::Syscall::mknod, $filename, int($mode), int($dev)) == 0;
 }
 
 sub fchownat($$$$$) {
