@@ -469,8 +469,8 @@ sub change_cpu_quota {
     } elsif ($ver == 2) {
 	# cgroupv2 environment, an undefined (unlimited) quota is defined as "max"
 	# in this interface:
-	$quota //= 'max'; # unlimited
-	if (defined($quota)) {
+	if (defined($period)) {
+	    $quota //= 'max'; # unlimited
 	    PVE::ProcFSTools::write_proc_entry("$path/cpu.max", "$quota $period");
 	} else {
 	    # we're allowed to only write the quota:
