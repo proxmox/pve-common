@@ -587,7 +587,7 @@ my $get_property_description = sub {
 	if ($style eq 'config') {
 	    $display_name = "$name:";
 	} elsif ($style eq 'arg') {
-	    $display_name = "-$name";
+	    $display_name = "--$name";
 	} elsif ($style eq 'fixed') {
 	    $display_name = "<$name>";
 	} else {
