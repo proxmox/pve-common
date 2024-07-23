@@ -198,7 +198,7 @@ sub file_write {
     my $fh = IO::File->new($filename, "w");
     return undef if !$fh;
 
-    my $res = print $fh $buf;
+    my $res = defined(syswrite($fh, $buf)) ? 1 : 0;
 
     $fh->close();
 
