@@ -1014,26 +1014,25 @@ The error.
 sub parse_config {
     my ($class, $filename, $raw, $allow_unknown) = @_;
 
-    if (!defined($raw)) {
-	return {
-	    ids => {},
-	    order => {},
-	    digest => Digest::SHA::sha1_hex(''),
-	};
-    }
-
-    my $re_begins_with_comment = qr/^\s*#/;
-    my $re_kv_pair = qr/^\s+  (\S+)  (\s+ (.*\S) )?  \s*$/x;
+    my $pdata = $class->private();
 
     my $ids = {};
     my $order = {};
+
+    $raw = '' if !defined($raw);
+
     my $digest = Digest::SHA::sha1_hex($raw);
 
-    my $current_order = 1;
-    my $line_no = 0;
+    my $pri = 1;
 
+    my $lineno = 0;
     my @lines = split(/\n/, $raw);
-    my @errors;
+    my $nextline = sub {
+	while (defined(my $line = shift @lines)) {
+	    $lineno++;
+	    return $line if ($line !~ /^\s*#/);
+	}
+    };
 
     my $is_array = sub {
 	my ($type, $key) = @_;
@@ -1044,112 +1043,106 @@ sub parse_config {
 	return $schema->{type} eq 'array';
     };
 
-    my $get_next_line = sub {
-	while (scalar(@lines)) {
-	    my $line = shift(@lines);
-	    $line_no++;
-
-	    next if ($line =~ m/$re_begins_with_comment/);
-
-	    return $line;
-	}
-
-	return undef;
-    };
-
-    my $skip_to_next_empty_line = sub {
-	while ($get_next_line->() ne '') {}
-    };
-
-    while (defined(my $line = $get_next_line->())) {
+    my $errors = [];
+    while (@lines) {
+	my $line = $nextline->();
 	next if !$line;
 
-	my $errprefix = "file $filename line $line_no";
+	my $errprefix = "file $filename line $lineno";
 
-	my ($type, $section_id, $errmsg, $config) = $class->parse_section_header($line);
+	my ($type, $sectionId, $errmsg, $config) = $class->parse_section_header($line);
+	if ($config) {
+	    my $skip = 0;
+	    my $unknown = 0;
 
-	if (!defined($config)) {
-	    warn "$errprefix - ignore config line: $line\n";
-	    next;
-	}
+	    my $plugin;
 
-	if ($errmsg) {
-	    chomp $errmsg;
-	    warn "$errprefix (skip section '$section_id'): $errmsg\n";
-	    $skip_to_next_empty_line->();
-	    next;
-	}
-
-	if (!$type) {
-	    warn "$errprefix (skip section '$section_id'): missing type - internal error\n";
-	    $skip_to_next_empty_line->();
-	    next;
-	}
-
-	my $plugin = eval { $class->lookup($type) };
-	my $is_unknown_type = defined($@) && $@ ne '';
-
-	if ($is_unknown_type && !$allow_unknown) {
-	    warn "$errprefix (skip section '$section_id'): unsupported type '$type'\n";
-	    $skip_to_next_empty_line->();
-	    next;
-	}
-
-	# Parse kv-pairs of section - will go on until empty line is encountered
-	while (my $section_line = $get_next_line->()) {
-	    if ($section_line =~ m/$re_kv_pair/) {
-		my ($key, $value) = ($1, $3);
-
-		eval {
-		    if ($is_unknown_type) {
-			if (!defined($config->{$key})) {
-			    $config->{$key} = $value;
-			} else {
-			    $config->{$key} = [$config->{$key}] if !ref($config->{$key});
-			    push $config->{$key}->@*, $value;
-			}
-		    } elsif ($is_array->($type, $key)) {
-			$value = $plugin->check_value($type, $key, $value, $section_id);
-			$config->{$key} = [] if !defined($config->{$key});
-			push $config->{$key}->@*, $value;
+	    if ($errmsg) {
+		$skip = 1;
+		chomp $errmsg;
+		warn "$errprefix (skip section '$sectionId'): $errmsg\n";
+	    } elsif (!$type) {
+		$skip = 1;
+		warn "$errprefix (skip section '$sectionId'): missing type - internal error\n";
+	    } else {
+		if (!($plugin = $pdata->{plugins}->{$type})) {
+		    if ($allow_unknown) {
+			$unknown = 1;
 		    } else {
-			die "duplicate attribute\n" if defined($config->{$key});
-			$value = $plugin->check_value($type, $key, $value, $section_id);
-			$config->{$key} = $value;
+			$skip = 1;
+			warn "$errprefix (skip section '$sectionId'): unsupported type '$type'\n";
 		    }
-		};
-		if (my $err = $@) {
-		    warn "$errprefix (section '$section_id') - unable to parse value of '$key': $err";
-		    push @errors, {
-			context => $errprefix,
-			section => $section_id,
-			key => $key,
-			err => $err,
-		    };
 		}
 	    }
-	}
 
-	if ($is_unknown_type || ($type && $plugin && $config)) {
-	    $config->{type} = $type;
+	    while ($line = $nextline->()) {
+		next if $skip;
 
-	    if (!$is_unknown_type) {
-		$config = eval { $config = $plugin->check_config($section_id, $config, 1, 1); };
-		warn "$errprefix (skip section '$section_id'): $@" if $@;
+		$errprefix = "file $filename line $lineno";
+
+		if ($line =~ m/^\s+(\S+)(\s+(.*\S))?\s*$/) {
+		    my ($k, $v) = ($1, $3);
+
+		    eval {
+			if ($unknown) {
+			    if (!defined($config->{$k})) {
+				$config->{$k} = $v;
+			    } else {
+				if (!ref($config->{$k})) {
+				    $config->{$k} = [$config->{$k}];
+				}
+				push $config->{$k}->@*, $v;
+			    }
+			} elsif ($is_array->($type, $k)) {
+			    $v = $plugin->check_value($type, $k, $v, $sectionId);
+			    $config->{$k} = [] if !defined($config->{$k});
+			    push $config->{$k}->@*, $v;
+			} else {
+			    die "duplicate attribute\n" if defined($config->{$k});
+			    $v = $plugin->check_value($type, $k, $v, $sectionId);
+			    $config->{$k} = $v;
+			}
+		    };
+		    if (my $err = $@) {
+			warn "$errprefix (section '$sectionId') - unable to parse value of '$k': $err";
+			push $errors->@*, {
+			    context => $errprefix,
+			    section => $sectionId,
+			    key => $k,
+			    err => $err,
+			};
+		    }
+
+		} else {
+		    warn "$errprefix (section '$sectionId') - ignore config line: $line\n";
+		}
 	    }
 
-	    $ids->{$section_id} = $config;
-	    $order->{$section_id} = $current_order++;
+	    if ($unknown) {
+		$config->{type} = $type;
+		$ids->{$sectionId} = $config;
+		$order->{$sectionId} = $pri++;
+	    } elsif (!$skip && $type && $plugin && $config) {
+		$config->{type} = $type;
+		if (!$unknown) {
+		    $config = eval { $config = $plugin->check_config($sectionId, $config, 1, 1); };
+		    warn "$errprefix (skip section '$sectionId'): $@" if $@;
+		}
+		$ids->{$sectionId} = $config;
+		$order->{$sectionId} = $pri++;
+	    }
+
+	} else {
+	    warn "$errprefix - ignore config line: $line\n";
 	}
     }
 
     my $cfg = {
 	ids => $ids,
 	order => $order,
-	digest => $digest,
+	digest => $digest
     };
-
-    $cfg->{errors} = \@errors if scalar(@errors) > 0;
+    $cfg->{errors} = $errors if scalar($errors->@*) > 0;
 
     return $cfg;
 }
