@@ -1,3 +1,18 @@
+libpve-common-perl (8.2.2) bookworm; urgency=medium
+
+  * tools: fix wrapper for mknod syscall
+
+  * fix #5486: add '%' to list of encoded characters for when percent-encoding
+    text to ensure the original value is correctly restored when decoding such
+    a percent-encoded string again
+
+  * fix #5529: cgroup: correctly handle changing cpu quota without a quota
+    passed
+
+  * cli: use double-hyphen as argument prefix for doc and CLI help output
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 30 Jul 2024 21:42:12 +0200
+
 libpve-common-perl (8.2.1) bookworm; urgency=medium
 
   * interfaces: support stanzas without types/methods, like ifupdown2 supports
