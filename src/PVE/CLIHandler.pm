@@ -222,7 +222,7 @@ sub generate_usage_str {
 
 		} elsif (defined($def->{$cmd}->{alias}) && ($format eq 'asciidoc')) {
 
-		    $str .= "*$prefix $cmd*\n\nAn alias for '$exename $def->{$cmd}->{alias}'.\n\n";
+		    $str .= "*$prefix $cmd*\n\nAn alias for '$prefix $def->{$cmd}->{alias}'.\n\n";
 
 		} else {
 		    next if $def->{$cmd}->{alias};
