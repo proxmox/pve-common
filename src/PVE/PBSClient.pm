@@ -49,11 +49,11 @@ sub new {
 
     $secret_dir = '/etc/pve/priv/storage' if !defined($secret_dir);
 
-    my $self = bless {
+    my $self = bless({
 	scfg => $scfg,
 	storeid => $storeid,
 	secret_dir => $secret_dir
-    }, $class;
+    }, $class);
     return $self;
 }
 
@@ -67,7 +67,7 @@ sub set_password {
     my ($self, $password) = @_;
 
     my $pwfile = password_file_name($self);
-    mkdir $self->{secret_dir};
+    mkdir($self->{secret_dir});
 
     PVE::Tools::file_set_contents($pwfile, "$password\n", 0600);
 };
@@ -98,7 +98,7 @@ sub set_encryption_key {
     my ($self, $key) = @_;
 
     my $encfile = $self->encryption_key_file_name();
-    mkdir $self->{secret_dir};
+    mkdir($self->{secret_dir});
 
     PVE::Tools::file_set_contents($encfile, "$key\n", 0600);
 };
@@ -108,7 +108,7 @@ sub delete_encryption_key {
 
     my $encfile = $self->encryption_key_file_name();
 
-    if (!unlink $encfile) {
+    if (!unlink($encfile)) {
 	return if $! == ENOENT;
 	die "failed to delete encryption key! $!\n";
     }
@@ -144,7 +144,7 @@ my $USE_CRYPT_PARAMS = {
 my sub do_raw_client_cmd {
     my ($self, $client_cmd, $param, %opts) = @_;
 
-    my $client_bin = (delete $opts{binary}) || 'proxmox-backup-client';
+    my $client_bin = delete($opts{binary}) || 'proxmox-backup-client';
     my $use_crypto = $USE_CRYPT_PARAMS->{$client_bin}->{$client_cmd} // 0;
 
     my $client_exe = "/usr/bin/$client_bin";
@@ -153,13 +153,13 @@ my sub do_raw_client_cmd {
     my $scfg = $self->{scfg};
     my $repo = get_repository($scfg);
 
-    my $userns_cmd = delete $opts{userns_cmd};
+    my $userns_cmd = delete($opts{userns_cmd});
 
     my $cmd = [];
 
-    push @$cmd, @$userns_cmd if defined($userns_cmd);
+    push(@$cmd, @$userns_cmd) if defined($userns_cmd);
 
-    push @$cmd, $client_exe, $client_cmd;
+    push(@$cmd, $client_exe, $client_cmd);
 
     # This must live in the top scope to not get closed before the `run_command`
     my $keyfd;
@@ -169,17 +169,17 @@ my sub do_raw_client_cmd {
 		// die "failed to get file descriptor flags: $!\n";
 	    fcntl($keyfd, F_SETFD, $flags & ~FD_CLOEXEC)
 		or die "failed to remove FD_CLOEXEC from encryption key file descriptor\n";
-	    push @$cmd, '--crypt-mode=encrypt', '--keyfd='.fileno($keyfd);
+	    push(@$cmd, '--crypt-mode=encrypt', '--keyfd='.fileno($keyfd));
 	} else {
-	    push @$cmd, '--crypt-mode=none';
+	    push(@$cmd, '--crypt-mode=none');
 	}
     }
 
-    push @$cmd, @$param if defined($param);
+    push(@$cmd, @$param) if defined($param);
 
-    push @$cmd, "--repository", $repo;
+    push(@$cmd, "--repository", $repo);
     if (defined(my $ns = delete($opts{namespace}))) {
-	push @$cmd, '--ns', $ns;
+	push(@$cmd, '--ns', $ns);
     }
 
     local $ENV{PBS_PASSWORD} = $self->get_password();
@@ -266,7 +266,7 @@ sub get_snapshots {
     }
 
     my $param = [];
-    push @$param, $group if defined($group);
+    push(@$param, $group) if defined($group);
 
     return run_client_cmd($self, "snapshots", $param, undef, undef, $namespace);
 };
@@ -337,16 +337,16 @@ sub prune_group {
 
     my $param = [];
 
-    push @$param, "--quiet";
+    push(@$param, "--quiet");
 
     if (defined($opts->{'dry-run'}) && $opts->{'dry-run'}) {
-	push @$param, "--dry-run", $opts->{'dry-run'};
+	push(@$param, "--dry-run", $opts->{'dry-run'});
     }
 
     foreach my $keep_opt (keys %$prune_opts) {
-	push @$param, "--$keep_opt", $prune_opts->{$keep_opt};
+	push(@$param, "--$keep_opt", $prune_opts->{$keep_opt});
     }
-    push @$param, "$group";
+    push(@$param, "$group");
 
     return run_client_cmd($self, 'prune', $param, undef, undef, $namespace);
 };
@@ -381,7 +381,7 @@ sub file_restore_list {
     my $cmd = [ $snapshot, $filepath, "--base64", $base64 ? 1 : 0];
 
     if (my $timeout = $extra_params->{timeout}) {
-	push $cmd->@*, '--timeout', $timeout;
+	push($cmd->@*, '--timeout', $timeout);
     }
 
     return run_client_cmd(
@@ -406,9 +406,9 @@ sub file_restore_extract_prepare {
     # allow reading data for proxy user
     my $wwwid = getpwnam('www-data') ||
 	die "getpwnam failed";
-    chown $wwwid, -1, "$tmpdir"
+    chown($wwwid, -1, "$tmpdir")
 	or die "changing permission on fifo dir '$tmpdir' failed: $!\n";
-    chown $wwwid, -1, "$tmpdir/fifo"
+    chown($wwwid, -1, "$tmpdir/fifo")
 	or die "changing permission on fifo '$tmpdir/fifo' failed: $!\n";
 
     return "$tmpdir/fifo";
@@ -432,7 +432,7 @@ sub file_restore_extract {
 
 	my $cmd = [ $snapshot, $filepath, "-", "--base64", $base64 ? 1 : 0];
 	if ($tar) {
-	    push @$cmd, '--format', 'tar', '--zstd', 1;
+	    push(@$cmd, '--format', 'tar', '--zstd', 1);
 	}
 
 	return run_raw_client_cmd(
