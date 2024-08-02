@@ -22,7 +22,6 @@ use PVE::Network;
 use PVE::ProcFSTools;
 use PVE::SafeSyslog;
 use PVE::Tools;
-use PVE::RESTEnvironment qw(log_warn);
 
 use base 'Exporter';
 
@@ -1144,9 +1143,6 @@ sub __read_etc_network_interfaces {
 		$d->{type} = $d->{'link-type'} if $d->{'link-type'} eq 'dummy';
 	    }
 	}
-
-	log_warn("detected a interface $iface that is not a bridge!")
-	    if !($d->{type} eq 'OVSBridge' || $d->{type} eq 'bridge') && $iface =~ m/^vmbr\d+$/;
 
 	# map address and netmask to cidr
 	if (my $addr = $d->{address}) {
