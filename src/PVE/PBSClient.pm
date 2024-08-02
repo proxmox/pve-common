@@ -208,7 +208,7 @@ my sub run_client_cmd : prototype($$;$$$$) {
     my $json_str = '';
     my $outfunc = sub { $json_str .= "$_[0]\n" };
 
-    $binary //= 'proxmox-backup-client';
+    $binary = 'proxmox-backup-client' if !defined($binary);
 
     $param = [] if !defined($param);
     $param = [ $param ] if !ref($param);
@@ -286,7 +286,7 @@ sub backup_fs_tree {
 	'--backup-id', $id,
     ];
 
-    $cmd_opts //= {};
+    $cmd_opts = {} if !defined($cmd_opts);
 
     $cmd_opts->{namespace} = $self->{scfg}->{namespace} if defined($self->{scfg}->{namespace});
 
@@ -308,7 +308,7 @@ sub restore_pxar {
 	"$target",
 	"--allow-existing-dirs", 0,
     ];
-    $cmd_opts //= {};
+    $cmd_opts = {} if !defined($cmd_opts);
 
     $cmd_opts->{namespace} = $namespace;
 
