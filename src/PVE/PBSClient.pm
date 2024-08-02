@@ -288,7 +288,9 @@ sub backup_fs_tree {
 
     $cmd_opts = {} if !defined($cmd_opts);
 
-    $cmd_opts->{namespace} = $self->{scfg}->{namespace} if defined($self->{scfg}->{namespace});
+    if (defined(my $namespace = $self->{scfg}->{namespace})) {
+	$cmd_opts->{namespace} = $namespace;
+    }
 
     return run_raw_client_cmd($self, 'backup', $param, %$cmd_opts);
 };
