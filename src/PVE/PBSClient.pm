@@ -345,7 +345,7 @@ sub prune_group {
 	push(@$param, "--dry-run", $opts->{'dry-run'});
     }
 
-    foreach my $keep_opt (keys %$prune_opts) {
+    for my $keep_opt (keys %$prune_opts) {
 	push(@$param, "--$keep_opt", $prune_opts->{$keep_opt});
     }
     push(@$param, "$group");
