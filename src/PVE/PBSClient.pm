@@ -213,7 +213,7 @@ my sub run_client_cmd : prototype($$;$$$$) {
     $param = [] if !defined($param);
     $param = [ $param ] if !ref($param);
 
-    $param = [@$param, '--output-format=json'] if !$no_output;
+    $param = [ @$param, '--output-format=json' ] if !$no_output;
 
     do_raw_client_cmd(
 	$self,
@@ -236,7 +236,7 @@ sub autogen_encryption_key {
     my ($self) = @_;
     my $encfile = $self->encryption_key_file_name();
     run_command(
-        ['proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile],
+        [ 'proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile ],
         errmsg => 'failed to create encryption key'
     );
     return file_get_contents($encfile);
@@ -324,7 +324,7 @@ sub forget_snapshot {
 
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
-    return run_client_cmd($self, 'forget', ["$snapshot"], 1, undef, $namespace)
+    return run_client_cmd($self, 'forget', [ "$snapshot" ], 1, undef, $namespace)
 };
 
 sub prune_group {
@@ -380,7 +380,7 @@ sub file_restore_list {
     my ($self, $snapshot, $filepath, $base64, $extra_params) = @_;
 
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
-    my $cmd = [ $snapshot, $filepath, "--base64", $base64 ? 1 : 0];
+    my $cmd = [ $snapshot, $filepath, "--base64", ($base64 ? 1 : 0) ];
 
     if (my $timeout = $extra_params->{timeout}) {
 	push($cmd->@*, '--timeout', $timeout);
@@ -432,7 +432,7 @@ sub file_restore_extract {
 	my $fn = fileno($fh);
 	my $errfunc = sub { print $_[0], "\n"; };
 
-	my $cmd = [ $snapshot, $filepath, "-", "--base64", $base64 ? 1 : 0];
+	my $cmd = [ $snapshot, $filepath, "-", "--base64", ($base64 ? 1 : 0) ];
 	if ($tar) {
 	    push(@$cmd, '--format', 'tar', '--zstd', 1);
 	}
