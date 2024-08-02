@@ -42,12 +42,12 @@ sub get_repository {
 }
 
 sub new {
-    my ($class, $scfg, $storeid, $sdir) = @_;
+    my ($class, $scfg, $storeid, $secret_dir) = @_;
 
     die "no section config provided\n" if ref($scfg) eq '';
     die "undefined store id\n" if !defined($storeid);
 
-    my $secret_dir = $sdir // '/etc/pve/priv/storage';
+    $secret_dir = '/etc/pve/priv/storage' if !defined($secret_dir);
 
     my $self = bless {
 	scfg => $scfg,
