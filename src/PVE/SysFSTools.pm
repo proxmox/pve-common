@@ -103,21 +103,21 @@ sub lspci {
 	    return;
 	}
 
+	$res->{iommugroup} = -1;
+	if (-e "$devdir/iommu_group") {
+	    my ($iommugroup) = (readlink("$devdir/iommu_group") =~ m/\/(\d+)$/);
+	    $res->{iommugroup} = int($iommugroup);
+	}
+
+	if (-d "$devdir/mdev_supported_types") {
+	    $res->{mdev} = 1;
+	} elsif (-d "$devdir/nvidia") {
+	    # nvidia driver for kernel 6.8 or higher
+	    $res->{mdev} = 1; # for api compatibility
+	    $res->{nvidia} = 1;
+	}
+
 	if ($verbose) {
-	    $res->{iommugroup} = -1;
-	    if (-e "$devdir/iommu_group") {
-		my ($iommugroup) = (readlink("$devdir/iommu_group") =~ m/\/(\d+)$/);
-		$res->{iommugroup} = int($iommugroup);
-	    }
-
-	    if (-d "$devdir/mdev_supported_types") {
-		$res->{mdev} = 1;
-	    } elsif (-d "$devdir/nvidia") {
-		# nvidia driver for kernel 6.8 or higher
-		$res->{mdev} = 1; # for api compatibility
-		$res->{nvidia} = 1;
-	    }
-
 	    my $device_hash = $ids->{$vendor}->{devices}->{$device} // {};
 
 	    my $sub_vendor = file_read_firstline("$devdir/subsystem_vendor");
