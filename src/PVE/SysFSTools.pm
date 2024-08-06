@@ -112,6 +112,10 @@ sub lspci {
 
 	    if (-d "$devdir/mdev_supported_types") {
 		$res->{mdev} = 1;
+	    } elsif (-d "$devdir/nvidia") {
+		# nvidia driver for kernel 6.8 or higher
+		$res->{mdev} = 1; # for api compatibility
+		$res->{nvidia} = 1;
 	    }
 
 	    my $device_hash = $ids->{$vendor}->{devices}->{$device} // {};
@@ -159,30 +163,45 @@ sub get_mdev_types {
 
     my $types = [];
 
-    my $mdev_path = "$pcisysfs/devices/$id/mdev_supported_types";
-    if (!-d $mdev_path) {
-	return $types;
+    my $dev_path = "$pcisysfs/devices/$id";
+    my $mdev_path = "$dev_path/mdev_supported_types";
+    my $nvidia_path = "$dev_path/nvidia/creatable_vgpu_types";
+    if (-d $mdev_path) {
+	dir_glob_foreach($mdev_path, '[^\.].*', sub {
+	    my ($type) = @_;
+
+	    my $type_path = "$mdev_path/$type";
+
+	    my $available = int(file_read_firstline("$type_path/available_instances"));
+	    my $description = PVE::Tools::file_get_contents("$type_path/description");
+
+	    my $entry = {
+		type => $type,
+		description => $description,
+		available => $available,
+	    };
+
+	    my $name = file_read_firstline("$type_path/name");
+	    $entry->{name} = $name if defined($name);
+
+	    push @$types, $entry;
+	});
+    } elsif (-f $nvidia_path) {
+	my $creatable = PVE::Tools::file_get_contents($nvidia_path);
+	for my $line (split("\n", $creatable)) {
+	    next if $line =~ m/^ID/; # header
+	    next if $line !~ m/^(.*?)\s*:\s*(.*)$/;
+	    my $id = $1;
+	    my $name = $2;
+
+	    push $types->@*, {
+		type => "nvidia-$id", # backwards compatibility
+		description => "", # TODO, read from xml/nvidia-smi ?
+		available => 1,
+		name  => $name,
+	    }
+	}
     }
-
-    dir_glob_foreach($mdev_path, '[^\.].*', sub {
-	my ($type) = @_;
-
-	my $type_path = "$mdev_path/$type";
-
-	my $available = int(file_read_firstline("$type_path/available_instances"));
-	my $description = PVE::Tools::file_get_contents("$type_path/description");
-
-	my $entry = {
-	    type => $type,
-	    description => $description,
-	    available => $available,
-	};
-
-	my $name = file_read_firstline("$type_path/name");
-	$entry->{name} = $name if defined($name);
-
-	push @$types, $entry;
-    });
 
     return $types;
 }
