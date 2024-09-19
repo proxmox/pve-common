@@ -1368,9 +1368,12 @@ sub validate {
     # we can disable that in the final release
     # todo: is there a better/faster way to detect cycles?
     my $cycles = 0;
+
     # 'download' responses can contain a filehandle, don't cycle-check that as
     # it produces a warning
-    my $is_download = ref($instance) eq 'HASH' && $instance->{download};
+    # TODO: remove 'download' variant in 9.0 - also see pve-http-server
+    my $is_download = ref($instance) eq 'HASH'
+                      && ($instance->{download_allowed} || $instance->{download});
     find_cycle($instance, sub { $cycles = 1 }) if !$is_download;
     if ($cycles) {
 	add_error($errors, undef, "data structure contains recursive cycles");
@@ -1655,11 +1658,16 @@ my $method_schema = {
 	    optional => 1,
 	    default => 1,
 	},
-        download => {
-            type => 'boolean',
+	download => {
+	    type => 'boolean',
+	    description => "Deprecated, use 'download_allowed' instead.",
+	    optional => 1,
+	},
+	download_allowed => {
+	    type => 'boolean',
 	    description => "Method is allowed to download file contents (download information is the return value of the method).",
 	    optional => 1,
-        },
+	},
 	proxyto => {
 	    type =>  'string',
 	    description => "A parameter name. If specified, all calls to this method are proxied to the host contained in that parameter.",
