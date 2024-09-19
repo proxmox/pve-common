@@ -1370,7 +1370,7 @@ sub validate {
     my $cycles = 0;
     # 'download' responses can contain a filehandle, don't cycle-check that as
     # it produces a warning
-    my $is_download = ref($instance) eq 'HASH' && exists($instance->{download});
+    my $is_download = ref($instance) eq 'HASH' && $instance->{download};
     find_cycle($instance, sub { $cycles = 1 }) if !$is_download;
     if ($cycles) {
 	add_error($errors, undef, "data structure contains recursive cycles");
