@@ -1657,7 +1657,7 @@ my $method_schema = {
 	},
         download => {
             type => 'boolean',
-	    description => "Method downloads the file content (filename is the return value of the method).",
+	    description => "Method is allowed to download file contents (download information is the return value of the method).",
 	    optional => 1,
         },
 	proxyto => {
