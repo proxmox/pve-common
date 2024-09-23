@@ -1,3 +1,12 @@
+libpve-common-perl (8.2.3) bookworm; urgency=medium
+
+  * schema: adapt description of method's 'download' key and rename it to
+    'download_allowed' with an alias to the old name for backward
+    compatibility. This only affects our REST API endpoint and gets devs some
+    slightly better UX for what setting this flag does.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 23 Sep 2024 10:23:57 +0200
+
 libpve-common-perl (8.2.2) bookworm; urgency=medium
 
   * tools: fix wrapper for mknod syscall
