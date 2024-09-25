@@ -190,6 +190,10 @@ sub iface_delete :prototype($) {
 
 sub iface_create :prototype($$@) {
     my ($iface, $type, @args) = @_;
+
+    eval { check_iface_name($iface) };
+    die "failed to create interface '$iface' - $@" if $@;
+
     run_command(['/sbin/ip', 'link', 'add', $iface, 'type', $type, @args], noerr => 1)
 	== 0 or die "failed to create interface '$iface'\n";
     return;
@@ -376,17 +380,21 @@ sub veth_create {
 
     # create veth pair
     if (! -d "/sys/class/net/$veth") {
-	my $cmd = ['/sbin/ip', 'link', 'add'];
-	# veth device + MTU
-	push @$cmd, 'name', $veth;
-	push @$cmd, 'mtu', $bridgemtu;
-	push @$cmd, 'type', 'veth';
-	# peer device + MTU
-	push @$cmd, 'peer', 'name', $vethpeer, 'mtu', $bridgemtu;
+	eval {
+	    check_iface_name($veth);
 
-	push @$cmd, 'addr', $mac if $mac;
+	    my $cmd = ['/sbin/ip', 'link', 'add'];
+	    # veth device + MTU
+	    push @$cmd, 'name', $veth;
+	    push @$cmd, 'mtu', $bridgemtu;
+	    push @$cmd, 'type', 'veth';
+	    # peer device + MTU
+	    push @$cmd, 'peer', 'name', $vethpeer, 'mtu', $bridgemtu;
 
-	eval { run_command($cmd) };
+	    push @$cmd, 'addr', $mac if $mac;
+
+	    run_command($cmd);
+	};
 	die "can't create interface $veth - $@\n" if $@;
     }
 
