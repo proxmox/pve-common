@@ -165,6 +165,22 @@ my $compute_fwbr_names = sub {
     return ($fwbr, $vethfw, $vethfwpeer, $ovsintport);
 };
 
+sub check_iface_name : prototype($) {
+    my ($name) = @_;
+
+    my $name_len = length($name);
+
+    # iproute2 / kernel have a strict interface name size limit
+    die "the interface name $name is too long"
+	if $name_len >= PVE::ProcFSTools::IFNAMSIZ;
+
+    # iproute2 checks with isspace(3), which includes vertical tabs (not catched with perl's '\s')
+    die "the interface name $name is empty or contains invalid characters"
+	if $name_len == 0 || $name =~ /\s|\v|\//;
+
+    return 1;
+}
+
 sub iface_delete :prototype($) {
     my ($iface) = @_;
     run_command(['/sbin/ip', 'link', 'delete', 'dev', $iface], noerr => 1)
@@ -561,6 +577,8 @@ sub activate_bridge_vlan_slave {
     # create vlan on $iface is not already exist
     if (! -d "/sys/class/net/$ifacevlan") {
 	eval {
+	    check_iface_name($ifacevlan);
+
 	    my $cmd = ['/sbin/ip', 'link', 'add'];
 	    push @$cmd, 'link', $iface;
 	    push @$cmd, 'name', $ifacevlan;
