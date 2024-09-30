@@ -285,10 +285,25 @@ sub file_set_contents {
 	}
 	die "unable to open file '$tmpname' - $!\n" if !$fh;
 
-	binmode($fh, ":encoding(UTF-8)") if $force_utf8;
+	if ($force_utf8) {
+	    $data = encode("utf8", $data);
+	} else {
+	    # Encode wide characters with print before passing them to syswrite
+	    my $unencoded_data = $data;
+	    open my $datafh, '>', \$data;
+	    print $datafh $unencoded_data;
+	    close $datafh;
+	}
 
-	die "unable to write '$tmpname' - $!\n" unless print $fh $data;
-	die "closing file '$tmpname' failed - $!\n" unless close $fh;
+	my $offset = 0;
+	my $len = length($data);
+
+	while ($offset < $len) {
+	    $offset += syswrite($fh, $data, $len - $offset, $offset)
+		or die "unable to write '$tmpname' - $!\n";
+	}
+
+	close $fh or die "closing file '$tmpname' failed - $!\n";
     };
     my $err = $@;
 
