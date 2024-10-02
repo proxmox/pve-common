@@ -1311,7 +1311,7 @@ sub __interface_to_string {
 
 	if (defined($d->{bridge_vlan_aware})) {
 	    $raw .= "\tbridge-vlan-aware yes\n";
-	    my $vlans = defined($d->{bridge_vids}) ? $d->{bridge_vids} : "2-4094";
+	    my $vlans = $d->{bridge_vids} ? $d->{bridge_vids} : "2-4094";
 	    $raw .= "\tbridge-vids $vlans\n";
 	}
 	$done->{bridge_vlan_aware} = 1;
