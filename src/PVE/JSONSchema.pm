@@ -81,6 +81,12 @@ register_standard_option('pve-iface', {
     minLength => 2, maxLength => 20,
 });
 
+register_standard_option('pve-vlan-id-or-range', {
+    description => "VLAN ID or range.",
+    type => 'string', format => 'pve-vlan-id-or-range',
+    minLength => 1, maxLength => 9,
+});
+
 register_standard_option('pve-storage-id', {
     description => "The storage identifier.",
     type => 'string', format => 'pve-storage-id',
@@ -593,6 +599,39 @@ sub pve_verify_iface {
 	die "invalid network interface name '$id'\n";
     }
     return $id;
+}
+
+# vlan id (vids), single or range
+register_format('pve-vlan-id-or-range', \&pve_verify_vlan_id_or_range);
+sub pve_verify_vlan_id_or_range {
+    my ($vlan, $noerr) = @_;
+
+    my $valid_vid = sub {
+	my $tag = shift;
+	if ($tag < 2 || $tag > 4094) {
+	    return 0 if $noerr;
+	    die "invalid VLAN tag '$tag'\n";
+	}
+	return 1;
+    };
+
+    if ($vlan !~ m/^(\d+)(?:-(\d+))?$/) {
+	return if $noerr;
+	die "invalid VLAN configuration '$vlan'\n";
+    }
+    my $start = $1;
+    my $end = $2;
+    return if !$valid_vid->($start);
+    if ($end) {
+	return if !$valid_vid->($end);
+
+	if ($start >= $end) {
+	    return if $noerr;
+	    die "VLAN range must go from lower to higher tag '$vlan'\n";
+	}
+    }
+
+    return $vlan;
 }
 
 # general addresses by name or IP
