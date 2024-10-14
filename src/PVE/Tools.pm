@@ -299,8 +299,9 @@ sub file_set_contents {
 	my $len = length($data);
 
 	while ($offset < $len) {
-	    $offset += syswrite($fh, $data, $len - $offset, $offset)
+	    my $written_bytes = syswrite($fh, $data, $len - $offset, $offset)
 		or die "unable to write '$tmpname' - $!\n";
+	    $offset += $written_bytes;
 	}
 
 	close $fh or die "closing file '$tmpname' failed - $!\n";
