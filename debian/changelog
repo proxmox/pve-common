@@ -1,3 +1,11 @@
+libpve-common-perl (8.2.4) bookworm; urgency=medium
+
+  * file set contents: use syswrite instead of print to avoid chunking write
+    into 8 KiB blocks, which can increase the overhead of the write operation
+    on the underlying storage.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 16 Oct 2024 19:02:19 +0200
+
 libpve-common-perl (8.2.3) bookworm; urgency=medium
 
   * schema: adapt description of method's 'download' key and rename it to
