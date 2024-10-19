@@ -1,3 +1,10 @@
+libpve-common-perl (8.2.5) bookworm; urgency=medium
+
+  * explicitly load the PerlIO base module to avoid some odd edge cases where
+    perl isn't able to do so automatically.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 19 Oct 2024 16:36:20 +0200
+
 libpve-common-perl (8.2.4) bookworm; urgency=medium
 
   * file set contents: use syswrite instead of print to avoid chunking write
