@@ -290,6 +290,13 @@ sub file_set_contents {
 	} else {
 	    # Encode wide characters with print before passing them to syswrite
 	    my $unencoded_data = $data;
+	    # Without this we get some "Can't locate PerlIO.pm in @INC" errors _sometimes_, and the
+	    # odd thing about it is that they can be "fixed" by calling file_set_contents in the
+	    # parent methode/code before the method, from another module, is called.
+	    # Anyway, loading PerlIO here should be fine as the in-memory variable writing is in
+	    # fact backed by the PerlIO based "scalar" module. This comment can be removed once the
+	    # odd behavior is really understood.
+	    use PerlIO::scalar;
 	    open(my $data_fh, '>', \$data) or die "failed to open in-memory variable - $!\n";
 	    print $data_fh $unencoded_data;
 	    close($data_fh);
