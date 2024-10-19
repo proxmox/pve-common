@@ -290,9 +290,9 @@ sub file_set_contents {
 	} else {
 	    # Encode wide characters with print before passing them to syswrite
 	    my $unencoded_data = $data;
-	    open my $datafh, '>', \$data;
-	    print $datafh $unencoded_data;
-	    close $datafh;
+	    open(my $data_fh, '>', \$data) or die "failed to open in-memory variable - $!\n";
+	    print $data_fh $unencoded_data;
+	    close($data_fh);
 	}
 
 	my $offset = 0;
