@@ -748,7 +748,7 @@ my $parse_ovs_option = sub {
     my $opts = {};
     foreach my $kv (split (/\s+/, $data || '')) {
 	my ($k, $v) = split('=', $kv, 2);
-	$opts->{$k} = $v if $k && $v;
+	$opts->{$k} = $v if $k && defined($v);
     }
     return $opts;
 };
