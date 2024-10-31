@@ -1610,7 +1610,7 @@ C<$config>.
 
 =cut
 
-sub delete_from_config {
+my sub delete_from_config {
     my ($config, $option_schema, $new_options, $to_delete) = @_;
 
     for my $k ($to_delete->@*) {
