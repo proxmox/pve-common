@@ -596,16 +596,16 @@ sub updateSchema {
 		next;
 	    }
 
-	    my $modifyable = 0;
+	    my $modifiable = 0;
 
-	    $modifyable = 1 if defined($copts->{$p}) && !$copts->{$p}->{fixed};
+	    $modifiable = 1 if defined($copts->{$p}) && !$copts->{$p}->{fixed};
 
 	    for my $t (keys $plugins->%*) {
 		my $opts = $pdata->{options}->{$t} || {};
 		next if !defined($opts->{$p});
-		$modifyable = 1 if !$opts->{$p}->{fixed};
+		$modifiable = 1 if !$opts->{$p}->{fixed};
 	    }
-	    next if !$modifyable;
+	    next if !$modifiable;
 
 	    $props->{$p} = $propertyList->{$p};
 	}
