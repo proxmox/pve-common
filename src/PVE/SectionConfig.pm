@@ -1,3 +1,97 @@
+=head1 NAME
+
+C<PVE::SectionConfig> - An Extendible Configuration File Format
+
+=head1 DESCRIPTION
+
+This package provides a way to have multiple (often similar) types of entries
+in the same config file, each in its own section, thus I<Section Config>.
+
+For each C<SectionConfig>-based config file, a C<PVE::JSONSchema> is derived
+automatically. This schema can be used to implement CRUD operations for
+the config data.
+
+The location of a config file is chosen by the author of the code that uses
+C<SectionConfig> and is not something this module is concerned with.
+
+=head1 USAGE
+
+The intended structure is to have a single I<base plugin> that uses the
+C<L<PVE::SectionConfig>> module as a base module. Furthermore, it should provide
+meaningful defaults in its C<$defaultData>, such as a default list of core
+C<L<PVE::JSONSchema>> I<properties>. The I<base plugin> is thus very similar to an
+I<abstract class>.
+
+Each I<child plugin> is then defined in its own package that should inherit
+from the base plugin and defines which properties it itself provides and
+uses, as well as which properties it uses from the base plugin.
+
+The methods that need to be implemented are annotated in the L</METHODS> section
+below.
+
+              ┌─────────────────┐
+              │  SectionConfig  │
+              └────────┬────────┘
+                       │
+                       │
+                       │
+              ┌────────▼────────┐
+              │    BasePlugin   │
+              └────────┬────────┘
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+    ┌────────▼────────┐ ┌────────▼────────┐
+    │ConcretePluginFoo│ │ConcretePluginBar│
+    └─────────────────┘ └─────────────────┘
+
+=head2 REGISTERING PLUGINS
+
+In order to actually be able to use plugins, they must first be
+L<< registered|/$plugin->register() >> and then L<< initialized|/$base->init() >>
+via the I<base plugin>:
+
+    use PVE::Example::BasePlugin;
+    use PVE::Example::PluginA;
+    use PVE::Example::PluginB;
+
+    PVE::Example::PluginA->register();
+    PVE::Example::PluginB->register();
+    PVE::Example::BasePlugin->init();
+
+=head2 MODES
+
+There are two modes for how properties are exposed.
+
+=head3 unified mode (default)
+
+In this mode there is only a global list of properties which the child
+plugins can use. This has the consequence that it's not possible to define the
+same property name more than once in different plugins.
+
+The reason behind this behaviour is to ensure that properties with the same
+name don't behave in different ways, or in other words, to enforce the use of
+identical properties for multiple plugins.
+
+=head3 isolated mode
+
+This mode can be used by calling C<L<< init()|/$base->init() >>> with an additional parameter:
+
+    PVE::Example::BasePlugin->init(property_isolation => 1);
+
+With this mode each I<child plugin> gets its own isolated list of properties,
+or in other words, a fully isolated schema namespace. Normally one wants to use
+C<oneOf> schemas when enabling isolation.
+
+Note that in this mode it's only necessary to specify a property in the
+return value of the C<L<< options()|/options() >>> method when it's either
+C<fixed> or stems from the global list of properties.
+
+All I<locally> defined properties of a child plugin are automatically added to
+its schema.
+
+=cut
+
 package PVE::SectionConfig;
 
 use strict;
@@ -10,65 +104,9 @@ use PVE::Exception qw(raise_param_exc);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::Tools;
 
-# This package provides a way to have multiple (often similar) types of entries
-# in the same config file, each in its own section, thus "Section Config".
-#
-# The intended structure is to have a single 'base' plugin that inherits from
-# this class and provides meaningful defaults in its '$defaultData', e.g. a
-# default list of the core properties in its propertyList (most often only 'id'
-# and 'type')
-#
-# Each 'real' plugin then has it's own package that should inherit from the
-# 'base' plugin and returns it's specific properties in the 'properties' method,
-# its type in the 'type' method and all the known options, from both parent and
-# itself, in the 'options' method.
-# The options method can also be used to define if a property is 'optional' or
-# 'fixed' (only settable on config entity-creation), for example:
-#
-# ````
-# sub options {
-#     return {
-#         'some-optional-property' => { optional => 1 },
-#         'a-fixed-property' => { fixed => 1 },
-#         'a-required-but-not-fixed-property' => {},
-#     };
-# }
-# ```
-#
-# 'fixed' options can be set on create, but not changed afterwards.
-#
-# To actually use it, you have to first register all the plugins and then init
-# the 'base' plugin, like so:
-#
-# ```
-# use PVE::Dummy::Plugin1;
-# use PVE::Dummy::Plugin2;
-# use PVE::Dummy::BasePlugin;
-#
-# PVE::Dummy::Plugin1->register();
-# PVE::Dummy::Plugin2->register();
-# PVE::Dummy::BasePlugin->init();
-# ```
-#
-# There are two modes for how properties are exposed, the default 'unified'
-# mode and the 'isolated' mode.
-# In the default unified mode, there is only a global list of properties
-# which the plugins can use, so you cannot define the same property name twice
-# in different plugins. The reason for this is to force the use of identical
-# properties for multiple plugins.
-#
-# The second way is to use the 'isolated' mode, which can be achieved by
-# calling init with `1` as its parameter like this:
-#
-# ```
-# PVE::Dummy::BasePlugin->init(property_isolation => 1);
-# ```
-#
-# With this, each plugin get's their own isolated list of properties which it
-# can use. Note that in this mode, you only have to specify the property in the
-# options method when it is either 'fixed' or comes from the global list of
-# properties. All locally defined ones get automatically added to the schema
-# for that plugin.
+=head2 METHODS
+
+=cut
 
 my $defaultData = {
     options => {},
@@ -77,10 +115,123 @@ my $defaultData = {
     propertyList => {},
 };
 
+=head3 $base->private()
+
+B<REQUIRED:> Must be implemented in the I<base plugin>.
+
+    $data = PVE::Example::Plugin->private()
+    $data = $class->private()
+
+Returns the entire internal state of C<L<PVE::SectionConfig>>, where all plugins
+as well as their C<L<< options()|/$plugin->options() >>> and more are being tracked.
+
+More precisely, this method returns a hash with the following structure:
+
+    {
+	propertyList => {
+	    'some-optional-property' => {
+		type => 'string',
+		optional => 1,
+		description => 'example property',
+	    },
+	    some-property => {
+		description => 'another example property',
+		type => 'boolean'
+	    },
+	},
+	options => {
+	    foo => {
+		'some-optional-property' => { optional => 1 },
+		...
+	    },
+	    ...
+	},
+	plugins => {
+	    foo => 'PVE::Example::FooPlugin',  # reference to package of child plugin
+	    ...
+	},
+	plugindata => {
+	    foo => { ... },  # depends on the specific plugin architecture
+	},
+    }
+
+Where C<foo> is the C<L<< type()|/$plugin->type() >>> of the plugin. See
+C<L<< options()|/$plugin->options() >>> and C<L<< plugindata()|/$plugin->plugindata() >>>
+for more information on their corresponding keys above.
+
+Most commonly this is used to define the default I<property list> of one's
+plugin architecture upfront, for example:
+
+    use PVE::JSONSchema qw(get_standard_option);
+
+    use base qw(PVE::SectionConfig);
+
+    # [...]
+
+    my $defaultData = {
+	propertyList => {
+	    type => {
+		description => "Type of plugin."
+	    },
+	    nodes => get_standard_option('pve-node-list', {
+		description => "List of nodes for which the plugin applies.",
+		optional => 1,
+	    }),
+	    disable => {
+		description => "Flag to disable the plugin.",
+		type => 'boolean',
+		optional => 1,
+	    },
+	    'max-foo-rate' => {
+		description => "Maximum 'foo' rate of the plugin. Use '-1' for unlimited.",
+		type => 'integer',
+		minimum => -1,
+		default => 42,
+		optional => 1,
+	    },
+	    # [...]
+	},
+    };
+
+    sub private {
+	return $defaultData;
+    }
+
+Additional properties defined in I<child plugins> are stored in the
+C<propertyList> key. See C<L<< properties()|/$plugin->properties() >>>.
+
+=cut
+
 sub private {
     die "overwrite me";
     return $defaultData;
 }
+
+=head3 $plugin->register()
+
+    PVE::Example::Plugin->register()
+
+Used to register I<child plugins>.
+
+More specifically, I<registering> a child plugin means that it is added to the
+list of known child plugins that is kept in the hash returned by
+C<L<< private()|/$base->private() >>>. Furthermore, the data returned by
+C<L<< plugindata()|/$plugin->plugindata() >>> is also stored upon registration.
+
+This method must be called on each child plugin before L<< initializing|/$base->init() >>
+the base plugin.
+
+For example:
+
+    use PVE::Example::BasePlugin;
+    use PVE::Example::PluginA;
+    use PVE::Example::PluginB;
+
+    PVE::Example::PluginA->register();
+    PVE::Example::PluginB->register();
+    PVE::Example::BasePlugin->init();
+
+=cut
 
 sub register {
     my ($class) = @_;
@@ -96,21 +247,143 @@ sub register {
     $pdata->{plugins}->{$type} = $class;
 }
 
+=head3 $plugin->type()
+
+B<REQUIRED:> Must be implemented in I<B<each>> I<child plugin>.
+
+    $type = PVE::Example::Plugin->type()
+    $type = $class->type()
+
+Returns the I<type> of a child plugin, which is a I<unique> string used to
+identify the child plugin.
+
+Must be overridden on I<B<each>> I<child plugin>, for example:
+
+    sub type {
+	return "foo";
+    }
+
+=cut
+
 sub type {
     die "overwrite me";
 }
+
+=head3 $plugin->properties()
+
+B<OPTIONAL:> Can be overridden in I<child plugins>.
+
+    $props = PVE::Example::Plugin->properties()
+    $props = $class->properties()
+
+Used to register additional properties that belong to a I<child plugin>.
+See below for details on L<the different modes|/MODES>.
+
+This method doesn't need to be overridden if no new properties are necessary.
+
+    sub properties() {
+	return {
+	    path => {
+		description => "Path used to retrieve a 'foo'.",
+		type => 'string',
+		format => 'some-custom-format-handler-for-paths',
+	    },
+	    is_bar = {
+		description => "Whether the 'foo' is 'bar' or not.",
+		type => 'boolean',
+	    },
+	    bwlimit => get_standard_option('bwlimit'),
+	};
+    }
+
+In the default I<L<unified mode|/MODES>>, these properties are added to the
+global list of properties. This means they may also be used by other plugins,
+rather than just by itself. The same property must not be defined by other
+plugins.
+
+In I<L<isolated mode|/MODES>>, these properties are specific to the plugin
+itself and cannot be used by others. They are however automatically added to
+the plugin's schema and made C<optional> by default.
+
+See the C<L<< options()|/$plugin->options() >>> method for more information.
+
+=cut
 
 sub properties {
     return {};
 }
 
+=head3 $plugin->options()
+
+B<OPTIONAL:> Can be overridden in I<child plugins>.
+
+    $opts = PVE::Example::Plugin->options()
+    $opts = $class->options()
+
+This method is used to specify which properties are actually allowed for
+a given I<child plugin>. See below for details on L<the different modes|/MODES>.
+
+Additionally, this method also allows to declare whether a property is
+C<optional> or C<fixed>.
+
+    sub options {
+	return {
+	    'some-optional-property' => { optional => 1 },
+	    'a-fixed-property' => { fixed => 1 },
+	    'a-required-but-not-fixed-property' => {},
+	};
+    }
+
+C<optional> properties are not required to be set.
+
+C<fixed> properties may only be set on creation of the config entity.
+
+In I<L<unified mode|/MODES>> (default), it is necessary to explicitly specify
+which I<properties> are used in the method's return value. Because properties
+are registered globally in this mode, any properties may be specified,
+regardless of which plugin introduced them.
+
+In I<L<isolated mode|/MODES>>, the locally defined properties (those registered
+by overriding C<L<< properties()|/$plugin->properties() >>>) are automatically
+added to the plugin's schema and made C<optional> by default. Should this not be
+desired, a property may still be explicitly defined, in order to make it required
+or C<fixed> instead.
+
+Properties in the global list of properties (see C<L<< private()|/$base->private() >>>)
+are not automatically added and must be explicitly defined instead.
+
+=cut
+
 sub options {
     return {};
 }
 
+=head3 $plugin->plugindata()
+
+B<OPTIONAL:> Can be implemented in I<child plugins>.
+
+    $plugindata = PVE::Example::Plugin->plugindata()
+    $plugindata = $class->plugindata()
+
+This method is used by plugin authors to provide any kind of data specific to
+their plugin implementation and is otherwise not touched by C<L<PVE::SectionConfig>>.
+
+This mostly exists for convenience and doesn't need to be implemented.
+
+=cut
+
 sub plugindata {
     return {};
 }
+
+=head3 $plugin->has_isolated_properties()
+
+    $is_isolated = PVE::Example::Plugin->has_isolated_properties()
+    $is_isolated = $class->has_isolated_properties()
+
+Checks whether the plugin has I<isolated properties> (runs in isolated mode).
+
+=cut
 
 sub has_isolated_properties {
     my ($class) = @_;
@@ -167,6 +440,33 @@ my sub add_property {
 	push $props->{$key}->{oneOf}->@*, $prop;
     }
 };
+
+=head3 $plugin->createSchema()
+
+=head3 $plugin->createSchema([ $skip_type, $base ])
+
+    $schema = PVE::Example::Plugin->($skip_type, $base)
+    $schema = $class->($skip_type, $base)
+
+Returns the C<PVE::JSONSchema> used for I<creating> config entries of a
+I<child plugin>.
+
+This schema may then be used as desired, for example as the definition of
+parameters of an API handler (C<POST>).
+
+=over
+
+=item C<$skip_type> (optional)
+
+Can be set to C<1> to not add the C<type> property to the schema.
+
+=item C<$base> (optional)
+
+The schema of additional properties not derived from the plugin definition.
+
+=back
+
+=cut
 
 sub createSchema {
     my ($class, $skip_type, $base) = @_;
@@ -241,6 +541,36 @@ sub createSchema {
 	properties => $props,
     };
 }
+
+=head3 $plugin->updateSchema()
+
+=head3 $plugin->updateSchema([ $single_class, $base ])
+
+    $updated_schema = PVE::Example::Plugin->($single_class, $base)
+    $updated_schema = $class->updateSchema($single_class, $base)
+
+Returns the C<L<PVE::JSONSchema>> used for I<updating> config entries of a
+I<child plugin>.
+
+This schema may then be used as desired, for example as the definition of
+parameters of an API handler (C<PUT>).
+
+=over
+
+=item C<$single_class> (optional)
+
+Can be set to C<1> to only include properties which are defined in the returned
+hash of C<L<< options()|/options() >>> of the plugin C<$class>.
+
+This parameter is only valid for child plugins, not the base plugin.
+
+=item C<$base> (optional)
+
+The schema of additional properties not derived from the plugin definition.
+
+=back
+
+=cut
 
 sub updateSchema {
     my ($class, $single_class, $base) = @_;
@@ -326,12 +656,22 @@ sub updateSchema {
     };
 }
 
-# the %param hash controls some behavior of the section config, currently the following options are
-# understood:
-#
-# - property_isolation: if set, each child-plugin has a fully isolated property (schema) namespace.
-#   By default this is off, meaning all child-plugins share the schema of properties with the same
-#   name. Normally one wants to use oneOf schema's when enabling isolation.
+=head3 $base->init()
+
+=head3 $base->init(property_isolation => 1)
+
+    $base_plugin->init();
+    $base_plugin->init(property_isolation => 1);
+
+This method is used to initialize C<SectionConfig> using all of the
+I<child plugins> that were I<L<< registered|/$plugin->register() >>> beforehand.
+
+Optionally, it is also possible to pass C<< property_isolation => 1>> to C<%param>
+in order to activate I<isolated mode>. See L</MODES> in the package-level
+documentation for more information.
+
+=cut
+
 sub init {
     my ($class, %param) = @_;
 
@@ -392,6 +732,16 @@ sub init {
     $propertyList->{type}->{enum} = [sort keys %$plugins];
 }
 
+=head3 $base->lookup($type)
+
+    $plugin = PVE::Example::BasePlugin->lookup($type)
+    $plugin = $class->lookup($type)
+
+Returns the I<child plugin> corresponding to the given C<L<< type()|/$plugin->type() >>>
+or dies if it cannot be found.
+
+=cut
+
 sub lookup {
     my ($class, $type) = @_;
 
@@ -405,6 +755,15 @@ sub lookup {
     return $plugin;
 }
 
+=head3 $base->lookup_types()
+
+    $types = PVE::Example::BasePlugin->lookup_types()
+    $types = $class->lookup_types()
+
+Returns a list of all I<child plugin> C<L<< type|/$plugin->type() >>>s.
+
+=cut
+
 sub lookup_types {
     my ($class) = @_;
 
@@ -413,17 +772,158 @@ sub lookup_types {
     return [ sort keys %{$pdata->{plugins}} ];
 }
 
+=head3 $base->decode_value(...)
+
+=head3 $base->decode_value($type, $key, $value)
+
+B<OPTIONAL:> Can be implemented in the I<base plugin>.
+
+    $decoded_value = PVE::Example::BasePlugin->decode_value($type, $key, $value)
+    $decoded_value = $class->($type, $key, $value)
+
+Called during C<L<< check_config()|/$base->check_config(...) >>> in order to convert values
+that have been read from a C<L<PVE::SectionConfig>> file which have been
+I<encoded> beforehand by C<L<< encode_value()|/$base->encode_value(...) >>>.
+
+Does nothing to C<$value> by default, but can be overridden in the I<base plugin>
+in order to implement custom conversion behavior.
+
+    sub decode_value {
+	my ($class, $type, $key, $value) = @_;
+
+	if ($key eq 'nodes') {
+	    my $res = {};
+
+	    for my $node (PVE::Tools::split_list($value)) {
+		if (PVE::JSONSchema::pve_verify_node_name($node)) {
+		    $res->{$node} = 1;
+		}
+	    }
+
+	    return $res;
+	}
+
+	return $value;
+    }
+
+=over
+
+=item C<$type>
+
+The C<L<< type()|/$plugin->type() >>> of plugin the C<$key> and C<$value> belong to.
+
+=item C<$key>
+
+The name of a I<L<< property|/$plugin->properties() >> that has been set on a C<$type> of
+config section.
+
+=item C<$value>
+
+The raw value of the I<L<< property|/$plugin->properties >>> denoted by C<$key> that was read
+from a section config file.
+
+=back
+
+=cut
+
 sub decode_value {
     my ($class, $type, $key, $value) = @_;
 
     return $value;
 }
 
+=head3 $base->encode_value(...)
+
+=head3 $base->encode_value($type, $key, $value)
+
+B<OPTIONAL:> Can be implemented in the I<base plugin>.
+
+    $encoded_value = PVE::Example::BasePlugin->encode_value($type, $key, $value)
+    $encoded_value = $class->($type, $key, $value)
+
+Called during C<L<< write_config()|/$base->write_config(...) >>> in order to
+convert values into a serializable format.
+
+Does nothing to C<$value> by default, but can be overridden in the I<base plugin>
+in order to implement custom conversion behavior. Usually one should also
+override C<L<< decode_value()|/$base->decode_value(...) >>> in a matching manner.
+
+    sub encode_value {
+	my ($class, $type, $key, $value) = @_;
+
+	if ($key eq 'nodes') {
+	    return join(',', keys(%$value));
+	}
+
+	return $value;
+    }
+
+=over
+
+=item C<$type>
+
+The C<L<< type()|/$plugin->type() >>> of plugin the C<$key> and C<$value> belong to.
+
+=item C<$key>
+
+The name of a I<L<< property|/$plugin->properties() >>> that has been set on a
+C<$type> of config section.
+
+=item C<$value>
+
+The value of the I<L<< property|/$plugin->properties >>> denoted by C<$key> to be
+encoded so that it can be written to a section config file.
+
+=back
+
+=cut
+
 sub encode_value {
     my ($class, $type, $key, $value) = @_;
 
     return $value;
 }
+
+=head3 $base->check_value(...)
+
+=head3 $base->check_value($type, $key, $value, $storeid [, $skipSchemaCheck ])
+
+    $checked_value = PVE::Example::BasePlugin->check_value($type, $key, $value, $storeid, $skipSchemaCheck)
+    $checked_value = $class->check_value($type, $key, $value, $storeid, $skipSchemaCheck)
+
+Used internally to check if various invariants are upheld when parsing a section
+config file. Also performs a C<PVE::JSONSchema> check on the C<$value> of the
+I<property> given by C<$key> of the plugin C<$type>, unless C<$skipSchemaCheck>
+is truthy.
+
+=over
+
+=item C<$type>
+
+The C<L<< type()|/$plugin->type() >>> of plugin the C<$key> and C<$value> belong to.
+
+=item C<$key>
+
+The name of a I<L<< property|/$plugin->properties() >>> that has been set on a
+C<$type> of config section.
+
+=item C<$value>
+
+The value of the I<L<< property|/$plugin->properties() >>> denoted by C<$key>
+that was read from a section config file.
+
+=item C<$storeid>
+
+The identifier of a section, as returned by C<L<< parse_section_header()|/$base->parse_section_header(...) >>>.
+
+=item C<$skipSchemaCheck> (optional)
+
+Whether to skip performing a C<L<PVE::JSONSchema>> property check on the given
+C<$value>.
+
+=back
+
+=cut
 
 sub check_value {
     my ($class, $type, $key, $value, $storeid, $skipSchemaCheck) = @_;
@@ -473,6 +973,42 @@ sub check_value {
     return $value;
 }
 
+=head3 $base->parse_section_header($line)
+
+B<OPTIONAL:> Can be overridden in the I<base plugin>.
+
+    ($type, $sectionId, $errmsg, $config) = PVE::Example::BasePlugin->parse_section_header($line)
+    ($type, $sectionId, $errmsg, $config) = $class->parse_section_header($line)
+
+Parses the header of a section and returns an array containing the section's
+L<< type|/$plugin->type() >>, ID and optionally an error message as well as
+additional config attributes.
+
+Can be overridden on the I<base plugin> in order to provide custom logic for
+handling the header, e.g. if the section IDs need to be parsed or validated in
+a certain way.
+
+For example:
+
+    sub parse_section_header {
+	my ($class, $line) = @_;
+
+	if ($line =~ m/^(\S):\s*(\S+)\s*$/) {
+	    my ($type, $sectionId) = ($1, $2);
+
+	    my $errmsg = undef;
+	    eval { check_section_id_is_valid($sectionId); };
+	    $errmsg = $@ if $@;
+
+	    my $config = parse_extra_stuff_from_section_id($sectionId);
+
+	    return ($type, $sectionId, $errmsg, $config);
+	}
+	return undef;
+    }
+
+=cut
+
 sub parse_section_header {
     my ($class, $line) = @_;
 
@@ -485,11 +1021,40 @@ sub parse_section_header {
     return undef;
 }
 
+=head3 $base->format_section_header(...)
+
+=head3 $base->format_section_header($type, $sectionId, $scfg, $done_hash)
+
+B<OPTIONAL:> Can be overridden in the I<base plugin>.
+
+    $header = PVE::Example::BasePlugin->format_section_header($type, $sectionId, $scfg, $done_hash)
+    $header = $class->format_section_header($type, $sectionId, $scfg, $done_hash)
+
+Formats the header of a section. Simply C<"$type: $sectionId\n"> by default.
+
+Note that when overriding this, the header B<MUST> end with a newline (C<\n>).
+One also might want to add a matching override for
+C<L<< parse_section_header()|/$base->parse_section_header($line) >>>.
+
+=cut
+
 sub format_section_header {
     my ($class, $type, $sectionId, $scfg, $done_hash) = @_;
 
     return "$type: $sectionId\n";
 }
+
+=head3 $base->get_property_schema(...)
+
+=head3 $base->get_property_schema($type, $key)
+
+    $schema = PVE::Example::BasePlugin->get_property_schema($type, $key)
+    $schema = $class->get_property_schema($type, $key)
+
+Returns the schema of the L<< property|/$plugin->properties() >> C<$key> of the
+plugin for C<$type>.
+
+=cut
 
 sub get_property_schema {
     my ($class, $type, $key) = @_;
@@ -505,6 +1070,109 @@ sub get_property_schema {
 
     return $schema;
 }
+
+=head3 $base->parse_config(...)
+
+=head3 $base->parse_config($filename, $raw [, $allow_unknown ])
+
+    $config = PVE::Example::BasePlugin->parse_config($filename, $raw, $allow_unknown)
+    $config = $class->parse_config($filename, $raw, $allow_unknown)
+
+Parses the contents of a file as C<L<PVE::SectionConfig>>, returning the parsed
+data annotated with additional information (see below).
+
+=over
+
+=item C<$filename>
+
+The name of the file whose content is stored in C<$raw>.
+
+Only used for error messages and warnings, so it may also be something else.
+
+=item C<$raw>
+
+The raw content of C<$filename>.
+
+=item C<$allow_unknown> (optional)
+
+Whether to allow parsing unknown I<types>.
+
+=back
+
+The returned hash is structured as follows:
+
+    {
+	ids => {
+	    foo => {
+		key => value,
+		...
+	    },
+	    bar => {
+		key => value,
+		...
+	    },
+	},
+	order => {
+	    foo => 1,
+	    bar => 2,
+	},
+	digest => "5f5513f8822fdbe5145af33b64d8d970dcf95c6e",
+	errors => (
+	    {
+		context => ...,
+		section => "section ID",
+		key => "some_key",
+		err => "error message",
+	    },
+	    ...
+	),
+    }
+
+=over
+
+=item C<ids>
+
+Each section's parsed data (via C<L<< check_config()/$base->check_config(...) >>>),
+indexed by the section ID.
+
+=item C<order>
+
+The order in which the sections in C<ids> were found in the config file.
+
+=item C<digest>
+
+A SHA1 hex digest of the contents in C<$raw>. May for example be used to check
+whether the configuration has changed between parses.
+
+=item C<errors> (optional)
+
+An optional list of error hashes.
+
+=back
+
+The hashes in the optionally returned C<errors> key are structured as follows:
+
+=over
+
+=item C<context>
+
+In which file and in which line the error was encountered.
+
+=item C<section>
+
+In which section the error was encountered.
+
+=item C<key>
+
+Which I<property> the error corresponds to.
+
+=item C<err>
+
+The error.
+
+=back
+
+=cut
 
 sub parse_config {
     my ($class, $filename, $raw, $allow_unknown) = @_;
@@ -642,6 +1310,60 @@ sub parse_config {
     return $cfg;
 }
 
+=head3 $base->check_config(...)
+
+=head3 $base->check_config($sectionId, $config, $create [, $skipSchemaCheck ])
+
+    $settings = PVE::Example::BasePlugin->check_config($sectionId, $config, $create, $skipSchemaCheck)
+    $settings = $class->check_config($sectionId, $config, $create, $skipSchemaCheck)
+
+Does not just check whether a section's configuration is valid, despite its
+name, but also calls checks values of I<L<< properties|/$plugin_>properties() >>>
+with C<L<< check_value()|/$base->check_value(...) >>> before decoding them using
+C<L<< decode_value()|/$base->decode_value(...) >>>.
+
+Returns a hash which contains all I<L<< properties|/$plugin_>properties() >>>
+for the given C<$sectionId>. In other words, all configured key-value pairs for
+the provided section.
+
+=over
+
+=item C<$sectionId>
+
+The identifier of a section, as returned by C<L<< /$base->parse_section_header($line) >>>.
+
+=item C<$config>
+
+The configuration of the section corresponding to C<$sectionId>.
+
+=item C<$create>
+
+If set to C<1>, checks whether a value has been set for all required properties
+of C<$config>.
+
+=item C<$skipSchemaCheck> (optional)
+
+Whether to skip performing any C<L<PVE::JSONSchema>> property checks.
+
+=back
+
+=head4 A Note on Extending and Overriding
+
+If additional checks are needed that cannot be expressed in the schema, this
+method may be extended or overridden I<with care>.
+
+When this method is I<overridden>, as in the original implementation is replaced
+completely, all values must still be checked via C<L<< check_value()|/$base->check_value(...) >>>
+and decoded with C<L<< decode_value()|/$base->decode_value(...) >>>.
+
+When extending the method, as in calling C<L<< $class->SUPER::check_config()|/$base->check_config(...) >>>
+inside the redefined method, it is important to note that the contents of the
+hash returned by the C<SUPER> call differ from the contents of C<$config>. This
+means that a custom check performed I<before> the C<SUPER> call cannot
+necessarily be performed in the same way I<after> the C<SUPER> call.
+
+=cut
+
 sub check_config {
     my ($class, $sectionId, $config, $create, $skipSchemaCheck) = @_;
 
@@ -699,6 +1421,55 @@ my $format_config_line = sub {
 	return "\t$key $value\n" if "$value" ne '';
     }
 };
+
+=head3 $base->write_config(...)
+
+=head3 $base->write_config($filename, $cfg [, $allow_unknown ])
+
+    $output = PVE::Example::BasePlugin->write_config($filename, $cfg, $allow_unknown)
+    $output = $class->write_config($filename, $cfg, $allow_unknown)
+
+Generates the output that should be written to the C<L<PVE::SectionConfig>> file.
+
+=over
+
+=item C<$filename> (unused)
+
+The name of the file to which the generated output will be written to.
+This parameter is currently unused and has no effect.
+
+=item C<$cfg>
+
+The hash that represents the entire configuration that should be written.
+This hash is expected to have the following format:
+
+    {
+	ids => {
+	    foo => {
+		key => value,
+		...
+	    },
+	    bar => {
+		key => value,
+		...
+	    },
+	},
+	order => {
+	    foo => 1,
+	    bar => 2,
+	},
+    }
+
+Any other top-level keys will be ignored, so it's okay to pass along the
+C<digest> key from C<L<< parse_config()|/$base->parse_config(...) >>>, for example.
+
+=item C<$allow_unknown> (optional)
+
+Whether to allow writing sections with an unknown I<L</type>>.
+
+=back
+
+=cut
 
 sub write_config {
     my ($class, $filename, $cfg, $allow_unknown) = @_;
@@ -797,6 +1568,47 @@ sub assert_if_modified {
 
     PVE::Tools::assert_if_modified($cfg->{digest}, $digest);
 }
+
+=head3 delete_from_config(...)
+
+=head3 delete_from_config($config, $option_schema, $new_options, $to_delete)
+
+    $config = delete_from_config($config, $option_schema, $new_options, $to_delete)
+
+Convenience helper method used internally to delete keys from the single section
+config C<$config>.
+
+Specifically, the keys given by C<$to_delete> are deleted from C<$config> if
+they're not required or fixed, or set in the same go.
+
+Note: The passed C<$config> is modified in place and also returned.
+
+=over
+
+=item C<$config>
+
+The section's configuration that the given I<L<< properties|/$plugin->properties(...) >>>
+in C<$to_delete> should be deleted from.
+
+=item C<$option_schema>
+
+The schema of the properties associated with C<$config>. See the
+C<L<< options()|/$plugin->options() >>> method.
+
+=item C<$new_options>
+
+The properties which will be added to C<$config>. Note that this method doesn't
+add any properties itself; this is to prohibit simultaneously setting and deleting
+the same I<property>.
+
+=item C<$to_delete>
+
+A reference to an array containing the names of the properties to delete from
+C<$config>.
+
+=back
+
+=cut
 
 sub delete_from_config {
     my ($config, $option_schema, $new_options, $to_delete) = @_;
