@@ -1,3 +1,34 @@
+libpve-common-perl (8.2.7) bookworm; urgency=medium
+
+  * fix #5623: OVS: avoid that config options set explicitly to `0` are
+    ignored.
+
+  * network config: drop warning for having a `vmbrX` interface that isn't a
+    bridge to avoid a cyclic use statement for this unlikely edge-case.
+
+  * sysfs tools: log full error if writing to a control file fails
+
+  * sysfs tools: fix regression on binding to vfio-pci when there are multiple
+    devices of the same (vendor-id, model-id) tuple, like with multiple GPUs
+    that have the same audio chip by allowing to ignore a "already existing"
+    error.
+
+  * network config: check if 'bridge_vids' property is not just an empty
+    string.
+
+  * partiually fix #3893: network: add formats for passing a VLAN id or range
+    parameter.
+
+  * fix #5454: net: assert names for vlan bridge slave interfaces are valid
+
+  * net: assert validity of names also when creating bridge and veth interfaces
+
+  * REST environment: also log warning messages to syslog
+
+  * pbs client: various code cleanups and refactoring
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 11 Nov 2024 20:29:21 +0100
+
 libpve-common-perl (8.2.6) bookworm; urgency=medium
 
   * sysfs tools: properly catch errors when updating kernel/module parameters
