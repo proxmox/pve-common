@@ -316,11 +316,9 @@ sub get_certificate_info {
     return $info;
 };
 
-# Checks whether certificate expires before $timestamp (UNIX epoch)
-sub check_expiry {
-    my ($cert_path, $timestamp) = @_;
-
-    $timestamp //= time();
+# Obtain the expiration timestamp of a X.509 certificate as a UNIX epoch.
+sub get_expiration_as_epoch {
+    my ($cert_path) = @_;
 
     my $cert = $read_certificate->($cert_path);
     my $not_after = eval { convert_asn1_to_epoch(Net::SSLeay::X509_get_notAfter($cert)) };
@@ -329,6 +327,17 @@ sub check_expiry {
     Net::SSLeay::X509_free($cert);
 
     die $err if $err;
+
+    return $not_after;
+};
+
+# Checks whether certificate expires before $timestamp (UNIX epoch)
+sub check_expiry {
+    my ($cert_path, $timestamp) = @_;
+
+    $timestamp //= time();
+
+    my $not_after = get_expiration_as_epoch($cert_path);
 
     return ($not_after < $timestamp) ? 1 : 0;
 };
