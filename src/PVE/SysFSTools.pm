@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use IO::File;
+use POSIX qw(EEXIST);
 
 use PVE::Tools qw(file_read_firstline dir_glob_foreach);
 
@@ -212,8 +213,9 @@ sub check_iommu_support{
 }
 
 # writes $buf into $filename, on success returns 1, on error returns 0 and warns
+# if $allow_existing is set, an EEXIST error will be handled as success
 sub file_write {
-    my ($filename, $buf) = @_;
+    my ($filename, $buf, $allow_existing) = @_;
 
     my $fh = IO::File->new($filename, "w");
     return undef if !$fh;
@@ -225,6 +227,7 @@ sub file_write {
     if (defined($res)) {
 	return 1;
     } elsif ($syserr) {
+	return 1 if $allow_existing && $syserr == EEXIST;
 	warn "error writing '$buf' to '$filename': $syserr\n";
     }
 
@@ -310,7 +313,8 @@ sub pci_dev_bind_to_vfio {
     return 1 if -d $testdir;
 
     my $data = "$dev->{vendor} $dev->{device}";
-    return undef if !file_write("$vfio_basedir/new_id", $data);
+    # allow EEXIST for multiple devices with the same vendor/modelid
+    return undef if !file_write("$vfio_basedir/new_id", $data, 1);
 
     my $fn = "$pcisysfs/devices/$name/driver/unbind";
     if (!file_write($fn, $name)) {
