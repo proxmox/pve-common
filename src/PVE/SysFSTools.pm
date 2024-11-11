@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use IO::File;
-use POSIX qw(EEXIST);
 
 use PVE::Tools qw(file_read_firstline dir_glob_foreach);
 
@@ -221,13 +220,13 @@ sub file_write {
     return undef if !$fh;
 
     my $res = syswrite($fh, $buf);
-    my $syserr = $!; # only relevant if $res is undefined
+    my ($syserr, %syserr) = ($!, %!); # only relevant if $res is undefined
     $fh->close();
 
     if (defined($res)) {
 	return 1;
     } elsif ($syserr) {
-	return 1 if $allow_existing && $syserr == EEXIST;
+	return 1 if $allow_existing && $syserr{EEXIST};
 	warn "error writing '$buf' to '$filename': $syserr\n";
     }
 
