@@ -211,17 +211,24 @@ sub check_iommu_support{
     return PVE::Tools::dir_glob_regex('/sys/class/iommu/', "[^\.].*");
 }
 
+# writes $buf into $filename, on success returns 1, on error returns 0 and warns
 sub file_write {
     my ($filename, $buf) = @_;
 
     my $fh = IO::File->new($filename, "w");
     return undef if !$fh;
 
-    my $res = defined(syswrite($fh, $buf)) ? 1 : 0;
-
+    my $res = syswrite($fh, $buf);
+    my $syserr = $!; # only relevant if $res is undefined
     $fh->close();
 
-    return $res;
+    if (defined($res)) {
+	return 1;
+    } elsif ($syserr) {
+	warn "error writing '$buf' to '$filename': $syserr\n";
+    }
+
+    return 0;
 }
 
 sub pci_device_info {
