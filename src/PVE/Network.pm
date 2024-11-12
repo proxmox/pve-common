@@ -238,6 +238,13 @@ sub disable_ipv6 {
     return;
 }
 
+my $bridge_enable_port_isolation = sub {
+   my ($iface) = @_;
+
+   eval { run_command(['/sbin/bridge', 'link', 'set', 'dev', $iface, 'isolated', 'on']) };
+   die "unable to enable port isolation on interface $iface - $@\n" if $@;
+};
+
 my $bridge_disable_interface_learning = sub {
     my ($iface) = @_;
 
@@ -418,7 +425,7 @@ sub veth_delete {
 }
 
 my $create_firewall_bridge_linux = sub {
-    my ($iface, $bridge, $tag, $trunks, $no_learning) = @_;
+    my ($iface, $bridge, $tag, $trunks, $no_learning, $isolation) = @_;
 
     my ($vmid, $devid) = &$parse_tap_device_name($iface);
     my ($fwbr, $vethfw, $vethfwpeer) = &$compute_fwbr_names($vmid, $devid);
@@ -433,6 +440,7 @@ my $create_firewall_bridge_linux = sub {
 
     &$bridge_add_interface($bridge, $vethfwpeer, $tag, $trunks);
     &$bridge_disable_interface_learning($vethfwpeer) if $no_learning;
+    $bridge_enable_port_isolation->($vethfwpeer) if $isolation;
     &$bridge_add_interface($fwbr, $vethfw);
 
     &$bridge_add_interface($fwbr, $iface);
@@ -492,6 +500,7 @@ sub tap_plug {
 	$opts->{learning} = !($bridge && $bridge->{'bridge-disable-mac-learning'}); # default learning to on
     }
     my $no_learning = !$opts->{learning};
+    my $isolation = $opts->{isolation};
 
     # cleanup old port config from any openvswitch bridge
     eval {
@@ -512,7 +521,7 @@ sub tap_plug {
 	}
 
 	if ($firewall) {
-	    &$create_firewall_bridge_linux($iface, $bridge, $tag, $trunks, $no_learning);
+	    &$create_firewall_bridge_linux($iface, $bridge, $tag, $trunks, $no_learning, $isolation);
 	} else {
 	    &$bridge_add_interface($bridge, $iface, $tag, $trunks);
 	}
@@ -520,6 +529,7 @@ sub tap_plug {
 	    $bridge_disable_interface_learning->($iface);
 	    add_bridge_fdb($iface, $opts->{mac}) if defined($opts->{mac});
 	}
+	$bridge_enable_port_isolation->($iface) if $isolation;
 
     } else {
 	&$cleanup_firewall_bridge($iface); # remove stale devices
