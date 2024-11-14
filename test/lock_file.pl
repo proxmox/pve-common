@@ -11,10 +11,6 @@ use PVE::Tools 'lock_file_full';
 
 my $name = "test.lockfile.$$-";
 
-END {
-	system("rm $name*");
-};
-
 # Utilities:
 
 sub forked($$) {
@@ -78,43 +74,6 @@ sub assert_not {
 	die "code shouldn't have run: $what\n" if $_ran{$what};
 }
 
-# Regular lock:
-new();
-lock_file_full($name, 10, 0, sub { ran('single lock') });
-assert('single lock');
-
-# Lock multiple times in a row:
-new();
-lock_file_full($name, 10, 0, sub { ran('lock A') });
-assert('lock A');
-lock_file_full($name, 10, 0, sub { ran('lock B') });
-assert('lock B');
-
-# Nested lock:
-new();
-lock_file_full($name, 10, 0, sub {
-	ran('lock A');
-	lock_file_full($name, 10, 0, sub { ran('lock B') });
-	assert('lock B');
-	ran('lock C');
-});
-assert('lock A');
-assert('lock B');
-assert('lock C');
-
-# Independent locks:
-new();
-lock_file_full($name, 10, 0, sub {
-	ran('lock A');
-	# locks file "${name}2"
-	lock_file_full($name.2, 10, 0, sub { ran('lock B') });
-	assert('lock B');
-	ran('lock C');
-});
-assert('lock A');
-assert('lock B');
-assert('lock C');
-
 # Does it actually lock? (shared=0)
 # Can we get two simultaneous shared locks? (shared=1)
 sub forktest1($) {
@@ -157,5 +116,50 @@ sub forktest1($) {
     };
     close($fmain);
 }
-forktest1(0);
-forktest1(1);
+
+eval {
+    # Regular lock:
+    new();
+    lock_file_full($name, 10, 0, sub { ran('single lock') });
+    assert('single lock');
+
+    # Lock multiple times in a row:
+    new();
+    lock_file_full($name, 10, 0, sub { ran('lock A') });
+    assert('lock A');
+    lock_file_full($name, 10, 0, sub { ran('lock B') });
+    assert('lock B');
+
+    # Nested lock:
+    new();
+    lock_file_full($name, 10, 0, sub {
+	ran('lock A');
+	lock_file_full($name, 10, 0, sub { ran('lock B') });
+	assert('lock B');
+	ran('lock C');
+    });
+    assert('lock A');
+    assert('lock B');
+    assert('lock C');
+
+    # Independent locks:
+    new();
+    lock_file_full($name, 10, 0, sub {
+	ran('lock A');
+	# locks file "${name}2"
+	lock_file_full($name.2, 10, 0, sub { ran('lock B') });
+	assert('lock B');
+	ran('lock C');
+    });
+    assert('lock A');
+    assert('lock B');
+    assert('lock C');
+
+    # Does it actually lock? (shared=0)
+    # Can we get two simultaneous shared locks? (shared=1)
+    forktest1(0);
+    forktest1(1);
+};
+my $err = $@;
+system("rm $name*");
+die $err if $err;
