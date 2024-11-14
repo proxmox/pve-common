@@ -1026,7 +1026,7 @@ sub must_stringify {
 # sigkill after $timeout  a $sub running in a fork if it can't write a pipe
 # the $sub has to return a single scalar
 sub run_fork_with_timeout {
-    my ($timeout, $sub) = @_;
+    my ($timeout, $sub, $opts) = @_;
 
     my $res;
     my $error;
@@ -1075,17 +1075,28 @@ sub run_fork_with_timeout {
 	$error = $child_res->{error};
     };
 
+    my $handle_forked = sub {
+	if (my $afterfork = $opts->{afterfork}) {
+	    eval { $afterfork->($child); };
+	    if (my $err = $@) {
+		$error = $err; # propagate error
+		die $err;
+	    }
+	}
+	$readvalues->();
+    };
+
     my $got_timeout = 0;
     my $wantarray = wantarray; # so it can be queried inside eval
     eval {
 	if (defined($timeout)) {
 	    if ($wantarray) {
-		(undef, $got_timeout) = run_with_timeout($timeout, $readvalues);
+		(undef, $got_timeout) = run_with_timeout($timeout, $handle_forked);
 	    } else {
-		run_with_timeout($timeout, $readvalues);
+		run_with_timeout($timeout, $handle_forked);
 	    }
 	} else {
-	    $readvalues->();
+	    $handle_forked->();
 	}
     };
     warn $@ if $@;
@@ -1102,8 +1113,8 @@ sub run_fork_with_timeout {
 }
 
 sub run_fork {
-    my ($code) = @_;
-    return run_fork_with_timeout(undef, $code);
+    my ($code, $opts) = @_;
+    return run_fork_with_timeout(undef, $code, $opts);
 }
 
 # NOTE: NFS syscall can't be interrupted, so alarm does
