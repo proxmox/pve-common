@@ -2146,10 +2146,10 @@ sub download_file_from_url {
 	    print "decompressing $tmp_download to $tmp_decomp\n";
 	    run_command($cmd, output => '>&'.fileno($fh));
 	    unlink $tmp_download;
-	    rename($tmp_decomp, $dest) or die "unable to rename temporary file: $!\n";
-	} else {
-	    rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
+	    $tmp_download = $tmp_decomp;
 	}
+
+	rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
     };
     if (my $err = $@) {
 	unlink $tmp_download or warn "could not cleanup temporary file: $!"
