@@ -1,3 +1,13 @@
+libpve-common-perl (8.2.9) bookworm; urgency=medium
+
+  * tools: run fork: allow running code in parent after fork
+
+  * tools: download file: add a verification callback to allow the call-site
+    to make context-specific assertions about the file content while it was
+    not yet copied to the target storage.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 18 Nov 2024 15:44:41 +0100
+
 libpve-common-perl (8.2.8) bookworm; urgency=medium
 
   * Revert "section config: make subroutine `delete_from_config` private"
