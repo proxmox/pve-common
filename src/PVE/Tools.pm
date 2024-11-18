@@ -2061,6 +2061,8 @@ sub safe_compare {
 #  https_proxy
 #  verify_certificates - if 0 (false) we tell wget to ignore untrusted TLS certs. Default to true
 #  md5sum|sha(1|224|256|384|512)sum - the respective expected checksum string
+#  assert_file_validity - a subroutine to verify the extracted/downloaded file. gets the tmp path as parameter
+#                         should die when the downloaded file is not valid
 sub download_file_from_url {
     my ($dest, $url, $opts) = @_;
 
@@ -2147,6 +2149,11 @@ sub download_file_from_url {
 	    run_command($cmd, output => '>&'.fileno($fh));
 	    unlink $tmp_download;
 	    $tmp_download = $tmp_decomp;
+	}
+
+	if (my $assertion = $opts->{assert_file_validity}) {
+	    eval { $assertion->($tmp_download); };
+	    die "failed to verify file: $@" if $@;
 	}
 
 	rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
