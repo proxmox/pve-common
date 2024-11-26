@@ -3,6 +3,10 @@ package PVE::Tools;
 use strict;
 use warnings;
 
+use open qw(:std :utf8);
+use Encode qw(decode_utf8);
+@ARGV = map { decode_utf8($_, 1) } @ARGV;
+
 use Date::Format qw(time2str);
 use Digest::MD5;
 use Digest::SHA;
