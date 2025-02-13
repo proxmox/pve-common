@@ -280,6 +280,10 @@ sub pci_device_info {
 
 	if (-d "$devdir/mdev_supported_types") {
 	    $res->{mdev} = 1;
+	} elsif (-d "$devdir/nvidia") {
+	    # nvidia driver for kernel 6.8 or higher
+	    $res->{mdev} = 1; # for api compatibility
+	    $res->{nvidia} = 1;
 	}
     }
 
