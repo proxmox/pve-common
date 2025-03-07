@@ -44,6 +44,7 @@ sub unescape_unit {
 # main loop is being used as we need to wait signals.
 sub systemd_call($;$) {
     my ($code, $timeout) = @_;
+    my $signal_info;
 
     my $bus = Net::DBus->system();
     my $reactor = Net::DBus::Reactor->main();
@@ -64,13 +65,18 @@ sub systemd_call($;$) {
 	    $timer = undef;
 	}
 
+	if (defined($signal_info)) {
+	    $if->disconnect_from_signal($signal_info->{name}, $signal_info->{handle});
+	    $signal_info = undef;
+	}
+
 	if (defined($reactor)) {
 	    $reactor->shutdown();
 	    $reactor = undef;
 	}
     };
 
-    my $result = $code->($if, $reactor, $finish_callback);
+    (my $result, $signal_info) = $code->($if, $reactor, $finish_callback);
     # Are we done immediately?
     return $result if defined $result;
 
@@ -124,7 +130,8 @@ sub enter_systemd_scope {
 
 	my $job;
 
-	$if->connect_to_signal('JobRemoved', sub {
+	my $signal_name = 'JobRemoved';
+	my $signal_handle = $if->connect_to_signal($signal_name, sub {
 	    my ($id, $removed_job, $signaled_unit, $result) = @_;
 	    return if $signaled_unit ne $unit || $removed_job ne $job;
 	    if ($result ne 'done') {
@@ -139,7 +146,12 @@ sub enter_systemd_scope {
 
 	$job = $if->StartTransientUnit($unit, 'fail', $properties, []);
 
-	return undef;
+	my $signal_info = {
+	    name => $signal_name,
+	    handle => $signal_handle,
+	};
+
+	return (undef, $signal_info);
     }, $timeout);
 }
 
@@ -152,18 +164,24 @@ sub wait_for_unit_removed($;$) {
 	my $unit_obj = eval { $if->GetUnit($unit) };
 	return 1 if !$unit_obj;
 
-	$if->connect_to_signal('UnitRemoved', sub {
+	my $signal_name = 'UnitRemoved';
+	my $signal_handle = $if->connect_to_signal($signal_name, sub {
 	    my ($id, $removed_unit) = @_;
 	    $finish_cb->(1) if $removed_unit eq $unit_obj;
 	});
 
+	my $signal_info = {
+	    name => $signal_name,
+	    handle => $signal_handle,
+	};
+
 	# Deal with what we lost between GetUnit() and connecting to UnitRemoved:
 	my $unit_obj_new = eval { $if->GetUnit($unit) };
 	if (!$unit_obj_new) {
-	    return 1;
+	    return (1, $signal_info);
 	}
 
-	return undef;
+	return (undef, $signal_info);
     }, $timeout);
 }
 
