@@ -44,7 +44,6 @@ sub unescape_unit {
 # main loop is being used as we need to wait signals.
 sub systemd_call($;$) {
     my ($code, $timeout) = @_;
-    my $signal_info;
 
     my $bus = Net::DBus->system();
     my $reactor = Net::DBus::Reactor->main();
@@ -52,7 +51,7 @@ sub systemd_call($;$) {
     my $service = $bus->get_service('org.freedesktop.systemd1');
     my $if = $service->get_object('/org/freedesktop/systemd1', 'org.freedesktop.systemd1.Manager');
 
-    my ($finished, $current_result, $timer);
+    my ($finished, $current_result, $timer, $signal_info);
     my $finish_callback = sub {
 	my ($result) = @_;
 
