@@ -1805,7 +1805,7 @@ sub fchownat($$$$$) {
 my $salt_starter = time();
 
 sub encrypt_pw {
-    my ($pw) = @_;
+    my ($pw, $prefix) = @_;
 
     $salt_starter++;
     my $salt = substr(Digest::SHA::sha1_base64(time() + $salt_starter + $$), 0, 8);
@@ -1813,7 +1813,18 @@ sub encrypt_pw {
     # crypt does not want '+' in salt (see 'man crypt')
     $salt =~ s/\+/X/g;
 
-    return crypt(encode("utf8", $pw), "\$5\$$salt\$");
+    $prefix = '5' if !$prefix;
+
+    my $input;
+    if ($prefix eq '5') {
+        $input = "\$5\$$salt\$";
+    } elsif ($prefix eq 'y') {
+        $input = "\$y\$j9T\$$salt\$"
+    } else {
+        die "Cannot hash password, unknown crypt prefix '$prefix'\n";
+    }
+
+    return crypt(encode("utf8", $pw), $input);
 }
 
 # intended usage: convert_size($val, "kb" => "gb")
