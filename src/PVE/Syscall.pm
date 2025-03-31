@@ -19,6 +19,7 @@ BEGIN {
 	mknod => &SYS_mknod,
 	faccessat => &SYS_faccessat,
 	setresuid => &SYS_setresuid,
+	fallocate => &SYS_fallocate,
 	fchownat => &SYS_fchownat,
 	mount => &SYS_mount,
 	renameat2 => &SYS_renameat2,
