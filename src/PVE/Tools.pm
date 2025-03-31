@@ -1824,7 +1824,12 @@ sub encrypt_pw {
         die "Cannot hash password, unknown crypt prefix '$prefix'\n";
     }
 
-    return crypt(encode("utf8", $pw), $input);
+    my $res = crypt(encode("utf8", $pw), $input);
+    if ($res =~ m/^\$$prefix\$/) {
+        return $res;
+    } else {
+        die "Failed to hash password!\n";
+    }
 }
 
 # intended usage: convert_size($val, "kb" => "gb")
