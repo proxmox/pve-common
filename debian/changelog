@@ -1,3 +1,14 @@
+libpve-common-perl (8.3.0) bookworm; urgency=medium
+
+  * sysfs tools: add 'nvidia' -> 'mdev' workaround to pci_device_info
+
+  * fix #5876: systemd: actively disconnect signals once handled to avoid
+    running into dbus default limit of 512 connections.
+
+  * kernel syscall: expose fallocate syscall
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 02 Apr 2025 20:00:52 +0200
+
 libpve-common-perl (8.2.9) bookworm; urgency=medium
 
   * tools: run fork: allow running code in parent after fork
