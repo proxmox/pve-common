@@ -1,3 +1,13 @@
+libpve-common-perl (8.3.1) bookworm; urgency=medium
+
+  * memory info: use the MemAvailable field from /proc/meminfo to compute used
+    memory to fix overestimation of that metric and to better align with what
+    modern versions of tools like `free` do.
+
+  * tools: upid decode: do not allow slashes in UPIDs.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 07 Apr 2025 21:29:49 +0200
+
 libpve-common-perl (8.3.0) bookworm; urgency=medium
 
   * sysfs tools: add 'nvidia' -> 'mdev' workaround to pci_device_info
