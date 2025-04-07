@@ -279,6 +279,7 @@ sub read_meminfo {
     my $res = {
 	memtotal => 0,
 	memfree => 0,
+	memavailable => 0,
 	memused => 0,
 	memshared => 0,
 	swaptotal => 0,
@@ -300,6 +301,7 @@ sub read_meminfo {
 
     $res->{memtotal} = $d->{memtotal};
     $res->{memfree} = $d->{memfree};
+    $res->{memavailable} = $d->{memavailable};
     # NOTE: MemAvailable is the only metric that will actually represent how much memory is
     # available for a new workload, without pushing the system into swap, no amount of calculating
     # with BUFFER, CACHE, .. will get you there, only the kernel can know this.
