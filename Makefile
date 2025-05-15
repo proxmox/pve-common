@@ -12,6 +12,10 @@ DSC=$(PACKAGE)_$(DEB_VERSION_UPSTREAM_REVISION).dsc
 all:
 	$(MAKE) -C src
 
+.PHONY: tidy
+tidy:
+	git ls-files ':*.p[ml]'| xargs -n4 -P0 proxmox-perltidy
+
 .PHONY: dinstall
 dinstall: deb
 	dpkg -i $(DEB)
