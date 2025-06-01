@@ -30,7 +30,7 @@ sub get_repository {
     $server = "[$server]" if $server =~ /^$IPV6RE$/;
 
     if (my $port = $scfg->{port}) {
-	$server .= ":$port" if $port != 8007;
+        $server .= ":$port" if $port != 8007;
     }
 
     my $datastore = $scfg->{datastore};
@@ -49,11 +49,14 @@ sub new {
 
     $secret_dir = '/etc/pve/priv/storage' if !defined($secret_dir);
 
-    my $self = bless({
-	scfg => $scfg,
-	storeid => $storeid,
-	secret_dir => $secret_dir
-    }, $class);
+    my $self = bless(
+        {
+            scfg => $scfg,
+            storeid => $storeid,
+            secret_dir => $secret_dir,
+        },
+        $class,
+    );
     return $self;
 }
 
@@ -70,7 +73,7 @@ sub set_password {
     mkdir($self->{secret_dir});
 
     PVE::Tools::file_set_contents($pwfile, "$password\n", 0600);
-};
+}
 
 sub delete_password {
     my ($self) = @_;
@@ -78,7 +81,7 @@ sub delete_password {
     my $pwfile = password_file_name($self);
 
     unlink $pwfile or $! == ENOENT or die "deleting password file failed - $!\n";
-};
+}
 
 sub get_password {
     my ($self) = @_;
@@ -92,7 +95,7 @@ sub encryption_key_file_name {
     my ($self) = @_;
 
     return "$self->{secret_dir}/$self->{storeid}.enc";
-};
+}
 
 sub set_encryption_key {
     my ($self, $key) = @_;
@@ -101,7 +104,7 @@ sub set_encryption_key {
     mkdir($self->{secret_dir});
 
     PVE::Tools::file_set_contents($encfile, "$key\n", 0600);
-};
+}
 
 sub delete_encryption_key {
     my ($self) = @_;
@@ -109,10 +112,10 @@ sub delete_encryption_key {
     my $encfile = $self->encryption_key_file_name();
 
     if (!unlink($encfile)) {
-	return if $! == ENOENT;
-	die "failed to delete encryption key! $!\n";
+        return if $! == ENOENT;
+        die "failed to delete encryption key! $!\n";
     }
-};
+}
 
 # Returns a file handle if there is an encryption key, or `undef` if there is not. Dies on error.
 my sub open_encryption_key {
@@ -122,8 +125,8 @@ my sub open_encryption_key {
 
     my $keyfd;
     if (!open($keyfd, '<', $encryption_key_file)) {
-	return undef if $! == ENOENT;
-	die "failed to open encryption key: $encryption_key_file: $!\n";
+        return undef if $! == ENOENT;
+        die "failed to open encryption key: $encryption_key_file: $!\n";
     }
 
     return $keyfd;
@@ -131,13 +134,13 @@ my sub open_encryption_key {
 
 my $USE_CRYPT_PARAMS = {
     'proxmox-backup-client' => {
-	backup => 1,
-	restore => 1,
-	'upload-log' => 1,
+        backup => 1,
+        restore => 1,
+        'upload-log' => 1,
     },
     'proxmox-file-restore' => {
-	list => 1,
-	extract => 1,
+        list => 1,
+        extract => 1,
     },
 };
 
@@ -148,7 +151,7 @@ my sub do_raw_client_cmd {
     my $use_crypto = $USE_CRYPT_PARAMS->{$client_bin}->{$client_cmd} // 0;
 
     my $client_exe = "/usr/bin/$client_bin";
-    die "executable not found '$client_exe'! $client_bin not installed?\n" if ! -x $client_exe;
+    die "executable not found '$client_exe'! $client_bin not installed?\n" if !-x $client_exe;
 
     my $scfg = $self->{scfg};
     my $repo = get_repository($scfg);
@@ -164,22 +167,22 @@ my sub do_raw_client_cmd {
     # This must live in the top scope to not get closed before the `run_command`
     my $keyfd;
     if ($use_crypto) {
-	if (defined($keyfd = open_encryption_key($self))) {
-	    my $flags = fcntl($keyfd, F_GETFD, 0)
-		// die "failed to get file descriptor flags: $!\n";
-	    fcntl($keyfd, F_SETFD, $flags & ~FD_CLOEXEC)
-		or die "failed to remove FD_CLOEXEC from encryption key file descriptor\n";
-	    push(@$cmd, '--crypt-mode=encrypt', '--keyfd='.fileno($keyfd));
-	} else {
-	    push(@$cmd, '--crypt-mode=none');
-	}
+        if (defined($keyfd = open_encryption_key($self))) {
+            my $flags = fcntl($keyfd, F_GETFD, 0)
+                // die "failed to get file descriptor flags: $!\n";
+            fcntl($keyfd, F_SETFD, $flags & ~FD_CLOEXEC)
+                or die "failed to remove FD_CLOEXEC from encryption key file descriptor\n";
+            push(@$cmd, '--crypt-mode=encrypt', '--keyfd=' . fileno($keyfd));
+        } else {
+            push(@$cmd, '--crypt-mode=none');
+        }
     }
 
     push(@$cmd, @$param) if defined($param);
 
     push(@$cmd, "--repository", $repo);
     if (defined(my $ns = delete($opts{namespace}))) {
-	push(@$cmd, '--ns', $ns);
+        push(@$cmd, '--ns', $ns);
     }
 
     local $ENV{PBS_PASSWORD} = $self->get_password();
@@ -191,7 +194,7 @@ my sub do_raw_client_cmd {
     local $ENV{PROXMOX_OUTPUT_NO_HEADER} = 1;
 
     if (my $logfunc = $opts{logfunc}) {
-	$logfunc->("run: " . join(' ', @$cmd));
+        $logfunc->("run: " . join(' ', @$cmd));
     }
 
     run_command($cmd, %opts);
@@ -211,18 +214,18 @@ my sub run_client_cmd : prototype($$;$$$$) {
     $binary = 'proxmox-backup-client' if !defined($binary);
 
     $param = [] if !defined($param);
-    $param = [ $param ] if !ref($param);
+    $param = [$param] if !ref($param);
 
-    $param = [ @$param, '--output-format=json' ] if !$no_output;
+    $param = [@$param, '--output-format=json'] if !$no_output;
 
     do_raw_client_cmd(
-	$self,
-	$client_cmd,
-	$param,
-	outfunc => $outfunc,
-	errmsg => "$binary failed",
-	binary => $binary,
-	namespace => $namespace,
+        $self,
+        $client_cmd,
+        $param,
+        outfunc => $outfunc,
+        errmsg => "$binary failed",
+        binary => $binary,
+        namespace => $namespace,
     );
 
     return undef if $no_output;
@@ -236,11 +239,11 @@ sub autogen_encryption_key {
     my ($self) = @_;
     my $encfile = $self->encryption_key_file_name();
     run_command(
-        [ 'proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile ],
-        errmsg => 'failed to create encryption key'
+        ['proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile],
+        errmsg => 'failed to create encryption key',
     );
     return file_get_contents($encfile);
-};
+}
 
 # TODO remove support for namespaced parameters. Needs Breaks for pmg-api and libpve-storage-perl.
 # Deprecated! The namespace should be passed in as part of the config in new().
@@ -260,16 +263,16 @@ sub get_snapshots {
 
     my $namespace;
     if (defined($group)) {
-	($namespace, $group) = split_namespaced_parameter($self, $group);
+        ($namespace, $group) = split_namespaced_parameter($self, $group);
     } else {
-	$namespace = $self->{scfg}->{namespace};
+        $namespace = $self->{scfg}->{namespace};
     }
 
     my $param = [];
     push(@$param, $group) if defined($group);
 
     return run_client_cmd($self, "snapshots", $param, undef, undef, $namespace);
-};
+}
 
 # create a new PXAR backup of a FS directory tree - doesn't cross FS boundary
 # by default.
@@ -281,19 +284,17 @@ sub backup_fs_tree {
     die "archive name not provided\n" if !defined($pxarname);
 
     my $param = [
-	"$pxarname.pxar:$root",
-	'--backup-type', 'host',
-	'--backup-id', $id,
+        "$pxarname.pxar:$root", '--backup-type', 'host', '--backup-id', $id,
     ];
 
     $cmd_opts = {} if !defined($cmd_opts);
 
     if (defined(my $namespace = $self->{scfg}->{namespace})) {
-	$cmd_opts->{namespace} = $namespace;
+        $cmd_opts->{namespace} = $namespace;
     }
 
     return run_raw_client_cmd($self, 'backup', $param, %$cmd_opts);
-};
+}
 
 sub restore_pxar {
     my ($self, $snapshot, $pxarname, $target, $cmd_opts) = @_;
@@ -305,17 +306,14 @@ sub restore_pxar {
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
     my $param = [
-	"$snapshot",
-	"$pxarname.pxar",
-	"$target",
-	"--allow-existing-dirs", 0,
+        "$snapshot", "$pxarname.pxar", "$target", "--allow-existing-dirs", 0,
     ];
     $cmd_opts = {} if !defined($cmd_opts);
 
     $cmd_opts->{namespace} = $namespace;
 
     return run_raw_client_cmd($self, 'restore', $param, %$cmd_opts);
-};
+}
 
 sub forget_snapshot {
     my ($self, $snapshot) = @_;
@@ -324,8 +322,8 @@ sub forget_snapshot {
 
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
-    return run_client_cmd($self, 'forget', [ "$snapshot" ], 1, undef, $namespace)
-};
+    return run_client_cmd($self, 'forget', ["$snapshot"], 1, undef, $namespace);
+}
 
 sub prune_group {
     my ($self, $opts, $prune_opts, $group) = @_;
@@ -342,16 +340,16 @@ sub prune_group {
     push(@$param, "--quiet");
 
     if (defined($opts->{'dry-run'}) && $opts->{'dry-run'}) {
-	push(@$param, "--dry-run", $opts->{'dry-run'});
+        push(@$param, "--dry-run", $opts->{'dry-run'});
     }
 
     for my $keep_opt (keys %$prune_opts) {
-	push(@$param, "--$keep_opt", $prune_opts->{$keep_opt});
+        push(@$param, "--$keep_opt", $prune_opts->{$keep_opt});
     }
     push(@$param, "$group");
 
     return run_client_cmd($self, 'prune', $param, undef, undef, $namespace);
-};
+}
 
 sub status {
     my ($self) = @_;
@@ -362,37 +360,32 @@ sub status {
     my $active = 0;
 
     eval {
-	my $res = run_client_cmd($self, "status");
+        my $res = run_client_cmd($self, "status");
 
-	$active = 1;
-	$total = $res->{total};
-	$used = $res->{used};
-	$free = $res->{avail};
+        $active = 1;
+        $total = $res->{total};
+        $used = $res->{used};
+        $free = $res->{avail};
     };
     if (my $err = $@) {
-	warn $err;
+        warn $err;
     }
 
     return ($total, $free, $used, $active);
-};
+}
 
 sub file_restore_list {
     my ($self, $snapshot, $filepath, $base64, $extra_params) = @_;
 
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
-    my $cmd = [ $snapshot, $filepath, "--base64", ($base64 ? 1 : 0) ];
+    my $cmd = [$snapshot, $filepath, "--base64", ($base64 ? 1 : 0)];
 
     if (my $timeout = $extra_params->{timeout}) {
-	push($cmd->@*, '--timeout', $timeout);
+        push($cmd->@*, '--timeout', $timeout);
     }
 
     return run_client_cmd(
-	$self,
-	"list",
-	$cmd,
-	0,
-	"proxmox-file-restore",
-	$namespace,
+        $self, "list", $cmd, 0, "proxmox-file-restore", $namespace,
     );
 }
 
@@ -403,15 +396,15 @@ sub file_restore_extract_prepare {
 
     my $tmpdir = tempdir();
     mkfifo("$tmpdir/fifo", 0600)
-	or die "creating file download fifo '$tmpdir/fifo' failed: $!\n";
+        or die "creating file download fifo '$tmpdir/fifo' failed: $!\n";
 
     # allow reading data for proxy user
-    my $wwwid = getpwnam('www-data') ||
-	die "getpwnam failed";
+    my $wwwid = getpwnam('www-data')
+        || die "getpwnam failed";
     chown($wwwid, -1, "$tmpdir")
-	or die "changing permission on fifo dir '$tmpdir' failed: $!\n";
+        or die "changing permission on fifo dir '$tmpdir' failed: $!\n";
     chown($wwwid, -1, "$tmpdir/fifo")
-	or die "changing permission on fifo '$tmpdir/fifo' failed: $!\n";
+        or die "changing permission on fifo '$tmpdir/fifo' failed: $!\n";
 
     return "$tmpdir/fifo";
 }
@@ -423,29 +416,29 @@ sub file_restore_extract {
     (my $namespace, $snapshot) = split_namespaced_parameter($self, $snapshot);
 
     my $ret = eval {
-	local $SIG{ALRM} = sub { die "got timeout\n" };
-	alarm(30);
-	sysopen(my $fh, "$output_file", O_WRONLY)
-	    or die "open target '$output_file' for writing failed: $!\n";
-	alarm(0);
+        local $SIG{ALRM} = sub { die "got timeout\n" };
+        alarm(30);
+        sysopen(my $fh, "$output_file", O_WRONLY)
+            or die "open target '$output_file' for writing failed: $!\n";
+        alarm(0);
 
-	my $fn = fileno($fh);
-	my $errfunc = sub { print $_[0], "\n"; };
+        my $fn = fileno($fh);
+        my $errfunc = sub { print $_[0], "\n"; };
 
-	my $cmd = [ $snapshot, $filepath, "-", "--base64", ($base64 ? 1 : 0) ];
-	if ($tar) {
-	    push(@$cmd, '--format', 'tar', '--zstd', 1);
-	}
+        my $cmd = [$snapshot, $filepath, "-", "--base64", ($base64 ? 1 : 0)];
+        if ($tar) {
+            push(@$cmd, '--format', 'tar', '--zstd', 1);
+        }
 
-	return run_raw_client_cmd(
-	    $self,
+        return run_raw_client_cmd(
+            $self,
             "extract",
-	    $cmd,
-	    binary => "proxmox-file-restore",
-	    namespace => $namespace,
-	    errfunc => $errfunc,
-	    output => ">&$fn",
-	);
+            $cmd,
+            binary => "proxmox-file-restore",
+            namespace => $namespace,
+            errfunc => $errfunc,
+            output => ">&$fn",
+        );
     };
     my $err = $@;
 

@@ -23,7 +23,7 @@ my $ifaces = $config->{ifaces};
 my $ck = sub {
     my ($i, $v, $e) = @_;
     $ifaces->{$i}->{$v} eq $e
-	or die "$run run: $i variable $v: got \"$ifaces->{$i}->{$v}\", expected: $e\n";
+        or die "$run run: $i variable $v: got \"$ifaces->{$i}->{$v}\", expected: $e\n";
 };
 
 my $check_config = sub {

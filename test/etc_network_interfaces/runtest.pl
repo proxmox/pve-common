@@ -29,7 +29,7 @@ sub load($) {
     my ($from) = @_;
 
     if (my $local = $saved_files{$from}) {
-      return $local;
+        return $local;
     }
 
     open my $fh, '<', $from or die "failed to open $from: $!";
@@ -54,7 +54,7 @@ sub delfile($) {
 # Delete all temporary files.
 sub flush_files() {
     foreach (keys %saved_files) {
-	delete $saved_files{$_} if $_ !~ m,^shared/,;
+        delete $saved_files{$_} if $_ !~ m,^shared/,;
     }
 }
 
@@ -103,16 +103,16 @@ sub update_iface($$%) {
 
     my $if_families = $if->{families} ||= [];
     foreach my $family (@$families) {
-	my $type = delete $family->{family};
-	@$if_families = ((grep { $_ ne $type } @$if_families), $type);
+        my $type = delete $family->{family};
+        @$if_families = ((grep { $_ ne $type } @$if_families), $type);
 
-	(my $suffix = $type) =~ s/^inet//;
-	$if->{"method$suffix"} = $family->{address} ? 'static' : 'manual';
-	foreach(qw(address netmask gateway options)) {
-	    if (my $value = delete $family->{$_}) {
-		$if->{"$_${suffix}"} = $value;
-	    }
-	}
+        (my $suffix = $type) =~ s/^inet//;
+        $if->{"method$suffix"} = $family->{address} ? 'static' : 'manual';
+        foreach (qw(address netmask gateway options)) {
+            if (my $value = delete $family->{$_}) {
+                $if->{"$_${suffix}"} = $value;
+            }
+        }
     }
 }
 
@@ -133,12 +133,12 @@ sub delete_iface($;$) {
     croak "interface doesn't exist: $name" if !$if;
 
     if (!$family) {
-      delete $ifaces->{$name};
-      return;
+        delete $ifaces->{$name};
+        return;
     }
 
     my $families = $if->{families};
-    @$families = grep {$_ ne $family} @$families;
+    @$families = grep { $_ ne $family } @$families;
     (my $suffix = $family) =~ s/^inet//;
     delete $if->{"$_$suffix"} foreach qw(address netmask gateway options);
 }
@@ -158,7 +158,7 @@ sub diff($$) {
     my $hb = IO::Handle->new_from_fd($wb, 'w');
 
     open my $diffproc, '-|', 'diff', '-up', "/dev/fd/$ra", "/dev/fd/$rb"
-	or die "failed to run program 'diff': $!";
+        or die "failed to run program 'diff': $!";
     POSIX::close($ra);
     POSIX::close($rb);
 
@@ -166,8 +166,8 @@ sub diff($$) {
     open my $f2, '<', \$b;
     my ($line1, $line2);
     do {
-	$ha->print($line1) if defined($line1 = <$f1>);
-	$hb->print($line2) if defined($line2 = <$f2>);
+        $ha->print($line1) if defined($line1 = <$f1>);
+        $hb->print($line2) if defined($line2 = <$f2>);
     } while (defined($line1 // $line2));
     close $f1;
     close $f2;
@@ -198,14 +198,12 @@ my $failed = 0;
 for our $Test (sort <t.*.pl>) {
     $total++;
     flush_files();
-    eval {
-	require $Test;
-    };
+    eval { require $Test; };
     if ($@) {
-	print "FAIL: $Test\n$@\n\n";
-	$failed++;
+        print "FAIL: $Test\n$@\n\n";
+        $failed++;
     } else {
-	print "PASS: $Test\n";
+        print "PASS: $Test\n";
     }
 }
 

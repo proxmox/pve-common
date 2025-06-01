@@ -12,18 +12,18 @@ use base qw(PVE::SectionConfig);
 
 my $defaultData = {
     propertyList => {
-	type => { description => "Section type." },
-	id => {
-	    description => "ID",
-	    type => 'string',
-	    format => 'pve-configid',
-	    maxLength => 64,
-	},
-	common => {
-	    type => 'string',
-	    description => 'common value',
-	    maxLength => 512,
-	},
+        type => { description => "Section type." },
+        id => {
+            description => "ID",
+            type => 'string',
+            format => 'pve-configid',
+            maxLength => 64,
+        },
+        common => {
+            type => 'string',
+            description => 'common value',
+            maxLength => 512,
+        },
     },
 };
 
@@ -66,24 +66,24 @@ sub type {
 
 sub properties {
     return {
-	field1 => {
-	    description => 'Field One',
-	    type => 'integer',
-	    minimum => 3,
-	    maximum => 9,
-	},
-	another => {
-	    description => 'Another field',
-	    type => 'string',
-	},
+        field1 => {
+            description => 'Field One',
+            type => 'integer',
+            minimum => 3,
+            maximum => 9,
+        },
+        another => {
+            description => 'Another field',
+            type => 'string',
+        },
     };
 }
 
 sub options {
     return {
-	common => { optional => 1 },
-	field1 => {},
-	another => { optional => 1 },
+        common => { optional => 1 },
+        field1 => {},
+        another => { optional => 1 },
     };
 }
 
@@ -99,40 +99,40 @@ sub type {
 
 sub properties {
     return {
-	field2 => {
-	    description => 'Field Two',
-	    type => 'integer',
-	    minimum => 3,
-	    maximum => 9,
-	},
-	arrayfield => {
-	    description => "Array Field with property string",
-	    type => 'array',
-	    items => {
-		type => 'string',
-		description => 'a property string',
-		format => {
-		    subfield1 => {
-			type => 'string',
-			description => 'first subfield'
-		    },
-		    subfield2 => {
-			type => 'integer',
-			minimum => 0,
-			optional => 1,
-		    },
-		},
-	    },
-	},
+        field2 => {
+            description => 'Field Two',
+            type => 'integer',
+            minimum => 3,
+            maximum => 9,
+        },
+        arrayfield => {
+            description => "Array Field with property string",
+            type => 'array',
+            items => {
+                type => 'string',
+                description => 'a property string',
+                format => {
+                    subfield1 => {
+                        type => 'string',
+                        description => 'first subfield',
+                    },
+                    subfield2 => {
+                        type => 'integer',
+                        minimum => 0,
+                        optional => 1,
+                    },
+                },
+            },
+        },
     };
 }
 
 sub options {
     return {
-	common => { optional => 1 },
-	field2 => {},
-	another => {},
-	arrayfield => { optional => 1 },
+        common => { optional => 1 },
+        field2 => {},
+        another => {},
+        arrayfield => { optional => 1 },
     };
 }
 
@@ -159,25 +159,25 @@ my sub enum {
 Conf->expect_success(
     'test1',
     {
-	ids => {
-	    t1 => {
-		type => 'one',
-		common => 'foo',
-		field1 => 3,
-	    },
-	    t2 => {
-		type => 'one',
-		common => 'foo2',
-		field1 => 4,
-		another => 'more-text',
-	    },
-	    t3 => {
-		type => 'two',
-		field2 => 5,
-		another => 'even more text',
-	    },
-	},
-	order => { t1 => 1, t2 => 2, t3 => 3 },
+        ids => {
+            t1 => {
+                type => 'one',
+                common => 'foo',
+                field1 => 3,
+            },
+            t2 => {
+                type => 'one',
+                common => 'foo2',
+                field1 => 4,
+                another => 'more-text',
+            },
+            t3 => {
+                type => 'two',
+                field2 => 5,
+                another => 'even more text',
+            },
+        },
+        order => { t1 => 1, t2 => 2, t3 => 3 },
     },
     <<"EOF");
 one: t1
@@ -196,32 +196,31 @@ EOF
 
 my $with_unknown_data = {
     ids => {
-	t1 => {
-	    type => 'one',
-	    common => 'foo',
-	    field1 => 3,
-	},
-	t2 => {
-	    type => 'one',
-	    common => 'foo2',
-	    field1 => 4,
-	    another => 'more-text',
-	},
-	t3 => {
-	    type => 'two',
-	    field2 => 5,
-	    another => 'even more text',
-	    arrayfield => [
-		'subfield1=test,subfield2=2',
-		'subfield1=test2',
-	    ],
-	},
-	invalid => {
-	    type => 'bad',
-	    common => 'omg',
-	    unknownfield => 'shouldnotbehere',
-	    unknownarray => ['entry1', 'entry2'],
-	},
+        t1 => {
+            type => 'one',
+            common => 'foo',
+            field1 => 3,
+        },
+        t2 => {
+            type => 'one',
+            common => 'foo2',
+            field1 => 4,
+            another => 'more-text',
+        },
+        t3 => {
+            type => 'two',
+            field2 => 5,
+            another => 'even more text',
+            arrayfield => [
+                'subfield1=test,subfield2=2', 'subfield1=test2',
+            ],
+        },
+        invalid => {
+            type => 'bad',
+            common => 'omg',
+            unknownfield => 'shouldnotbehere',
+            unknownarray => ['entry1', 'entry2'],
+        },
     },
     order => enum(qw(t1 t2 invalid t3)),
 };
@@ -254,65 +253,65 @@ Conf->expect_success('unknown-allowed', $with_unknown_data, $with_unknown_text, 
 # schema tests
 my $create_schema = Conf->createSchema();
 my $expected_create_schema = {
-    additionalProperties =>  0,
+    additionalProperties => 0,
     type => 'object',
-    properties =>  {
-	id => {
-	    description => 'ID',
-	    format => 'pve-configid',
-	    maxLength => 64,
-	    type => 'string',
-	},
-	type =>  {
-	    description => 'Section type.',
-	    enum => ['one', 'two'],
-	    type => 'string',
-	},
-	common => {
-	    type => 'string',
-	    description => 'common value',
-	    maxLength => 512,
-	},
-	field1 =>  {
-	    description =>  'Field One',
-	    maximum =>  9,
-	    minimum =>  3,
-	    optional =>  1,
-	    type =>  'integer',
+    properties => {
+        id => {
+            description => 'ID',
+            format => 'pve-configid',
+            maxLength => 64,
+            type => 'string',
+        },
+        type => {
+            description => 'Section type.',
+            enum => ['one', 'two'],
+            type => 'string',
+        },
+        common => {
+            type => 'string',
+            description => 'common value',
+            maxLength => 512,
+        },
+        field1 => {
+            description => 'Field One',
+            maximum => 9,
+            minimum => 3,
+            optional => 1,
+            type => 'integer',
 
-	},
-	'field2'=> {
-	    'description'=> 'Field Two',
-	    'maximum'=> 9,
-	    'minimum'=> 3,
-	    'optional'=> 1,
-	    'type'=> 'integer',
-	},
-	'arrayfield'=> {
-	    'description'=> 'Array Field with property string',
-	    'items'=> {
-		'description'=> 'a property string',
-		'format'=> {
-		    'subfield2'=> {
-			'optional'=> 1,
-			'type'=> 'integer',
-			'minimum'=> 0
-		    },
-		    'subfield1'=> {
-			'description'=> 'first subfield',
-			'type'=> 'string',
-		    },
-		},
-		'type'=> 'string'
-	    },
-	    'optional'=> 1,
-	    'type'=> 'array',
-	},
-	'another'=> {
-	    'description'=> 'Another field',
-	    'optional'=> 1,
-	    'type'=> 'string',
-	},
+        },
+        'field2' => {
+            'description' => 'Field Two',
+            'maximum' => 9,
+            'minimum' => 3,
+            'optional' => 1,
+            'type' => 'integer',
+        },
+        'arrayfield' => {
+            'description' => 'Array Field with property string',
+            'items' => {
+                'description' => 'a property string',
+                'format' => {
+                    'subfield2' => {
+                        'optional' => 1,
+                        'type' => 'integer',
+                        'minimum' => 0,
+                    },
+                    'subfield1' => {
+                        'description' => 'first subfield',
+                        'type' => 'string',
+                    },
+                },
+                'type' => 'string',
+            },
+            'optional' => 1,
+            'type' => 'array',
+        },
+        'another' => {
+            'description' => 'Another field',
+            'optional' => 1,
+            'type' => 'string',
+        },
     },
 };
 
@@ -323,63 +322,64 @@ my $expected_update_schema = {
     additionalProperties => 0,
     type => 'object',
     properties => {
-	id => {
-	    description => 'ID',
-	    format => 'pve-configid',
-	    maxLength => 64,
-	    type => 'string',
-	},
-	delete => {
-	    type => 'string', format => 'pve-configid-list',
-	    description => "A list of settings you want to delete.",
-	    maxLength => 4096,
-	    optional => 1,
-	},
-	digest => PVE::JSONSchema::get_standard_option('pve-config-digest'),
-	common => {
-	    description => 'common value',
-	    maxLength => 512,
-	    type => 'string',
-	},
-	field1 => {
-	    description => 'Field One',
-	    maximum => 9,
-	    minimum => 3,
-	    optional => 1,
-	    type => 'integer'
-	},
-	field2 => {
-	    description => 'Field Two',
-	    maximum => 9,
-	    minimum => 3,
-	    optional => 1,
-	    type => 'integer',
-	},
-	arrayfield => {
-	    description => 'Array Field with property string',
-	    items => {
-		type => 'string',
-		description => 'a property string',
-		format => {
-		    subfield2 => {
-			type => 'integer',
-			minimum => 0,
-			optional => 1
-		    },
-		    subfield1 => {
-			description => 'first subfield',
-			type => 'string'
-		    }
-		}
-	    },
-	    optional => 1,
-	    type => 'array',
-	},
-	another => {
-	    description => 'Another field',
-	    optional => 1,
-	    type => 'string',
-	},
+        id => {
+            description => 'ID',
+            format => 'pve-configid',
+            maxLength => 64,
+            type => 'string',
+        },
+        delete => {
+            type => 'string',
+            format => 'pve-configid-list',
+            description => "A list of settings you want to delete.",
+            maxLength => 4096,
+            optional => 1,
+        },
+        digest => PVE::JSONSchema::get_standard_option('pve-config-digest'),
+        common => {
+            description => 'common value',
+            maxLength => 512,
+            type => 'string',
+        },
+        field1 => {
+            description => 'Field One',
+            maximum => 9,
+            minimum => 3,
+            optional => 1,
+            type => 'integer',
+        },
+        field2 => {
+            description => 'Field Two',
+            maximum => 9,
+            minimum => 3,
+            optional => 1,
+            type => 'integer',
+        },
+        arrayfield => {
+            description => 'Array Field with property string',
+            items => {
+                type => 'string',
+                description => 'a property string',
+                format => {
+                    subfield2 => {
+                        type => 'integer',
+                        minimum => 0,
+                        optional => 1,
+                    },
+                    subfield1 => {
+                        description => 'first subfield',
+                        type => 'string',
+                    },
+                },
+            },
+            optional => 1,
+            type => 'array',
+        },
+        another => {
+            description => 'Another field',
+            optional => 1,
+            type => 'string',
+        },
     },
 };
 is_deeply($update_schema, $expected_update_schema, "update schema test");

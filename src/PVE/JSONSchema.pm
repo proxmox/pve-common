@@ -17,10 +17,10 @@ use Data::Dumper;
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
-register_standard_option
-get_standard_option
-parse_property_string
-print_property_string
+    register_standard_option
+    get_standard_option
+    parse_property_string
+    print_property_string
 );
 
 our $CONFIGID_RE = qr/[a-z][a-z0-9_-]+/i;
@@ -32,11 +32,12 @@ our $CONFIGID_RE = qr/[a-z][a-z0-9_-]+/i;
 # the code is similar to the javascript parser from http://code.google.com/p/jsonschema/
 
 my $standard_options = {};
+
 sub register_standard_option {
     my ($name, $schema) = @_;
 
     die "standard option '$name' already registered\n"
-	if $standard_options->{$name};
+        if $standard_options->{$name};
 
     $standard_options->{$name} = $schema;
 }
@@ -44,103 +45,151 @@ sub register_standard_option {
 sub get_standard_option {
     my ($name, $base) = @_;
 
-    my $std =  $standard_options->{$name};
+    my $std = $standard_options->{$name};
     die "no such standard option '$name'\n" if !$std;
 
     my $res = $base || {};
 
     foreach my $opt (keys %$std) {
-	next if defined($res->{$opt});
-	$res->{$opt} = $std->{$opt};
+        next if defined($res->{$opt});
+        $res->{$opt} = $std->{$opt};
     }
 
     return $res;
-};
+}
 
-register_standard_option('pve-vmid', {
-    description => "The (unique) ID of the VM.",
-    type => 'integer',
-    format => 'pve-vmid',
-    minimum => 100,
-    maximum => 999_999_999,
-});
+register_standard_option(
+    'pve-vmid',
+    {
+        description => "The (unique) ID of the VM.",
+        type => 'integer',
+        format => 'pve-vmid',
+        minimum => 100,
+        maximum => 999_999_999,
+    },
+);
 
-register_standard_option('pve-node', {
-    description => "The cluster node name.",
-    type => 'string', format => 'pve-node',
-});
+register_standard_option(
+    'pve-node',
+    {
+        description => "The cluster node name.",
+        type => 'string',
+        format => 'pve-node',
+    },
+);
 
-register_standard_option('pve-node-list', {
-    description => "List of cluster node names.",
-    type => 'string', format => 'pve-node-list',
-});
+register_standard_option(
+    'pve-node-list',
+    {
+        description => "List of cluster node names.",
+        type => 'string',
+        format => 'pve-node-list',
+    },
+);
 
-register_standard_option('pve-iface', {
-    description => "Network interface name.",
-    type => 'string', format => 'pve-iface',
-    minLength => 2, maxLength => 20,
-});
+register_standard_option(
+    'pve-iface',
+    {
+        description => "Network interface name.",
+        type => 'string',
+        format => 'pve-iface',
+        minLength => 2,
+        maxLength => 20,
+    },
+);
 
-register_standard_option('pve-vlan-id-or-range', {
-    description => "VLAN ID or range.",
-    type => 'string', format => 'pve-vlan-id-or-range',
-    minLength => 1, maxLength => 9,
-});
+register_standard_option(
+    'pve-vlan-id-or-range',
+    {
+        description => "VLAN ID or range.",
+        type => 'string',
+        format => 'pve-vlan-id-or-range',
+        minLength => 1,
+        maxLength => 9,
+    },
+);
 
-register_standard_option('pve-storage-id', {
-    description => "The storage identifier.",
-    type => 'string', format => 'pve-storage-id',
-    format_description => 'storage ID',
-});
+register_standard_option(
+    'pve-storage-id',
+    {
+        description => "The storage identifier.",
+        type => 'string',
+        format => 'pve-storage-id',
+        format_description => 'storage ID',
+    },
+);
 
-register_standard_option('pve-bridge-id', {
-    description => "Bridge to attach guest network devices to.",
-    type => 'string', format => 'pve-bridge-id',
-    format_description => 'bridge',
-});
+register_standard_option(
+    'pve-bridge-id',
+    {
+        description => "Bridge to attach guest network devices to.",
+        type => 'string',
+        format => 'pve-bridge-id',
+        format_description => 'bridge',
+    },
+);
 
-register_standard_option('pve-config-digest', {
-    description => 'Prevent changes if current configuration file has a different digest. '
-	. 'This can be used to prevent concurrent modifications.',
-    type => 'string',
-    optional => 1,
-    # sha1 hex digests are 40 characters long
-    # sha256 hex digests are 64 characters long (sha256 is used in our Rust code)
-    maxLength => 64,
-});
+register_standard_option(
+    'pve-config-digest',
+    {
+        description => 'Prevent changes if current configuration file has a different digest. '
+            . 'This can be used to prevent concurrent modifications.',
+        type => 'string',
+        optional => 1,
+        # sha1 hex digests are 40 characters long
+        # sha256 hex digests are 64 characters long (sha256 is used in our Rust code)
+        maxLength => 64,
+    },
+);
 
-register_standard_option('skiplock', {
-    description => "Ignore locks - only root is allowed to use this option.",
-    type => 'boolean',
-    optional => 1,
-});
+register_standard_option(
+    'skiplock',
+    {
+        description => "Ignore locks - only root is allowed to use this option.",
+        type => 'boolean',
+        optional => 1,
+    },
+);
 
-register_standard_option('extra-args', {
-    description => "Extra arguments as array",
-    type => 'array',
-    items => { type => 'string' },
-    optional => 1
-});
+register_standard_option(
+    'extra-args',
+    {
+        description => "Extra arguments as array",
+        type => 'array',
+        items => { type => 'string' },
+        optional => 1,
+    },
+);
 
-register_standard_option('fingerprint-sha256', {
-    description => "Certificate SHA 256 fingerprint.",
-    type => 'string',
-    pattern => '([A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}',
-});
+register_standard_option(
+    'fingerprint-sha256',
+    {
+        description => "Certificate SHA 256 fingerprint.",
+        type => 'string',
+        pattern => '([A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}',
+    },
+);
 
-register_standard_option('pve-output-format', {
-    type => 'string',
-    description => 'Output format.',
-    enum => [ 'text', 'json', 'json-pretty', 'yaml' ],
-    optional => 1,
-    default => 'text',
-});
+register_standard_option(
+    'pve-output-format',
+    {
+        type => 'string',
+        description => 'Output format.',
+        enum => ['text', 'json', 'json-pretty', 'yaml'],
+        optional => 1,
+        default => 'text',
+    },
+);
 
-register_standard_option('pve-snapshot-name', {
-    description => "The name of the snapshot.",
-    type => 'string', format => 'pve-configid',
-    maxLength => 40,
-});
+register_standard_option(
+    'pve-snapshot-name',
+    {
+        description => "The name of the snapshot.",
+        type => 'string',
+        format => 'pve-configid',
+        maxLength => 40,
+    },
+);
 
 my $format_list = {};
 my $format_validators = {};
@@ -149,12 +198,12 @@ sub register_format {
     my ($name, $format, $validator) = @_;
 
     die "JSON schema format '$name' already registered\n"
-	if $format_list->{$name};
+        if $format_list->{$name};
 
     if ($validator) {
-	die "A \$validator function can only be specified for hash-based formats\n"
-	    if ref($format) ne 'HASH';
-	$format_validators->{$name} = $validator;
+        die "A \$validator function can only be specified for hash-based formats\n"
+            if ref($format) ne 'HASH';
+        $format_validators->{$name} = $validator;
     }
 
     $format_list->{$name} = $format;
@@ -171,7 +220,7 @@ sub register_renderer {
     my ($name, $code) = @_;
 
     die "renderer '$name' already registered\n"
-	if $renderer_hash->{$name};
+        if $renderer_hash->{$name};
 
     $renderer_hash->{$name} = $code;
 }
@@ -183,30 +232,33 @@ sub get_renderer {
 
 # register some common type for pve
 
-register_format('string', sub {}); # allow format => 'string-list'
+register_format('string', sub { }); # allow format => 'string-list'
 
 register_format('urlencoded', \&pve_verify_urlencoded);
+
 sub pve_verify_urlencoded {
     my ($text, $noerr) = @_;
     if ($text !~ /^[-%a-zA-Z0-9_.!~*'()]*$/) {
-	return undef if $noerr;
-	die "invalid urlencoded string: $text\n";
+        return undef if $noerr;
+        die "invalid urlencoded string: $text\n";
     }
     return $text;
 }
 
 register_format('pve-configid', \&pve_verify_configid);
+
 sub pve_verify_configid {
     my ($id, $noerr) = @_;
 
     if ($id !~ m/^$CONFIGID_RE$/) {
-	return undef if $noerr;
-	die "invalid configuration ID '$id'\n";
+        return undef if $noerr;
+        die "invalid configuration ID '$id'\n";
     }
     return $id;
 }
 
 PVE::JSONSchema::register_format('pve-storage-id', \&parse_storage_id);
+
 sub parse_storage_id {
     my ($storeid, $noerr) = @_;
 
@@ -214,17 +266,19 @@ sub parse_storage_id {
 }
 
 PVE::JSONSchema::register_format('pve-bridge-id', \&parse_bridge_id);
+
 sub parse_bridge_id {
     my ($id, $noerr) = @_;
 
     if ($id !~ m/^[-_.\w\d]+$/) {
-	return undef if $noerr;
-	die "invalid bridge ID '$id'\n";
+        return undef if $noerr;
+        die "invalid bridge ID '$id'\n";
     }
     return $id;
 }
 
 PVE::JSONSchema::register_format('acme-plugin-id', \&parse_acme_plugin_id);
+
 sub parse_acme_plugin_id {
     my ($pluginid, $noerr) = @_;
 
@@ -234,31 +288,33 @@ sub parse_acme_plugin_id {
 sub parse_id {
     my ($id, $type, $noerr) = @_;
 
-     if ($id !~ m/^[a-z][a-z0-9\-\_\.]*[a-z0-9]$/i) {
-	return undef if $noerr;
-	die "$type ID '$id' contains illegal characters\n";
+    if ($id !~ m/^[a-z][a-z0-9\-\_\.]*[a-z0-9]$/i) {
+        return undef if $noerr;
+        die "$type ID '$id' contains illegal characters\n";
     }
     return $id;
 }
 
 register_format('pve-vmid', \&pve_verify_vmid);
+
 sub pve_verify_vmid {
     my ($vmid, $noerr) = @_;
 
     if ($vmid !~ m/^[1-9][0-9]{2,8}$/) {
-	return undef if $noerr;
-	die "value does not look like a valid VM ID\n";
+        return undef if $noerr;
+        die "value does not look like a valid VM ID\n";
     }
     return $vmid;
 }
 
 register_format('pve-node', \&pve_verify_node_name);
+
 sub pve_verify_node_name {
     my ($node, $noerr) = @_;
 
     if ($node !~ m/^([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)$/) {
-	return undef if $noerr;
-	die "value does not look like a valid node name\n";
+        return undef if $noerr;
+        die "value does not look like a valid node name\n";
     }
     return $node;
 }
@@ -270,7 +326,7 @@ sub map_id {
     return $source if !defined($map);
 
     return $map->{entries}->{$source}
-	if $map->{entries} && defined($map->{entries}->{$source});
+        if $map->{entries} && defined($map->{entries}->{$source});
 
     return $map->{default} if $map->{default};
 
@@ -286,35 +342,33 @@ sub parse_idmap {
     my $map = {};
 
     foreach my $entry (PVE::Tools::split_list($idmap)) {
-	if ($entry eq '1') {
-	    $map->{identity} = 1;
-	} elsif ($entry =~ m/^([^:]+):([^:]+)$/) {
-	    my ($source, $target) = ($1, $2);
-	    eval {
-		check_format($idformat, $source, '');
-		check_format($idformat, $target, '');
-	    };
-	    die "entry '$entry' contains invalid ID - $@\n" if $@;
+        if ($entry eq '1') {
+            $map->{identity} = 1;
+        } elsif ($entry =~ m/^([^:]+):([^:]+)$/) {
+            my ($source, $target) = ($1, $2);
+            eval {
+                check_format($idformat, $source, '');
+                check_format($idformat, $target, '');
+            };
+            die "entry '$entry' contains invalid ID - $@\n" if $@;
 
-	    die "duplicate mapping for source '$source'\n"
-		if exists $map->{entries}->{$source};
+            die "duplicate mapping for source '$source'\n"
+                if exists $map->{entries}->{$source};
 
-	    $map->{entries}->{$source} = $target;
-	} else {
-	    eval {
-		check_format($idformat, $entry);
-	    };
-	    die "entry '$entry' contains invalid ID - $@\n" if $@;
+            $map->{entries}->{$source} = $target;
+        } else {
+            eval { check_format($idformat, $entry); };
+            die "entry '$entry' contains invalid ID - $@\n" if $@;
 
-	    die "default target ID can only be provided once\n"
-		if exists $map->{default};
+            die "default target ID can only be provided once\n"
+                if exists $map->{default};
 
-	    $map->{default} = $entry;
-	}
+            $map->{default} = $entry;
+        }
     }
 
     die "identity mapping cannot be combined with other mappings\n"
-	if $map->{identity} && ($map->{default} || exists $map->{entries});
+        if $map->{identity} && ($map->{default} || exists $map->{entries});
 
     return $map;
 }
@@ -324,24 +378,29 @@ my $verify_idpair = sub {
 
     eval { parse_idmap($input, $format) };
     if ($@) {
-	return undef if $noerr;
-	die "$@\n";
+        return undef if $noerr;
+        die "$@\n";
     }
 
     return $input;
 };
 
-PVE::JSONSchema::register_standard_option('pve-targetstorage', {
-    description => "Mapping from source to target storages. Providing only a single storage ID maps all source storages to that storage. Providing the special value '1' will map each source storage to itself.",
-    type => 'string',
-    format => 'storage-pair-list',
-    optional => 1,
-});
+PVE::JSONSchema::register_standard_option(
+    'pve-targetstorage',
+    {
+        description =>
+            "Mapping from source to target storages. Providing only a single storage ID maps all source storages to that storage. Providing the special value '1' will map each source storage to itself.",
+        type => 'string',
+        format => 'storage-pair-list',
+        optional => 1,
+    },
+);
 
 # note: this only checks a single list entry
 # when using a storage-pair-list map, you need to pass the full parameter to
 # parse_idmap
 register_format('storage-pair', \&verify_storagepair);
+
 sub verify_storagepair {
     my ($storagepair, $noerr) = @_;
     return $verify_idpair->($storagepair, $noerr, 'pve-storage-id');
@@ -351,72 +410,82 @@ sub verify_storagepair {
 # when using a bridge-pair-list map, you need to pass the full parameter to
 # parse_idmap
 register_format('bridge-pair', \&verify_bridgepair);
+
 sub verify_bridgepair {
     my ($bridgepair, $noerr) = @_;
     return $verify_idpair->($bridgepair, $noerr, 'pve-bridge-id');
 }
 
 register_format('mac-addr', \&pve_verify_mac_addr);
+
 sub pve_verify_mac_addr {
     my ($mac_addr, $noerr) = @_;
 
     # don't allow I/G bit to be set, most of the time it breaks things, see:
     # https://pve.proxmox.com/pipermail/pve-devel/2019-March/035998.html
     if ($mac_addr !~ m/^[a-f0-9][02468ace](?::[a-f0-9]{2}){5}$/i) {
-	return undef if $noerr;
-	die "value does not look like a valid unicast MAC address\n";
+        return undef if $noerr;
+        die "value does not look like a valid unicast MAC address\n";
     }
     return $mac_addr;
 
 }
-register_standard_option('mac-addr', {
-    type => 'string',
-    description => 'Unicast MAC address.',
-    verbose_description => 'A common MAC address with the I/G (Individual/Group) bit not set.',
-    format_description => "XX:XX:XX:XX:XX:XX",
-    optional => 1,
-    format => 'mac-addr',
-});
+register_standard_option(
+    'mac-addr',
+    {
+        type => 'string',
+        description => 'Unicast MAC address.',
+        verbose_description =>
+            'A common MAC address with the I/G (Individual/Group) bit not set.',
+        format_description => "XX:XX:XX:XX:XX:XX",
+        optional => 1,
+        format => 'mac-addr',
+    },
+);
 
 register_format('ipv4', \&pve_verify_ipv4);
+
 sub pve_verify_ipv4 {
     my ($ipv4, $noerr) = @_;
 
     if ($ipv4 !~ m/^(?:$IPV4RE)$/) {
- 	return undef if $noerr;
-	die "value does not look like a valid IPv4 address\n";
+        return undef if $noerr;
+        die "value does not look like a valid IPv4 address\n";
     }
     return $ipv4;
 }
 
 register_format('ipv6', \&pve_verify_ipv6);
+
 sub pve_verify_ipv6 {
     my ($ipv6, $noerr) = @_;
 
     if ($ipv6 !~ m/^(?:$IPV6RE)$/) {
- 	return undef if $noerr;
-	die "value does not look like a valid IPv6 address\n";
+        return undef if $noerr;
+        die "value does not look like a valid IPv6 address\n";
     }
     return $ipv6;
 }
 
 register_format('ip', \&pve_verify_ip);
+
 sub pve_verify_ip {
     my ($ip, $noerr) = @_;
 
     if ($ip !~ m/^(?:(?:$IPV4RE)|(?:$IPV6RE))$/) {
- 	return undef if $noerr;
-	die "value does not look like a valid IP address\n";
+        return undef if $noerr;
+        die "value does not look like a valid IP address\n";
     }
     return $ip;
 }
 
 PVE::JSONSchema::register_format('ldap-simple-attr', \&verify_ldap_simple_attr);
+
 sub verify_ldap_simple_attr {
     my ($attr, $noerr) = @_;
 
     if ($attr =~ m/^[a-zA-Z0-9]+$/) {
-	return $attr;
+        return $attr;
     }
 
     die "value '$attr' does not look like a simple ldap attribute name\n" if !$noerr;
@@ -466,22 +535,24 @@ sub get_netmask_bits {
 }
 
 register_format('ipv4mask', \&pve_verify_ipv4mask);
+
 sub pve_verify_ipv4mask {
     my ($mask, $noerr) = @_;
 
     if (!defined($ipv4_mask_hash->{$mask})) {
-	return undef if $noerr;
-	die "value does not look like a valid IP netmask\n";
+        return undef if $noerr;
+        die "value does not look like a valid IP netmask\n";
     }
     return $mask;
 }
 
 register_format('CIDRv6', \&pve_verify_cidrv6);
+
 sub pve_verify_cidrv6 {
     my ($cidr, $noerr) = @_;
 
     if ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))$! && ($1 > 7) && ($1 <= 128)) {
-	return $cidr;
+        return $cidr;
     }
 
     return undef if $noerr;
@@ -489,11 +560,12 @@ sub pve_verify_cidrv6 {
 }
 
 register_format('CIDRv4', \&pve_verify_cidrv4);
+
 sub pve_verify_cidrv4 {
     my ($cidr, $noerr) = @_;
 
-    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) &&  ($1 <= 32)) {
-	return $cidr;
+    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) && ($1 <= 32)) {
+        return $cidr;
     }
 
     return undef if $noerr;
@@ -501,87 +573,96 @@ sub pve_verify_cidrv4 {
 }
 
 register_format('CIDR', \&pve_verify_cidr);
+
 sub pve_verify_cidr {
     my ($cidr, $noerr) = @_;
 
-    if (!(pve_verify_cidrv4($cidr, 1) ||
-	  pve_verify_cidrv6($cidr, 1)))
-    {
-	return undef if $noerr;
-	die "value does not look like a valid CIDR network\n";
+    if (!(pve_verify_cidrv4($cidr, 1) || pve_verify_cidrv6($cidr, 1))) {
+        return undef if $noerr;
+        die "value does not look like a valid CIDR network\n";
     }
 
     return $cidr;
 }
 
 register_format('pve-ipv4-config', \&pve_verify_ipv4_config);
+
 sub pve_verify_ipv4_config {
     my ($config, $noerr) = @_;
 
-    return $config if $config =~ /^(?:dhcp|manual)$/ ||
-                      pve_verify_cidrv4($config, 1);
+    return $config
+        if $config =~ /^(?:dhcp|manual)$/
+        || pve_verify_cidrv4($config, 1);
     return undef if $noerr;
     die "value does not look like a valid ipv4 network configuration\n";
 }
 
 register_format('pve-ipv6-config', \&pve_verify_ipv6_config);
+
 sub pve_verify_ipv6_config {
     my ($config, $noerr) = @_;
 
-    return $config if $config =~ /^(?:auto|dhcp|manual)$/ ||
-                      pve_verify_cidrv6($config, 1);
+    return $config
+        if $config =~ /^(?:auto|dhcp|manual)$/
+        || pve_verify_cidrv6($config, 1);
     return undef if $noerr;
     die "value does not look like a valid ipv6 network configuration\n";
 }
 
 register_format('email', \&pve_verify_email);
+
 sub pve_verify_email {
     my ($email, $noerr) = @_;
 
     if ($email !~ /^$PVE::Tools::EMAIL_RE$/) {
-	   return undef if $noerr;
-	   die "value does not look like a valid email address\n";
+        return undef if $noerr;
+        die "value does not look like a valid email address\n";
     }
     return $email;
 }
 
 register_format('email-or-username', \&pve_verify_email_or_username);
+
 sub pve_verify_email_or_username {
     my ($email, $noerr) = @_;
 
-    if ($email !~ /^$PVE::Tools::EMAIL_RE$/ &&
-	$email !~ /^$PVE::Tools::EMAIL_USER_RE$/) {
-	   return undef if $noerr;
-	   die "value does not look like a valid email address or user name\n";
+    if (
+        $email !~ /^$PVE::Tools::EMAIL_RE$/
+        && $email !~ /^$PVE::Tools::EMAIL_USER_RE$/
+    ) {
+        return undef if $noerr;
+        die "value does not look like a valid email address or user name\n";
     }
     return $email;
 }
 
 register_format('dns-name', \&pve_verify_dns_name);
+
 sub pve_verify_dns_name {
     my ($name, $noerr) = @_;
 
     my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
 
     if ($name !~ /^(${namere}\.)*${namere}$/) {
-	   return undef if $noerr;
-	   die "value does not look like a valid DNS name\n";
+        return undef if $noerr;
+        die "value does not look like a valid DNS name\n";
     }
     return $name;
 }
 
 register_format('timezone', \&pve_verify_timezone);
+
 sub pve_verify_timezone {
     my ($timezone, $noerr) = @_;
 
     return $timezone if $timezone eq 'UTC';
 
-    open(my $fh, "<",  "/usr/share/zoneinfo/zone.tab");
+    open(my $fh, "<", "/usr/share/zoneinfo/zone.tab");
     while (my $line = <$fh>) {
-	next if $line =~ /^\s*#/;
-	chomp $line;
-	my $zone = (split /\t/, $line)[2];
-	return $timezone if $timezone eq $zone; # found
+        next if $line =~ /^\s*#/;
+        chomp $line;
+        my $zone = (split /\t/, $line)[2];
+        return $timezone if $timezone eq $zone; # found
     }
     close $fh;
 
@@ -591,44 +672,46 @@ sub pve_verify_timezone {
 
 # network interface name
 register_format('pve-iface', \&pve_verify_iface);
+
 sub pve_verify_iface {
     my ($id, $noerr) = @_;
 
     if ($id !~ m/^[a-z][a-z0-9_]{1,20}([:\.]\d+)?$/i) {
-	return undef if $noerr;
-	die "invalid network interface name '$id'\n";
+        return undef if $noerr;
+        die "invalid network interface name '$id'\n";
     }
     return $id;
 }
 
 # vlan id (vids), single or range
 register_format('pve-vlan-id-or-range', \&pve_verify_vlan_id_or_range);
+
 sub pve_verify_vlan_id_or_range {
     my ($vlan, $noerr) = @_;
 
     my $valid_vid = sub {
-	my $tag = shift;
-	if ($tag < 2 || $tag > 4094) {
-	    return 0 if $noerr;
-	    die "invalid VLAN tag '$tag'\n";
-	}
-	return 1;
+        my $tag = shift;
+        if ($tag < 2 || $tag > 4094) {
+            return 0 if $noerr;
+            die "invalid VLAN tag '$tag'\n";
+        }
+        return 1;
     };
 
     if ($vlan !~ m/^(\d+)(?:-(\d+))?$/) {
-	return if $noerr;
-	die "invalid VLAN configuration '$vlan'\n";
+        return if $noerr;
+        die "invalid VLAN configuration '$vlan'\n";
     }
     my $start = $1;
     my $end = $2;
     return if !$valid_vid->($start);
     if ($end) {
-	return if !$valid_vid->($end);
+        return if !$valid_vid->($end);
 
-	if ($start >= $end) {
-	    return if $noerr;
-	    die "VLAN range must go from lower to higher tag '$vlan'\n";
-	}
+        if ($start >= $end) {
+            return if $noerr;
+            die "VLAN range must go from lower to higher tag '$vlan'\n";
+        }
     }
 
     return $vlan;
@@ -636,46 +719,56 @@ sub pve_verify_vlan_id_or_range {
 
 # general addresses by name or IP
 register_format('address', \&pve_verify_address);
+
 sub pve_verify_address {
     my ($addr, $noerr) = @_;
 
-    if (!(pve_verify_ip($addr, 1) ||
-	  pve_verify_dns_name($addr, 1)))
-    {
-	   return undef if $noerr;
-	   die "value does not look like a valid address: $addr\n";
+    if (!(pve_verify_ip($addr, 1) || pve_verify_dns_name($addr, 1))) {
+        return undef if $noerr;
+        die "value does not look like a valid address: $addr\n";
     }
     return $addr;
 }
 
 register_format('disk-size', \&pve_verify_disk_size);
+
 sub pve_verify_disk_size {
     my ($size, $noerr) = @_;
     if (!defined(parse_size($size))) {
-	return undef if $noerr;
-	die "value does not look like a valid disk size: $size\n";
+        return undef if $noerr;
+        die "value does not look like a valid disk size: $size\n";
     }
     return $size;
 }
 
-register_standard_option('spice-proxy', {
-    description => "SPICE proxy server. This can be used by the client to specify the proxy server. All nodes in a cluster runs 'spiceproxy', so it is up to the client to choose one. By default, we return the node where the VM is currently running. As reasonable setting is to use same node you use to connect to the API (This is window.location.hostname for the JS GUI).",
-    type => 'string', format => 'address',
-});
-
-register_standard_option('remote-viewer-config', {
-    description => "Returned values can be directly passed to the 'remote-viewer' application.",
-    additionalProperties => 1,
-    properties => {
-	type => { type => 'string' },
-	password => { type => 'string' },
-	proxy => { type => 'string' },
-	host => { type => 'string' },
-	'tls-port' => { type => 'integer' },
+register_standard_option(
+    'spice-proxy',
+    {
+        description =>
+            "SPICE proxy server. This can be used by the client to specify the proxy server. All nodes in a cluster runs 'spiceproxy', so it is up to the client to choose one. By default, we return the node where the VM is currently running. As reasonable setting is to use same node you use to connect to the API (This is window.location.hostname for the JS GUI).",
+        type => 'string',
+        format => 'address',
     },
-});
+);
+
+register_standard_option(
+    'remote-viewer-config',
+    {
+        description =>
+            "Returned values can be directly passed to the 'remote-viewer' application.",
+        additionalProperties => 1,
+        properties => {
+            type => { type => 'string' },
+            password => { type => 'string' },
+            proxy => { type => 'string' },
+            host => { type => 'string' },
+            'tls-port' => { type => 'integer' },
+        },
+    },
+);
 
 register_format('pve-startup-order', \&pve_verify_startup_order);
+
 sub pve_verify_startup_order {
     my ($value, $noerr) = @_;
 
@@ -688,76 +781,84 @@ sub pve_verify_startup_order {
 
 my %bwlimit_opt = (
     optional => 1,
-    type => 'number', minimum => '0',
+    type => 'number',
+    minimum => '0',
     format_description => 'LIMIT',
 );
 
 my $bwlimit_format = {
-	default => {
-	    %bwlimit_opt,
-	    description => 'default bandwidth limit in KiB/s',
-	},
-	restore => {
-	    %bwlimit_opt,
-	    description => 'bandwidth limit in KiB/s for restoring guests from backups',
-	},
-	migration => {
-	    %bwlimit_opt,
-	    description => 'bandwidth limit in KiB/s for migrating guests (including moving local disks)',
-	},
-	clone => {
-	    %bwlimit_opt,
-	    description => 'bandwidth limit in KiB/s for cloning disks',
-	},
-	move => {
-	    %bwlimit_opt,
-	    description => 'bandwidth limit in KiB/s for moving disks',
-	},
+    default => {
+        %bwlimit_opt, description => 'default bandwidth limit in KiB/s',
+    },
+    restore => {
+        %bwlimit_opt,
+        description => 'bandwidth limit in KiB/s for restoring guests from backups',
+    },
+    migration => {
+        %bwlimit_opt,
+        description =>
+            'bandwidth limit in KiB/s for migrating guests (including moving local disks)',
+    },
+    clone => {
+        %bwlimit_opt, description => 'bandwidth limit in KiB/s for cloning disks',
+    },
+    move => {
+        %bwlimit_opt, description => 'bandwidth limit in KiB/s for moving disks',
+    },
 };
 register_format('bwlimit', $bwlimit_format);
-register_standard_option('bwlimit', {
-    description => "Set I/O bandwidth limit for various operations (in KiB/s).",
-    optional => 1,
-    type => 'string',
-    format => $bwlimit_format,
-});
+register_standard_option(
+    'bwlimit',
+    {
+        description => "Set I/O bandwidth limit for various operations (in KiB/s).",
+        optional => 1,
+        type => 'string',
+        format => $bwlimit_format,
+    },
+);
 
 my $remote_format = {
     host => {
-	type => 'string',
-	description => 'Remote Proxmox hostname or IP',
-	format_description => 'ADDRESS',
+        type => 'string',
+        description => 'Remote Proxmox hostname or IP',
+        format_description => 'ADDRESS',
     },
     port => {
-	type => 'integer',
-	optional => 1,
-	description => 'Port to connect to',
-	format_description => 'PORT',
+        type => 'integer',
+        optional => 1,
+        description => 'Port to connect to',
+        format_description => 'PORT',
     },
     apitoken => {
-	type => 'string',
-	description => 'A full Proxmox API token including the secret value.',
-	format_description => 'PVEAPIToken=user@realm!token=SECRET',
+        type => 'string',
+        description => 'A full Proxmox API token including the secret value.',
+        format_description => 'PVEAPIToken=user@realm!token=SECRET',
     },
     fingerprint => get_standard_option(
-	'fingerprint-sha256',
-	{
-	    optional => 1,
-	    description => 'Remote host\'s certificate fingerprint, if not trusted by system store.',
-	    format_description => 'FINGERPRINT',
-	}
+        'fingerprint-sha256',
+        {
+            optional => 1,
+            description =>
+                'Remote host\'s certificate fingerprint, if not trusted by system store.',
+            format_description => 'FINGERPRINT',
+        },
     ),
 };
 register_format('proxmox-remote', $remote_format);
-register_standard_option('proxmox-remote', {
-    description => "Specification of a remote endpoint.",
-    type => 'string', format => 'proxmox-remote',
-});
+register_standard_option(
+    'proxmox-remote',
+    {
+        description => "Specification of a remote endpoint.",
+        type => 'string',
+        format => 'proxmox-remote',
+    },
+);
 
 our $PVE_TAG_RE = qr/[a-z0-9_][a-z0-9_\-\+\.]*/i;
 
 # used for pve-tag-list in e.g., guest configs
 register_format('pve-tag', \&pve_verify_tag);
+
 sub pve_verify_tag {
     my ($value, $noerr) = @_;
 
@@ -776,41 +877,49 @@ sub pve_parse_startup_order {
     my $res = {};
 
     foreach my $p (split(/,/, $value)) {
-	next if $p =~ m/^\s*$/;
+        next if $p =~ m/^\s*$/;
 
-	if ($p =~ m/^(order=)?(\d+)$/) {
-	    $res->{order} = $2;
-	} elsif ($p =~ m/^up=(\d+)$/) {
-	    $res->{up} = $1;
-	} elsif ($p =~ m/^down=(\d+)$/) {
-	    $res->{down} = $1;
-	} else {
-	    return undef;
-	}
+        if ($p =~ m/^(order=)?(\d+)$/) {
+            $res->{order} = $2;
+        } elsif ($p =~ m/^up=(\d+)$/) {
+            $res->{up} = $1;
+        } elsif ($p =~ m/^down=(\d+)$/) {
+            $res->{down} = $1;
+        } else {
+            return undef;
+        }
     }
 
     return $res;
 }
 
-PVE::JSONSchema::register_standard_option('pve-startup-order', {
-    description => "Startup and shutdown behavior. Order is a non-negative number defining the general startup order. Shutdown in done with reverse ordering. Additionally you can set the 'up' or 'down' delay in seconds, which specifies a delay to wait before the next VM is started or stopped.",
-    optional => 1,
-    type => 'string', format => 'pve-startup-order',
-    typetext => '[[order=]\d+] [,up=\d+] [,down=\d+] ',
-});
+PVE::JSONSchema::register_standard_option(
+    'pve-startup-order',
+    {
+        description =>
+            "Startup and shutdown behavior. Order is a non-negative number defining the general startup order. Shutdown in done with reverse ordering. Additionally you can set the 'up' or 'down' delay in seconds, which specifies a delay to wait before the next VM is started or stopped.",
+        optional => 1,
+        type => 'string',
+        format => 'pve-startup-order',
+        typetext => '[[order=]\d+] [,up=\d+] [,down=\d+] ',
+    },
+);
 
 register_format('pve-tfa-secret', \&pve_verify_tfa_secret);
+
 sub pve_verify_tfa_secret {
     my ($key, $noerr) = @_;
 
     # The old format used 16 base32 chars or 40 hex digits. Since they have a common subset it's
     # hard to distinguish them without the our previous length constraints, so add a 'v2' of the
     # format to support arbitrary lengths properly:
-    if ($key =~ /^v2-0x[0-9a-fA-F]{16,128}$/ || # hex
-        $key =~ /^v2-[A-Z2-7=]{16,128}$/ ||     # base32
-        $key =~ /^(?:[A-Z2-7=]{16}|[A-Fa-f0-9]{40})$/) # and the old pattern copy&pasted
+    if (
+        $key =~ /^v2-0x[0-9a-fA-F]{16,128}$/ || # hex
+        $key =~ /^v2-[A-Z2-7=]{16,128}$/ || # base32
+        $key =~ /^(?:[A-Z2-7=]{16}|[A-Fa-f0-9]{40})$/
+        ) # and the old pattern copy&pasted
     {
-	return $key;
+        return $key;
     }
 
     return undef if $noerr;
@@ -818,8 +927,8 @@ sub pve_verify_tfa_secret {
     die "unable to decode TFA secret\n";
 }
 
-
 PVE::JSONSchema::register_format('pve-task-status-type', \&verify_task_status_type);
+
 sub verify_task_status_type {
     my ($value, $noerr) = @_;
 
@@ -834,13 +943,13 @@ sub check_format {
     my ($format, $value, $path) = @_;
 
     if (ref($format) eq 'HASH') {
-	# hash ref cannot have validator/list/opt handling attached
-	return parse_property_string($format, $value, $path);
+        # hash ref cannot have validator/list/opt handling attached
+        return parse_property_string($format, $value, $path);
     }
 
     if (ref($format) eq 'CODE') {
-	# we are the (sole, old-style) validator
-	return $format->($value);
+        # we are the (sole, old-style) validator
+        return $format->($value);
     }
 
     return if $format eq 'regex';
@@ -852,26 +961,26 @@ sub check_format {
     die "undefined format '$format'\n" if !$registered;
 
     die "'-$format_type' format must have code ref, not hash\n"
-	if $format_type ne 'none' && ref($registered) ne 'CODE';
+        if $format_type ne 'none' && ref($registered) ne 'CODE';
 
     if ($format_type eq 'list') {
-	$parsed = [];
-	# Note: we allow empty lists
-	foreach my $v (split_list($value)) {
-	    push @{$parsed}, $registered->($v);
-	}
+        $parsed = [];
+        # Note: we allow empty lists
+        foreach my $v (split_list($value)) {
+            push @{$parsed}, $registered->($v);
+        }
     } elsif ($format_type eq 'opt') {
-	$parsed = $registered->($value) if $value;
+        $parsed = $registered->($value) if $value;
     } else {
-	if (ref($registered) eq 'HASH') {
-	    # Note: this is the only case where a validator function could be
-	    # attached, hence it's safe to handle that in parse_property_string.
-	    # We do however have to call it with $format_name instead of
-	    # $registered, so it knows about the name (and thus any validators).
-	    $parsed = parse_property_string($format, $value, $path);
-	} else {
-	    $parsed = $registered->($value);
-	}
+        if (ref($registered) eq 'HASH') {
+            # Note: this is the only case where a validator function could be
+            # attached, hence it's safe to handle that in parse_property_string.
+            # We do however have to call it with $format_name instead of
+            # $registered, so it knows about the name (and thus any validators).
+            $parsed = parse_property_string($format, $value, $path);
+        } else {
+            $parsed = $registered->($value);
+        }
     }
 
     return $parsed;
@@ -883,38 +992,38 @@ sub parse_size {
     return undef if $value !~ m/^(\d+(\.\d+)?)([KMGT])?$/;
     my ($size, $unit) = ($1, $3);
     if ($unit) {
-	if ($unit eq 'K') {
-	    $size = $size * 1024;
-	} elsif ($unit eq 'M') {
-	    $size = $size * 1024 * 1024;
-	} elsif ($unit eq 'G') {
-	    $size = $size * 1024 * 1024 * 1024;
-	} elsif ($unit eq 'T') {
-	    $size = $size * 1024 * 1024 * 1024 * 1024;
-	}
+        if ($unit eq 'K') {
+            $size = $size * 1024;
+        } elsif ($unit eq 'M') {
+            $size = $size * 1024 * 1024;
+        } elsif ($unit eq 'G') {
+            $size = $size * 1024 * 1024 * 1024;
+        } elsif ($unit eq 'T') {
+            $size = $size * 1024 * 1024 * 1024 * 1024;
+        }
     }
     return int($size);
-};
+}
 
 sub format_size {
     my ($size) = @_;
 
     $size = int($size);
 
-    my $kb = int($size/1024);
-    return $size if $kb*1024 != $size;
+    my $kb = int($size / 1024);
+    return $size if $kb * 1024 != $size;
 
-    my $mb = int($kb/1024);
-    return "${kb}K" if $mb*1024 != $kb;
+    my $mb = int($kb / 1024);
+    return "${kb}K" if $mb * 1024 != $kb;
 
-    my $gb = int($mb/1024);
-    return "${mb}M" if $gb*1024 != $mb;
+    my $gb = int($mb / 1024);
+    return "${mb}M" if $gb * 1024 != $mb;
 
-    my $tb = int($gb/1024);
-    return "${gb}G" if $tb*1024 != $gb;
+    my $tb = int($gb / 1024);
+    return "${gb}G" if $tb * 1024 != $gb;
 
     return "${tb}T";
-};
+}
 
 sub parse_boolean {
     my ($bool) = @_;
@@ -932,67 +1041,68 @@ sub parse_property_string {
     # Support named formats here, too:
     my $validator;
     if (!ref($format)) {
-	if (my $reg = get_format($format)) {
-	    die "parse_property_string only accepts hash based named formats\n"
-		if ref($reg) ne 'HASH';
+        if (my $reg = get_format($format)) {
+            die "parse_property_string only accepts hash based named formats\n"
+                if ref($reg) ne 'HASH';
 
-	    # named formats can have validators attached
-	    $validator = $format_validators->{$format};
+            # named formats can have validators attached
+            $validator = $format_validators->{$format};
 
-	    $format = $reg;
-	} else {
-	    die "unknown format: $format\n";
-	}
+            $format = $reg;
+        } else {
+            die "unknown format: $format\n";
+        }
     } elsif (ref($format) ne 'HASH') {
-	die "unexpected format value of type ".ref($format)."\n";
+        die "unexpected format value of type " . ref($format) . "\n";
     }
 
     my $default_key;
 
     my $res = {};
     foreach my $part (split(/,/, $data)) {
-	next if $part =~ /^\s*$/;
+        next if $part =~ /^\s*$/;
 
-	if ($part =~ /^([^=]+)=(.+)$/) {
-	    my ($k, $v) = ($1, $2);
-	    die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
-	    my $schema = $format->{$k};
-	    if (my $alias = $schema->{alias}) {
-		if (my $key_alias = $schema->{keyAlias}) {
-		    die "key alias '$key_alias' is already defined\n" if defined($res->{$key_alias});
-		    $res->{$key_alias} = $k;
-		}
-		$k = $alias;
-		$schema = $format->{$k};
-	    }
+        if ($part =~ /^([^=]+)=(.+)$/) {
+            my ($k, $v) = ($1, $2);
+            die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
+            my $schema = $format->{$k};
+            if (my $alias = $schema->{alias}) {
+                if (my $key_alias = $schema->{keyAlias}) {
+                    die "key alias '$key_alias' is already defined\n"
+                        if defined($res->{$key_alias});
+                    $res->{$key_alias} = $k;
+                }
+                $k = $alias;
+                $schema = $format->{$k};
+            }
 
-	    die "invalid key in comma-separated list property: $k\n" if !$schema;
-	    if ($schema->{type} && $schema->{type} eq 'boolean') {
-		$v = parse_boolean($v) // $v;
-	    }
-	    $res->{$k} = $v;
-	} elsif ($part !~ /=/) {
-	    die "duplicate key in comma-separated list property: $default_key\n" if $default_key;
-	    foreach my $key (keys %$format) {
-		if ($format->{$key}->{default_key}) {
-		    $default_key = $key;
-		    if (!$res->{$default_key}) {
-			$res->{$default_key} = $part;
-			last;
-		    }
-		    die "duplicate key in comma-separated list property: $default_key\n";
-		}
-	    }
-	    die "value without key, but schema does not define a default key\n" if !$default_key;
-	} else {
-	    die "missing key in comma-separated list property\n";
-	}
+            die "invalid key in comma-separated list property: $k\n" if !$schema;
+            if ($schema->{type} && $schema->{type} eq 'boolean') {
+                $v = parse_boolean($v) // $v;
+            }
+            $res->{$k} = $v;
+        } elsif ($part !~ /=/) {
+            die "duplicate key in comma-separated list property: $default_key\n" if $default_key;
+            foreach my $key (keys %$format) {
+                if ($format->{$key}->{default_key}) {
+                    $default_key = $key;
+                    if (!$res->{$default_key}) {
+                        $res->{$default_key} = $part;
+                        last;
+                    }
+                    die "duplicate key in comma-separated list property: $default_key\n";
+                }
+            }
+            die "value without key, but schema does not define a default key\n" if !$default_key;
+        } else {
+            die "missing key in comma-separated list property\n";
+        }
     }
 
     my $errors = {};
     check_object($path, $format, $res, $additional_properties, $errors);
     if (scalar(%$errors)) {
-	raise "format error\n", errors => $errors;
+        raise "format error\n", errors => $errors;
     }
 
     return $validator->($res) if $validator;
@@ -1005,9 +1115,9 @@ sub add_error {
     $path = '_root' if !$path;
 
     if ($errors->{$path}) {
-	$errors->{$path} = join ('\n', $errors->{$path}, $msg);
+        $errors->{$path} = join('\n', $errors->{$path}, $msg);
     } else {
-	$errors->{$path} = $msg;
+        $errors->{$path} = $msg;
     }
 }
 
@@ -1030,103 +1140,103 @@ sub check_type {
     return 1 if !$type;
 
     if (!defined($value)) {
-	return 1 if $type eq 'null';
-	die "internal error"
+        return 1 if $type eq 'null';
+        die "internal error";
     }
 
     if (my $tt = ref($type)) {
-	if ($tt eq 'ARRAY') {
-	    foreach my $t (@$type) {
-		my $tmperr = {};
-		check_type($path, $t, $value, $tmperr);
-		return 1 if !scalar(%$tmperr);
-	    }
-	    my $ttext = join ('|', @$type);
-	    add_error($errors, $path, "type check ('$ttext') failed");
-	    return undef;
-	} elsif ($tt eq 'HASH') {
-	    my $tmperr = {};
-	    check_prop($value, $type, $path, $tmperr);
-	    return 1 if !scalar(%$tmperr);
-	    add_error($errors, $path, "type check failed");
-	    return undef;
-	} else {
-	    die "internal error - got reference type '$tt'";
-	}
+        if ($tt eq 'ARRAY') {
+            foreach my $t (@$type) {
+                my $tmperr = {};
+                check_type($path, $t, $value, $tmperr);
+                return 1 if !scalar(%$tmperr);
+            }
+            my $ttext = join('|', @$type);
+            add_error($errors, $path, "type check ('$ttext') failed");
+            return undef;
+        } elsif ($tt eq 'HASH') {
+            my $tmperr = {};
+            check_prop($value, $type, $path, $tmperr);
+            return 1 if !scalar(%$tmperr);
+            add_error($errors, $path, "type check failed");
+            return undef;
+        } else {
+            die "internal error - got reference type '$tt'";
+        }
 
     } else {
 
-	return 1 if $type eq 'any';
+        return 1 if $type eq 'any';
 
-	if ($type eq 'null') {
-	    if (defined($value)) {
-		add_error($errors, $path, "type check ('$type') failed - value is not null");
-		return undef;
-	    }
-	    return 1;
-	}
+        if ($type eq 'null') {
+            if (defined($value)) {
+                add_error($errors, $path, "type check ('$type') failed - value is not null");
+                return undef;
+            }
+            return 1;
+        }
 
-	my $vt = ref($value);
+        my $vt = ref($value);
 
-	if ($type eq 'array') {
-	    if (!$vt || $vt ne 'ARRAY') {
-		add_error($errors, $path, "type check ('$type') failed");
-		return undef;
-	    }
-	    return 1;
-	} elsif ($type eq 'object') {
-	    if (!$vt || $vt ne 'HASH') {
-		add_error($errors, $path, "type check ('$type') failed");
-		return undef;
-	    }
-	    return 1;
-	} elsif ($type eq 'coderef') {
-	    if (!$vt || $vt ne 'CODE') {
-		add_error($errors, $path, "type check ('$type') failed");
-		return undef;
-	    }
-	    return 1;
-	} elsif ($type eq 'string' && $vt eq 'Regexp') {
-	    # qr// regexes can be used as strings and make sense for format=regex
-	    return 1;
-	} else {
-	    if ($vt) {
-		if ($type eq 'boolean' && JSON::is_bool($value)) {
-		    return 1;
-		}
-		add_error($errors, $path, "type check ('$type') failed - got $vt");
-		return undef;
-	    } else {
-		if ($type eq 'string') {
-		    return 1; # nothing to check ?
-		} elsif ($type eq 'boolean') {
-		    #if ($value =~ m/^(1|true|yes|on)$/i) {
-		    if ($value eq '1') {
-			return 1;
-		    #} elsif ($value =~ m/^(0|false|no|off)$/i) {
-		    } elsif ($value eq '0') {
-			return 1; # return success (not value)
-		    } else {
-			add_error($errors, $path, "type check ('$type') failed - got '$value'");
-			return undef;
-		    }
-		} elsif ($type eq 'integer') {
-		    if (!is_integer($value)) {
-			add_error($errors, $path, "type check ('$type') failed - got '$value'");
-			return undef;
-		    }
-		    return 1;
-		} elsif ($type eq 'number') {
-		    if (!is_number($value)) {
-			add_error($errors, $path, "type check ('$type') failed - got '$value'");
-			return undef;
-		    }
-		    return 1;
-		} else {
-		    return 1; # no need to verify unknown types
-		}
-	    }
-	}
+        if ($type eq 'array') {
+            if (!$vt || $vt ne 'ARRAY') {
+                add_error($errors, $path, "type check ('$type') failed");
+                return undef;
+            }
+            return 1;
+        } elsif ($type eq 'object') {
+            if (!$vt || $vt ne 'HASH') {
+                add_error($errors, $path, "type check ('$type') failed");
+                return undef;
+            }
+            return 1;
+        } elsif ($type eq 'coderef') {
+            if (!$vt || $vt ne 'CODE') {
+                add_error($errors, $path, "type check ('$type') failed");
+                return undef;
+            }
+            return 1;
+        } elsif ($type eq 'string' && $vt eq 'Regexp') {
+            # qr// regexes can be used as strings and make sense for format=regex
+            return 1;
+        } else {
+            if ($vt) {
+                if ($type eq 'boolean' && JSON::is_bool($value)) {
+                    return 1;
+                }
+                add_error($errors, $path, "type check ('$type') failed - got $vt");
+                return undef;
+            } else {
+                if ($type eq 'string') {
+                    return 1; # nothing to check ?
+                } elsif ($type eq 'boolean') {
+                    #if ($value =~ m/^(1|true|yes|on)$/i) {
+                    if ($value eq '1') {
+                        return 1;
+                        #} elsif ($value =~ m/^(0|false|no|off)$/i) {
+                    } elsif ($value eq '0') {
+                        return 1; # return success (not value)
+                    } else {
+                        add_error($errors, $path, "type check ('$type') failed - got '$value'");
+                        return undef;
+                    }
+                } elsif ($type eq 'integer') {
+                    if (!is_integer($value)) {
+                        add_error($errors, $path, "type check ('$type') failed - got '$value'");
+                        return undef;
+                    }
+                    return 1;
+                } elsif ($type eq 'number') {
+                    if (!is_number($value)) {
+                        add_error($errors, $path, "type check ('$type') failed - got '$value'");
+                        return undef;
+                    }
+                    return 1;
+                } else {
+                    return 1; # no need to verify unknown types
+                }
+            }
+        }
     }
 
     return undef;
@@ -1136,7 +1246,7 @@ my sub get_instance_type {
     my ($schema, $key, $value) = @_;
 
     if (my $type_property = $schema->{$key}->{'type-property'}) {
-	return $value->{$type_property};
+        return $value->{$type_property};
     }
 
     return undef;
@@ -1149,62 +1259,69 @@ sub check_object {
 
     my $st = ref($schema);
     if (!$st || $st ne 'HASH') {
-	add_error($errors, $path, "Invalid schema definition.");
-	return;
+        add_error($errors, $path, "Invalid schema definition.");
+        return;
     }
 
     my $vt = ref($value);
     if (!$vt || $vt ne 'HASH') {
-	add_error($errors, $path, "an object is required");
-	return;
+        add_error($errors, $path, "an object is required");
+        return;
     }
 
     foreach my $k (keys %$schema) {
-	my $instance_type = get_instance_type($schema, $k, $value);
-	check_prop($value->{$k}, $schema->{$k}, $path ? "$path.$k" : $k, $errors, $instance_type);
+        my $instance_type = get_instance_type($schema, $k, $value);
+        check_prop($value->{$k}, $schema->{$k}, $path ? "$path.$k" : $k, $errors, $instance_type);
     }
 
     foreach my $k (keys %$value) {
 
-	my $newpath =  $path ? "$path.$k" : $k;
+        my $newpath = $path ? "$path.$k" : $k;
 
-	if (my $subschema = $schema->{$k}) {
-	    if (my $requires = $subschema->{requires}) {
-		if (ref($requires)) {
-		    #print "TEST: " . Dumper($value) . "\n", Dumper($requires) ;
-		    check_prop($value, $requires, $path, $errors);
-		} elsif (!defined($value->{$requires})) {
-		    add_error($errors, $path ? "$path.$requires" : $requires,
-			      "missing property - '$newpath' requires this property");
-		}
-	    }
+        if (my $subschema = $schema->{$k}) {
+            if (my $requires = $subschema->{requires}) {
+                if (ref($requires)) {
+                    #print "TEST: " . Dumper($value) . "\n", Dumper($requires) ;
+                    check_prop($value, $requires, $path, $errors);
+                } elsif (!defined($value->{$requires})) {
+                    add_error(
+                        $errors,
+                        $path ? "$path.$requires" : $requires,
+                        "missing property - '$newpath' requires this property",
+                    );
+                }
+            }
 
-	    # if it's a oneOf, check if there is a matching type
-	    my $matched_type = 1;
-	    if ($subschema->{oneOf}) {
-		my $instance_type = get_instance_type($schema, $k, $value);
-		$matched_type = 0;
-		for my $alternative ($subschema->{oneOf}->@*) {
-		    if (my $instance_types = $alternative->{'instance-types'}) {
-			if (!grep { $instance_type eq $_ } $instance_types->@*) {
-			    next;
-			}
-		    }
-		    $matched_type = 1;
-		    last;
-		}
-	    }
+            # if it's a oneOf, check if there is a matching type
+            my $matched_type = 1;
+            if ($subschema->{oneOf}) {
+                my $instance_type = get_instance_type($schema, $k, $value);
+                $matched_type = 0;
+                for my $alternative ($subschema->{oneOf}->@*) {
+                    if (my $instance_types = $alternative->{'instance-types'}) {
+                        if (!grep { $instance_type eq $_ } $instance_types->@*) {
+                            next;
+                        }
+                    }
+                    $matched_type = 1;
+                    last;
+                }
+            }
 
-	    next if $matched_type; # value is already checked above
-	}
+            next if $matched_type; # value is already checked above
+        }
 
-	if (defined ($additional_properties) && !$additional_properties) {
-	    add_error($errors, $newpath, "property is not defined in schema " .
-		      "and the schema does not allow additional properties");
-	    next;
-	}
-	check_prop($value->{$k}, $additional_properties, $newpath, $errors)
-	    if ref($additional_properties);
+        if (defined($additional_properties) && !$additional_properties) {
+            add_error(
+                $errors,
+                $newpath,
+                "property is not defined in schema "
+                    . "and the schema does not allow additional properties",
+            );
+            next;
+        }
+        check_prop($value->{$k}, $additional_properties, $newpath, $errors)
+            if ref($additional_properties);
     }
 }
 
@@ -1213,10 +1330,10 @@ sub check_object_warn {
     my $errors = {};
     check_object($path, $schema, $value, $additional_properties, $errors);
     if (scalar(%$errors)) {
-	foreach my $k (keys %$errors) {
-	    warn "parse error: $k: $errors->{$k}\n";
-	}
-	return 0;
+        foreach my $k (keys %$errors) {
+            warn "parse error: $k: $errors->{$k}\n";
+        }
+        return 0;
     }
     return 1;
 }
@@ -1231,169 +1348,178 @@ sub check_prop {
 
     my $st = ref($schema);
     if (!$st || $st ne 'HASH') {
-	add_error($errors, $path, "Invalid schema definition.");
-	return;
+        add_error($errors, $path, "Invalid schema definition.");
+        return;
     }
 
     # must pass any of the given schemas
     my $optional_for_type = 0;
     if ($schema->{oneOf}) {
-	# in case we have an instance_type given, just check for that variant
-	if ($schema->{'type-property'}) {
-	    $optional_for_type = 1;
-	    for (my $i = 0; $i < scalar($schema->{oneOf}->@*); $i++) {
-		last if !$instance_type; # treat as optional if we don't have a type
-		my $inner_schema = $schema->{oneOf}->[$i];
+        # in case we have an instance_type given, just check for that variant
+        if ($schema->{'type-property'}) {
+            $optional_for_type = 1;
+            for (my $i = 0; $i < scalar($schema->{oneOf}->@*); $i++) {
+                last if !$instance_type; # treat as optional if we don't have a type
+                my $inner_schema = $schema->{oneOf}->[$i];
 
-		if (!defined($inner_schema->{'instance-types'})) {
-		    add_error($errors, $path, "missing 'instance-types' in oneOf alternative");
-		    return;
-		}
+                if (!defined($inner_schema->{'instance-types'})) {
+                    add_error($errors, $path, "missing 'instance-types' in oneOf alternative");
+                    return;
+                }
 
-		next if !grep { $_ eq $instance_type } $inner_schema->{'instance-types'}->@*;
-		$optional_for_type = $inner_schema->{optional} // 0;
-		check_prop($value, $inner_schema, $path, $errors);
-	    }
-	} else {
-	    my $is_valid = 0;
-	    my $collected_errors = {};
-	    for (my $i = 0; $i < scalar($schema->{oneOf}->@*); $i++) {
-		my $inner_schema = $schema->{oneOf}->[$i];
-		my $inner_errors = {};
-		check_prop($value, $inner_schema, "$path.oneOf[$i]", $inner_errors);
-		if (!$inner_errors->%*) {
-		    $is_valid = 1;
-		    last;
-		}
+                next if !grep { $_ eq $instance_type } $inner_schema->{'instance-types'}->@*;
+                $optional_for_type = $inner_schema->{optional} // 0;
+                check_prop($value, $inner_schema, $path, $errors);
+            }
+        } else {
+            my $is_valid = 0;
+            my $collected_errors = {};
+            for (my $i = 0; $i < scalar($schema->{oneOf}->@*); $i++) {
+                my $inner_schema = $schema->{oneOf}->[$i];
+                my $inner_errors = {};
+                check_prop($value, $inner_schema, "$path.oneOf[$i]", $inner_errors);
+                if (!$inner_errors->%*) {
+                    $is_valid = 1;
+                    last;
+                }
 
-		for my $inner_path (keys $inner_errors->%*) {
-		    add_error($collected_errors, $inner_path, $inner_errors->{$path});
-		}
-	    }
+                for my $inner_path (keys $inner_errors->%*) {
+                    add_error($collected_errors, $inner_path, $inner_errors->{$path});
+                }
+            }
 
-	    if (!$is_valid) {
-		for my $inner_path (keys $collected_errors->%*) {
-		    add_error($errors, $inner_path, $collected_errors->{$path});
-		}
-	    }
-	}
+            if (!$is_valid) {
+                for my $inner_path (keys $collected_errors->%*) {
+                    add_error($errors, $inner_path, $collected_errors->{$path});
+                }
+            }
+        }
     } elsif ($instance_type) {
-	if (!defined($schema->{'instance-types'})) {
-	    add_error($errors, $path, "missing 'instance-types'");
-	    return;
-	}
-	if (grep { $_ eq $instance_type} $schema->{'instance_types'}->@*) {
-	    $optional_for_type = 1;
-	}
+        if (!defined($schema->{'instance-types'})) {
+            add_error($errors, $path, "missing 'instance-types'");
+            return;
+        }
+        if (grep { $_ eq $instance_type } $schema->{'instance_types'}->@*) {
+            $optional_for_type = 1;
+        }
     }
 
     # if it extends another schema, it must pass that schema as well
-    if($schema->{extends}) {
-	check_prop($value, $schema->{extends}, $path, $errors);
+    if ($schema->{extends}) {
+        check_prop($value, $schema->{extends}, $path, $errors);
     }
 
-    if (!defined ($value)) {
-	return if $schema->{type} && $schema->{type} eq 'null';
-	if (!$schema->{optional} && !$schema->{alias} && !$schema->{group} && !$optional_for_type) {
-	    add_error($errors, $path, "property is missing and it is not optional");
-	}
-	return;
+    if (!defined($value)) {
+        return if $schema->{type} && $schema->{type} eq 'null';
+        if (!$schema->{optional} && !$schema->{alias} && !$schema->{group} && !$optional_for_type) {
+            add_error($errors, $path, "property is missing and it is not optional");
+        }
+        return;
     }
 
     return if !check_type($path, $schema->{type}, $value, $errors);
 
     if ($schema->{disallow}) {
-	my $tmperr = {};
-	if (check_type($path, $schema->{disallow}, $value, $tmperr)) {
-	    add_error($errors, $path, "disallowed value was matched");
-	    return;
-	}
+        my $tmperr = {};
+        if (check_type($path, $schema->{disallow}, $value, $tmperr)) {
+            add_error($errors, $path, "disallowed value was matched");
+            return;
+        }
     }
 
     if (my $vt = ref($value)) {
 
-	if ($vt eq 'ARRAY') {
-	    if ($schema->{items}) {
-		my $it = ref($schema->{items});
-		if ($it && $it eq 'ARRAY') {
-		    #die "implement me $path: $vt " . Dumper($schema) ."\n".  Dumper($value);
-		    die "not implemented";
-		} else {
-		    my $ind = 0;
-		    foreach my $el (@$value) {
-			check_prop($el, $schema->{items}, "${path}[$ind]", $errors);
-			$ind++;
-		    }
-		}
-	    }
-	    return;
-	} elsif ($schema->{properties} || $schema->{additionalProperties}) {
-	    check_object($path, defined($schema->{properties}) ? $schema->{properties} : {},
-			 $value, $schema->{additionalProperties}, $errors);
-	    return;
-	}
+        if ($vt eq 'ARRAY') {
+            if ($schema->{items}) {
+                my $it = ref($schema->{items});
+                if ($it && $it eq 'ARRAY') {
+                    #die "implement me $path: $vt " . Dumper($schema) ."\n".  Dumper($value);
+                    die "not implemented";
+                } else {
+                    my $ind = 0;
+                    foreach my $el (@$value) {
+                        check_prop($el, $schema->{items}, "${path}[$ind]", $errors);
+                        $ind++;
+                    }
+                }
+            }
+            return;
+        } elsif ($schema->{properties} || $schema->{additionalProperties}) {
+            check_object(
+                $path,
+                defined($schema->{properties}) ? $schema->{properties} : {},
+                $value,
+                $schema->{additionalProperties},
+                $errors,
+            );
+            return;
+        }
 
     } else {
 
-	if (my $format = $schema->{format}) {
-	    eval { check_format($format, $value, $path); };
-	    if ($@) {
-		add_error($errors, $path, "invalid format - $@");
-		return;
-	    }
-	}
+        if (my $format = $schema->{format}) {
+            eval { check_format($format, $value, $path); };
+            if ($@) {
+                add_error($errors, $path, "invalid format - $@");
+                return;
+            }
+        }
 
-	if (my $pattern = $schema->{pattern}) {
-	    if ($value !~ m/^$pattern$/) {
-		add_error($errors, $path, "value does not match the regex pattern");
-		return;
-	    }
-	}
+        if (my $pattern = $schema->{pattern}) {
+            if ($value !~ m/^$pattern$/) {
+                add_error($errors, $path, "value does not match the regex pattern");
+                return;
+            }
+        }
 
-	if (defined (my $max = $schema->{maxLength})) {
-	    if (length($value) > $max) {
-		add_error($errors, $path, "value may only be $max characters long");
-		return;
-	    }
-	}
+        if (defined(my $max = $schema->{maxLength})) {
+            if (length($value) > $max) {
+                add_error($errors, $path, "value may only be $max characters long");
+                return;
+            }
+        }
 
-	if (defined (my $min = $schema->{minLength})) {
-	    if (length($value) < $min) {
-		add_error($errors, $path, "value must be at least $min characters long");
-		return;
-	    }
-	}
+        if (defined(my $min = $schema->{minLength})) {
+            if (length($value) < $min) {
+                add_error($errors, $path, "value must be at least $min characters long");
+                return;
+            }
+        }
 
-	if (is_number($value)) {
-	    if (defined (my $max = $schema->{maximum})) {
-		if ($value > $max) {
-		    add_error($errors, $path, "value must have a maximum value of $max");
-		    return;
-		}
-	    }
+        if (is_number($value)) {
+            if (defined(my $max = $schema->{maximum})) {
+                if ($value > $max) {
+                    add_error($errors, $path, "value must have a maximum value of $max");
+                    return;
+                }
+            }
 
-	    if (defined (my $min = $schema->{minimum})) {
-		if ($value < $min) {
-		    add_error($errors, $path, "value must have a minimum value of $min");
-		    return;
-		}
-	    }
-	}
+            if (defined(my $min = $schema->{minimum})) {
+                if ($value < $min) {
+                    add_error($errors, $path, "value must have a minimum value of $min");
+                    return;
+                }
+            }
+        }
 
-	if (my $ea = $schema->{enum}) {
+        if (my $ea = $schema->{enum}) {
 
-	    my $found;
-	    foreach my $ev (@$ea) {
-		if ($ev eq $value) {
-		    $found = 1;
-		    last;
-		}
-	    }
-	    if (!$found) {
-		add_error($errors, $path, "value '$value' does not have a value in the enumeration '" .
-			  join(", ", @$ea) . "'");
-	    }
-	}
+            my $found;
+            foreach my $ev (@$ea) {
+                if ($ev eq $value) {
+                    $found = 1;
+                    last;
+                }
+            }
+            if (!$found) {
+                add_error(
+                    $errors,
+                    $path,
+                    "value '$value' does not have a value in the enumeration '"
+                        . join(", ", @$ea) . "'",
+                );
+            }
+        }
     }
 }
 
@@ -1412,228 +1538,255 @@ sub validate {
     # it produces a warning
     # TODO: remove 'download' variant in 9.0 - also see pve-http-server
     my $is_download = ref($instance) eq 'HASH'
-                      && ($instance->{download_allowed} || $instance->{download});
+        && ($instance->{download_allowed} || $instance->{download});
     find_cycle($instance, sub { $cycles = 1 }) if !$is_download;
     if ($cycles) {
-	add_error($errors, undef, "data structure contains recursive cycles");
+        add_error($errors, undef, "data structure contains recursive cycles");
     } elsif ($schema) {
-	check_prop($instance, $schema, '', $errors);
+        check_prop($instance, $schema, '', $errors);
     }
 
     if (scalar(%$errors)) {
-	raise $errmsg, code => HTTP_BAD_REQUEST, errors => $errors;
+        raise $errmsg, code => HTTP_BAD_REQUEST, errors => $errors;
     }
 
     return 1;
 }
 
-my $schema_valid_types = ["string", "object", "coderef", "array", "boolean", "number", "integer", "null", "any"];
+my $schema_valid_types =
+    ["string", "object", "coderef", "array", "boolean", "number", "integer", "null", "any"];
 my $default_schema_noref = {
     description => "This is the JSON Schema for JSON Schemas.",
-    type => [ "object" ],
+    type => ["object"],
     additionalProperties => 0,
     properties => {
-	type => {
-	    type => ["string", "array"],
-	    description => "This is a type definition value. This can be a simple type, or a union type",
-	    optional => 1,
-	    default => "any",
-	    items => {
-		type => "string",
-		enum => $schema_valid_types,
-	    },
-	    enum => $schema_valid_types,
-	},
-	oneOf => {
-	    type => 'array',
-	    description => "This represents the alternative options for this Schema instance.",
-	    optional => 1,
-	    items => {
-		type => 'object',
-		description => "A valid option of the properties",
-	    },
-	},
-	'instance-types' => {
-	    type => 'array',
-	    description => "Indicate to which type the parameter (or variant if inside a oneOf) belongs.",
-	    optional => 1,
-	    items => {
-		type => 'string',
-	    },
-	},
-	'type-property' => {
-	    type => 'string',
-	    description => "The property to check for instance types.",
-	    optional => 1,
-	},
-	optional => {
-	    type => "boolean",
-	    description => "This indicates that the instance property in the instance object is not required.",
-	    optional => 1,
-	    default => 0
-	},
-	properties => {
-	    type => "object",
-	    description => "This is a definition for the properties of an object value",
-	    optional => 1,
-	    default => {},
-	},
-	items => {
-	    type => "object",
-	    description => "When the value is an array, this indicates the schema to use to validate each item in an array",
-	    optional => 1,
-	    default => {},
-	},
-	additionalProperties => {
-	    type => [ "boolean", "object"],
-	    description => "This provides a default property definition for all properties that are not explicitly defined in an object type definition.",
-	    optional => 1,
-	    default => {},
-	},
-	minimum => {
-	    type => "number",
-	    optional => 1,
-	    description => "This indicates the minimum value for the instance property when the type of the instance value is a number.",
-	},
-	maximum => {
-	    type => "number",
-	    optional => 1,
-	    description => "This indicates the maximum value for the instance property when the type of the instance value is a number.",
-	},
-	minLength => {
-	    type => "integer",
-	    description => "When the instance value is a string, this indicates minimum length of the string",
-	    optional => 1,
-	    minimum => 0,
-	    default => 0,
-	},
-	maxLength => {
-	    type => "integer",
-	    description => "When the instance value is a string, this indicates maximum length of the string.",
-	    optional => 1,
-	},
-	typetext => {
-	    type => "string",
-	    optional => 1,
-	    description => "A text representation of the type (used to generate documentation).",
-	},
-	pattern => {
-	    type => "string",
-	    format => "regex",
-	    description => "When the instance value is a string, this provides a regular expression that a instance string value should match in order to be valid.",
-	    optional => 1,
-	    default => ".*",
-	},
-	enum => {
-	    type => "array",
-	    optional => 1,
-	    description => "This provides an enumeration of possible values that are valid for the instance property.",
-	},
-	description => {
-	    type => "string",
-	    optional => 1,
-	    description => "This provides a description of the purpose the instance property. The value can be a string or it can be an object with properties corresponding to various different instance languages (with an optional default property indicating the default description).",
-	},
-	verbose_description => {
-	    type => "string",
-	    optional => 1,
-	    description => "This provides a more verbose description.",
-	},
-	format_description => {
-	    type => "string",
-	    optional => 1,
-	    description => "This provides a shorter (usually just one word) description for a property used to generate descriptions for comma separated list property strings.",
-	},
-	title => {
-	    type => "string",
-	    optional => 1,
-	    description => "This provides the title of the property",
-	},
-	renderer => {
-	    type => "string",
-	    optional => 1,
-	    description => "This is used to provide rendering hints to format cli command output.",
-	},
-	requires => {
-	    type => [ "string", "object" ],
-	    optional => 1,
-	    description => "indicates a required property or a schema that must be validated if this property is present",
-	},
-	format => {
-	    type => [ "string", "object" ],
-	    optional => 1,
-	    description => "This indicates what format the data is among some predefined formats which may include:\n\ndate - a string following the ISO format \naddress \nschema - a schema definition object \nperson \npage \nhtml - a string representing HTML",
-	},
-	default_key => {
-	    type => "boolean",
-	    optional => 1,
-	    description => "Whether this is the default key in a comma separated list property string.",
-	},
-	alias => {
-	    type => 'string',
-	    optional => 1,
-	    description => "When a key represents the same property as another it can be an alias to it, causing the parsed datastructure to use the other key to store the current value under.",
-	},
-	keyAlias => {
-	    type => 'string',
-	    optional => 1,
-	    description => "Allows to store the current 'key' as value of another property. Only valid if used together with 'alias'.",
-	    requires => 'alias',
-	},
-	default => {
-	    type => "any",
-	    optional => 1,
-	    description => "This indicates the default for the instance property."
-	},
-	completion => {
-	    type => 'coderef',
-	    description => "Bash completion function. This function should return a list of possible values.",
-	    optional => 1,
-	},
-	disallow => {
-	    type => "object",
-	    optional => 1,
-	    description => "This attribute may take the same values as the \"type\" attribute, however if the instance matches the type or if this value is an array and the instance matches any type or schema in the array, then this instance is not valid.",
-	},
-	extends => {
-	    type => "object",
-	    optional => 1,
-	    description => "This indicates the schema extends the given schema. All instances of this schema must be valid to by the extended schema also.",
-	    default => {},
-	},
-	# this is from hyper schema
-	links => {
-	    type => "array",
-	    description => "This defines the link relations of the instance objects",
-	    optional => 1,
-	    items => {
-		type => "object",
-		properties => {
-		    href => {
-			type => "string",
-			description => "This defines the target URL for the relation and can be parameterized using {propertyName} notation. It should be resolved as a URI-reference relative to the URI that was used to retrieve the instance document",
-		    },
-		    rel => {
-			type => "string",
-			description => "This is the name of the link relation",
-			optional => 1,
-			default => "full",
-		    },
-		    method => {
-			type => "string",
-			description => "For submission links, this defines the method that should be used to access the target resource",
-			optional => 1,
-			default => "GET",
-		    },
-		},
-	    },
-	},
-	print_width => {
-	    type => "integer",
-	    description => "For CLI context, this defines the maximal width to print before truncating",
-	    optional => 1,
-	},
-    }
+        type => {
+            type => ["string", "array"],
+            description =>
+                "This is a type definition value. This can be a simple type, or a union type",
+            optional => 1,
+            default => "any",
+            items => {
+                type => "string",
+                enum => $schema_valid_types,
+            },
+            enum => $schema_valid_types,
+        },
+        oneOf => {
+            type => 'array',
+            description => "This represents the alternative options for this Schema instance.",
+            optional => 1,
+            items => {
+                type => 'object',
+                description => "A valid option of the properties",
+            },
+        },
+        'instance-types' => {
+            type => 'array',
+            description =>
+                "Indicate to which type the parameter (or variant if inside a oneOf) belongs.",
+            optional => 1,
+            items => {
+                type => 'string',
+            },
+        },
+        'type-property' => {
+            type => 'string',
+            description => "The property to check for instance types.",
+            optional => 1,
+        },
+        optional => {
+            type => "boolean",
+            description =>
+                "This indicates that the instance property in the instance object is not required.",
+            optional => 1,
+            default => 0,
+        },
+        properties => {
+            type => "object",
+            description => "This is a definition for the properties of an object value",
+            optional => 1,
+            default => {},
+        },
+        items => {
+            type => "object",
+            description =>
+                "When the value is an array, this indicates the schema to use to validate each item in an array",
+            optional => 1,
+            default => {},
+        },
+        additionalProperties => {
+            type => ["boolean", "object"],
+            description =>
+                "This provides a default property definition for all properties that are not explicitly defined in an object type definition.",
+            optional => 1,
+            default => {},
+        },
+        minimum => {
+            type => "number",
+            optional => 1,
+            description =>
+                "This indicates the minimum value for the instance property when the type of the instance value is a number.",
+        },
+        maximum => {
+            type => "number",
+            optional => 1,
+            description =>
+                "This indicates the maximum value for the instance property when the type of the instance value is a number.",
+        },
+        minLength => {
+            type => "integer",
+            description =>
+                "When the instance value is a string, this indicates minimum length of the string",
+            optional => 1,
+            minimum => 0,
+            default => 0,
+        },
+        maxLength => {
+            type => "integer",
+            description =>
+                "When the instance value is a string, this indicates maximum length of the string.",
+            optional => 1,
+        },
+        typetext => {
+            type => "string",
+            optional => 1,
+            description =>
+                "A text representation of the type (used to generate documentation).",
+        },
+        pattern => {
+            type => "string",
+            format => "regex",
+            description =>
+                "When the instance value is a string, this provides a regular expression that a instance string value should match in order to be valid.",
+            optional => 1,
+            default => ".*",
+        },
+        enum => {
+            type => "array",
+            optional => 1,
+            description =>
+                "This provides an enumeration of possible values that are valid for the instance property.",
+        },
+        description => {
+            type => "string",
+            optional => 1,
+            description =>
+                "This provides a description of the purpose the instance property. The value can be a string or it can be an object with properties corresponding to various different instance languages (with an optional default property indicating the default description).",
+        },
+        verbose_description => {
+            type => "string",
+            optional => 1,
+            description => "This provides a more verbose description.",
+        },
+        format_description => {
+            type => "string",
+            optional => 1,
+            description =>
+                "This provides a shorter (usually just one word) description for a property used to generate descriptions for comma separated list property strings.",
+        },
+        title => {
+            type => "string",
+            optional => 1,
+            description => "This provides the title of the property",
+        },
+        renderer => {
+            type => "string",
+            optional => 1,
+            description =>
+                "This is used to provide rendering hints to format cli command output.",
+        },
+        requires => {
+            type => ["string", "object"],
+            optional => 1,
+            description =>
+                "indicates a required property or a schema that must be validated if this property is present",
+        },
+        format => {
+            type => ["string", "object"],
+            optional => 1,
+            description =>
+                "This indicates what format the data is among some predefined formats which may include:\n\ndate - a string following the ISO format \naddress \nschema - a schema definition object \nperson \npage \nhtml - a string representing HTML",
+        },
+        default_key => {
+            type => "boolean",
+            optional => 1,
+            description =>
+                "Whether this is the default key in a comma separated list property string.",
+        },
+        alias => {
+            type => 'string',
+            optional => 1,
+            description =>
+                "When a key represents the same property as another it can be an alias to it, causing the parsed datastructure to use the other key to store the current value under.",
+        },
+        keyAlias => {
+            type => 'string',
+            optional => 1,
+            description =>
+                "Allows to store the current 'key' as value of another property. Only valid if used together with 'alias'.",
+            requires => 'alias',
+        },
+        default => {
+            type => "any",
+            optional => 1,
+            description => "This indicates the default for the instance property.",
+        },
+        completion => {
+            type => 'coderef',
+            description =>
+                "Bash completion function. This function should return a list of possible values.",
+            optional => 1,
+        },
+        disallow => {
+            type => "object",
+            optional => 1,
+            description =>
+                "This attribute may take the same values as the \"type\" attribute, however if the instance matches the type or if this value is an array and the instance matches any type or schema in the array, then this instance is not valid.",
+        },
+        extends => {
+            type => "object",
+            optional => 1,
+            description =>
+                "This indicates the schema extends the given schema. All instances of this schema must be valid to by the extended schema also.",
+            default => {},
+        },
+        # this is from hyper schema
+        links => {
+            type => "array",
+            description => "This defines the link relations of the instance objects",
+            optional => 1,
+            items => {
+                type => "object",
+                properties => {
+                    href => {
+                        type => "string",
+                        description =>
+                            "This defines the target URL for the relation and can be parameterized using {propertyName} notation. It should be resolved as a URI-reference relative to the URI that was used to retrieve the instance document",
+                    },
+                    rel => {
+                        type => "string",
+                        description => "This is the name of the link relation",
+                        optional => 1,
+                        default => "full",
+                    },
+                    method => {
+                        type => "string",
+                        description =>
+                            "For submission links, this defines the method that should be used to access the target resource",
+                        optional => 1,
+                        default => "GET",
+                    },
+                },
+            },
+        },
+        print_width => {
+            type => "integer",
+            description =>
+                "For CLI context, this defines the maximal width to print before truncating",
+            optional => 1,
+        },
+    },
 };
 
 my $default_schema = Storable::dclone($default_schema_noref);
@@ -1658,77 +1811,82 @@ my $method_schema = {
     type => "object",
     additionalProperties => 0,
     properties => {
-	description => {
-	    description => "This a description of the method",
-	    optional => 1,
-	},
-	name => {
-	    type =>  'string',
-	    description => "This indicates the name of the function to call.",
-	    optional => 1,
+        description => {
+            description => "This a description of the method",
+            optional => 1,
+        },
+        name => {
+            type => 'string',
+            description => "This indicates the name of the function to call.",
+            optional => 1,
             requires => {
- 		additionalProperties => 1,
-		properties => {
+                additionalProperties => 1,
+                properties => {
                     name => {},
                     description => {},
                     code => {},
- 	            method => {},
+                    method => {},
                     parameters => {},
                     path => {},
                     parameters => {},
                     returns => {},
-                }
+                },
             },
-	},
-	method => {
-	    type =>  'string',
-	    description => "The HTTP method name.",
-	    enum => [ 'GET', 'POST', 'PUT', 'DELETE' ],
-	    optional => 1,
-	},
+        },
+        method => {
+            type => 'string',
+            description => "The HTTP method name.",
+            enum => ['GET', 'POST', 'PUT', 'DELETE'],
+            optional => 1,
+        },
         protected => {
             type => 'boolean',
-	    description => "Method needs special privileges - only pvedaemon can execute it",
-	    optional => 1,
+            description => "Method needs special privileges - only pvedaemon can execute it",
+            optional => 1,
         },
-	allowtoken => {
-	    type => 'boolean',
-	    description => "Method is available for clients authenticated using an API token.",
-	    optional => 1,
-	    default => 1,
-	},
-	download => {
-	    type => 'boolean',
-	    description => "Deprecated, use 'download_allowed' instead.",
-	    optional => 1,
-	},
-	download_allowed => {
-	    type => 'boolean',
-	    description => "Method is allowed to download file contents (download information is the return value of the method).",
-	    optional => 1,
-	},
-	proxyto => {
-	    type =>  'string',
-	    description => "A parameter name. If specified, all calls to this method are proxied to the host contained in that parameter.",
-	    optional => 1,
-	},
-	proxyto_callback => {
-	    type =>  'coderef',
-	    description => "A function which is called to resolve the proxyto attribute. The default implementation returns the value of the 'proxyto' parameter.",
-	    optional => 1,
-	},
+        allowtoken => {
+            type => 'boolean',
+            description => "Method is available for clients authenticated using an API token.",
+            optional => 1,
+            default => 1,
+        },
+        download => {
+            type => 'boolean',
+            description => "Deprecated, use 'download_allowed' instead.",
+            optional => 1,
+        },
+        download_allowed => {
+            type => 'boolean',
+            description =>
+                "Method is allowed to download file contents (download information is the return value of the method).",
+            optional => 1,
+        },
+        proxyto => {
+            type => 'string',
+            description =>
+                "A parameter name. If specified, all calls to this method are proxied to the host contained in that parameter.",
+            optional => 1,
+        },
+        proxyto_callback => {
+            type => 'coderef',
+            description =>
+                "A function which is called to resolve the proxyto attribute. The default implementation returns the value of the 'proxyto' parameter.",
+            optional => 1,
+        },
         permissions => {
-	    type => 'object',
-	    description => "Required access permissions. By default only 'root' is allowed to access this method.",
-	    optional => 1,
-	    additionalProperties => 0,
-	    properties => {
-	        description => {
-	             description => "Describe access permissions.",
-	             optional => 1,
-	        },
+            type => 'object',
+            description =>
+                "Required access permissions. By default only 'root' is allowed to access this method.",
+            optional => 1,
+            additionalProperties => 0,
+            properties => {
+                description => {
+                    description => "Describe access permissions.",
+                    optional => 1,
+                },
                 user => {
-                    description => "A simply way to allow access for 'all' authenticated users. Value 'world' is used to allow access without credentials.",
+                    description =>
+                        "A simply way to allow access for 'all' authenticated users. Value 'world' is used to allow access without credentials.",
                     type => 'string',
                     enum => ['all', 'world'],
                     optional => 1,
@@ -1736,57 +1894,58 @@ my $method_schema = {
                 check => {
                     description => "Array of permission checks (prefix notation).",
                     type => 'array',
-                    optional => 1
+                    optional => 1,
                 },
             },
         },
         match_name => {
-	    description => "Used internally",
-	    optional => 1,
+            description => "Used internally",
+            optional => 1,
         },
         match_re => {
-	    description => "Used internally",
-	    optional => 1,
+            description => "Used internally",
+            optional => 1,
         },
-	path => {
-	    type =>  'string',
-	    description => "path for URL matching (uri template)",
-	},
+        path => {
+            type => 'string',
+            description => "path for URL matching (uri template)",
+        },
         fragmentDelimiter => {
             type => 'string',
-	    description => "A way to override the default fragment delimiter '/'. This only works on a whole sub-class. You can set this to the empty string to match the whole rest of the URI.",
-	    optional => 1,
+            description =>
+                "A way to override the default fragment delimiter '/'. This only works on a whole sub-class. You can set this to the empty string to match the whole rest of the URI.",
+            optional => 1,
         },
-	parameters => {
-	    type => 'object',
-	    description => "JSON Schema for parameters.",
-	    optional => 1,
-	},
-	returns => {
-	    type => 'object',
-	    description => "JSON Schema for return value.",
-	    optional => 1,
-	},
+        parameters => {
+            type => 'object',
+            description => "JSON Schema for parameters.",
+            optional => 1,
+        },
+        returns => {
+            type => 'object',
+            description => "JSON Schema for return value.",
+            optional => 1,
+        },
         code => {
-	    type => 'coderef',
-	    description => "method implementation (code reference)",
-	    optional => 1,
+            type => 'coderef',
+            description => "method implementation (code reference)",
+            optional => 1,
         },
-	subclass => {
-	    type => 'string',
-	    description => "Delegate call to this class (perl class string).",
-	    optional => 1,
+        subclass => {
+            type => 'string',
+            description => "Delegate call to this class (perl class string).",
+            optional => 1,
             requires => {
- 		additionalProperties => 0,
-		properties => {
+                additionalProperties => 0,
+                properties => {
                     subclass => {},
                     path => {},
                     match_name => {},
                     match_re => {},
-                    fragmentDelimiter => { optional => 1 }
-                }
+                    fragmentDelimiter => { optional => 1 },
+                },
             },
-	},
+        },
     },
 
 };
@@ -1827,10 +1986,10 @@ sub method_get_child_link {
 
     my $found;
     foreach my $lnk (@$links) {
-	if ($lnk->{href} && $lnk->{rel} && ($lnk->{rel} eq 'child')) {
-	    $found = $lnk;
-	    last;
-	}
+        if ($lnk->{href} && $lnk->{rel} && ($lnk->{rel} eq 'child')) {
+            $found = $lnk;
+            last;
+        }
     }
 
     return $found;
@@ -1842,147 +2001,150 @@ sub get_options {
     my ($schema, $args, $arg_param, $fixed_param, $param_mapping_hash) = @_;
 
     if (!$schema || !$schema->{properties}) {
-	raise("too many arguments\n", code => HTTP_BAD_REQUEST)
-	    if scalar(@$args) != 0;
-	return {};
+        raise("too many arguments\n", code => HTTP_BAD_REQUEST)
+            if scalar(@$args) != 0;
+        return {};
     }
 
     my $list_param;
     if ($arg_param && !ref($arg_param)) {
-	my $pd = $schema->{properties}->{$arg_param};
-	die "expected list format $pd->{format}"
-	    if !($pd && $pd->{format} && $pd->{format} =~ m/-list/);
-	$list_param = $arg_param;
+        my $pd = $schema->{properties}->{$arg_param};
+        die "expected list format $pd->{format}"
+            if !($pd && $pd->{format} && $pd->{format} =~ m/-list/);
+        $list_param = $arg_param;
     }
 
     my @interactive = ();
     my @getopt = ();
-    foreach my $prop (keys %{$schema->{properties}}) {
-	my $pd = $schema->{properties}->{$prop};
-	next if $list_param && $prop eq $list_param;
-	next if defined($fixed_param->{$prop});
+    foreach my $prop (keys %{ $schema->{properties} }) {
+        my $pd = $schema->{properties}->{$prop};
+        next if $list_param && $prop eq $list_param;
+        next if defined($fixed_param->{$prop});
 
-	my $mapping = $param_mapping_hash->{$prop};
-	if ($mapping && $mapping->{interactive}) {
-	    # interactive parameters such as passwords: make the argument
-	    # optional and call the mapping function afterwards.
-	    push @getopt, "$prop:s";
-	    push @interactive, [$prop, $mapping->{func}];
-	} elsif ($pd->{type} && $pd->{type} eq 'boolean') {
-	    push @getopt, "$prop:s";
-	} else {
-	    if ($pd->{format} && $pd->{format} =~ m/-list/) {
-		push @getopt, "$prop=s@";
-	    } elsif ($pd->{type} && $pd->{type} eq 'array') {
-		push @getopt, "$prop=s@";
-	    } else {
-		push @getopt, "$prop=s";
-	    }
-	}
+        my $mapping = $param_mapping_hash->{$prop};
+        if ($mapping && $mapping->{interactive}) {
+            # interactive parameters such as passwords: make the argument
+            # optional and call the mapping function afterwards.
+            push @getopt, "$prop:s";
+            push @interactive, [$prop, $mapping->{func}];
+        } elsif ($pd->{type} && $pd->{type} eq 'boolean') {
+            push @getopt, "$prop:s";
+        } else {
+            if ($pd->{format} && $pd->{format} =~ m/-list/) {
+                push @getopt, "$prop=s@";
+            } elsif ($pd->{type} && $pd->{type} eq 'array') {
+                push @getopt, "$prop=s@";
+            } else {
+                push @getopt, "$prop=s";
+            }
+        }
     }
 
     Getopt::Long::Configure('prefix_pattern=(--|-)');
 
     my $opts = {};
     raise("unable to parse option\n", code => HTTP_BAD_REQUEST)
-	if !Getopt::Long::GetOptionsFromArray($args, $opts, @getopt);
+        if !Getopt::Long::GetOptionsFromArray($args, $opts, @getopt);
 
     if (@$args) {
-	if ($list_param) {
-	    $opts->{$list_param} = $args;
-	    $args = [];
-	} elsif (ref($arg_param)) {
-	    for (my $i = 0; $i < scalar(@$arg_param); $i++) {
-		my $arg_name = $arg_param->[$i];
-		if ($opts->{'extra-args'}) {
-		    raise("internal error: extra-args must be the last argument\n", code => HTTP_BAD_REQUEST);
-		}
-		if ($arg_name eq 'extra-args') {
-		    $opts->{'extra-args'} = $args;
-		    $args = [];
-		    next;
-		}
-		if (!@$args) {
-		    # check if all left-over arg_param are optional, else we
-		    # must die as the mapping is then ambigious
-		    for (; $i < scalar(@$arg_param); $i++) {
-			my $prop = $arg_param->[$i];
-			raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
-			    if !$schema->{properties}->{$prop}->{optional};
-		    }
-		    if ($arg_param->[-1] eq 'extra-args') {
-			$opts->{'extra-args'} = [];
-		    }
-		    last;
-		}
-		$opts->{$arg_name} = shift @$args;
-	    }
-	    raise("too many arguments\n", code => HTTP_BAD_REQUEST) if @$args;
-	} else {
-	    raise("too many arguments\n", code => HTTP_BAD_REQUEST)
-		if scalar(@$args) != 0;
-	}
+        if ($list_param) {
+            $opts->{$list_param} = $args;
+            $args = [];
+        } elsif (ref($arg_param)) {
+            for (my $i = 0; $i < scalar(@$arg_param); $i++) {
+                my $arg_name = $arg_param->[$i];
+                if ($opts->{'extra-args'}) {
+                    raise(
+                        "internal error: extra-args must be the last argument\n",
+                        code => HTTP_BAD_REQUEST,
+                    );
+                }
+                if ($arg_name eq 'extra-args') {
+                    $opts->{'extra-args'} = $args;
+                    $args = [];
+                    next;
+                }
+                if (!@$args) {
+                    # check if all left-over arg_param are optional, else we
+                    # must die as the mapping is then ambigious
+                    for (; $i < scalar(@$arg_param); $i++) {
+                        my $prop = $arg_param->[$i];
+                        raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
+                            if !$schema->{properties}->{$prop}->{optional};
+                    }
+                    if ($arg_param->[-1] eq 'extra-args') {
+                        $opts->{'extra-args'} = [];
+                    }
+                    last;
+                }
+                $opts->{$arg_name} = shift @$args;
+            }
+            raise("too many arguments\n", code => HTTP_BAD_REQUEST) if @$args;
+        } else {
+            raise("too many arguments\n", code => HTTP_BAD_REQUEST)
+                if scalar(@$args) != 0;
+        }
     } else {
-	if (ref($arg_param)) {
-	    foreach my $arg_name (@$arg_param) {
-		if ($arg_name eq 'extra-args') {
-		    $opts->{'extra-args'} = [];
-		} elsif (!$schema->{properties}->{$arg_name}->{optional}) {
-		    raise("not enough arguments\n", code => HTTP_BAD_REQUEST);
-		}
-	    }
-	}
+        if (ref($arg_param)) {
+            foreach my $arg_name (@$arg_param) {
+                if ($arg_name eq 'extra-args') {
+                    $opts->{'extra-args'} = [];
+                } elsif (!$schema->{properties}->{$arg_name}->{optional}) {
+                    raise("not enough arguments\n", code => HTTP_BAD_REQUEST);
+                }
+            }
+        }
     }
 
     foreach my $entry (@interactive) {
-	my ($opt, $func) = @$entry;
-	my $pd = $schema->{properties}->{$opt};
-	my $value = $opts->{$opt};
-	if (defined($value) || !$pd->{optional}) {
-	    $opts->{$opt} = $func->($value);
-	}
+        my ($opt, $func) = @$entry;
+        my $pd = $schema->{properties}->{$opt};
+        my $value = $opts->{$opt};
+        if (defined($value) || !$pd->{optional}) {
+            $opts->{$opt} = $func->($value);
+        }
     }
 
     # decode after Getopt as we are not sure how well it handles unicode
     foreach my $p (keys %$opts) {
-	if (!ref($opts->{$p})) {
-	    $opts->{$p} = decode('locale', $opts->{$p});
-	} elsif (ref($opts->{$p}) eq 'ARRAY') {
-	    my $tmp = [];
-	    foreach my $v (@{$opts->{$p}}) {
-		push @$tmp, decode('locale', $v);
-	    }
-	    $opts->{$p} = $tmp;
-	} elsif (ref($opts->{$p}) eq 'SCALAR') {
-	    $opts->{$p} = decode('locale', $$opts->{$p});
-	} else {
-	    raise("decoding options failed, unknown reference\n", code => HTTP_BAD_REQUEST);
-	}
+        if (!ref($opts->{$p})) {
+            $opts->{$p} = decode('locale', $opts->{$p});
+        } elsif (ref($opts->{$p}) eq 'ARRAY') {
+            my $tmp = [];
+            foreach my $v (@{ $opts->{$p} }) {
+                push @$tmp, decode('locale', $v);
+            }
+            $opts->{$p} = $tmp;
+        } elsif (ref($opts->{$p}) eq 'SCALAR') {
+            $opts->{$p} = decode('locale', $$opts->{$p});
+        } else {
+            raise("decoding options failed, unknown reference\n", code => HTTP_BAD_REQUEST);
+        }
     }
 
     foreach my $p (keys %$opts) {
-	if (my $pd = $schema->{properties}->{$p}) {
-	    if ($pd->{type} && $pd->{type} eq 'boolean') {
-		if ($opts->{$p} eq '') {
-		    $opts->{$p} = 1;
-		} elsif (defined(my $bool = parse_boolean($opts->{$p}))) {
-		    $opts->{$p} = $bool;
-		} else {
-		    raise("unable to parse boolean option\n", code => HTTP_BAD_REQUEST);
-		}
-	    } elsif ($pd->{format}) {
+        if (my $pd = $schema->{properties}->{$p}) {
+            if ($pd->{type} && $pd->{type} eq 'boolean') {
+                if ($opts->{$p} eq '') {
+                    $opts->{$p} = 1;
+                } elsif (defined(my $bool = parse_boolean($opts->{$p}))) {
+                    $opts->{$p} = $bool;
+                } else {
+                    raise("unable to parse boolean option\n", code => HTTP_BAD_REQUEST);
+                }
+            } elsif ($pd->{format}) {
 
-		if ($pd->{format} =~ m/-list/) {
-		    # allow --vmid 100 --vmid 101 and --vmid 100,101
-		    # allow --dow mon --dow fri and --dow mon,fri
-		    $opts->{$p} = join(",", @{$opts->{$p}}) if ref($opts->{$p}) eq 'ARRAY';
-		}
-	    }
-	}
+                if ($pd->{format} =~ m/-list/) {
+                    # allow --vmid 100 --vmid 101 and --vmid 100,101
+                    # allow --dow mon --dow fri and --dow mon,fri
+                    $opts->{$p} = join(",", @{ $opts->{$p} }) if ref($opts->{$p}) eq 'ARRAY';
+                }
+            }
+        }
     }
 
     foreach my $p (keys %$fixed_param) {
-	$opts->{$p} = $fixed_param->{$p};
+        $opts->{$p} = $fixed_param->{$p};
     }
 
     return $opts;
@@ -1993,63 +2155,67 @@ sub parse_config : prototype($$$;$) {
     my ($schema, $filename, $raw, $comment_key) = @_;
 
     # do fast check (avoid validate_schema($schema))
-    die "got strange schema" if !$schema->{type} ||
-	!$schema->{properties} || $schema->{type} ne 'object';
+    die "got strange schema"
+        if !$schema->{type}
+        || !$schema->{properties}
+        || $schema->{type} ne 'object';
 
     my $cfg = {};
 
     my $comment_data;
     my $handle_comment = sub { $_[0] =~ /^#/ };
     if (defined($comment_key)) {
-	$comment_data = '';
-	my $comment_re = qr/^\Q$comment_key\E:\s*(.*\S)\s*$/;
-	$handle_comment = sub {
-	    if ($_[0] =~ /^\#(.*)\s*$/ || $_[0] =~ $comment_re) {
-		$comment_data .= PVE::Tools::decode_text($1) . "\n";
-		return 1;
-	    }
-	    return undef;
-	};
+        $comment_data = '';
+        my $comment_re = qr/^\Q$comment_key\E:\s*(.*\S)\s*$/;
+        $handle_comment = sub {
+            if ($_[0] =~ /^\#(.*)\s*$/ || $_[0] =~ $comment_re) {
+                $comment_data .= PVE::Tools::decode_text($1) . "\n";
+                return 1;
+            }
+            return undef;
+        };
     }
 
     while ($raw =~ /^\s*(.+?)\s*$/gm) {
-	my $line = $1;
+        my $line = $1;
 
-	next if $handle_comment->($line);
+        next if $handle_comment->($line);
 
-	if ($line =~ m/^(\S+?):\s*(.*)$/) {
-	    my $key = $1;
-	    my $value = $2;
-	    if ($schema->{properties}->{$key} &&
-		$schema->{properties}->{$key}->{type} eq 'boolean') {
+        if ($line =~ m/^(\S+?):\s*(.*)$/) {
+            my $key = $1;
+            my $value = $2;
+            if (
+                $schema->{properties}->{$key}
+                && $schema->{properties}->{$key}->{type} eq 'boolean'
+            ) {
 
-		$value = parse_boolean($value) // $value;
-	    }
-	    if (
-		$schema->{properties}->{$key}
-		&& $schema->{properties}->{$key}->{type} eq 'array'
-	    ) {
+                $value = parse_boolean($value) // $value;
+            }
+            if (
+                $schema->{properties}->{$key}
+                && $schema->{properties}->{$key}->{type} eq 'array'
+            ) {
 
-		$cfg->{$key} //= [];
-		push $cfg->{$key}->@*, $value;
-		next;
-	    }
-	    $cfg->{$key} = $value;
-	} else {
-	    warn "ignore config line: $line\n"
-	}
+                $cfg->{$key} //= [];
+                push $cfg->{$key}->@*, $value;
+                next;
+            }
+            $cfg->{$key} = $value;
+        } else {
+            warn "ignore config line: $line\n";
+        }
     }
 
     if (defined($comment_data)) {
-	$cfg->{$comment_key} = $comment_data;
+        $cfg->{$comment_key} = $comment_data;
     }
 
     my $errors = {};
     check_prop($cfg, $schema, '', $errors);
 
     foreach my $k (keys %$errors) {
-	warn "parse error in '$filename' - '$k': $errors->{$k}\n";
-	delete $cfg->{$k};
+        warn "parse error in '$filename' - '$k': $errors->{$k}\n";
+        delete $cfg->{$k};
     }
 
     return $cfg;
@@ -2060,15 +2226,17 @@ sub dump_config {
     my ($schema, $filename, $cfg) = @_;
 
     # do fast check (avoid validate_schema($schema))
-    die "got strange schema" if !$schema->{type} ||
-	!$schema->{properties} || $schema->{type} ne 'object';
+    die "got strange schema"
+        if !$schema->{type}
+        || !$schema->{properties}
+        || $schema->{type} ne 'object';
 
     validate($cfg, $schema, "validation error in '$filename'\n");
 
     my $data = '';
 
     foreach my $k (sort keys %$cfg) {
-	$data .= "$k: $cfg->{$k}\n";
+        $data .= "$k: $cfg->{$k}\n";
     }
 
     return $data;
@@ -2083,26 +2251,26 @@ my $find_schema_default_key = sub {
     my $keyAliasProps = {};
 
     foreach my $key (keys %$format) {
-	my $phash = $format->{$key};
-	if ($phash->{default_key}) {
-	    die "multiple default keys in schema ($default_key, $key)\n"
-		if defined($default_key);
-	    die "default key '$key' is an alias - this is not allowed\n"
-		if defined($phash->{alias});
-	    die "default key '$key' with keyAlias attribute is not allowed\n"
-		if $phash->{keyAlias};
-	    $default_key = $key;
-	}
-	my $key_alias = $phash->{keyAlias};
-	die "found keyAlias without 'alias definition for '$key'\n"
-	    if $key_alias && !$phash->{alias};
+        my $phash = $format->{$key};
+        if ($phash->{default_key}) {
+            die "multiple default keys in schema ($default_key, $key)\n"
+                if defined($default_key);
+            die "default key '$key' is an alias - this is not allowed\n"
+                if defined($phash->{alias});
+            die "default key '$key' with keyAlias attribute is not allowed\n"
+                if $phash->{keyAlias};
+            $default_key = $key;
+        }
+        my $key_alias = $phash->{keyAlias};
+        die "found keyAlias without 'alias definition for '$key'\n"
+            if $key_alias && !$phash->{alias};
 
-	if ($phash->{alias} && $key_alias) {
-	    die "inconsistent keyAlias '$key_alias' definition"
-		if defined($keyAliasProps->{$key_alias}) &&
-		$keyAliasProps->{$key_alias} ne $phash->{alias};
-	    $keyAliasProps->{$key_alias} = $phash->{alias};
-	}
+        if ($phash->{alias} && $key_alias) {
+            die "inconsistent keyAlias '$key_alias' definition"
+                if defined($keyAliasProps->{$key_alias})
+                && $keyAliasProps->{$key_alias} ne $phash->{alias};
+            $keyAliasProps->{$key_alias} = $phash->{alias};
+        }
     }
 
     return wantarray ? ($default_key, $keyAliasProps) : $default_key;
@@ -2117,69 +2285,70 @@ sub generate_typetext {
     my $add_sep = 0;
 
     my $add_option_string = sub {
-	my ($text, $optional) = @_;
+        my ($text, $optional) = @_;
 
-	if ($add_sep) {
-	    $text = ",$text";
-	    $res .= ' ';
-	}
-	$text = "[$text]" if $optional;
-	$res .= $text;
-	$add_sep = 1;
+        if ($add_sep) {
+            $text = ",$text";
+            $res .= ' ';
+        }
+        $text = "[$text]" if $optional;
+        $res .= $text;
+        $add_sep = 1;
     };
 
     my $format_key_value = sub {
-	my ($key, $phash) = @_;
+        my ($key, $phash) = @_;
 
-	die "internal error" if defined($phash->{alias});
+        die "internal error" if defined($phash->{alias});
 
-	my $keytext = $key;
+        my $keytext = $key;
 
-	my $typetext = '';
+        my $typetext = '';
 
-	if (my $desc = $phash->{format_description}) {
-	    $typetext .= "<$desc>";
-	} elsif (my $text = $phash->{typetext}) {
-	    $typetext .= $text;
-	} elsif (my $enum = $phash->{enum}) {
-	    if ($list_enums || (scalar(@$enum) <= 3)) {
-		$typetext .= '<' . join('|', @$enum) . '>';
-	    } else {
-		$typetext .= '<enum>';
-	    }
-	} elsif ($phash->{type} eq 'boolean') {
-	    $typetext .= '<1|0>';
-	} elsif ($phash->{type} eq 'integer') {
-	    $typetext .= '<integer>';
-	} elsif ($phash->{type} eq 'number') {
-	    $typetext .= '<number>';
-	} else {
-	    die "internal error: neither format_description nor typetext found for option '$key'";
-	}
+        if (my $desc = $phash->{format_description}) {
+            $typetext .= "<$desc>";
+        } elsif (my $text = $phash->{typetext}) {
+            $typetext .= $text;
+        } elsif (my $enum = $phash->{enum}) {
+            if ($list_enums || (scalar(@$enum) <= 3)) {
+                $typetext .= '<' . join('|', @$enum) . '>';
+            } else {
+                $typetext .= '<enum>';
+            }
+        } elsif ($phash->{type} eq 'boolean') {
+            $typetext .= '<1|0>';
+        } elsif ($phash->{type} eq 'integer') {
+            $typetext .= '<integer>';
+        } elsif ($phash->{type} eq 'number') {
+            $typetext .= '<number>';
+        } else {
+            die
+                "internal error: neither format_description nor typetext found for option '$key'";
+        }
 
-	if (defined($default_key) && ($default_key eq $key)) {
-	    &$add_option_string("[$keytext=]$typetext", $phash->{optional});
-	} else {
-	    &$add_option_string("$keytext=$typetext", $phash->{optional});
-	}
+        if (defined($default_key) && ($default_key eq $key)) {
+            &$add_option_string("[$keytext=]$typetext", $phash->{optional});
+        } else {
+            &$add_option_string("$keytext=$typetext", $phash->{optional});
+        }
     };
 
     my $done = {};
 
     my $cond_add_key = sub {
-	my ($key) = @_;
+        my ($key) = @_;
 
-	return if $done->{$key}; # avoid duplicates
+        return if $done->{$key}; # avoid duplicates
 
-	$done->{$key} = 1;
+        $done->{$key} = 1;
 
-	my $phash = $format->{$key};
+        my $phash = $format->{$key};
 
-	return if !$phash; # should not happen
+        return if !$phash; # should not happen
 
-	return if $phash->{alias};
+        return if $phash->{alias};
 
-	&$format_key_value($key, $phash);
+        &$format_key_value($key, $phash);
 
     };
 
@@ -2187,17 +2356,17 @@ sub generate_typetext {
 
     # add required keys first
     foreach my $key (sort keys %$format) {
-	my $phash = $format->{$key};
-	&$cond_add_key($key) if $phash && !$phash->{optional};
+        my $phash = $format->{$key};
+        &$cond_add_key($key) if $phash && !$phash->{optional};
     }
 
     # add the rest
     foreach my $key (sort keys %$format) {
-	&$cond_add_key($key);
+        &$cond_add_key($key);
     }
 
     foreach my $keyAlias (sort keys %$keyAliasProps) {
-	&$add_option_string("<$keyAlias>=<$keyAliasProps->{$keyAlias }>", 1);
+        &$add_option_string("<$keyAlias>=<$keyAliasProps->{$keyAlias }>", 1);
     }
 
     return $res;
@@ -2208,17 +2377,17 @@ sub print_property_string {
 
     my $validator;
     if (ref($format) ne 'HASH') {
-	my $schema = get_format($format);
-	die "not a valid format: $format\n" if !$schema;
-	# named formats can have validators attached
-	$validator = $format_validators->{$format};
-	$format = $schema;
+        my $schema = get_format($format);
+        die "not a valid format: $format\n" if !$schema;
+        # named formats can have validators attached
+        $validator = $format_validators->{$format};
+        $format = $schema;
     }
 
     my $errors = {};
     check_object($path, $format, $data, undef, $errors);
     if (scalar(%$errors)) {
-	raise "format error", errors => $errors;
+        raise "format error", errors => $errors;
     }
 
     $data = $validator->($data) if $validator;
@@ -2229,64 +2398,64 @@ sub print_property_string {
     my $add_sep = 0;
 
     my $add_option_string = sub {
-	my ($text) = @_;
+        my ($text) = @_;
 
-	$res .= ',' if $add_sep;
-	$res .= $text;
-	$add_sep = 1;
+        $res .= ',' if $add_sep;
+        $res .= $text;
+        $add_sep = 1;
     };
 
     my $format_value = sub {
-	my ($key, $value, $format) = @_;
+        my ($key, $value, $format) = @_;
 
-	if (defined($format) && ($format eq 'disk-size')) {
-	    return format_size($value);
-	} else {
-	    die "illegal value with commas for $key\n" if $value =~ /,/;
-	    return $value;
-	}
+        if (defined($format) && ($format eq 'disk-size')) {
+            return format_size($value);
+        } else {
+            die "illegal value with commas for $key\n" if $value =~ /,/;
+            return $value;
+        }
     };
 
     my $done = { map { $_ => 1 } @$skip };
 
     my $cond_add_key = sub {
-	my ($key, $isdefault) = @_;
+        my ($key, $isdefault) = @_;
 
-	return if $done->{$key}; # avoid duplicates
+        return if $done->{$key}; # avoid duplicates
 
-	$done->{$key} = 1;
+        $done->{$key} = 1;
 
-	my $value = $data->{$key};
+        my $value = $data->{$key};
 
-	return if !defined($value);
+        return if !defined($value);
 
-	my $phash = $format->{$key};
+        my $phash = $format->{$key};
 
-	# try to combine values if we have key aliases
-	if (my $combine = $keyAliasProps->{$key}) {
-	    if (defined(my $combine_value = $data->{$combine})) {
-		my $combine_format = $format->{$combine}->{format};
-		my $value_str = &$format_value($key, $value, $phash->{format});
-		my $combine_str = &$format_value($combine, $combine_value, $combine_format);
-		&$add_option_string("${value_str}=${combine_str}");
-		$done->{$combine} = 1;
-		return;
-	    }
-	}
+        # try to combine values if we have key aliases
+        if (my $combine = $keyAliasProps->{$key}) {
+            if (defined(my $combine_value = $data->{$combine})) {
+                my $combine_format = $format->{$combine}->{format};
+                my $value_str = &$format_value($key, $value, $phash->{format});
+                my $combine_str = &$format_value($combine, $combine_value, $combine_format);
+                &$add_option_string("${value_str}=${combine_str}");
+                $done->{$combine} = 1;
+                return;
+            }
+        }
 
-	if ($phash && $phash->{alias}) {
-	    $phash = $format->{$phash->{alias}};
-	}
+        if ($phash && $phash->{alias}) {
+            $phash = $format->{ $phash->{alias} };
+        }
 
-	die "invalid key '$key'\n" if !$phash;
-	die "internal error" if defined($phash->{alias});
+        die "invalid key '$key'\n" if !$phash;
+        die "internal error" if defined($phash->{alias});
 
-	my $value_str = &$format_value($key, $value, $phash->{format});
-	if ($isdefault) {
-	    &$add_option_string($value_str);
-	} else {
-	    &$add_option_string("$key=${value_str}");
-	}
+        my $value_str = &$format_value($key, $value, $phash->{format});
+        if ($isdefault) {
+            &$add_option_string($value_str);
+        } else {
+            &$add_option_string("$key=${value_str}");
+        }
     };
 
     # add default key first
@@ -2294,13 +2463,13 @@ sub print_property_string {
 
     # add required keys first
     foreach my $key (sort keys %$data) {
-	my $phash = $format->{$key};
-	&$cond_add_key($key) if $phash && !$phash->{optional};
+        my $phash = $format->{$key};
+        &$cond_add_key($key) if $phash && !$phash->{optional};
     }
 
     # add the rest
     foreach my $key (sort keys %$data) {
-	&$cond_add_key($key);
+        &$cond_add_key($key);
     }
 
     return $res;
@@ -2312,32 +2481,31 @@ sub schema_get_type_text {
     my $type = $phash->{type} || 'string';
 
     if ($phash->{typetext}) {
-	return $phash->{typetext};
+        return $phash->{typetext};
     } elsif ($phash->{format_description}) {
-	return "<$phash->{format_description}>";
+        return "<$phash->{format_description}>";
     } elsif ($phash->{enum}) {
-	return "<" . join(' | ', sort @{$phash->{enum}}) . ">";
+        return "<" . join(' | ', sort @{ $phash->{enum} }) . ">";
     } elsif ($phash->{pattern}) {
-	return $phash->{pattern};
+        return $phash->{pattern};
     } elsif ($type eq 'integer' || $type eq 'number') {
-	# NOTE: always access values as number (avoid converion to string)
-	if (defined($phash->{minimum}) && defined($phash->{maximum})) {
-	    return "<$type> (" . ($phash->{minimum} + 0) . " - " .
-		($phash->{maximum} + 0) . ")";
-	} elsif (defined($phash->{minimum})) {
-	    return "<$type> (" . ($phash->{minimum} + 0) . " - N)";
-	} elsif (defined($phash->{maximum})) {
-	    return "<$type> (-N - " . ($phash->{maximum} + 0) . ")";
-	}
+        # NOTE: always access values as number (avoid converion to string)
+        if (defined($phash->{minimum}) && defined($phash->{maximum})) {
+            return "<$type> (" . ($phash->{minimum} + 0) . " - " . ($phash->{maximum} + 0) . ")";
+        } elsif (defined($phash->{minimum})) {
+            return "<$type> (" . ($phash->{minimum} + 0) . " - N)";
+        } elsif (defined($phash->{maximum})) {
+            return "<$type> (-N - " . ($phash->{maximum} + 0) . ")";
+        }
     } elsif ($type eq 'string') {
-	if (my $format = $phash->{format}) {
-	    $format = get_format($format) if ref($format) ne 'HASH';
-	    if (ref($format) eq 'HASH') {
-		my $list_enums = 0;
-		$list_enums = 1 if $style && $style eq 'config-sub';
-		return generate_typetext($format, $list_enums);
-	    }
-	}
+        if (my $format = $phash->{format}) {
+            $format = get_format($format) if ref($format) ne 'HASH';
+            if (ref($format) eq 'HASH') {
+                my $list_enums = 0;
+                $list_enums = 1 if $style && $style eq 'config-sub';
+                return generate_typetext($format, $list_enums);
+            }
+        }
     }
 
     return "<$type>";

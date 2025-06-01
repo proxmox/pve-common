@@ -34,48 +34,48 @@ use PVE::Syscall;
 no warnings 'portable'; # Support for 64-bit ints required
 
 our @EXPORT_OK = qw(
-$IPV6RE
-$IPV4RE
-lock_file
-lock_file_full
-run_command
-file_set_contents
-file_get_contents
-file_read_firstline
-dir_glob_regex
-dir_glob_foreach
-split_list
-template_replace
-safe_print
-trim
-extract_param
-extract_sensitive_params
-file_copy
-get_host_arch
-O_PATH
-O_TMPFILE
-AT_EMPTY_PATH
-AT_FDCWD
-CLONE_NEWNS
-CLONE_NEWUTS
-CLONE_NEWIPC
-CLONE_NEWUSER
-CLONE_NEWPID
-CLONE_NEWNET
-MS_RDONLY
-MS_NOSUID
-MS_NODEV
-MS_NOEXEC
-MS_SYNCHRONOUS
-MS_REMOUNT
-MS_MANDLOCK
-MS_DIRSYNC
-MS_NOSYMFOLLOW
-MS_NOATIME
-MS_NODIRATIME
-MS_BIND
-MS_MOVE
-MS_REC
+    $IPV6RE
+    $IPV4RE
+    lock_file
+    lock_file_full
+    run_command
+    file_set_contents
+    file_get_contents
+    file_read_firstline
+    dir_glob_regex
+    dir_glob_foreach
+    split_list
+    template_replace
+    safe_print
+    trim
+    extract_param
+    extract_sensitive_params
+    file_copy
+    get_host_arch
+    O_PATH
+    O_TMPFILE
+    AT_EMPTY_PATH
+    AT_FDCWD
+    CLONE_NEWNS
+    CLONE_NEWUTS
+    CLONE_NEWIPC
+    CLONE_NEWUSER
+    CLONE_NEWPID
+    CLONE_NEWNET
+    MS_RDONLY
+    MS_NOSUID
+    MS_NODEV
+    MS_NOEXEC
+    MS_SYNCHRONOUS
+    MS_REMOUNT
+    MS_MANDLOCK
+    MS_DIRSYNC
+    MS_NOSYMFOLLOW
+    MS_NOATIME
+    MS_NODIRATIME
+    MS_BIND
+    MS_MOVE
+    MS_REC
 );
 
 my $pvelogdir = "/var/log/pve";
@@ -89,56 +89,69 @@ our $IPV4RE = "(?:(?:$IPV4OCTET\\.){3}$IPV4OCTET)";
 my $IPV6H16 = "(?:[0-9a-fA-F]{1,4})";
 my $IPV6LS32 = "(?:(?:$IPV4RE|$IPV6H16:$IPV6H16))";
 
-our $IPV6RE = "(?:" .
-    "(?:(?:" .                             "(?:$IPV6H16:){6})$IPV6LS32)|" .
-    "(?:(?:" .                           "::(?:$IPV6H16:){5})$IPV6LS32)|" .
-    "(?:(?:(?:" .              "$IPV6H16)?::(?:$IPV6H16:){4})$IPV6LS32)|" .
-    "(?:(?:(?:(?:$IPV6H16:){0,1}$IPV6H16)?::(?:$IPV6H16:){3})$IPV6LS32)|" .
-    "(?:(?:(?:(?:$IPV6H16:){0,2}$IPV6H16)?::(?:$IPV6H16:){2})$IPV6LS32)|" .
-    "(?:(?:(?:(?:$IPV6H16:){0,3}$IPV6H16)?::(?:$IPV6H16:){1})$IPV6LS32)|" .
-    "(?:(?:(?:(?:$IPV6H16:){0,4}$IPV6H16)?::" .           ")$IPV6LS32)|" .
-    "(?:(?:(?:(?:$IPV6H16:){0,5}$IPV6H16)?::" .            ")$IPV6H16)|" .
-    "(?:(?:(?:(?:$IPV6H16:){0,6}$IPV6H16)?::" .                    ")))";
+our $IPV6RE = "(?:"
+    . "(?:(?:"
+    . "(?:$IPV6H16:){6})$IPV6LS32)|"
+    . "(?:(?:"
+    . "::(?:$IPV6H16:){5})$IPV6LS32)|"
+    . "(?:(?:(?:"
+    . "$IPV6H16)?::(?:$IPV6H16:){4})$IPV6LS32)|"
+    . "(?:(?:(?:(?:$IPV6H16:){0,1}$IPV6H16)?::(?:$IPV6H16:){3})$IPV6LS32)|"
+    . "(?:(?:(?:(?:$IPV6H16:){0,2}$IPV6H16)?::(?:$IPV6H16:){2})$IPV6LS32)|"
+    . "(?:(?:(?:(?:$IPV6H16:){0,3}$IPV6H16)?::(?:$IPV6H16:){1})$IPV6LS32)|"
+    . "(?:(?:(?:(?:$IPV6H16:){0,4}$IPV6H16)?::"
+    . ")$IPV6LS32)|"
+    . "(?:(?:(?:(?:$IPV6H16:){0,5}$IPV6H16)?::"
+    . ")$IPV6H16)|"
+    . "(?:(?:(?:(?:$IPV6H16:){0,6}$IPV6H16)?::" . ")))";
 
 our $IPRE = "(?:$IPV4RE|$IPV6RE)";
 
 our $EMAIL_USER_RE = qr/[\w\+\-\~]+(\.[\w\+\-\~]+)*/;
 our $EMAIL_RE = qr/$EMAIL_USER_RE@[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+)*/;
 
-use constant {CLONE_NEWNS   => 0x00020000,
-              CLONE_NEWUTS  => 0x04000000,
-              CLONE_NEWIPC  => 0x08000000,
-              CLONE_NEWUSER => 0x10000000,
-              CLONE_NEWPID  => 0x20000000,
-              CLONE_NEWNET  => 0x40000000};
-
-use constant {O_PATH    => 0x00200000,
-              O_CLOEXEC => 0x00080000,
-              O_TMPFILE => 0x00400000 | O_DIRECTORY};
-
-use constant {AT_EMPTY_PATH => 0x1000,
-              AT_FDCWD => -100};
-
-# from <linux/fs.h>
-use constant {RENAME_NOREPLACE => (1 << 0),
-              RENAME_EXCHANGE  => (1 << 1),
-              RENAME_WHITEOUT  => (1 << 2)};
+use constant {
+    CLONE_NEWNS => 0x00020000,
+    CLONE_NEWUTS => 0x04000000,
+    CLONE_NEWIPC => 0x08000000,
+    CLONE_NEWUSER => 0x10000000,
+    CLONE_NEWPID => 0x20000000,
+    CLONE_NEWNET => 0x40000000,
+};
 
 use constant {
-    MS_RDONLY      => (1),
-    MS_NOSUID      => (1 <<  1),
-    MS_NODEV       => (1 <<  2),
-    MS_NOEXEC      => (1 <<  3),
-    MS_SYNCHRONOUS => (1 <<  4),
-    MS_REMOUNT     => (1 <<  5),
-    MS_MANDLOCK    => (1 <<  6),
-    MS_DIRSYNC     => (1 <<  7),
-    MS_NOSYMFOLLOW => (1 <<  8),
-    MS_NOATIME     => (1 << 10),
-    MS_NODIRATIME  => (1 << 11),
-    MS_BIND        => (1 << 12),
-    MS_MOVE        => (1 << 13),
-    MS_REC         => (1 << 14),
+    O_PATH => 0x00200000,
+    O_CLOEXEC => 0x00080000,
+    O_TMPFILE => 0x00400000 | O_DIRECTORY,
+};
+
+use constant {
+    AT_EMPTY_PATH => 0x1000,
+    AT_FDCWD => -100,
+};
+
+# from <linux/fs.h>
+use constant {
+    RENAME_NOREPLACE => (1 << 0),
+    RENAME_EXCHANGE => (1 << 1),
+    RENAME_WHITEOUT => (1 << 2),
+};
+
+use constant {
+    MS_RDONLY => (1),
+    MS_NOSUID => (1 << 1),
+    MS_NODEV => (1 << 2),
+    MS_NOEXEC => (1 << 3),
+    MS_SYNCHRONOUS => (1 << 4),
+    MS_REMOUNT => (1 << 5),
+    MS_MANDLOCK => (1 << 6),
+    MS_DIRSYNC => (1 << 7),
+    MS_NOSYMFOLLOW => (1 << 8),
+    MS_NOATIME => (1 << 10),
+    MS_NODIRATIME => (1 << 11),
+    MS_BIND => (1 << 12),
+    MS_MOVE => (1 << 13),
+    MS_REC => (1 << 14),
 };
 
 sub run_with_timeout {
@@ -154,17 +167,17 @@ sub run_with_timeout {
     my $res;
 
     eval {
-	local $SIG{ALRM} = sub { $sigcount++; $got_timeout = 1;  die "got timeout\n"; };
-	local $SIG{PIPE} = sub { $sigcount++; die "broken pipe\n" };
-	local $SIG{__DIE__};   # see SA bug 4631
+        local $SIG{ALRM} = sub { $sigcount++; $got_timeout = 1; die "got timeout\n"; };
+        local $SIG{PIPE} = sub { $sigcount++; die "broken pipe\n" };
+        local $SIG{__DIE__}; # see SA bug 4631
 
-	alarm($timeout);
+        alarm($timeout);
 
-	eval { $res = &$code(@param); };
+        eval { $res = &$code(@param); };
 
-	alarm(0); # avoid race conditions
+        alarm(0); # avoid race conditions
 
-	die $@ if $@;
+        die $@ if $@;
     };
 
     my $err = $@;
@@ -188,7 +201,7 @@ sub run_with_timeout {
 # count how deep we're nesting. Therefore this hash now stores a weak reference
 # to a boolean telling us whether we already have a lock.
 
-my $lock_handles =  {};
+my $lock_handles = {};
 
 sub lock_file_full {
     my ($filename, $timeout, $shared, $code, @param) = @_;
@@ -201,27 +214,27 @@ sub lock_file_full {
 
     # Returns a locked file handle.
     my $get_locked_file = sub {
-	my $fh = IO::File->new(">>$filename")
-	    or die "can't open file - $!\n";
+        my $fh = IO::File->new(">>$filename")
+            or die "can't open file - $!\n";
 
-	if (!flock($fh, $mode|LOCK_NB)) {
-	    print STDERR "trying to acquire lock...\n";
-	    my $success;
-	    while(1) {
-		$success = flock($fh, $mode);
-		# try again on EINTR (see bug #273)
-		if ($success || ($! != EINTR)) {
-		    last;
-		}
-	    }
-	    if (!$success) {
-		print STDERR " failed\n";
-		die "can't acquire lock '$filename' - $!\n";
-	    }
-	    print STDERR " OK\n";
-	}
+        if (!flock($fh, $mode | LOCK_NB)) {
+            print STDERR "trying to acquire lock...\n";
+            my $success;
+            while (1) {
+                $success = flock($fh, $mode);
+                # try again on EINTR (see bug #273)
+                if ($success || ($! != EINTR)) {
+                    last;
+                }
+            }
+            if (!$success) {
+                print STDERR " failed\n";
+                die "can't acquire lock '$filename' - $!\n";
+            }
+            print STDERR " OK\n";
+        }
 
-	return $fh;
+        return $fh;
     };
 
     my $res;
@@ -229,38 +242,37 @@ sub lock_file_full {
     my $check = 0; # This must not go out of scope before running the code.
     my $local_fh; # This must stay local
     if (!$checkptr || !$$checkptr) {
-	# We cannot create a weak reference in a single atomic step, so we first
-	# create a false-value, then create a reference to it, then weaken it,
-	# and after successfully locking the file we change the boolean value.
-	#
-	# The reason for this is that if an outer SIGALRM throws an exception
-	# between creating the reference and weakening it, a subsequent call to
-	# lock_file_full() will see a leftover full reference to a valid
-	# variable. This variable must be 0 in order for said call to attempt to
-	# lock the file anew.
-	#
-	# An externally triggered exception elsewhere in the code will cause the
-	# weak reference to become 'undef', and since the file handle is only
-	# stored in the local scope in $local_fh, the file will be closed by
-	# perl's cleanup routines as well.
-	#
-	# This still assumes that an IO::File handle can properly deal with such
-	# exceptions thrown during its own destruction, but that's up to perls
-	# guts now.
-	$lockhash->{$filename} = \$check;
-	weaken $lockhash->{$filename};
-	$local_fh = eval { run_with_timeout($timeout, $get_locked_file) };
-	if ($@) {
-	    $@ = "can't lock file '$filename' - $@";
-	    return undef;
-	}
-	$check = 1;
+        # We cannot create a weak reference in a single atomic step, so we first
+        # create a false-value, then create a reference to it, then weaken it,
+        # and after successfully locking the file we change the boolean value.
+        #
+        # The reason for this is that if an outer SIGALRM throws an exception
+        # between creating the reference and weakening it, a subsequent call to
+        # lock_file_full() will see a leftover full reference to a valid
+        # variable. This variable must be 0 in order for said call to attempt to
+        # lock the file anew.
+        #
+        # An externally triggered exception elsewhere in the code will cause the
+        # weak reference to become 'undef', and since the file handle is only
+        # stored in the local scope in $local_fh, the file will be closed by
+        # perl's cleanup routines as well.
+        #
+        # This still assumes that an IO::File handle can properly deal with such
+        # exceptions thrown during its own destruction, but that's up to perls
+        # guts now.
+        $lockhash->{$filename} = \$check;
+        weaken $lockhash->{$filename};
+        $local_fh = eval { run_with_timeout($timeout, $get_locked_file) };
+        if ($@) {
+            $@ = "can't lock file '$filename' - $@";
+            return undef;
+        }
+        $check = 1;
     }
     $res = eval { &$code(@param); };
     return undef if $@;
     return $res;
 }
-
 
 sub lock_file {
     my ($filename, $timeout, $code, @param) = @_;
@@ -269,69 +281,69 @@ sub lock_file {
 }
 
 sub file_set_contents {
-    my ($filename, $data, $perm, $force_utf8)  = @_;
+    my ($filename, $data, $perm, $force_utf8) = @_;
 
     $perm = 0644 if !defined($perm);
 
     my $tmpname = "$filename.tmp.$$";
 
     eval {
-	my ($fh, $tries) = (undef, 0);
-	while (!$fh && $tries++ < 3) {
-	    $fh = IO::File->new($tmpname, O_WRONLY|O_CREAT|O_EXCL, $perm);
-	    if (!$fh && $! == EEXIST) {
-		unlink($tmpname) or die "unable to delete old temp file: $!\n";
-	    }
-	}
-	die "unable to open file '$tmpname' - $!\n" if !$fh;
+        my ($fh, $tries) = (undef, 0);
+        while (!$fh && $tries++ < 3) {
+            $fh = IO::File->new($tmpname, O_WRONLY | O_CREAT | O_EXCL, $perm);
+            if (!$fh && $! == EEXIST) {
+                unlink($tmpname) or die "unable to delete old temp file: $!\n";
+            }
+        }
+        die "unable to open file '$tmpname' - $!\n" if !$fh;
 
-	if ($force_utf8) {
-	    $data = encode("utf8", $data);
-	} else {
-	    # Encode wide characters with print before passing them to syswrite
-	    my $unencoded_data = $data;
-	    # Preload PerlIO::scalar at compile time to prevent runtime loading issues when
-	    # file_set_contents is called with PVE::LXC::Setup::protected_call. Normally,
-	    # PerlIO::scalar is loaded implicitly during the execution of
-	    # `open(my $data_fh, '>', \$data)`. However, this fails if it is executed within a
-	    # chroot environment where the necessary PerlIO.pm module file is inaccessible.
-	    # Preloading the module ensures it is available regardless of the execution context.
-	    use PerlIO::scalar;
-	    open(my $data_fh, '>', \$data) or die "failed to open in-memory variable - $!\n";
-	    print $data_fh $unencoded_data;
-	    close($data_fh);
-	}
+        if ($force_utf8) {
+            $data = encode("utf8", $data);
+        } else {
+            # Encode wide characters with print before passing them to syswrite
+            my $unencoded_data = $data;
+            # Preload PerlIO::scalar at compile time to prevent runtime loading issues when
+            # file_set_contents is called with PVE::LXC::Setup::protected_call. Normally,
+            # PerlIO::scalar is loaded implicitly during the execution of
+            # `open(my $data_fh, '>', \$data)`. However, this fails if it is executed within a
+            # chroot environment where the necessary PerlIO.pm module file is inaccessible.
+            # Preloading the module ensures it is available regardless of the execution context.
+            use PerlIO::scalar;
+            open(my $data_fh, '>', \$data) or die "failed to open in-memory variable - $!\n";
+            print $data_fh $unencoded_data;
+            close($data_fh);
+        }
 
-	my $offset = 0;
-	my $len = length($data);
+        my $offset = 0;
+        my $len = length($data);
 
-	while ($offset < $len) {
-	    my $written_bytes = syswrite($fh, $data, $len - $offset, $offset)
-		or die "unable to write '$tmpname' - $!\n";
-	    $offset += $written_bytes;
-	}
+        while ($offset < $len) {
+            my $written_bytes = syswrite($fh, $data, $len - $offset, $offset)
+                or die "unable to write '$tmpname' - $!\n";
+            $offset += $written_bytes;
+        }
 
-	close $fh or die "closing file '$tmpname' failed - $!\n";
+        close $fh or die "closing file '$tmpname' failed - $!\n";
     };
     my $err = $@;
 
     if ($err) {
-	unlink $tmpname;
-	die $err;
+        unlink $tmpname;
+        die $err;
     }
 
     if (!rename($tmpname, $filename)) {
-	my $msg = "close (rename) atomic file '$filename' failed: $!\n";
-	unlink $tmpname;
-	die $msg;
+        my $msg = "close (rename) atomic file '$filename' failed: $!\n";
+        unlink $tmpname;
+        die $msg;
     }
 }
 
 sub file_get_contents {
     my ($filename, $max) = @_;
 
-    my $fh = IO::File->new($filename, "r") ||
-	die "can't open '$filename' - $!\n";
+    my $fh = IO::File->new($filename, "r")
+        || die "can't open '$filename' - $!\n";
 
     my $content = safe_read_from($fh, $max, 0, $filename);
 
@@ -343,16 +355,16 @@ sub file_get_contents {
 sub file_copy {
     my ($filename, $dst, $max, $perm) = @_;
 
-    file_set_contents ($dst, file_get_contents($filename, $max), $perm);
+    file_set_contents($dst, file_get_contents($filename, $max), $perm);
 }
 
 sub file_read_firstline {
     my ($filename) = @_;
 
-    my $fh = IO::File->new ($filename, "r");
+    my $fh = IO::File->new($filename, "r");
     if (!$fh) {
-	return undef if $! == POSIX::ENOENT;
-	die "file '$filename' exists but open for reading failed - $!\n";
+        return undef if $! == POSIX::ENOENT;
+        die "file '$filename' exists but open for reading failed - $!\n";
     }
     my $res = <$fh>;
     chomp $res if $res;
@@ -372,12 +384,12 @@ sub safe_read_from {
     my $input = '';
     my $count;
     while ($count = sysread($fh, $input, 8192, $br)) {
-	$br += $count;
-	die "$subject too long - aborting\n" if $br > $max;
-	if ($oneline && $input =~ m/^(.*)\n/) {
-	    $input = $1;
-	    last;
-	}
+        $br += $count;
+        die "$subject too long - aborting\n" if $br > $max;
+        if ($oneline && $input =~ m/^(.*)\n/) {
+            $input = $1;
+            last;
+        }
     }
     die "unable to read $subject - $!\n" if !defined($count);
 
@@ -416,27 +428,27 @@ sub run_command {
     my $cmdstr;
 
     if (my $ref = ref($cmd)) {
-	if (ref($cmd->[0])) {
-	    $cmdstr = 'set -o pipefail && ';
-	    my $pipe = '';
-	    foreach my $command (@$cmd) {
-		# concatenate quoted parameters
-		# strings which are passed by reference are NOT shell quoted
-		$cmdstr .= $pipe .  join(' ', map { ref($_) ? $$_ : shellquote($_) } @$command);
-		$pipe = ' | ';
-	    }
-	    $cmd = [ '/bin/bash', '-c', "$cmdstr" ];
-	} else {
-	    $cmdstr = cmd2string($cmd);
-	}
+        if (ref($cmd->[0])) {
+            $cmdstr = 'set -o pipefail && ';
+            my $pipe = '';
+            foreach my $command (@$cmd) {
+                # concatenate quoted parameters
+                # strings which are passed by reference are NOT shell quoted
+                $cmdstr .= $pipe . join(' ', map { ref($_) ? $$_ : shellquote($_) } @$command);
+                $pipe = ' | ';
+            }
+            $cmd = ['/bin/bash', '-c', "$cmdstr"];
+        } else {
+            $cmdstr = cmd2string($cmd);
+        }
     } else {
-	$cmdstr = $cmd;
-	if ($cmd =~ m/\|/) {
-	    # see 'man bash' for option pipefail
-	    $cmd = [ '/bin/bash', '-c', "set -o pipefail && $cmd" ];
-	} else {
-	    $cmd = [ $cmd ];
-	}
+        $cmdstr = $cmd;
+        if ($cmd =~ m/\|/) {
+            # see 'man bash' for option pipefail
+            $cmd = ['/bin/bash', '-c', "set -o pipefail && $cmd"];
+        } else {
+            $cmd = [$cmd];
+        }
     }
 
     my $errmsg;
@@ -458,186 +470,187 @@ sub run_command {
 
     eval {
 
-	foreach my $p (keys %param) {
-	    if ($p eq 'timeout') {
-		$timeout = $param{$p};
-	    } elsif ($p eq 'umask') {
-		$old_umask = umask($param{$p});
-	    } elsif ($p eq 'errmsg') {
-		$errmsg = $param{$p};
-	    } elsif ($p eq 'input') {
-		$input = $param{$p};
-	    } elsif ($p eq 'output') {
-		$output = $param{$p};
-	    } elsif ($p eq 'outfunc') {
-		$outfunc = $param{$p};
-	    } elsif ($p eq 'errfunc') {
-		$errfunc = $param{$p};
-	    } elsif ($p eq 'logfunc') {
-		$logfunc = $param{$p};
-	    } elsif ($p eq 'afterfork') {
-		$afterfork = $param{$p};
-	    } elsif ($p eq 'noerr') {
-		$noerr = $param{$p};
-	    } elsif ($p eq 'keeplocale') {
-		$keeplocale = $param{$p};
-	    } elsif ($p eq 'quiet') {
-		$quiet = $param{$p};
-	    } else {
-		die "got unknown parameter '$p' for run_command\n";
-	    }
-	}
+        foreach my $p (keys %param) {
+            if ($p eq 'timeout') {
+                $timeout = $param{$p};
+            } elsif ($p eq 'umask') {
+                $old_umask = umask($param{$p});
+            } elsif ($p eq 'errmsg') {
+                $errmsg = $param{$p};
+            } elsif ($p eq 'input') {
+                $input = $param{$p};
+            } elsif ($p eq 'output') {
+                $output = $param{$p};
+            } elsif ($p eq 'outfunc') {
+                $outfunc = $param{$p};
+            } elsif ($p eq 'errfunc') {
+                $errfunc = $param{$p};
+            } elsif ($p eq 'logfunc') {
+                $logfunc = $param{$p};
+            } elsif ($p eq 'afterfork') {
+                $afterfork = $param{$p};
+            } elsif ($p eq 'noerr') {
+                $noerr = $param{$p};
+            } elsif ($p eq 'keeplocale') {
+                $keeplocale = $param{$p};
+            } elsif ($p eq 'quiet') {
+                $quiet = $param{$p};
+            } else {
+                die "got unknown parameter '$p' for run_command\n";
+            }
+        }
 
-	if ($errmsg) {
-	    my $origerrfunc = $errfunc;
-	    $errfunc = sub {
-		if ($laststderr) {
-		    if ($origerrfunc) {
-			&$origerrfunc("$laststderr\n");
-		    } else {
-			print STDERR "$laststderr\n" if $laststderr;
-		    }
-		}
-		$laststderr = shift;
-	    };
-	}
+        if ($errmsg) {
+            my $origerrfunc = $errfunc;
+            $errfunc = sub {
+                if ($laststderr) {
+                    if ($origerrfunc) {
+                        &$origerrfunc("$laststderr\n");
+                    } else {
+                        print STDERR "$laststderr\n" if $laststderr;
+                    }
+                }
+                $laststderr = shift;
+            };
+        }
 
-	my $reader = $output && $output =~ m/^>&/ ? $output : IO::File->new();
-	my $writer = $input && $input =~ m/^<&/ ? $input : IO::File->new();
-	my $error  = IO::File->new();
+        my $reader = $output && $output =~ m/^>&/ ? $output : IO::File->new();
+        my $writer = $input && $input =~ m/^<&/ ? $input : IO::File->new();
+        my $error = IO::File->new();
 
-	my $orig_pid = $$;
+        my $orig_pid = $$;
 
-	eval {
-	    local $ENV{LC_ALL} = 'C' if !$keeplocale;
+        eval {
+            local $ENV{LC_ALL} = 'C' if !$keeplocale;
 
-	    # suppress LVM warnings like: "File descriptor 3 left open";
-	    local $ENV{LVM_SUPPRESS_FD_WARNINGS} = "1";
+            # suppress LVM warnings like: "File descriptor 3 left open";
+            local $ENV{LVM_SUPPRESS_FD_WARNINGS} = "1";
 
-	    $pid = open3($writer, $reader, $error, @$cmd) || die $!;
+            $pid = open3($writer, $reader, $error, @$cmd) || die $!;
 
-	    # if we pipe fron STDIN, open3 closes STDIN, so we get a perl warning like
-	    # "Filehandle STDIN reopened as GENXYZ .. " as soon as we open a new file.
-	    # to avoid that we open /dev/null
-	    if (!ref($writer) && !defined(fileno(STDIN))) {
-		POSIX::close(0);
-		open(STDIN, '<', '/dev/null');
-	    }
-	};
+            # if we pipe fron STDIN, open3 closes STDIN, so we get a perl warning like
+            # "Filehandle STDIN reopened as GENXYZ .. " as soon as we open a new file.
+            # to avoid that we open /dev/null
+            if (!ref($writer) && !defined(fileno(STDIN))) {
+                POSIX::close(0);
+                open(STDIN, '<', '/dev/null');
+            }
+        };
 
-	my $err = $@;
+        my $err = $@;
 
-	# catch exec errors
-	if ($orig_pid != $$) {
-	    warn "ERROR: $err";
-	    POSIX::_exit (1);
-	    kill ('KILL', $$);
-	}
+        # catch exec errors
+        if ($orig_pid != $$) {
+            warn "ERROR: $err";
+            POSIX::_exit(1);
+            kill('KILL', $$);
+        }
 
-	die $err if $err;
+        die $err if $err;
 
-	local $SIG{ALRM} = sub { die "got timeout\n"; } if $timeout;
-	$oldtimeout = alarm($timeout) if $timeout;
+        local $SIG{ALRM} = sub { die "got timeout\n"; }
+            if $timeout;
+        $oldtimeout = alarm($timeout) if $timeout;
 
-	&$afterfork() if $afterfork;
+        &$afterfork() if $afterfork;
 
-	if (ref($writer)) {
-	    print $writer $input if defined $input;
-	    close $writer;
-	}
+        if (ref($writer)) {
+            print $writer $input if defined $input;
+            close $writer;
+        }
 
-	my $select = IO::Select->new();
-	$select->add($reader) if ref($reader);
-	$select->add($error);
+        my $select = IO::Select->new();
+        $select->add($reader) if ref($reader);
+        $select->add($error);
 
-	my $outlog = '';
-	my $errlog = '';
+        my $outlog = '';
+        my $errlog = '';
 
-	my $starttime = time();
+        my $starttime = time();
 
-	while ($select->count) {
-	    my @handles = $select->can_read(1);
+        while ($select->count) {
+            my @handles = $select->can_read(1);
 
-	    foreach my $h (@handles) {
-		my $buf = '';
-		my $count = sysread ($h, $buf, 4096);
-		if (!defined ($count)) {
-		    my $err = $!;
-		    kill (9, $pid);
-		    waitpid ($pid, 0);
-		    die $err;
-		}
-		$select->remove ($h) if !$count;
-		if ($h eq $reader) {
-		    if ($outfunc || $logfunc) {
-			eval {
-			    while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
-				my $line = $outlog . $1;
-				$outlog = '';
-				&$outfunc($line) if $outfunc;
-				&$logfunc($line) if $logfunc;
-			    }
-			    $outlog .= $buf;
-			};
-			my $err = $@;
-			if ($err) {
-			    kill (9, $pid);
-			    waitpid ($pid, 0);
-			    die $err;
-			}
-		    } elsif (!$quiet) {
-			print $buf;
-			*STDOUT->flush();
-		    }
-		} elsif ($h eq $error) {
-		    if ($errfunc || $logfunc) {
-			eval {
-			    while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
-				my $line = $errlog . $1;
-				$errlog = '';
-				&$errfunc($line) if $errfunc;
-				&$logfunc($line) if $logfunc;
-			    }
-			    $errlog .= $buf;
-			};
-			my $err = $@;
-			if ($err) {
-			    kill (9, $pid);
-			    waitpid ($pid, 0);
-			    die $err;
-			}
-		    } elsif (!$quiet) {
-			print STDERR $buf;
-			*STDERR->flush();
-		    }
-		}
-	    }
-	}
+            foreach my $h (@handles) {
+                my $buf = '';
+                my $count = sysread($h, $buf, 4096);
+                if (!defined($count)) {
+                    my $err = $!;
+                    kill(9, $pid);
+                    waitpid($pid, 0);
+                    die $err;
+                }
+                $select->remove($h) if !$count;
+                if ($h eq $reader) {
+                    if ($outfunc || $logfunc) {
+                        eval {
+                            while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
+                                my $line = $outlog . $1;
+                                $outlog = '';
+                                &$outfunc($line) if $outfunc;
+                                &$logfunc($line) if $logfunc;
+                            }
+                            $outlog .= $buf;
+                        };
+                        my $err = $@;
+                        if ($err) {
+                            kill(9, $pid);
+                            waitpid($pid, 0);
+                            die $err;
+                        }
+                    } elsif (!$quiet) {
+                        print $buf;
+                        *STDOUT->flush();
+                    }
+                } elsif ($h eq $error) {
+                    if ($errfunc || $logfunc) {
+                        eval {
+                            while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
+                                my $line = $errlog . $1;
+                                $errlog = '';
+                                &$errfunc($line) if $errfunc;
+                                &$logfunc($line) if $logfunc;
+                            }
+                            $errlog .= $buf;
+                        };
+                        my $err = $@;
+                        if ($err) {
+                            kill(9, $pid);
+                            waitpid($pid, 0);
+                            die $err;
+                        }
+                    } elsif (!$quiet) {
+                        print STDERR $buf;
+                        *STDERR->flush();
+                    }
+                }
+            }
+        }
 
-	&$outfunc($outlog) if $outfunc && $outlog;
-	&$logfunc($outlog) if $logfunc && $outlog;
+        &$outfunc($outlog) if $outfunc && $outlog;
+        &$logfunc($outlog) if $logfunc && $outlog;
 
-	&$errfunc($errlog) if $errfunc && $errlog;
-	&$logfunc($errlog) if $logfunc && $errlog;
+        &$errfunc($errlog) if $errfunc && $errlog;
+        &$logfunc($errlog) if $logfunc && $errlog;
 
-	waitpid ($pid, 0);
+        waitpid($pid, 0);
 
-	if ($? == -1) {
-	    die "failed to execute\n";
-	} elsif (my $sig = ($? & 127)) {
-	    die "got signal $sig\n";
-	} elsif ($exitcode = ($? >> 8)) {
-	    if (!($exitcode == 24 && ($cmdstr =~ m|^(\S+/)?rsync\s|))) {
-		if ($errmsg && $laststderr) {
-		    my $lerr = $laststderr;
-		    $laststderr = undef;
-		    die "$lerr\n";
-		}
-		die "exit code $exitcode\n";
-	    }
-	}
+        if ($? == -1) {
+            die "failed to execute\n";
+        } elsif (my $sig = ($? & 127)) {
+            die "got signal $sig\n";
+        } elsif ($exitcode = ($? >> 8)) {
+            if (!($exitcode == 24 && ($cmdstr =~ m|^(\S+/)?rsync\s|))) {
+                if ($errmsg && $laststderr) {
+                    my $lerr = $laststderr;
+                    $laststderr = undef;
+                    die "$lerr\n";
+                }
+                die "exit code $exitcode\n";
+            }
+        }
 
-	alarm(0);
+        alarm(0);
     };
 
     my $err = $@;
@@ -645,42 +658,42 @@ sub run_command {
     alarm(0);
 
     if ($errmsg && $laststderr) {
-	&$errfunc(undef); # flush laststderr
+        &$errfunc(undef); # flush laststderr
     }
 
-    umask ($old_umask) if defined($old_umask);
+    umask($old_umask) if defined($old_umask);
 
     alarm($oldtimeout) if $oldtimeout;
 
     if ($err) {
-	if ($pid && ($err eq "got timeout\n")) {
-	    kill (9, $pid);
-	    waitpid ($pid, 0);
-	    die "command '$cmdstr' failed: $err";
-	}
+        if ($pid && ($err eq "got timeout\n")) {
+            kill(9, $pid);
+            waitpid($pid, 0);
+            die "command '$cmdstr' failed: $err";
+        }
 
-	if ($errmsg) {
-	    $err =~ s/^usermod:\s*// if $cmdstr =~ m|^(\S+/)?usermod\s|;
-	    die "$errmsg: $err";
-	} elsif(!$noerr) {
-	    die "command '$cmdstr' failed: $err";
-	}
+        if ($errmsg) {
+            $err =~ s/^usermod:\s*// if $cmdstr =~ m|^(\S+/)?usermod\s|;
+            die "$errmsg: $err";
+        } elsif (!$noerr) {
+            die "command '$cmdstr' failed: $err";
+        }
     }
 
     return $exitcode;
 }
 
 # Run a command with a tcp socket as standard input.
-sub pipe_socket_to_command  {
+sub pipe_socket_to_command {
     my ($cmd, $ip, $port) = @_;
 
     my $params = {
-	Listen => 1,
-	ReuseAddr => 1,
-	Proto => &Socket::IPPROTO_TCP,
-	GetAddrInfoFlags => 0,
-	LocalAddr => $ip,
-	LocalPort => $port,
+        Listen => 1,
+        ReuseAddr => 1,
+        Proto => &Socket::IPPROTO_TCP,
+        GetAddrInfoFlags => 0,
+        LocalAddr => $ip,
+        LocalPort => $port,
     };
     my $socket = IO::Socket::IP->new(%$params) or die "failed to open socket: $!\n";
 
@@ -700,29 +713,29 @@ sub pipe_socket_to_command  {
     # can't really use PVE::Tools::run_command().
     my $pid = fork() // die "fork failed: $!\n";
     if (!$pid) {
-	POSIX::dup2(fileno($client), 0);
-	POSIX::dup2(fileno($client), 1);
-	close($client);
-	exec {$cmd->[0]} @$cmd or do {
-	    warn "exec failed: $!\n";
-	    POSIX::_exit(1);
-	};
+        POSIX::dup2(fileno($client), 0);
+        POSIX::dup2(fileno($client), 1);
+        close($client);
+        exec { $cmd->[0] } @$cmd or do {
+            warn "exec failed: $!\n";
+            POSIX::_exit(1);
+        };
     }
 
     close($client);
     if (waitpid($pid, 0) != $pid) {
-	kill(15 => $pid); # if we got interrupted terminate the child
-	my $count = 0;
-	while (waitpid($pid, POSIX::WNOHANG) != $pid) {
-	    usleep(100000);
-	    $count++;
-	    kill(9 => $pid), last if $count > 300; # 30 second timeout
-	}
+        kill(15 => $pid); # if we got interrupted terminate the child
+        my $count = 0;
+        while (waitpid($pid, POSIX::WNOHANG) != $pid) {
+            usleep(100000);
+            $count++;
+            kill(9 => $pid), last if $count > 300; # 30 second timeout
+        }
     }
     if (my $sig = ($? & 127)) {
-	die "got signal $sig\n";
+        die "got signal $sig\n";
     } elsif (my $exitcode = ($? >> 8)) {
-	die "exit code $exitcode\n";
+        die "exit code $exitcode\n";
     }
 
     return undef;
@@ -731,12 +744,12 @@ sub pipe_socket_to_command  {
 sub split_list {
     my $listtxt = shift // '';
 
-    return split (/\0/, $listtxt) if $listtxt =~ m/\0/;
+    return split(/\0/, $listtxt) if $listtxt =~ m/\0/;
 
     $listtxt =~ s/[,;]/ /g;
     $listtxt =~ s/^\s+//;
 
-    my @data = split (/\s+/, $listtxt);
+    my @data = split(/\s+/, $listtxt);
 
     return @data;
 }
@@ -760,8 +773,8 @@ sub template_replace {
 
     my $res = '';
     while ($tmpl =~ m/([^{]+)?(\{([^}]+)\})?/g) {
-	$res .= $1 if $1;
-	$res .= ($data->{$3} || '-') if $2;
+        $res .= $1 if $1;
+        $res .= ($data->{$3} || '-') if $2;
     }
     return $res;
 }
@@ -779,81 +792,81 @@ sub safe_print {
 sub debmirrors {
 
     return {
-	'at' => 'ftp.at.debian.org',
-	'au' => 'ftp.au.debian.org',
-	'be' => 'ftp.be.debian.org',
-	'bg' => 'ftp.bg.debian.org',
-	'br' => 'ftp.br.debian.org',
-	'ca' => 'ftp.ca.debian.org',
-	'ch' => 'ftp.ch.debian.org',
-	'cl' => 'ftp.cl.debian.org',
-	'cz' => 'ftp.cz.debian.org',
-	'de' => 'ftp.de.debian.org',
-	'dk' => 'ftp.dk.debian.org',
-	'ee' => 'ftp.ee.debian.org',
-	'es' => 'ftp.es.debian.org',
-	'fi' => 'ftp.fi.debian.org',
-	'fr' => 'ftp.fr.debian.org',
-	'gr' => 'ftp.gr.debian.org',
-	'hk' => 'ftp.hk.debian.org',
-	'hr' => 'ftp.hr.debian.org',
-	'hu' => 'ftp.hu.debian.org',
-	'ie' => 'ftp.ie.debian.org',
-	'is' => 'ftp.is.debian.org',
-	'it' => 'ftp.it.debian.org',
-	'jp' => 'ftp.jp.debian.org',
-	'kr' => 'ftp.kr.debian.org',
-	'mx' => 'ftp.mx.debian.org',
-	'nl' => 'ftp.nl.debian.org',
-	'no' => 'ftp.no.debian.org',
-	'nz' => 'ftp.nz.debian.org',
-	'pl' => 'ftp.pl.debian.org',
-	'pt' => 'ftp.pt.debian.org',
-	'ro' => 'ftp.ro.debian.org',
-	'ru' => 'ftp.ru.debian.org',
-	'se' => 'ftp.se.debian.org',
-	'si' => 'ftp.si.debian.org',
-	'sk' => 'ftp.sk.debian.org',
-	'tr' => 'ftp.tr.debian.org',
-	'tw' => 'ftp.tw.debian.org',
-	'gb' => 'ftp.uk.debian.org',
-	'us' => 'ftp.us.debian.org',
+        'at' => 'ftp.at.debian.org',
+        'au' => 'ftp.au.debian.org',
+        'be' => 'ftp.be.debian.org',
+        'bg' => 'ftp.bg.debian.org',
+        'br' => 'ftp.br.debian.org',
+        'ca' => 'ftp.ca.debian.org',
+        'ch' => 'ftp.ch.debian.org',
+        'cl' => 'ftp.cl.debian.org',
+        'cz' => 'ftp.cz.debian.org',
+        'de' => 'ftp.de.debian.org',
+        'dk' => 'ftp.dk.debian.org',
+        'ee' => 'ftp.ee.debian.org',
+        'es' => 'ftp.es.debian.org',
+        'fi' => 'ftp.fi.debian.org',
+        'fr' => 'ftp.fr.debian.org',
+        'gr' => 'ftp.gr.debian.org',
+        'hk' => 'ftp.hk.debian.org',
+        'hr' => 'ftp.hr.debian.org',
+        'hu' => 'ftp.hu.debian.org',
+        'ie' => 'ftp.ie.debian.org',
+        'is' => 'ftp.is.debian.org',
+        'it' => 'ftp.it.debian.org',
+        'jp' => 'ftp.jp.debian.org',
+        'kr' => 'ftp.kr.debian.org',
+        'mx' => 'ftp.mx.debian.org',
+        'nl' => 'ftp.nl.debian.org',
+        'no' => 'ftp.no.debian.org',
+        'nz' => 'ftp.nz.debian.org',
+        'pl' => 'ftp.pl.debian.org',
+        'pt' => 'ftp.pt.debian.org',
+        'ro' => 'ftp.ro.debian.org',
+        'ru' => 'ftp.ru.debian.org',
+        'se' => 'ftp.se.debian.org',
+        'si' => 'ftp.si.debian.org',
+        'sk' => 'ftp.sk.debian.org',
+        'tr' => 'ftp.tr.debian.org',
+        'tw' => 'ftp.tw.debian.org',
+        'gb' => 'ftp.uk.debian.org',
+        'us' => 'ftp.us.debian.org',
     };
 }
 
-my $keymaphash =  {
-    'dk'     => ['Danish', 'da', 'qwerty/dk-latin1.kmap.gz', 'dk', 'nodeadkeys'],
-    'de'     => ['German', 'de', 'qwertz/de-latin1-nodeadkeys.kmap.gz', 'de', 'nodeadkeys' ],
-    'de-ch'  => ['Swiss-German', 'de-ch', 'qwertz/sg-latin1.kmap.gz',  'ch', 'de_nodeadkeys' ],
-    'en-gb'  => ['United Kingdom', 'en-gb', 'qwerty/uk.kmap.gz' , 'gb', undef],
-    'en-us'  => ['U.S. English', 'en-us', 'qwerty/us-latin1.kmap.gz',  'us', undef ],
-    'es'     => ['Spanish', 'es', 'qwerty/es.kmap.gz', 'es', 'nodeadkeys'],
+my $keymaphash = {
+    'dk' => ['Danish', 'da', 'qwerty/dk-latin1.kmap.gz', 'dk', 'nodeadkeys'],
+    'de' => ['German', 'de', 'qwertz/de-latin1-nodeadkeys.kmap.gz', 'de', 'nodeadkeys'],
+    'de-ch' => ['Swiss-German', 'de-ch', 'qwertz/sg-latin1.kmap.gz', 'ch', 'de_nodeadkeys'],
+    'en-gb' => ['United Kingdom', 'en-gb', 'qwerty/uk.kmap.gz', 'gb', undef],
+    'en-us' => ['U.S. English', 'en-us', 'qwerty/us-latin1.kmap.gz', 'us', undef],
+    'es' => ['Spanish', 'es', 'qwerty/es.kmap.gz', 'es', 'nodeadkeys'],
     #'et'     => [], # Ethopia or Estonia ??
-    'fi'     => ['Finnish', 'fi', 'qwerty/fi-latin1.kmap.gz', 'fi', 'nodeadkeys'],
+    'fi' => ['Finnish', 'fi', 'qwerty/fi-latin1.kmap.gz', 'fi', 'nodeadkeys'],
     #'fo'     => ['Faroe Islands', 'fo', ???, 'fo', 'nodeadkeys'],
-    'fr'     => ['French', 'fr', 'azerty/fr-latin1.kmap.gz', 'fr', 'nodeadkeys'],
-    'fr-be'  => ['Belgium-French', 'fr-be', 'azerty/be2-latin1.kmap.gz', 'be', 'nodeadkeys'],
-    'fr-ca'  => ['Canada-French', 'fr-ca', 'qwerty/cf.kmap.gz', 'ca', 'fr-legacy'],
-    'fr-ch'  => ['Swiss-French', 'fr-ch', 'qwertz/fr_CH-latin1.kmap.gz', 'ch', 'fr_nodeadkeys'],
+    'fr' => ['French', 'fr', 'azerty/fr-latin1.kmap.gz', 'fr', 'nodeadkeys'],
+    'fr-be' => ['Belgium-French', 'fr-be', 'azerty/be2-latin1.kmap.gz', 'be', 'nodeadkeys'],
+    'fr-ca' => ['Canada-French', 'fr-ca', 'qwerty/cf.kmap.gz', 'ca', 'fr-legacy'],
+    'fr-ch' => ['Swiss-French', 'fr-ch', 'qwertz/fr_CH-latin1.kmap.gz', 'ch', 'fr_nodeadkeys'],
     #'hr'     => ['Croatia', 'hr', 'qwertz/croat.kmap.gz', 'hr', ??], # latin2?
-    'hu'     => ['Hungarian', 'hu', 'qwertz/hu.kmap.gz', 'hu', undef],
-    'is'     => ['Icelandic', 'is', 'qwerty/is-latin1.kmap.gz', 'is', 'nodeadkeys'],
-    'it'     => ['Italian', 'it', 'qwerty/it2.kmap.gz', 'it', 'nodeadkeys'],
-    'jp'     => ['Japanese', 'ja', 'qwerty/jp106.kmap.gz', 'jp', undef],
-    'lt'     => ['Lithuanian', 'lt', 'qwerty/lt.kmap.gz', 'lt', 'std'],
+    'hu' => ['Hungarian', 'hu', 'qwertz/hu.kmap.gz', 'hu', undef],
+    'is' => ['Icelandic', 'is', 'qwerty/is-latin1.kmap.gz', 'is', 'nodeadkeys'],
+    'it' => ['Italian', 'it', 'qwerty/it2.kmap.gz', 'it', 'nodeadkeys'],
+    'jp' => ['Japanese', 'ja', 'qwerty/jp106.kmap.gz', 'jp', undef],
+    'lt' => ['Lithuanian', 'lt', 'qwerty/lt.kmap.gz', 'lt', 'std'],
     #'lv'     => ['Latvian', 'lv', 'qwerty/lv-latin4.kmap.gz', 'lv', ??], # latin4 or latin7?
-    'mk'     => ['Macedonian', 'mk', 'qwerty/mk.kmap.gz', 'mk', 'nodeadkeys'],
-    'nl'     => ['Dutch', 'nl', 'qwerty/nl.kmap.gz', 'nl', undef],
+    'mk' => ['Macedonian', 'mk', 'qwerty/mk.kmap.gz', 'mk', 'nodeadkeys'],
+    'nl' => ['Dutch', 'nl', 'qwerty/nl.kmap.gz', 'nl', undef],
     #'nl-be'  => ['Belgium-Dutch', 'nl-be', ?, ?, ?],
-    'no'   => ['Norwegian', 'no', 'qwerty/no-latin1.kmap.gz', 'no', 'nodeadkeys'],
-    'pl'     => ['Polish', 'pl', 'qwerty/pl.kmap.gz', 'pl', undef],
-    'pt'     => ['Portuguese', 'pt', 'qwerty/pt-latin1.kmap.gz', 'pt', 'nodeadkeys'],
-    'pt-br'  => ['Brazil-Portuguese', 'pt-br', 'qwerty/br-latin1.kmap.gz', 'br', 'nodeadkeys'],
+    'no' => ['Norwegian', 'no', 'qwerty/no-latin1.kmap.gz', 'no', 'nodeadkeys'],
+    'pl' => ['Polish', 'pl', 'qwerty/pl.kmap.gz', 'pl', undef],
+    'pt' => ['Portuguese', 'pt', 'qwerty/pt-latin1.kmap.gz', 'pt', 'nodeadkeys'],
+    'pt-br' => ['Brazil-Portuguese', 'pt-br', 'qwerty/br-latin1.kmap.gz', 'br', 'nodeadkeys'],
     #'ru'     => ['Russian', 'ru', 'qwerty/ru.kmap.gz', 'ru', undef], # don't know?
-    'si'     => ['Slovenian', 'sl', 'qwertz/slovene.kmap.gz', 'si', undef],
-    'se'     => ['Swedish', 'sv', 'qwerty/se-latin1.kmap.gz', 'se', 'nodeadkeys'],
+    'si' => ['Slovenian', 'sl', 'qwertz/slovene.kmap.gz', 'si', undef],
+    'se' => ['Swedish', 'sv', 'qwerty/se-latin1.kmap.gz', 'se', 'nodeadkeys'],
     #'th'     => [],
-    'tr'     => ['Turkish', 'tr', 'qwerty/trq.kmap.gz', 'tr', undef],
+    'tr' => ['Turkish', 'tr', 'qwerty/trq.kmap.gz', 'tr', undef],
 };
 
 my $kvmkeymaparray = [];
@@ -879,22 +892,22 @@ sub extract_param {
 }
 
 # For extracting sensitive keys (e.g. password), to avoid writing them to www-data owned configs
-sub extract_sensitive_params :prototype($$$) {
+sub extract_sensitive_params : prototype($$$) {
     my ($param, $sensitive_list, $delete_list) = @_;
 
     my %delete = map { $_ => 1 } ($delete_list || [])->@*;
 
     my $sensitive = {};
     for my $opt (@$sensitive_list) {
-	# handle deletions as explicitly setting `undef`, so subs which only have $param but not
-	# $delete_list available can recognize them. Afterwards new values  may override.
-	if (exists($delete{$opt})) {
-	    $sensitive->{$opt} = undef;
-	}
+        # handle deletions as explicitly setting `undef`, so subs which only have $param but not
+        # $delete_list available can recognize them. Afterwards new values  may override.
+        if (exists($delete{$opt})) {
+            $sensitive->{$opt} = undef;
+        }
 
-	if (defined(my $value = extract_param($param, $opt))) {
-	    $sensitive->{$opt} = $value;
-	}
+        if (defined(my $value = extract_param($param, $opt))) {
+            $sensitive->{$opt} = $value;
+        }
     }
 
     return $sensitive;
@@ -914,16 +927,19 @@ sub wait_for_vnc_port {
 
     my $found;
     while (($elapsed = tv_interval($starttime)) < $timeout) {
-	# -Htln = don't print header, tcp, listening sockets only, numeric ports
-	run_command($cmd, outfunc => sub {
-	    my $line = shift;
-	    if ($line =~ m/^LISTEN\s+\d+\s+\d+\s+\S+:(\d+)\s/) {
-		$found = 1 if ($port == $1);
-	    }
-	});
-	return 1 if $found;
-	$sleeptime += 100000 if  $sleeptime < 1000000;
-	usleep($sleeptime);
+        # -Htln = don't print header, tcp, listening sockets only, numeric ports
+        run_command(
+            $cmd,
+            outfunc => sub {
+                my $line = shift;
+                if ($line =~ m/^LISTEN\s+\d+\s+\d+\s+\S+:(\d+)\s/) {
+                    $found = 1 if ($port == $1);
+                }
+            },
+        );
+        return 1 if $found;
+        $sleeptime += 100000 if $sleeptime < 1000000;
+        usleep($sleeptime);
     }
 
     die "Timeout while waiting for port '$port' to get ready!\n";
@@ -941,52 +957,54 @@ sub next_unused_port {
 
     my $code = sub {
 
-	my $expiretime = 5;
-	my $ctime = time();
+        my $expiretime = 5;
+        my $ctime = time();
 
-	my $ports = {};
+        my $ports = {};
 
-	if (my $fh = IO::File->new ($filename, "r")) {
-	    while (my $line = <$fh>) {
-		if ($line =~ m/^(\d+)\s(\d+)$/) {
-		    my ($port, $timestamp) = ($1, $2);
-		    if (($timestamp + $expiretime) > $ctime) {
-			$ports->{$port} = $timestamp; # not expired
-		    }
-		}
-	    }
-	}
+        if (my $fh = IO::File->new($filename, "r")) {
+            while (my $line = <$fh>) {
+                if ($line =~ m/^(\d+)\s(\d+)$/) {
+                    my ($port, $timestamp) = ($1, $2);
+                    if (($timestamp + $expiretime) > $ctime) {
+                        $ports->{$port} = $timestamp; # not expired
+                    }
+                }
+            }
+        }
 
-	my $newport;
-	my %sockargs = (Listen => 5,
-			ReuseAddr => 1,
-			Family    => $family,
-			Proto     => IPPROTO_TCP,
-			GetAddrInfoFlags => 0);
-	$sockargs{LocalAddr} = $address if defined($address);
+        my $newport;
+        my %sockargs = (
+            Listen => 5,
+            ReuseAddr => 1,
+            Family => $family,
+            Proto => IPPROTO_TCP,
+            GetAddrInfoFlags => 0,
+        );
+        $sockargs{LocalAddr} = $address if defined($address);
 
-	for (my $p = $range_start; $p < $range_end; $p++) {
-	    next if $ports->{$p}; # reserved
+        for (my $p = $range_start; $p < $range_end; $p++) {
+            next if $ports->{$p}; # reserved
 
-	    $sockargs{LocalPort} = $p;
-	    my $sock = IO::Socket::IP->new(%sockargs);
+            $sockargs{LocalPort} = $p;
+            my $sock = IO::Socket::IP->new(%sockargs);
 
-	    if ($sock) {
-		close($sock);
-		$newport = $p;
-		$ports->{$p} = $ctime;
-		last;
-	    }
-	}
+            if ($sock) {
+                close($sock);
+                $newport = $p;
+                $ports->{$p} = $ctime;
+                last;
+            }
+        }
 
-	my $data = "";
-	foreach my $p (keys %$ports) {
-	    $data .= "$p $ports->{$p}\n";
-	}
+        my $data = "";
+        foreach my $p (keys %$ports) {
+            $data .= "$p $ports->{$p}\n";
+        }
 
-	file_set_contents($filename, $data);
+        file_set_contents($filename, $data);
 
-	return $newport;
+        return $newport;
     };
 
     my $p = lock_file('/var/lock/pve-ports.lck', 10, $code);
@@ -1017,10 +1035,10 @@ sub next_spice_port {
 }
 
 sub must_stringify {
-	my ($value) = @_;
-	eval { $value = "$value" };
-	return "error turning value into a string: $@" if $@;
-	return $value;
+    my ($value) = @_;
+    eval { $value = "$value" };
+    return "error turning value into a string: $@" if $@;
+    return $value;
 }
 
 # sigkill after $timeout  a $sub running in a fork if it can't write a pipe
@@ -1040,64 +1058,64 @@ sub run_fork_with_timeout {
 
     my $child = fork();
     if (!defined($child)) {
-	die "fork failed: $!\n";
-	return $res;
+        die "fork failed: $!\n";
+        return $res;
     }
 
     if (!$child) {
-	$pipe_out->writer();
+        $pipe_out->writer();
 
-	eval {
-	    $res = $sub->();
-	    print {$pipe_out} encode_json({ result => $res });
-	    $pipe_out->flush();
-	};
-	if (my $err = $@) {
-	    print {$pipe_out} encode_json({ error => must_stringify($err) });
-	    $pipe_out->flush();
-	    POSIX::_exit(1);
-	}
-	POSIX::_exit(0);
+        eval {
+            $res = $sub->();
+            print {$pipe_out} encode_json({ result => $res });
+            $pipe_out->flush();
+        };
+        if (my $err = $@) {
+            print {$pipe_out} encode_json({ error => must_stringify($err) });
+            $pipe_out->flush();
+            POSIX::_exit(1);
+        }
+        POSIX::_exit(0);
     }
 
     local $SIG{INT} = sub { $sig_received++; };
     local $SIG{TERM} = sub {
-	$error //= "interrupted by unexpected signal\n";
-	kill('TERM', $child);
+        $error //= "interrupted by unexpected signal\n";
+        kill('TERM', $child);
     };
 
     $pipe_out->reader();
 
     my $readvalues = sub {
-	local $/ = undef;
-	my $child_res = decode_json(readline_nointr($pipe_out));
-	$res = $child_res->{result};
-	$error = $child_res->{error};
+        local $/ = undef;
+        my $child_res = decode_json(readline_nointr($pipe_out));
+        $res = $child_res->{result};
+        $error = $child_res->{error};
     };
 
     my $handle_forked = sub {
-	if (my $afterfork = $opts->{afterfork}) {
-	    eval { $afterfork->($child); };
-	    if (my $err = $@) {
-		$error = $err; # propagate error
-		die $err;
-	    }
-	}
-	$readvalues->();
+        if (my $afterfork = $opts->{afterfork}) {
+            eval { $afterfork->($child); };
+            if (my $err = $@) {
+                $error = $err; # propagate error
+                die $err;
+            }
+        }
+        $readvalues->();
     };
 
     my $got_timeout = 0;
     my $wantarray = wantarray; # so it can be queried inside eval
     eval {
-	if (defined($timeout)) {
-	    if ($wantarray) {
-		(undef, $got_timeout) = run_with_timeout($timeout, $handle_forked);
-	    } else {
-		run_with_timeout($timeout, $handle_forked);
-	    }
-	} else {
-	    $handle_forked->();
-	}
+        if (defined($timeout)) {
+            if ($wantarray) {
+                (undef, $got_timeout) = run_with_timeout($timeout, $handle_forked);
+            } else {
+                run_with_timeout($timeout, $handle_forked);
+            }
+        } else {
+            $handle_forked->();
+        }
     };
     warn $@ if $@;
     $pipe_out->close();
@@ -1130,13 +1148,13 @@ sub df {
     warn $@ if $@;
 
     # untaint, but be flexible: PB usage can result in scientific notation
-    my ($blocks, $used, $bavail) = map { defined($_) ? (/^([\d\.e\-+]+)$/) : 0 }
-	$res->@{qw(blocks used bavail)};
+    my ($blocks, $used, $bavail) =
+        map { defined($_) ? (/^([\d\.e\-+]+)$/) : 0 } $res->@{qw(blocks used bavail)};
 
     return {
-	total => $blocks,
-	used => $used,
-	avail => $bavail,
+        total => $blocks,
+        used => $used,
+        avail => $bavail,
     };
 }
 
@@ -1148,11 +1166,11 @@ sub du {
     $timeout //= 10;
 
     my $parser = sub {
-	my $line = shift;
+        my $line = shift;
 
-	if ($line =~ m/^(\d+)\s+total$/) {
-	    $size = $1;
-	}
+        if ($line =~ m/^(\d+)\s+total$/) {
+            $size = $1;
+        }
     };
 
     run_command(['du', '-scb', $path], outfunc => $parser, timeout => $timeout);
@@ -1170,9 +1188,8 @@ sub upid_encode {
 
     # Note: pstart can be > 32bit if uptime > 497 days, so this can result in
     # more that 8 characters for pstart
-    return sprintf("UPID:%s:%08X:%08X:%08X:%s:%s:%s:", $d->{node}, $d->{pid},
-		   $d->{pstart}, $d->{starttime}, $d->{type}, $d->{id},
-		   $d->{user});
+    return sprintf("UPID:%s:%08X:%08X:%08X:%s:%s:%s:",
+        $d->{node}, $d->{pid}, $d->{pstart}, $d->{starttime}, $d->{type}, $d->{id}, $d->{user});
 }
 
 sub upid_decode {
@@ -1183,21 +1200,23 @@ sub upid_decode {
 
     # "UPID:$node:$pid:$pstart:$startime:$dtype:$id:$user"
     # Note: allow up to 9 characters for pstart (work until 20 years uptime)
-    if ($upid =~ m|^UPID:([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8,9}):([0-9A-Fa-f]{8}):([^:\s/]+):([^:\s/]*):([^:\s/]+):$|) {
-	$res->{node} = $1;
-	$res->{pid} = hex($3);
-	$res->{pstart} = hex($4);
-	$res->{starttime} = hex($5);
-	$res->{type} = $6;
-	$res->{id} = $7;
-	$res->{user} = $8;
+    if ($upid =~
+        m|^UPID:([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8,9}):([0-9A-Fa-f]{8}):([^:\s/]+):([^:\s/]*):([^:\s/]+):$|
+    ) {
+        $res->{node} = $1;
+        $res->{pid} = hex($3);
+        $res->{pstart} = hex($4);
+        $res->{starttime} = hex($5);
+        $res->{type} = $6;
+        $res->{id} = $7;
+        $res->{user} = $8;
 
-	my $subdir = substr($5, 7, 8);
-	$filename = "$pvetaskdir/$subdir/$upid";
+        my $subdir = substr($5, 7, 8);
+        $filename = "$pvetaskdir/$subdir/$upid";
 
     } else {
-	return undef if $noerr;
-	die "unable to parse worker upid '$upid'\n";
+        return undef if $noerr;
+        die "unable to parse worker upid '$upid'\n";
     }
 
     return wantarray ? ($res, $filename) : $res;
@@ -1211,17 +1230,17 @@ sub upid_open {
     my $dirname = dirname($filename);
     make_path($dirname);
 
-    my $wwwid = getpwnam('www-data') ||
-	die "getpwnam failed";
+    my $wwwid = getpwnam('www-data')
+        || die "getpwnam failed";
 
     my $perm = 0640;
 
-    my $outfh = IO::File->new ($filename, O_WRONLY|O_CREAT|O_EXCL, $perm) ||
-	die "unable to create output file '$filename' - $!\n";
+    my $outfh = IO::File->new($filename, O_WRONLY | O_CREAT | O_EXCL, $perm)
+        || die "unable to create output file '$filename' - $!\n";
     chown $wwwid, -1, $outfh;
 
     return $outfh;
-};
+}
 
 sub upid_read_status {
     my ($upid) = @_;
@@ -1234,19 +1253,20 @@ sub upid_read_status {
     my $readbuf = '';
     my $br = sysread($fh, $readbuf, $maxlen);
     close($fh);
+
     if ($br) {
-	return "unable to extract last line"
-	    if $readbuf !~ m/\n?(.+)$/;
-	my $line = $1;
-	if ($line =~ m/^TASK OK$/) {
-	    return 'OK';
-	} elsif ($line =~ m/^TASK ERROR: (.+)$/) {
-	    return $1;
-	} elsif ($line =~ m/^TASK (WARNINGS: \d+)$/) {
-	    return $1;
-	} else {
-	    return "unexpected status";
-	}
+        return "unable to extract last line"
+            if $readbuf !~ m/\n?(.+)$/;
+        my $line = $1;
+        if ($line =~ m/^TASK OK$/) {
+            return 'OK';
+        } elsif ($line =~ m/^TASK ERROR: (.+)$/) {
+            return $1;
+        } elsif ($line =~ m/^TASK (WARNINGS: \d+)$/) {
+            return $1;
+        } else {
+            return "unexpected status";
+        }
     }
     return "unable to read tail (got $br bytes)";
 }
@@ -1264,15 +1284,15 @@ sub upid_normalize_status_type {
     my ($status) = @_;
 
     if (!$status) {
-	return 'unknown';
+        return 'unknown';
     } elsif ($status eq 'OK') {
-	return 'ok';
+        return 'ok';
     } elsif ($status =~ m/^WARNINGS: \d+$/) {
-	return 'warning';
+        return 'warning';
     } elsif ($status eq 'unexpected status') {
-	return 'unknown';
+        return 'unknown';
     } else {
-	return 'error';
+        return 'error';
     }
 }
 
@@ -1296,7 +1316,7 @@ sub decode_utf8_parameters {
     my ($param) = @_;
 
     foreach my $p (qw(comment description firstname lastname)) {
-	$param->{$p} = decode('utf8', $param->{$p}) if $param->{$p};
+        $param->{$p} = decode('utf8', $param->{$p}) if $param->{$p};
     }
 
     return $param;
@@ -1314,7 +1334,7 @@ sub random_ether_addr {
 
     my $addr = sprintf("%02X:%02X:%02X:%02X:%02X:%02X", unpack("C6", $rand));
     if (defined($prefix)) {
-	$addr = uc($prefix) . substr($addr, length($prefix));
+        $addr = uc($prefix) . substr($addr, length($prefix));
     }
     return $addr;
 }
@@ -1335,14 +1355,14 @@ sub cmd2string {
     my @qa = ();
     foreach my $arg (@$cmd) { push @qa, shellquote($arg); }
 
-    return join (' ', @qa);
+    return join(' ', @qa);
 }
 
 # split an shell argument string into an array,
 sub split_args {
     my ($str) = @_;
 
-    return $str ? [ Text::ParseWords::shellwords($str) ] : [];
+    return $str ? [Text::ParseWords::shellwords($str)] : [];
 }
 
 sub dump_logfile_by_filehandle {
@@ -1357,38 +1377,38 @@ sub dump_logfile_by_filehandle {
 
     my $line;
     if ($filter) {
-	# duplicate code, so that we do not slow down normal path
-	while (defined($line = <$fh>)) {
-	    if (ref($filter) eq 'CODE') {
-		next if !$filter->($line);
-	    } else {
-		next if $line !~ m/$filter/;
-	    }
-	    next if $count++ < $start;
-	    if (!$read_until_end) {
-		next if $limit <= 0;
-		$limit--;
-	    }
-	    chomp $line;
-	    push @$lines, { n => $count, t => $line};
-	}
+        # duplicate code, so that we do not slow down normal path
+        while (defined($line = <$fh>)) {
+            if (ref($filter) eq 'CODE') {
+                next if !$filter->($line);
+            } else {
+                next if $line !~ m/$filter/;
+            }
+            next if $count++ < $start;
+            if (!$read_until_end) {
+                next if $limit <= 0;
+                $limit--;
+            }
+            chomp $line;
+            push @$lines, { n => $count, t => $line };
+        }
     } else {
-	while (defined($line = <$fh>)) {
-	    next if $count++ < $start;
-	    if (!$read_until_end) {
-		next if $limit <= 0;
-		$limit--;
-	    }
-	    chomp $line;
-	    push @$lines, { n => $count, t => $line};
-	}
+        while (defined($line = <$fh>)) {
+            next if $count++ < $start;
+            if (!$read_until_end) {
+                next if $limit <= 0;
+                $limit--;
+            }
+            chomp $line;
+            push @$lines, { n => $count, t => $line };
+        }
     }
 
     # HACK: ExtJS store.guaranteeRange() does not like empty array
     # so we add a line
     if (!$count && $final) {
-	$count++;
-	push @$lines, { n => $count, t => "no content"};
+        $count++;
+        push @$lines, { n => $count, t => "no content" };
     }
 
     $state->{count} = $count;
@@ -1400,14 +1420,14 @@ sub dump_logfile {
 
     my $fh = IO::File->new($filename, "r");
     if (!$fh) {
-	return (1, { n => 1, t => "unable to open file - $!"});
+        return (1, { n => 1, t => "unable to open file - $!" });
     }
 
     my %state = (
-	'count' => 0,
-	'lines' => [],
-	'start' => $start,
-	'limit' => $limit,
+        'count' => 0,
+        'lines' => [],
+        'start' => $start,
+        'limit' => $limit,
     );
 
     dump_logfile_by_filehandle($fh, $filter, \%state);
@@ -1427,12 +1447,12 @@ sub dump_journal {
     $limit = 50 if !$limit;
 
     my $parser = sub {
-	my $line = shift;
+        my $line = shift;
 
-	return if $count++ < $start;
-	return if $limit <= 0;
-	push @$lines, { n => int($count), t => $line};
-	$limit--;
+        return if $count++ < $start;
+        return if $limit <= 0;
+        push @$lines, { n => int($count), t => $line };
+        $limit--;
     };
 
     my $cmd = ['journalctl', '-o', 'short', '--no-pager'];
@@ -1445,8 +1465,8 @@ sub dump_journal {
     # HACK: ExtJS store.guaranteeRange() does not like empty array
     # so we add a line
     if (!$count) {
-	$count++;
-	push @$lines, { n => $count, t => "no content"};
+        $count++;
+        push @$lines, { n => $count, t => "no content" };
     }
 
     return ($count, $lines);
@@ -1455,14 +1475,14 @@ sub dump_journal {
 sub dir_glob_regex {
     my ($dir, $regex) = @_;
 
-    my $dh = IO::Dir->new ($dir);
+    my $dh = IO::Dir->new($dir);
     return wantarray ? () : undef if !$dh;
 
     while (defined(my $tmp = $dh->read)) {
-	if (my @res = $tmp =~ m/^($regex)$/) {
-	    $dh->close;
-	    return wantarray ? @res : $tmp;
-	}
+        if (my @res = $tmp =~ m/^($regex)$/) {
+            $dh->close;
+            return wantarray ? @res : $tmp;
+        }
     }
     $dh->close;
 
@@ -1472,13 +1492,13 @@ sub dir_glob_regex {
 sub dir_glob_foreach {
     my ($dir, $regex, $func) = @_;
 
-    my $dh = IO::Dir->new ($dir);
+    my $dh = IO::Dir->new($dir);
     if (defined $dh) {
-	while (defined(my $tmp = $dh->read)) {
-	    if (my @res = $tmp =~ m/^($regex)$/) {
-		&$func (@res);
-	    }
-	}
+        while (defined(my $tmp = $dh->read)) {
+            if (my @res = $tmp =~ m/^($regex)$/) {
+                &$func(@res);
+            }
+        }
     }
 }
 
@@ -1486,7 +1506,7 @@ sub assert_if_modified {
     my ($digest1, $digest2) = @_;
 
     if ($digest1 && $digest2 && ($digest1 ne $digest2)) {
-	die "detected modified configuration - file changed by other user? Try again.\n";
+        die "detected modified configuration - file changed by other user? Try again.\n";
     }
 }
 
@@ -1498,14 +1518,10 @@ sub fnv31a {
     my $hval = 0x811c9dc5;
 
     foreach my $c (unpack('C*', $string)) {
-	$hval ^= $c;
-	$hval += (
-	    (($hval << 1) ) +
-	    (($hval << 4) ) +
-	    (($hval << 7) ) +
-	    (($hval << 8) ) +
-	    (($hval << 24) ) );
-	$hval = $hval & 0xffffffff;
+        $hval ^= $c;
+        $hval +=
+            ((($hval << 1)) + (($hval << 4)) + (($hval << 7)) + (($hval << 8)) + (($hval << 24)));
+        $hval = $hval & 0xffffffff;
     }
     return $hval & 0x7fffffff;
 }
@@ -1515,16 +1531,19 @@ sub fnv31a_hex { return sprintf("%X", fnv31a(@_)); }
 sub unpack_sockaddr_in46 {
     my ($sin) = @_;
     my $family = Socket::sockaddr_family($sin);
-    my ($port, $host) = ($family == AF_INET6 ? Socket::unpack_sockaddr_in6($sin)
-                                             : Socket::unpack_sockaddr_in($sin));
+    my ($port, $host) = (
+        $family == AF_INET6
+        ? Socket::unpack_sockaddr_in6($sin)
+        : Socket::unpack_sockaddr_in($sin)
+    );
     return ($family, $port, $host);
 }
 
 sub getaddrinfo_all {
     my ($hostname, @opts) = @_;
     my %hints = (
-	flags => AI_V4MAPPED | AI_ALL,
-	@opts,
+        flags => AI_V4MAPPED | AI_ALL,
+        @opts,
     );
     my ($err, @res) = Socket::getaddrinfo($hostname, '0', \%hints);
     die "failed to get address info for: $hostname: $err\n" if $err;
@@ -1544,8 +1563,8 @@ sub get_fqdn {
     my ($nodename) = @_;
 
     my $hints = {
-	flags => AI_CANONNAME,
-	socktype => SOCK_DGRAM
+        flags => AI_CANONNAME,
+        socktype => SOCK_DGRAM,
     };
 
     my ($err, @addrs) = Socket::getaddrinfo($nodename, undef, $hints);
@@ -1559,11 +1578,13 @@ sub get_fqdn {
 # The port is always optional and thus may be undef.
 sub parse_host_and_port {
     my ($address) = @_;
-    if ($address =~ /^($IPV4RE|[[:alnum:]\-.]+)(?::(\d+))?$/ ||             # ipv4 or host with optional ':port'
+    if (
+        $address =~ /^($IPV4RE|[[:alnum:]\-.]+)(?::(\d+))?$/ || # ipv4 or host with optional ':port'
         $address =~ /^\[($IPV6RE|$IPV4RE|[[:alnum:]\-.]+)\](?::(\d+))?$/ || # anything in brackets with optional ':port'
-        $address =~ /^($IPV6RE)(?:\.(\d+))?$/)                              # ipv6 with optional port separated by dot
+        $address =~ /^($IPV6RE)(?:\.(\d+))?$/
+        ) # ipv6 with optional port separated by dot
     {
-	return ($1, $2, 1); # end with 1 to support simple if(parse...) tests
+        return ($1, $2, 1); # end with 1 to support simple if(parse...) tests
     }
     return; # nothing
 }
@@ -1596,21 +1617,21 @@ sub fsync($) {
 sub renameat2($$$$$) {
     my ($olddirfd, $oldpath, $newdirfd, $newpath, $flags) = @_;
     return 0 == syscall(
-	PVE::Syscall::renameat2,
-	int($olddirfd),
-	$oldpath,
-	int($newdirfd),
-	$newpath,
-	int($flags),
+        PVE::Syscall::renameat2,
+        int($olddirfd),
+        $oldpath,
+        int($newdirfd),
+        $newpath,
+        int($flags),
     );
 }
 
 sub sync_mountpoint {
     my ($path) = @_;
-    sysopen my $fd, $path, O_RDONLY|O_CLOEXEC or die "failed to open $path: $!\n";
+    sysopen my $fd, $path, O_RDONLY | O_CLOEXEC or die "failed to open $path: $!\n";
     my $syncfs_err;
     if (!syncfs(fileno($fd))) {
-	$syncfs_err = "$!";
+        $syncfs_err = "$!";
     }
     close($fd);
     die "syncfs '$path' failed - $syncfs_err\n" if defined $syncfs_err;
@@ -1619,7 +1640,7 @@ sub sync_mountpoint {
 my sub check_mail_addr {
     my ($addr) = @_;
     die "'$addr' does not look like a valid email address or username\n"
-	if $addr !~ /^$EMAIL_RE$/ && $addr !~ /^$EMAIL_USER_RE$/;
+        if $addr !~ /^$EMAIL_RE$/ && $addr !~ /^$EMAIL_USER_RE$/;
 }
 
 # support sending multi-part mail messages with a text and or a HTML part
@@ -1627,10 +1648,10 @@ my sub check_mail_addr {
 sub sendmail {
     my ($mailto, $subject, $text, $html, $mailfrom, $author) = @_;
 
-    $mailto = [ $mailto ] if !ref($mailto);
+    $mailto = [$mailto] if !ref($mailto);
 
     check_mail_addr($_) for $mailto->@*;
-    my $to_quoted = [ map { shellquote($_) } $mailto->@* ];
+    my $to_quoted = [map { shellquote($_) } $mailto->@*];
 
     $mailfrom = $mailfrom || "root";
     check_mail_addr($mailfrom);
@@ -1638,8 +1659,8 @@ sub sendmail {
 
     $author = $author // 'Proxmox VE';
 
-    open (my $mail, "|-", "sendmail", "-B", "8BITMIME", "-f", $from_quoted, "--", $to_quoted->@*)
-	or die "unable to open 'sendmail' - $!";
+    open(my $mail, "|-", "sendmail", "-B", "8BITMIME", "-f", $from_quoted, "--", $to_quoted->@*)
+        or die "unable to open 'sendmail' - $!";
 
     my $is_multipart = $text && $html;
     my $boundary = "----_=_NextPart_001_" . int(time()) . $$; # multipart spec, see rfc 1521
@@ -1649,44 +1670,44 @@ sub sendmail {
     print $mail "MIME-Version: 1.0\n" if $subject =~ /[^[:ascii:]]/ || $is_multipart;
 
     print $mail "From: $author <$mailfrom>\n";
-    print $mail "To: " . join(', ', @$mailto) ."\n";
+    print $mail "To: " . join(', ', @$mailto) . "\n";
     print $mail "Date: " . time2str('%a, %d %b %Y %H:%M:%S %z', time()) . "\n";
     print $mail "Subject: $subject\n";
 
     if ($is_multipart) {
-	print $mail "Content-Type: multipart/alternative;\n";
-	print $mail "\tboundary=\"$boundary\"\n";
-	print $mail "\n";
-	print $mail "This is a multi-part message in MIME format.\n\n";
-	print $mail "--$boundary\n";
+        print $mail "Content-Type: multipart/alternative;\n";
+        print $mail "\tboundary=\"$boundary\"\n";
+        print $mail "\n";
+        print $mail "This is a multi-part message in MIME format.\n\n";
+        print $mail "--$boundary\n";
     }
 
     if (defined($text)) {
-	print $mail "Content-Type: text/plain;\n";
-	print $mail "Auto-Submitted: auto-generated;\n";
-	print $mail "\tcharset=\"UTF-8\"\n";
-	print $mail "Content-Transfer-Encoding: 8bit\n";
-	print $mail "\n";
+        print $mail "Content-Type: text/plain;\n";
+        print $mail "Auto-Submitted: auto-generated;\n";
+        print $mail "\tcharset=\"UTF-8\"\n";
+        print $mail "Content-Transfer-Encoding: 8bit\n";
+        print $mail "\n";
 
-	# avoid 'remove extra line breaks' issue (MS Outlook)
-	my $fill = '  ';
-	$text =~ s/^/$fill/gm;
+        # avoid 'remove extra line breaks' issue (MS Outlook)
+        my $fill = '  ';
+        $text =~ s/^/$fill/gm;
 
-	print $mail $text;
+        print $mail $text;
 
-	print $mail "\n--$boundary\n" if $is_multipart;
+        print $mail "\n--$boundary\n" if $is_multipart;
     }
 
     if (defined($html)) {
-	print $mail "Content-Type: text/html;\n";
-	print $mail "Auto-Submitted: auto-generated;\n";
-	print $mail "\tcharset=\"UTF-8\"\n";
-	print $mail "Content-Transfer-Encoding: 8bit\n";
-	print $mail "\n";
+        print $mail "Content-Type: text/html;\n";
+        print $mail "Auto-Submitted: auto-generated;\n";
+        print $mail "\tcharset=\"UTF-8\"\n";
+        print $mail "Content-Transfer-Encoding: 8bit\n";
+        print $mail "\n";
 
-	print $mail $html;
+        print $mail $html;
 
-	print $mail "\n--$boundary--\n" if $is_multipart;
+        print $mail "\n--$boundary--\n" if $is_multipart;
     }
 
     close($mail);
@@ -1707,23 +1728,23 @@ sub tempfile {
 
     my $dir = $opts{dir};
     if (!$dir) {
-	if (-d "/run/user/$<") {
-	    $dir = "/run/user/$<";
-	} elsif ($< == 0) {
-	    $dir = "/run";
-	} else {
-	    $dir = "/tmp";
-	}
+        if (-d "/run/user/$<") {
+            $dir = "/run/user/$<";
+        } elsif ($< == 0) {
+            $dir = "/run";
+        } else {
+            $dir = "/tmp";
+        }
     }
     my $mode = $opts{mode} // O_RDWR;
     $mode |= O_EXCL if !$opts{allow_links};
 
     my $fh = IO::File->new($dir, $mode | O_TMPFILE, $perm);
     if (!$fh && $! == EOPNOTSUPP) {
-	$dir = '/tmp' if !defined($opts{dir});
-	$dir .= "/.tmpfile.$$";
-	$fh = IO::File->new($dir, $mode | O_CREAT | O_EXCL, $perm);
-	unlink($dir) if $fh;
+        $dir = '/tmp' if !defined($opts{dir});
+        $dir .= "/.tmpfile.$$";
+        $fh = IO::File->new($dir, $mode | O_CREAT | O_EXCL, $perm);
+        unlink($dir) if $fh;
     }
     die "failed to create tempfile: $!\n" if !$fh;
     return $fh;
@@ -1735,15 +1756,15 @@ sub tempfile_contents {
 
     my $fh = tempfile($perm, %opts);
     eval {
-	die "unable to write to tempfile: $!\n" if !print {$fh} $data;
-	die "unable to flush to tempfile: $!\n" if !defined($fh->flush());
+        die "unable to write to tempfile: $!\n" if !print {$fh} $data;
+        die "unable to flush to tempfile: $!\n" if !defined($fh->flush());
     };
     if (my $err = $@) {
-	close $fh;
-	die $err;
+        close $fh;
+        die $err;
     }
 
-    return ("/proc/$$/fd/".$fh->fileno, $fh);
+    return ("/proc/$$/fd/" . $fh->fileno, $fh);
 }
 
 sub validate_ssh_public_keys {
@@ -1751,13 +1772,16 @@ sub validate_ssh_public_keys {
     my @lines = split(/\n/, $raw);
 
     foreach my $line (@lines) {
-	next if $line =~ m/^\s*$/;
-	eval {
-	    my ($filename, $handle) = tempfile_contents($line);
-	    run_command(["ssh-keygen", "-l", "-f", $filename],
-			outfunc => sub {}, errfunc => sub {});
-	};
-	die "SSH public key validation error\n" if $@;
+        next if $line =~ m/^\s*$/;
+        eval {
+            my ($filename, $handle) = tempfile_contents($line);
+            run_command(
+                ["ssh-keygen", "-l", "-f", $filename],
+                outfunc => sub { },
+                errfunc => sub { },
+            );
+        };
+        die "SSH public key validation error\n" if $@;
     }
 }
 
@@ -1793,12 +1817,12 @@ sub mknod($$$) {
 sub fchownat($$$$$) {
     my ($dirfd, $pathname, $owner, $group, $flags) = @_;
     return syscall(
-	PVE::Syscall::fchownat,
-	int($dirfd),
-	$pathname,
-	int($owner),
-	int($group),
-	int($flags),
+        PVE::Syscall::fchownat,
+        int($dirfd),
+        $pathname,
+        int($owner),
+        int($group),
+        int($flags),
     ) == 0;
 }
 
@@ -1819,7 +1843,7 @@ sub encrypt_pw {
     if ($prefix eq '5') {
         $input = "\$5\$$salt\$";
     } elsif ($prefix eq 'y') {
-        $input = "\$y\$j9T\$$salt\$"
+        $input = "\$y\$j9T\$$salt\$";
     } else {
         die "Cannot hash password, unknown crypt prefix '$prefix'\n";
     }
@@ -1847,23 +1871,24 @@ sub convert_size {
     my ($value, $from, $to, $no_round_up) = @_;
 
     my $units = {
-	b  => 0,
-	kb => 1,
-	mb => 2,
-	gb => 3,
-	tb => 4,
-	pb => 5,
+        b => 0,
+        kb => 1,
+        mb => 2,
+        gb => 3,
+        tb => 4,
+        pb => 5,
     };
 
     die "no value given"
-	if !defined($value) || $value eq "";
+        if !defined($value) || $value eq "";
 
-    $from = lc($from // ''); $to = lc($to // '');
+    $from = lc($from // '');
+    $to = lc($to // '');
     die "unknown 'from' and/or 'to' units ($from => $to)"
-	if !defined($units->{$from}) || !defined($units->{$to});
+        if !defined($units->{$from}) || !defined($units->{$to});
 
     die "value '$value' is not a valid, positive number"
-	if $value !~ m/^(?:[0-9]+\.?[0-9]*|[0-9]*\.[0-9]+)$/;
+        if $value !~ m/^(?:[0-9]+\.?[0-9]*|[0-9]*\.[0-9]+)$/;
 
     my $shift_amount = ($units->{$from} - $units->{$to}) * 10;
 
@@ -1879,13 +1904,14 @@ sub readline_nointr {
     my ($fh) = @_;
     my $line;
     while (1) {
-	$line = <$fh>;
-	last if defined($line) || ($! != EINTR);
+        $line = <$fh>;
+        last if defined($line) || ($! != EINTR);
     }
     return $line;
 }
 
 my $host_arch;
+
 sub get_host_arch {
     $host_arch = (POSIX::uname())[4] if !$host_arch;
     return $host_arch;
@@ -1909,33 +1935,33 @@ sub array_intersect {
     my ($arrays) = @_;
 
     if (!ref($arrays->[0])) {
-	$arrays = [ grep { ref($_) eq 'ARRAY' } @_ ];
+        $arrays = [grep { ref($_) eq 'ARRAY' } @_];
     }
 
     return [] if scalar(@$arrays) == 0;
     return $arrays->[0] if scalar(@$arrays) == 1;
 
     my $array_unique = sub {
-	my %seen = ();
-	return grep { ! $seen{ $_ }++ } @_;
+        my %seen = ();
+        return grep { !$seen{$_}++ } @_;
     };
 
     # base idea is to get all unique members from the first array, then
     # check the common elements with the next (uniquely made) one, only keep
     # those. Repeat for every array and at the end we only have those left
     # which exist in all arrays
-    my $return_arr = [ $array_unique->(@{$arrays->[0]}) ];
+    my $return_arr = [$array_unique->(@{ $arrays->[0] })];
     for my $i (1 .. $#$arrays) {
-	my %count = ();
-	# $return_arr is already unique, explicit at before the loop, implicit below.
-	foreach my $element (@$return_arr, $array_unique->(@{$arrays->[$i]})) {
-	    $count{$element}++;
-	}
-	$return_arr = [];
-	foreach my $element (keys %count) {
-	    push @$return_arr, $element if $count{$element} > 1;
-	}
-	last if scalar(@$return_arr) == 0; # empty intersection, early exit
+        my %count = ();
+        # $return_arr is already unique, explicit at before the loop, implicit below.
+        foreach my $element (@$return_arr, $array_unique->(@{ $arrays->[$i] })) {
+            $count{$element}++;
+        }
+        $return_arr = [];
+        foreach my $element (keys %count) {
+            push @$return_arr, $element if $count{$element} > 1;
+        }
+        last if scalar(@$return_arr) == 0; # empty intersection, early exit
     }
 
     return $return_arr;
@@ -1944,22 +1970,19 @@ sub array_intersect {
 sub open_tree($$$) {
     my ($dfd, $pathname, $flags) = @_;
     return PVE::Syscall::file_handle_result(syscall(
-	&PVE::Syscall::open_tree,
-	int($dfd),
-	$pathname,
-	int($flags),
+        &PVE::Syscall::open_tree, int($dfd), $pathname, int($flags),
     ));
 }
 
 sub move_mount($$$$$) {
     my ($from_dirfd, $from_pathname, $to_dirfd, $to_pathname, $flags) = @_;
     return 0 == syscall(
-	&PVE::Syscall::move_mount,
-	int($from_dirfd),
-	$from_pathname,
-	int($to_dirfd),
-	$to_pathname,
-	int($flags),
+        &PVE::Syscall::move_mount,
+        int($from_dirfd),
+        $from_pathname,
+        int($to_dirfd),
+        $to_pathname,
+        int($flags),
     );
 }
 
@@ -1971,32 +1994,21 @@ sub fsopen($$) {
 sub fsmount($$$) {
     my ($fd, $flags, $mount_attrs) = @_;
     return PVE::Syscall::file_handle_result(syscall(
-	&PVE::Syscall::fsmount,
-	int($fd),
-	int($flags),
-	int($mount_attrs),
+        &PVE::Syscall::fsmount, int($fd), int($flags), int($mount_attrs),
     ));
 }
 
 sub fspick($$$) {
     my ($dirfd, $pathname, $flags) = @_;
     return PVE::Syscall::file_handle_result(syscall(
-	&PVE::Syscall::fspick,
-	int($dirfd),
-	$pathname,
-	int($flags),
+        &PVE::Syscall::fspick, int($dirfd), $pathname, int($flags),
     ));
 }
 
 sub fsconfig($$$$$) {
     my ($fd, $command, $key, $value, $aux) = @_;
     return 0 == syscall(
-	&PVE::Syscall::fsconfig,
-	int($fd),
-	int($command),
-	$key,
-	$value,
-	int($aux),
+        &PVE::Syscall::fsconfig, int($fd), int($command), $key, $value, int($aux),
     );
 }
 
@@ -2005,12 +2017,7 @@ sub fsconfig($$$$$) {
 sub mount($$$$$) {
     my ($source, $target, $filesystemtype, $mountflags, $data) = @_;
     return 0 == syscall(
-	&PVE::Syscall::mount,
-	$source,
-	$target,
-	$filesystemtype,
-	int($mountflags),
-	$data,
+        &PVE::Syscall::mount, $source, $target, $filesystemtype, int($mountflags), $data,
     );
 }
 
@@ -2023,12 +2030,12 @@ sub getxattr($$;$) {
 
     my $xattr_size = -1; # the actual size of the xattr, can be zero
     if (defined(my $fd = fileno($path_or_handle))) {
-	$xattr_size = syscall(&PVE::Syscall::fgetxattr, $fd, $name, $buf, int($size));
+        $xattr_size = syscall(&PVE::Syscall::fgetxattr, $fd, $name, $buf, int($size));
     } else {
-	$xattr_size = syscall(&PVE::Syscall::getxattr, $path_or_handle, $name, $buf, int($size));
+        $xattr_size = syscall(&PVE::Syscall::getxattr, $path_or_handle, $name, $buf, int($size));
     }
     if ($xattr_size < 0) {
-	return undef;
+        return undef;
     }
     $buf = substr($buf, 0, $xattr_size);
     return wantarray ? ($buf, $xattr_size) : $buf;
@@ -2040,23 +2047,18 @@ sub setxattr($$$;$) {
     my $size = length($value); # NOTE: seems to get correct length also for wide-characters in text..
 
     if (defined(my $fd = fileno($path_or_handle))) {
-	return 0 == syscall(
-	    &PVE::Syscall::fsetxattr,
-	    $fd,
-	    $name,
-	    $value,
-	    int($size),
-	    int($flags // 0),
-	);
+        return 0 == syscall(
+            &PVE::Syscall::fsetxattr, $fd, $name, $value, int($size), int($flags // 0),
+        );
     } else {
-	return 0 == syscall(
-	    &PVE::Syscall::setxattr,
-	    $path_or_handle,
-	    $name,
-	    $value,
-	    int($size),
-	    int($flags // 0),
-	);
+        return 0 == syscall(
+            &PVE::Syscall::setxattr,
+            $path_or_handle,
+            $name,
+            $value,
+            int($size),
+            int($flags // 0),
+        );
     }
 }
 
@@ -2068,7 +2070,6 @@ sub safe_compare {
     return 1 if !defined($right);
     return $cmp->($left, $right);
 }
-
 
 # opts is a hash ref with the following known properties
 #  allow_overwrite - if 1, overwriting existing files is allowed, use with care. Default to false
@@ -2084,102 +2085,107 @@ sub download_file_from_url {
 
     my ($checksum_algorithm, $checksum_expected);
     for ('sha512', 'sha384', 'sha256', 'sha224', 'sha1', 'md5') {
-	if (defined($opts->{"${_}sum"})) {
-	    $checksum_algorithm = $_;
-	    $checksum_expected = $opts->{"${_}sum"};
-	    last;
-	}
+        if (defined($opts->{"${_}sum"})) {
+            $checksum_algorithm = $_;
+            $checksum_expected = $opts->{"${_}sum"};
+            last;
+        }
     }
     die "checksum required but not specified\n" if ($opts->{hash_required} && !$checksum_algorithm);
 
     print "downloading $url to $dest\n";
 
     if (-f $dest) {
-	if ($checksum_algorithm) {
-	    print "calculating checksum of existing file...";
-	    my $checksum_got = get_file_hash($checksum_algorithm, $dest);
+        if ($checksum_algorithm) {
+            print "calculating checksum of existing file...";
+            my $checksum_got = get_file_hash($checksum_algorithm, $dest);
 
-	    if (lc($checksum_got) eq lc($checksum_expected)) {
-		print "OK, got correct file already, no need to download\n";
-		return;
-	    } elsif ($opts->{allow_overwrite}) {
-		print "checksum mismatch: got '$checksum_got' != expect '$checksum_expected', re-download\n";
-	    } else {
-		print "\n";  # the front end expects the error to reside at the last line without any noise
-		die "checksum mismatch: got '$checksum_got' != expect '$checksum_expected', aborting\n";
-	    }
-	} elsif (!$opts->{allow_overwrite}) {
-	    die "refusing to override existing file '$dest'\n";
-	}
+            if (lc($checksum_got) eq lc($checksum_expected)) {
+                print "OK, got correct file already, no need to download\n";
+                return;
+            } elsif ($opts->{allow_overwrite}) {
+                print
+                    "checksum mismatch: got '$checksum_got' != expect '$checksum_expected', re-download\n";
+            } else {
+                print "\n"; # the front end expects the error to reside at the last line without any noise
+                die
+                    "checksum mismatch: got '$checksum_got' != expect '$checksum_expected', aborting\n";
+            }
+        } elsif (!$opts->{allow_overwrite}) {
+            die "refusing to override existing file '$dest'\n";
+        }
     }
 
     my $tmp_download = "$dest.tmp_dwnl.$$";
     my $tmp_decomp = "$dest.tmp_dcom.$$";
     eval {
-	local $SIG{INT} = sub {
-	    unlink $tmp_download or warn "could not cleanup temporary file: $!"
-		if -e $tmp_download;
-	    unlink $tmp_decomp or warn "could not cleanup temporary file: $!"
-		if $opts->{decompression_command} && -e $tmp_decomp;
-	    die "got interrupted by signal\n";
-	};
+        local $SIG{INT} = sub {
+            unlink $tmp_download
+                or warn "could not cleanup temporary file: $!"
+                if -e $tmp_download;
+            unlink $tmp_decomp
+                or warn "could not cleanup temporary file: $!"
+                if $opts->{decompression_command} && -e $tmp_decomp;
+            die "got interrupted by signal\n";
+        };
 
-	{ # limit the scope of the ENV change
-	    local %ENV;
-	    if ($opts->{http_proxy}) {
-		$ENV{http_proxy} = $opts->{http_proxy};
-	    }
-	    if ($opts->{https_proxy}) {
-		$ENV{https_proxy} = $opts->{https_proxy};
-	    }
+        { # limit the scope of the ENV change
+            local %ENV;
+            if ($opts->{http_proxy}) {
+                $ENV{http_proxy} = $opts->{http_proxy};
+            }
+            if ($opts->{https_proxy}) {
+                $ENV{https_proxy} = $opts->{https_proxy};
+            }
 
-	    my $cmd = ['wget', '--progress=dot:giga', '-O', $tmp_download, $url];
+            my $cmd = ['wget', '--progress=dot:giga', '-O', $tmp_download, $url];
 
-	    if (!($opts->{verify_certificates} // 1)) { # default to true
-		push @$cmd, '--no-check-certificate';
-	    }
+            if (!($opts->{verify_certificates} // 1)) { # default to true
+                push @$cmd, '--no-check-certificate';
+            }
 
-	    run_command($cmd, errmsg => "download failed");
-	}
+            run_command($cmd, errmsg => "download failed");
+        }
 
-	if ($checksum_algorithm) {
-	    print "calculating checksum...";
+        if ($checksum_algorithm) {
+            print "calculating checksum...";
 
-	    my $checksum_got = get_file_hash($checksum_algorithm, $tmp_download);
+            my $checksum_got = get_file_hash($checksum_algorithm, $tmp_download);
 
-	    if (lc($checksum_got) eq lc($checksum_expected)) {
-		print "OK, checksum verified\n";
-	    } else {
-		print "\n";  # the front end expects the error to reside at the last line without any noise
-		die "checksum mismatch: got '$checksum_got' != expect '$checksum_expected'\n";
-	    }
-	}
+            if (lc($checksum_got) eq lc($checksum_expected)) {
+                print "OK, checksum verified\n";
+            } else {
+                print "\n"; # the front end expects the error to reside at the last line without any noise
+                die "checksum mismatch: got '$checksum_got' != expect '$checksum_expected'\n";
+            }
+        }
 
-	if (my $cmd = $opts->{decompression_command}) {
-	    push @$cmd, $tmp_download;
-	    my $fh;
-	    if (!open($fh, ">", "$tmp_decomp")) {
-		die "cant open temporary file $tmp_decomp for decompresson: $!\n";
-	    }
-	    print "decompressing $tmp_download to $tmp_decomp\n";
-	    run_command($cmd, output => '>&'.fileno($fh));
-	    unlink $tmp_download;
-	    $tmp_download = $tmp_decomp;
-	}
+        if (my $cmd = $opts->{decompression_command}) {
+            push @$cmd, $tmp_download;
+            my $fh;
+            if (!open($fh, ">", "$tmp_decomp")) {
+                die "cant open temporary file $tmp_decomp for decompresson: $!\n";
+            }
+            print "decompressing $tmp_download to $tmp_decomp\n";
+            run_command($cmd, output => '>&' . fileno($fh));
+            unlink $tmp_download;
+            $tmp_download = $tmp_decomp;
+        }
 
-	if (my $assertion = $opts->{assert_file_validity}) {
-	    eval { $assertion->($tmp_download); };
-	    die "failed to verify file: $@" if $@;
-	}
+        if (my $assertion = $opts->{assert_file_validity}) {
+            eval { $assertion->($tmp_download); };
+            die "failed to verify file: $@" if $@;
+        }
 
-	rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
+        rename($tmp_download, $dest) or die "unable to rename temporary file: $!\n";
     };
     if (my $err = $@) {
-	unlink $tmp_download or warn "could not cleanup temporary file: $!"
-	    if -e $tmp_download;
-	unlink $tmp_decomp or warn "could not cleanup temporary file: $!"
-	    if $opts->{decompression_command} && -e $tmp_decomp;
-	die $err;
+        unlink $tmp_download or warn "could not cleanup temporary file: $!"
+            if -e $tmp_download;
+        unlink $tmp_decomp
+            or warn "could not cleanup temporary file: $!"
+            if $opts->{decompression_command} && -e $tmp_decomp;
+        die $err;
     }
 
     print "download of '$url' to '$dest' finished\n";
@@ -2189,12 +2195,12 @@ sub get_file_hash {
     my ($algorithm, $filename) = @_;
 
     my $algorithm_map = {
-	'md5' => sub { Digest::MD5->new },
-	'sha1' => sub { Digest::SHA->new(1) },
-	'sha224' => sub { Digest::SHA->new(224) },
-	'sha256' => sub { Digest::SHA->new(256) },
-	'sha384' => sub { Digest::SHA->new(384) },
-	'sha512' => sub { Digest::SHA->new(512) },
+        'md5' => sub { Digest::MD5->new },
+        'sha1' => sub { Digest::SHA->new(1) },
+        'sha224' => sub { Digest::SHA->new(224) },
+        'sha256' => sub { Digest::SHA->new(256) },
+        'sha384' => sub { Digest::SHA->new(384) },
+        'sha512' => sub { Digest::SHA->new(512) },
     };
 
     my $digester = $algorithm_map->{$algorithm}->() or die "unknown algorithm '$algorithm'\n";
@@ -2224,15 +2230,15 @@ sub is_deeply {
     return 0 if $ref_a ne $ref_b;
 
     if ($ref_a eq 'HASH') {
-	return 0 if scalar(keys $a->%*) != scalar(keys $b->%*);
-	for my $opt (keys $a->%*) {
-	    return 0 if !is_deeply($a->{$opt}, $b->{$opt});
-	}
+        return 0 if scalar(keys $a->%*) != scalar(keys $b->%*);
+        for my $opt (keys $a->%*) {
+            return 0 if !is_deeply($a->{$opt}, $b->{$opt});
+        }
     } elsif ($ref_a eq 'ARRAY') {
-	return 0 if scalar($a->@*) != scalar($b->@*);
-	for (my $i = 0; $i < $a->@*; $i++) {
-	    return 0 if !is_deeply($a->[$i], $b->[$i]);
-	}
+        return 0 if scalar($a->@*) != scalar($b->@*);
+        for (my $i = 0; $i < $a->@*; $i++) {
+            return 0 if !is_deeply($a->[$i], $b->[$i]);
+        }
     }
 
     return 1;

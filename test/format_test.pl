@@ -11,10 +11,10 @@ use Test::More;
 use Test::MockModule;
 
 my $valid_configids = [
-	'aa', 'a0', 'a_', 'a-', 'a-a', 'a'x100, 'Aa', 'AA',
+    'aa', 'a0', 'a_', 'a-', 'a-a', 'a' x 100, 'Aa', 'AA',
 ];
 my $invalid_configids = [
-	'a', 'a+', '1a', '_a', '-a', '+a', 'A',
+    'a', 'a+', '1a', '_a', '-a', '+a', 'A',
 ];
 
 my $noerr = 1; # easier to test
@@ -37,13 +37,13 @@ my $render_data = [
     ["duration", 40, undef, "40s"],
     ["duration", 59.64432, undef, "1m"],
     ["duration", 110, undef, "1m 50s"],
-    ["duration", 7*24*3829*2, undef, "2w 21h 22m 24s"],
+    ["duration", 7 * 24 * 3829 * 2, undef, "2w 21h 22m 24s"],
     ["fraction_as_percentage", 0.412, undef, "41.20%"],
     ["bytes", 0, undef, "0.00 B"],
     ["bytes", 1023, 4, "1023.0000 B"],
     ["bytes", 1024, undef, "1.00 KiB"],
-    ["bytes", 1024*1024*123 + 1024*300, 1, "123.3 MiB"],
-    ["bytes", 1024*1024*1024*1024*4 + 1024*1024*2048*8, undef, "4.02 TiB"],
+    ["bytes", 1024 * 1024 * 123 + 1024 * 300, 1, "123.3 MiB"],
+    ["bytes", 1024 * 1024 * 1024 * 1024 * 4 + 1024 * 1024 * 2048 * 8, undef, "4.02 TiB"],
 ];
 
 foreach my $data (@$render_data) {

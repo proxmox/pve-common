@@ -22,13 +22,14 @@ my $dow_names = {
 };
 
 PVE::JSONSchema::register_format('pve-calendar-event', \&pve_verify_calendar_event);
+
 sub pve_verify_calendar_event {
     my ($text, $noerr) = @_;
 
     eval { parse_calendar_event($text); };
     if (my $err = $@) {
-	return undef if $noerr;
-	die "invalid calendar event '$text' - $err\n";
+        return undef if $noerr;
+        die "invalid calendar event '$text' - $err\n";
     }
     return $text;
 }
@@ -41,7 +42,7 @@ sub parse_calendar_event {
     $event = trim($event);
 
     if ($event eq '') {
-	die "unable to parse calendar event - event is empty\n";
+        die "unable to parse calendar event - event is empty\n";
     }
 
     return Proxmox::RS::CalendarEvent->new($event);

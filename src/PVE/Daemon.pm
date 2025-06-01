@@ -63,10 +63,10 @@ sub after_fork_cleanup {
     PVE::INotify::inotify_close();
 
     for my $sig (qw(CHLD HUP INT TERM QUIT)) {
-	$SIG{$sig} = 'DEFAULT'; # restore default handler
-	# AnyEvent signals only works if $SIG{XX} is
-	# undefined (perl event loop)
-	delete $SIG{$sig}; # so that we can handle events with AnyEvent
+        $SIG{$sig} = 'DEFAULT'; # restore default handler
+        # AnyEvent signals only works if $SIG{XX} is
+        # undefined (perl event loop)
+        delete $SIG{$sig}; # so that we can handle events with AnyEvent
     }
 }
 
@@ -79,33 +79,33 @@ my $lockpidfile = sub {
 
     if (my $fd = $self->{env_pve_lock_fd}) {
 
-	$self->{daemon_lock_fh} = IO::Handle->new_from_fd($fd, "a");
+        $self->{daemon_lock_fh} = IO::Handle->new_from_fd($fd, "a");
 
     } else {
 
-	$waittime = 5;
-	$self->{daemon_lock_fh} = IO::File->new(">>$lkfn");
+        $waittime = 5;
+        $self->{daemon_lock_fh} = IO::File->new(">>$lkfn");
     }
 
     if (!$self->{daemon_lock_fh}) {
-	die "can't open lock '$lkfn' - $!\n";
+        die "can't open lock '$lkfn' - $!\n";
     }
 
-    for (my $i = 0; $i < $waittime; $i ++) {
-	return if flock ($self->{daemon_lock_fh}, LOCK_EX|LOCK_NB);
-	sleep(1);
+    for (my $i = 0; $i < $waittime; $i++) {
+        return if flock($self->{daemon_lock_fh}, LOCK_EX | LOCK_NB);
+        sleep(1);
     }
 
-    if (!flock ($self->{daemon_lock_fh}, LOCK_EX|LOCK_NB)) {
-	&$close_daemon_lock($self);
-	my $err = $!;
+    if (!flock($self->{daemon_lock_fh}, LOCK_EX | LOCK_NB)) {
+        &$close_daemon_lock($self);
+        my $err = $!;
 
-	my ($running, $pid) = $self->running();
-	if ($running) {
-	    die "can't acquire lock '$lkfn' - daemon already started (pid = $pid)\n";
-	} else {
-	    die "can't acquire lock '$lkfn' - $err\n";
-	}
+        my ($running, $pid) = $self->running();
+        if ($running) {
+            die "can't acquire lock '$lkfn' - daemon already started (pid = $pid)\n";
+        } else {
+            die "can't acquire lock '$lkfn' - $err\n";
+        }
     }
 };
 
@@ -114,10 +114,10 @@ my $writepidfile = sub {
 
     my $pidfile = $self->{pidfile};
 
-    open (my $PID_FH, '>', "$pidfile") or die "can't open pid file '$pidfile' - $!\n";
+    open(my $PID_FH, '>', "$pidfile") or die "can't open pid file '$pidfile' - $!\n";
 
     print $PID_FH "$$\n";
-    close ($PID_FH);
+    close($PID_FH);
 };
 
 my $server_cleanup = sub {
@@ -131,13 +131,13 @@ my $finish_workers = sub {
     my ($self) = @_;
 
     foreach my $id (qw(workers old_workers)) {
-	foreach my $cpid (keys %{$self->{$id}}) {
-	    my $waitpid = waitpid($cpid, WNOHANG);
-	    if (defined($waitpid) && ($waitpid == $cpid)) {
-		delete ($self->{$id}->{$cpid});
-		syslog('info', "worker $cpid finished");
-	    }
-	}
+        foreach my $cpid (keys %{ $self->{$id} }) {
+            my $waitpid = waitpid($cpid, WNOHANG);
+            if (defined($waitpid) && ($waitpid == $cpid)) {
+                delete($self->{$id}->{$cpid});
+                syslog('info', "worker $cpid finished");
+            }
+        }
     }
 };
 
@@ -146,7 +146,7 @@ my $start_workers = sub {
 
     return if $self->{terminate};
 
-    my $count = scalar keys %{$self->{workers}};
+    my $count = scalar keys %{ $self->{workers} };
     my $need = $self->{max_workers} - $count;
 
     return if $need <= 0;
@@ -154,29 +154,29 @@ my $start_workers = sub {
     syslog('info', "starting $need worker(s)");
 
     while ($need > 0) {
-	my $pid = fork;
+        my $pid = fork;
 
-	if (!defined ($pid)) {
-	    syslog('err', "can't fork worker");
-	    sleep (1);
-	} elsif ($pid) { # parent
-	    $self->{workers}->{$pid} = 1;
-	    syslog('info', "worker $pid started");
-	    $need--;
-	} else {
-	    $0 = "$self->{name} worker";
+        if (!defined($pid)) {
+            syslog('err', "can't fork worker");
+            sleep(1);
+        } elsif ($pid) { # parent
+            $self->{workers}->{$pid} = 1;
+            syslog('info', "worker $pid started");
+            $need--;
+        } else {
+            $0 = "$self->{name} worker";
 
-	    $self->after_fork_cleanup();
+            $self->after_fork_cleanup();
 
-	    eval { $self->run(); };
-	    if (my $err = $@) {
-		syslog('err', $err);
-		sleep(5); # avoid fast restarts
-	    }
+            eval { $self->run(); };
+            if (my $err = $@) {
+                syslog('err', $err);
+                sleep(5); # avoid fast restarts
+            }
 
-	    syslog('info', "worker exit");
-	    exit (0);
-	}
+            syslog('info', "worker exit");
+            exit(0);
+        }
     }
 };
 
@@ -184,7 +184,7 @@ my $terminate_old_workers = sub {
     my ($self) = @_;
 
     # if list is empty kill sends no signal, so no checks needed
-    kill 15, keys %{$self->{old_workers}};
+    kill 15, keys %{ $self->{old_workers} };
 };
 
 my $terminate_server = sub {
@@ -201,40 +201,40 @@ my $terminate_server = sub {
     return if $allow_open_children && $self->{leave_children_open_on_reload};
 
     # else send TERM to all (old and current) child workers
-    kill 15, (keys %{$self->{workers}}, keys %{$self->{old_workers}});
+    kill 15, (keys %{ $self->{workers} }, keys %{ $self->{old_workers} });
 
     # nicely shutdown childs (give them max 10 seconds to shut down)
     my $previous_alarm = alarm(10);
     eval {
-	local $SIG{ALRM} = sub { die "timeout\n" };
+        local $SIG{ALRM} = sub { die "timeout\n" };
 
-	while ((my $pid = waitpid (-1, 0)) > 0) {
-	    foreach my $id (qw(workers old_workers)) {
-		if (defined($self->{$id}->{$pid})) {
-		    delete($self->{$id}->{$pid});
-		    syslog('info', "worker $pid finished");
-		}
-	    }
-	}
-	alarm(0); # avoid race condition
+        while ((my $pid = waitpid(-1, 0)) > 0) {
+            foreach my $id (qw(workers old_workers)) {
+                if (defined($self->{$id}->{$pid})) {
+                    delete($self->{$id}->{$pid});
+                    syslog('info', "worker $pid finished");
+                }
+            }
+        }
+        alarm(0); # avoid race condition
     };
     my $err = $@;
 
-    alarm ($previous_alarm);
+    alarm($previous_alarm);
 
     if ($err) {
-	syslog('err', "error stopping workers (will kill them now) - $err");
-	foreach my $id (qw(workers old_workers)) {
-	    foreach my $cpid (keys %{$self->{$id}}) {
-		# KILL childs still alive!
-		if (kill (0, $cpid)) {
-		    delete($self->{$id}->{$cpid});
-		    syslog("err", "kill worker $cpid");
-		    kill(9, $cpid);
-		    # fixme: waitpid?
-		}
-	    }
-	}
+        syslog('err', "error stopping workers (will kill them now) - $err");
+        foreach my $id (qw(workers old_workers)) {
+            foreach my $cpid (keys %{ $self->{$id} }) {
+                # KILL childs still alive!
+                if (kill(0, $cpid)) {
+                    delete($self->{$id}->{$cpid});
+                    syslog("err", "kill worker $cpid");
+                    kill(9, $cpid);
+                    # fixme: waitpid?
+                }
+            }
+        }
     }
 };
 
@@ -249,9 +249,9 @@ sub setup {
     my $lockfd = $ENV{PVE_DAEMON_LOCK_FD};
     delete $ENV{PVE_DAEMON_LOCK_FD};
     if (defined($lockfd)) {
-	die "unable to parse lock fd '$lockfd'\n"
-	    if $lockfd !~ m/^(\d+)$/;
-	$lockfd = $1; # untaint
+        die "unable to parse lock fd '$lockfd'\n"
+            if $lockfd !~ m/^(\d+)$/;
+        $lockfd = $1; # untaint
     }
     $self->{env_pve_lock_fd} = $lockfd;
 
@@ -263,29 +263,29 @@ sub setup {
     PVE::INotify::inotify_init();
 
     if (my $gidstr = $self->{setgid}) {
-	my $gid = getgrnam($gidstr) || die "getgrnam failed - $!\n";
-	POSIX::setgid($gid) || die "setgid $gid failed - $!\n";
-	$EGID = "$gid $gid"; # this calls setgroups
-	# just to be sure
-	die "detected strange gid\n" if !($GID eq "$gid $gid" && $EGID eq "$gid $gid");
+        my $gid = getgrnam($gidstr) || die "getgrnam failed - $!\n";
+        POSIX::setgid($gid) || die "setgid $gid failed - $!\n";
+        $EGID = "$gid $gid"; # this calls setgroups
+        # just to be sure
+        die "detected strange gid\n" if !($GID eq "$gid $gid" && $EGID eq "$gid $gid");
     }
 
     if (my $uidstr = $self->{setuid}) {
-	my $uid = getpwnam($uidstr) || die "getpwnam failed - $!\n";
-	POSIX::setuid($uid) || die "setuid $uid failed - $!\n";
-	# just to be sure
-	die "detected strange uid\n" if !($UID == $uid && $EUID == $uid);
+        my $uid = getpwnam($uidstr) || die "getpwnam failed - $!\n";
+        POSIX::setuid($uid) || die "setuid $uid failed - $!\n";
+        # just to be sure
+        die "detected strange uid\n" if !($UID == $uid && $EUID == $uid);
     }
 
     if ($restart && $self->{max_workers}) {
-	if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
-	    foreach my $pid (split(':', $wpids)) {
-		# check & untaint
-		if ($pid =~ m/^(\d+)$/) {
-		    $self->{old_workers}->{$1} = 1;
-		}
-	    }
-	}
+        if (my $wpids = $ENV{PVE_DAEMON_WORKER_PIDS}) {
+            foreach my $pid (split(':', $wpids)) {
+                # check & untaint
+                if ($pid =~ m/^(\d+)$/) {
+                    $self->{old_workers}->{$1} = 1;
+                }
+            }
+        }
     }
 
     $self->{nodename} = PVE::INotify::nodename();
@@ -310,26 +310,26 @@ my $server_run = sub {
     $self->init();
 
     if (!$debug) {
-	open STDIN,  '<', '/dev/null' or die "can't read /dev/null - $!";
-	open STDOUT, '>', '/dev/null' or die "can't write /dev/null - $!";
+        open STDIN, '<', '/dev/null' or die "can't read /dev/null - $!";
+        open STDOUT, '>', '/dev/null' or die "can't write /dev/null - $!";
     }
 
     if (!$self->{env_restart_pve_daemon} && !$debug) {
-	PVE::INotify::inotify_close();
-	$spid = fork();
-	if (!defined ($spid)) {
-	    die "can't put server into background - fork failed";
-	} elsif ($spid) { # parent
-	    exit (0);
-	}
-	PVE::INotify::inotify_init();
+        PVE::INotify::inotify_close();
+        $spid = fork();
+        if (!defined($spid)) {
+            die "can't put server into background - fork failed";
+        } elsif ($spid) { # parent
+            exit(0);
+        }
+        PVE::INotify::inotify_init();
     }
 
     if ($self->{env_restart_pve_daemon}) {
-	syslog('info' , "restarting server");
+        syslog('info', "restarting server");
     } else {
-	&$writepidfile($self);
-	syslog('info' , "starting server");
+        &$writepidfile($self);
+        syslog('info', "starting server");
     }
 
     POSIX::setsid();
@@ -338,84 +338,84 @@ my $server_run = sub {
 
     my $old_sig_term = $SIG{TERM};
     local $SIG{TERM} = sub {
-	local ($@, $!, $?); # do not overwrite error vars
-	syslog('info', "received signal TERM");
-	&$terminate_server($self, 0);
-	&$server_cleanup($self);
-	&$old_sig_term(@_) if $old_sig_term;
+        local ($@, $!, $?); # do not overwrite error vars
+        syslog('info', "received signal TERM");
+        &$terminate_server($self, 0);
+        &$server_cleanup($self);
+        &$old_sig_term(@_) if $old_sig_term;
     };
 
     my $old_sig_quit = $SIG{QUIT};
     local $SIG{QUIT} = sub {
-	local ($@, $!, $?); # do not overwrite error vars
-	syslog('info', "received signal QUIT");
-	&$terminate_server($self, 0);
-	&$server_cleanup($self);
-	&$old_sig_quit(@_) if $old_sig_quit;
+        local ($@, $!, $?); # do not overwrite error vars
+        syslog('info', "received signal QUIT");
+        &$terminate_server($self, 0);
+        &$server_cleanup($self);
+        &$old_sig_quit(@_) if $old_sig_quit;
     };
 
     my $old_sig_int = $SIG{INT};
     local $SIG{INT} = sub {
-	local ($@, $!, $?); # do not overwrite error vars
-	syslog('info', "received signal INT");
-	$SIG{INT} = 'DEFAULT'; # allow to terminate now
-	&$terminate_server($self, 0);
-	&$server_cleanup($self);
-	&$old_sig_int(@_) if $old_sig_int;
+        local ($@, $!, $?); # do not overwrite error vars
+        syslog('info', "received signal INT");
+        $SIG{INT} = 'DEFAULT'; # allow to terminate now
+        &$terminate_server($self, 0);
+        &$server_cleanup($self);
+        &$old_sig_int(@_) if $old_sig_int;
     };
 
     $SIG{HUP} = sub {
-	local ($@, $!, $?); # do not overwrite error vars
-	syslog('info', "received signal HUP");
-	$self->{got_hup_signal} = 1;
-	if ($self->{max_workers}) {
-	    &$terminate_server($self, 1);
-	} elsif ($self->can('hup')) {
-	    eval { $self->hup() };
-	    warn $@ if $@;
-	}
+        local ($@, $!, $?); # do not overwrite error vars
+        syslog('info', "received signal HUP");
+        $self->{got_hup_signal} = 1;
+        if ($self->{max_workers}) {
+            &$terminate_server($self, 1);
+        } elsif ($self->can('hup')) {
+            eval { $self->hup() };
+            warn $@ if $@;
+        }
     };
 
     eval {
-	if ($self->{max_workers}) {
-	    my $old_sig_chld = $SIG{CHLD};
-	    local $SIG{CHLD} = sub {
-		local ($@, $!, $?); # do not overwrite error vars
-		&$finish_workers($self);
-		&$old_sig_chld(@_) if $old_sig_chld;
-	    };
+        if ($self->{max_workers}) {
+            my $old_sig_chld = $SIG{CHLD};
+            local $SIG{CHLD} = sub {
+                local ($@, $!, $?); # do not overwrite error vars
+                &$finish_workers($self);
+                &$old_sig_chld(@_) if $old_sig_chld;
+            };
 
-	    # now loop forever (until we receive terminate signal)
-	    for (;;) {
-		&$start_workers($self);
-		sleep(5);
-		&$terminate_old_workers($self);
-		&$finish_workers($self);
-		last if $self->{terminate};
-	    }
+            # now loop forever (until we receive terminate signal)
+            for (;;) {
+                &$start_workers($self);
+                sleep(5);
+                &$terminate_old_workers($self);
+                &$finish_workers($self);
+                last if $self->{terminate};
+            }
 
-	} else {
-	    $self->run();
-	}
+        } else {
+            $self->run();
+        }
     };
     my $err = $@;
 
     if ($err) {
-	syslog ('err', "ERROR: $err");
+        syslog('err', "ERROR: $err");
 
-	&$terminate_server($self, 1);
+        &$terminate_server($self, 1);
 
-	if (my $wait_time = $self->{restart_on_error}) {
-	    $self->restart_daemon($wait_time);
-	} else {
-	    $self->exit_daemon(-1);
-	}
+        if (my $wait_time = $self->{restart_on_error}) {
+            $self->restart_daemon($wait_time);
+        } else {
+            $self->exit_daemon(-1);
+        }
     }
 
     if ($self->{got_hup_signal}) {
-	$self->restart_daemon();
+        $self->restart_daemon();
     } else {
-	$self->exit_daemon(0);
+        $self->exit_daemon(0);
     }
 };
 
@@ -427,46 +427,44 @@ sub new {
     my $self;
 
     eval {
-	my $class = ref($this) || $this;
+        my $class = ref($this) || $this;
 
-	$self = bless {
-	    name => $name,
-	    pidfile => "/var/run/${name}.pid",
-	    workers => {},
-	    old_workers => {},
-	}, $class;
+        $self = bless {
+            name => $name,
+            pidfile => "/var/run/${name}.pid",
+            workers => {},
+            old_workers => {},
+        }, $class;
 
+        foreach my $opt (keys %params) {
+            my $value = $params{$opt};
+            if ($opt eq 'restart_on_error') {
+                $self->{$opt} = $value;
+            } elsif ($opt eq 'stop_wait_time') {
+                $self->{$opt} = $value;
+            } elsif ($opt eq 'pidfile') {
+                $self->{$opt} = $value;
+            } elsif ($opt eq 'max_workers') {
+                $self->{$opt} = $value;
+            } elsif ($opt eq 'leave_children_open_on_reload') {
+                $self->{$opt} = $value;
+            } elsif ($opt eq 'setgid') {
+                $self->{$opt} = $value;
+            } elsif ($opt eq 'setuid') {
+                $self->{$opt} = $value;
+            } else {
+                die "unknown daemon option '$opt'\n";
+            }
+        }
 
-	foreach my $opt (keys %params) {
-	    my $value = $params{$opt};
-	    if ($opt eq 'restart_on_error') {
-		$self->{$opt} = $value;
-	    } elsif ($opt eq 'stop_wait_time') {
-		$self->{$opt} = $value;
-	    } elsif ($opt eq 'pidfile') {
-		$self->{$opt} = $value;
-	    } elsif ($opt eq 'max_workers') {
-		$self->{$opt} = $value;
-	    } elsif ($opt eq 'leave_children_open_on_reload') {
-		$self->{$opt} = $value;
-	    } elsif ($opt eq 'setgid') {
-		$self->{$opt} = $value;
-	    } elsif ($opt eq 'setuid') {
-		$self->{$opt} = $value;
-	    } else {
-		die "unknown daemon option '$opt'\n";
-	    }
-	}
+        # untaint
+        $self->{cmdline} = [map { /^(.*)$/ } @$cmdline];
 
-
-	# untaint
-	$self->{cmdline} = [map { /^(.*)$/ } @$cmdline];
-
-	$0 = $name;
+        $0 = $name;
     };
     if (my $err = $@) {
-	&$log_err($err);
-	exit(-1);
+        &$log_err($err);
+        exit(-1);
     }
 
     return $self;
@@ -490,21 +488,21 @@ sub restart_daemon {
     $ENV{RESTART_PVE_DAEMON} = 1;
 
     foreach my $ds (@$daemon_sockets) {
-	$ds->fcntl(Fcntl::F_SETFD(), 0);
+        $ds->fcntl(Fcntl::F_SETFD(), 0);
     }
 
     if ($self->{max_workers}) {
-	my @workers = (keys %{$self->{workers}}, keys %{$self->{old_workers}});
-	$ENV{PVE_DAEMON_WORKER_PIDS} = join(':', @workers);
+        my @workers = (keys %{ $self->{workers} }, keys %{ $self->{old_workers} });
+        $ENV{PVE_DAEMON_WORKER_PIDS} = join(':', @workers);
     }
 
     sleep($waittime) if $waittime; # avoid high server load due to restarts
 
     PVE::INotify::inotify_close();
 
-    exec (@{$self->{cmdline}});
+    exec(@{ $self->{cmdline} });
 
-    exit (-1); # never reached?
+    exit(-1); # never reached?
 }
 
 # please overwrite in subclass
@@ -518,11 +516,11 @@ sub init {
 sub shutdown {
     my ($self) = @_;
 
-    syslog('info' , "server closing");
+    syslog('info', "server closing");
 
     if (!$self->{max_workers}) {
-	# wait for children
-	1 while (waitpid(-1, POSIX::WNOHANG()) > 0);
+        # wait for children
+        1 while (waitpid(-1, POSIX::WNOHANG()) > 0);
     }
 }
 
@@ -538,21 +536,21 @@ sub run {
     my ($self) = @_;
 
     for (;;) { # forever
-	syslog('info' , "server is running");
-	sleep(5);
+        syslog('info', "server is running");
+        sleep(5);
     }
 }
 
 sub start {
     my ($self, $debug) = @_;
 
-    eval  {
-	$self->setup();
-	&$server_run($self, $debug);
+    eval {
+        $self->setup();
+        &$server_run($self, $debug);
     };
     if (my $err = $@) {
-	&$log_err("start failed - $err");
-	exit(-1);
+        &$log_err("start failed - $err");
+        exit(-1);
     }
 }
 
@@ -573,9 +571,9 @@ my $read_pid = sub {
 # checks if the process was started by systemd
 my $init_ppid = sub {
     if (getppid() == 1) {
-       return 1;
+        return 1;
     } else {
-       return 0;
+        return 0;
     }
 };
 
@@ -585,8 +583,8 @@ sub running {
     my $pid = &$read_pid($self);
 
     if ($pid) {
-	my $res = PVE::ProcFSTools::check_process_running($pid) ? 1 : 0;
-	return wantarray ? ($res, $pid) : $res;
+        my $res = PVE::ProcFSTools::check_process_running($pid) ? 1 : 0;
+        return wantarray ? ($res, $pid) : $res;
     }
 
     return wantarray ? (0, 0) : 0;
@@ -600,32 +598,32 @@ sub stop {
     return if !$pid;
 
     if (PVE::ProcFSTools::check_process_running($pid)) {
-	kill(15, $pid); # send TERM signal
-	# give some time
-	my $wait_time = $self->{stop_wait_time} || 5;
-	my $running = 1;
-	for (my $i = 0; $i < $wait_time; $i++) {
-	    $running = PVE::ProcFSTools::check_process_running($pid);
-	    last if !$running;
-	    sleep (1);
-	}
+        kill(15, $pid); # send TERM signal
+        # give some time
+        my $wait_time = $self->{stop_wait_time} || 5;
+        my $running = 1;
+        for (my $i = 0; $i < $wait_time; $i++) {
+            $running = PVE::ProcFSTools::check_process_running($pid);
+            last if !$running;
+            sleep(1);
+        }
 
-	syslog('err', "server still running - send KILL") if $running;
+        syslog('err', "server still running - send KILL") if $running;
 
-	# to be sure
-	kill(9, $pid);
-	waitpid($pid, 0);
+        # to be sure
+        kill(9, $pid);
+        waitpid($pid, 0);
     }
 
     if (-f $self->{pidfile}) {
-	eval {
-	    # try to get the lock
-	    &$lockpidfile($self);
-	    &$server_cleanup($self);
-	};
-	if (my $err = $@) {
-	    &$log_err("cleanup failed - $err");
-	}
+        eval {
+            # try to get the lock
+            &$lockpidfile($self);
+            &$server_cleanup($self);
+        };
+        if (my $err = $@) {
+            &$log_err("cleanup failed - $err");
+        }
     }
 }
 
@@ -635,25 +633,25 @@ sub register_start_command {
     my $class = ref($self);
 
     $class->register_method({
-	name => 'start',
-	path => 'start',
-	method => 'POST',
-	description => $description || "Start the daemon.",
-	parameters => {
-	    additionalProperties => 0,
-	    properties => {
-		debug => {
-		    description => "Debug mode - stay in foreground",
-		    type => "boolean",
-		    optional => 1,
-		    default => 0,
-		},
-	    },
-	},
-	returns => { type => 'null' },
+        name => 'start',
+        path => 'start',
+        method => 'POST',
+        description => $description || "Start the daemon.",
+        parameters => {
+            additionalProperties => 0,
+            properties => {
+                debug => {
+                    description => "Debug mode - stay in foreground",
+                    type => "boolean",
+                    optional => 1,
+                    default => 0,
+                },
+            },
+        },
+        returns => { type => 'null' },
 
-	code => sub {
-	    my ($param) = @_;
+        code => sub {
+            my ($param) = @_;
 
             if (&$init_ppid() || $param->{debug}) {
                 $self->start($param->{debug});
@@ -661,28 +659,29 @@ sub register_start_command {
                 PVE::Tools::run_command(['systemctl', 'start', $self->{name}]);
             }
 
-	    return undef;
-	}});
+            return undef;
+        },
+    });
 }
 
 my $reload_daemon = sub {
     my ($self, $use_hup) = @_;
 
     if ($self->{env_restart_pve_daemon}) {
-	$self->start();
+        $self->start();
     } else {
-	my ($running, $pid) = $self->running();
-	if (!$running) {
-	    $self->start();
-	} else {
-	    if ($use_hup) {
-		syslog('info', "send HUP to $pid");
-		kill 1, $pid;
-	    } else {
-		$self->stop();
-		$self->start();
-	    }
-	}
+        my ($running, $pid) = $self->running();
+        if (!$running) {
+            $self->start();
+        } else {
+            if ($use_hup) {
+                syslog('info', "send HUP to $pid");
+                kill 1, $pid;
+            } else {
+                $self->stop();
+                $self->start();
+            }
+        }
     }
 };
 
@@ -692,27 +691,29 @@ sub register_restart_command {
     my $class = ref($self);
 
     $class->register_method({
-	name => 'restart',
-	path => 'restart',
-	method => 'POST',
-	description => $description || "Restart the daemon (or start if not running).",
-	parameters => {
-	    additionalProperties => 0,
-	    properties => {},
-	},
-	returns => { type => 'null' },
+        name => 'restart',
+        path => 'restart',
+        method => 'POST',
+        description => $description || "Restart the daemon (or start if not running).",
+        parameters => {
+            additionalProperties => 0,
+            properties => {},
+        },
+        returns => { type => 'null' },
 
-	code => sub {
-	    my ($param) = @_;
+        code => sub {
+            my ($param) = @_;
 
-	    if (&$init_ppid()) {
-		&$reload_daemon($self, $use_hup);
-	    } else {
-		PVE::Tools::run_command(['systemctl', $use_hup ? 'reload-or-restart' : 'restart', $self->{name}]);
-	    }
+            if (&$init_ppid()) {
+                &$reload_daemon($self, $use_hup);
+            } else {
+                PVE::Tools::run_command(
+                    ['systemctl', $use_hup ? 'reload-or-restart' : 'restart', $self->{name}]);
+            }
 
-	    return undef;
-	}});
+            return undef;
+        },
+    });
 }
 
 sub register_reload_command {
@@ -721,23 +722,24 @@ sub register_reload_command {
     my $class = ref($self);
 
     $class->register_method({
-	name => 'reload',
-	path => 'reload',
-	method => 'POST',
-	description => $description || "Reload daemon configuration (or start if not running).",
-	parameters => {
-	    additionalProperties => 0,
-	    properties => {},
-	},
-	returns => { type => 'null' },
+        name => 'reload',
+        path => 'reload',
+        method => 'POST',
+        description => $description || "Reload daemon configuration (or start if not running).",
+        parameters => {
+            additionalProperties => 0,
+            properties => {},
+        },
+        returns => { type => 'null' },
 
-	code => sub {
-	    my ($param) = @_;
+        code => sub {
+            my ($param) = @_;
 
-	    &$reload_daemon($self, 1);
+            &$reload_daemon($self, 1);
 
-	    return undef;
-	}});
+            return undef;
+        },
+    });
 }
 
 sub register_stop_command {
@@ -746,27 +748,28 @@ sub register_stop_command {
     my $class = ref($self);
 
     $class->register_method({
-	name => 'stop',
-	path => 'stop',
-	method => 'POST',
-	description => $description || "Stop the daemon.",
-	parameters => {
-	    additionalProperties => 0,
-	    properties => {},
-	},
-	returns => { type => 'null' },
+        name => 'stop',
+        path => 'stop',
+        method => 'POST',
+        description => $description || "Stop the daemon.",
+        parameters => {
+            additionalProperties => 0,
+            properties => {},
+        },
+        returns => { type => 'null' },
 
-	code => sub {
-	    my ($param) = @_;
+        code => sub {
+            my ($param) = @_;
 
-	    if (&$init_ppid()) {
-		$self->stop();
-	    } else {
-		PVE::Tools::run_command(['systemctl', 'stop', $self->{name}]);
-	    }
+            if (&$init_ppid()) {
+                $self->stop();
+            } else {
+                PVE::Tools::run_command(['systemctl', 'stop', $self->{name}]);
+            }
 
-	    return undef;
-	}});
+            return undef;
+        },
+    });
 }
 
 sub register_status_command {
@@ -775,23 +778,24 @@ sub register_status_command {
     my $class = ref($self);
 
     $class->register_method({
-	name => 'status',
-	path => 'status',
-	method => 'GET',
-	description => "Get daemon status.",
-	parameters => {
-	    additionalProperties => 0,
-	    properties => {},
-	},
-	returns => {
-	    type => 'string',
-	    enum => ['stopped', 'running'],
-	},
-	code => sub {
-	    my ($param) = @_;
+        name => 'status',
+        path => 'status',
+        method => 'GET',
+        description => "Get daemon status.",
+        parameters => {
+            additionalProperties => 0,
+            properties => {},
+        },
+        returns => {
+            type => 'string',
+            enum => ['stopped', 'running'],
+        },
+        code => sub {
+            my ($param) = @_;
 
-	    return $self->running() ? 'running' : 'stopped';
-	}});
+            return $self->running() ? 'running' : 'stopped';
+        },
+    });
 }
 
 # some useful helper
@@ -803,50 +807,51 @@ sub create_reusable_socket {
 
     my ($socket, $sockfd);
 
-    if (defined($sockfd = $ENV{"PVE_DAEMON_SOCKET_$port"}) &&
-	$self->{env_restart_pve_daemon}) {
+    if (
+        defined($sockfd = $ENV{"PVE_DAEMON_SOCKET_$port"})
+        && $self->{env_restart_pve_daemon}
+    ) {
 
-	die "unable to parse socket fd '$sockfd'\n"
-	    if $sockfd !~ m/^(\d+)$/;
-	$sockfd = $1; # untaint
+        die "unable to parse socket fd '$sockfd'\n"
+            if $sockfd !~ m/^(\d+)$/;
+        $sockfd = $1; # untaint
 
-	$socket = IO::Socket::IP->new;
-	$socket->fdopen($sockfd, 'w') ||
-	    die "cannot fdopen file descriptor '$sockfd' - $!\n";
+        $socket = IO::Socket::IP->new;
+        $socket->fdopen($sockfd, 'w')
+            || die "cannot fdopen file descriptor '$sockfd' - $!\n";
 
-	$socket->fcntl(Fcntl::F_SETFD(), Fcntl::FD_CLOEXEC);
+        $socket->fcntl(Fcntl::F_SETFD(), Fcntl::FD_CLOEXEC);
     } else {
 
-	my %sockargs = (
-	    LocalPort => $port,
-	    Listen => SOMAXCONN,
-	    Proto  => 'tcp',
-	    GetAddrInfoFlags => 0,
-	    ReuseAddr => 1,
-	);
-	if (defined($host)) {
-	    $socket = IO::Socket::IP->new( LocalHost => $host, %sockargs) ||
-		die "unable to create socket - $@\n";
-	} else {
-	    # disabling AF_INET6 (by adding ipv6.disable=1 to the kernel cmdline)
-	    # causes bind on :: to fail, try 0.0.0.0 in that case
-	    $socket = IO::Socket::IP->new( LocalHost => '::', %sockargs) //
-		IO::Socket::IP->new( LocalHost => '0.0.0.0', %sockargs);
-	    die "unable to create socket - $@\n" if !$socket;
-	}
+        my %sockargs = (
+            LocalPort => $port,
+            Listen => SOMAXCONN,
+            Proto => 'tcp',
+            GetAddrInfoFlags => 0,
+            ReuseAddr => 1,
+        );
+        if (defined($host)) {
+            $socket = IO::Socket::IP->new(LocalHost => $host, %sockargs)
+                || die "unable to create socket - $@\n";
+        } else {
+            # disabling AF_INET6 (by adding ipv6.disable=1 to the kernel cmdline)
+            # causes bind on :: to fail, try 0.0.0.0 in that case
+            $socket = IO::Socket::IP->new(LocalHost => '::', %sockargs)
+                // IO::Socket::IP->new(LocalHost => '0.0.0.0', %sockargs);
+            die "unable to create socket - $@\n" if !$socket;
+        }
 
-	# we often observe delays when using Nagle algorithm,
-	# so we disable that to maximize performance
-	setsockopt($socket, IPPROTO_TCP, TCP_NODELAY, 1);
+        # we often observe delays when using Nagle algorithm,
+        # so we disable that to maximize performance
+        setsockopt($socket, IPPROTO_TCP, TCP_NODELAY, 1);
 
-	$ENV{"PVE_DAEMON_SOCKET_$port"} = $socket->fileno;
+        $ENV{"PVE_DAEMON_SOCKET_$port"} = $socket->fileno;
     }
 
     push @$daemon_sockets, $socket;
 
     return $socket;
 }
-
 
 1;
 

@@ -28,13 +28,13 @@ sub new_from_path {
 
     my $filename;
     if ($effective) {
-	$filename = "$path/cpuset.effective_cpus";
-	if (!-e $filename) {
-	    # cgroupv2:
-	    $filename = "$path/cpuset.cpus.effective";
-	}
+        $filename = "$path/cpuset.effective_cpus";
+        if (!-e $filename) {
+            # cgroupv2:
+            $filename = "$path/cpuset.cpus.effective";
+        }
     } else {
-	$filename = "$path/cpuset.cpus";
+        $filename = "$path/cpuset.cpus";
     }
 
     my $set_text = PVE::Tools::file_read_firstline($filename) // '';
@@ -51,17 +51,17 @@ sub parse_cpuset {
     my $count = 0;
 
     foreach my $part (split(/,/, $set_text)) {
-	if ($part =~ /^\s*(\d+)(?:-(\d+))?\s*$/) {
-	    my ($from, $to) = ($1, $2);
-	    $to //= $1;
-	    die "invalid range: $part ($to < $from)\n" if $to < $from;
-	    for (my $i = $from; $i <= $to; $i++) {
-		$members->{$i} = 1;
-		$count++;
-	    };
-	} else {
-	    die "invalid range: $part\n";
-	}
+        if ($part =~ /^\s*(\d+)(?:-(\d+))?\s*$/) {
+            my ($from, $to) = ($1, $2);
+            $to //= $1;
+            die "invalid range: $part ($to < $from)\n" if $to < $from;
+            for (my $i = $from; $i <= $to; $i++) {
+                $members->{$i} = 1;
+                $count++;
+            }
+        } else {
+            die "invalid range: $part\n";
+        }
     }
 
     return ($count, $members);
@@ -84,8 +84,8 @@ sub write_to_path {
     my $value = '';
     my @members = $self->members();
     foreach my $cpuid (@members) {
-	$value .= ',' if length($value);
-	$value .= $cpuid;
+        $value .= ',' if length($value);
+        $value .= $cpuid;
     }
 
     open(my $fh, '>', $filename) || die "failed to open '$filename' - $!\n";
@@ -99,9 +99,9 @@ sub insert {
     my $count = 0;
 
     foreach my $cpu (@members) {
-	next if $self->{members}->{$cpu};
-	$self->{members}->{$cpu} = 1;
-	$count++;
+        next if $self->{members}->{$cpu};
+        $self->{members}->{$cpu} = 1;
+        $count++;
     }
 
     return $count;
@@ -113,32 +113,32 @@ sub delete {
     my $count = 0;
 
     foreach my $cpu (@members) {
-	next if !$self->{members}->{$cpu};
-	delete $self->{members}->{$cpu};
-	$count++;
+        next if !$self->{members}->{$cpu};
+        delete $self->{members}->{$cpu};
+        $count++;
     }
 
     return $count;
 }
 
 sub has {
-   my ($self, $cpuid) = @_;
+    my ($self, $cpuid) = @_;
 
-   return $self->{members}->{$cpuid};
+    return $self->{members}->{$cpuid};
 }
 
 # members: this list is always sorted!
 sub members {
     my ($self) = @_;
 
-    my @sorted_members = sort { $a <=> $b } keys %{$self->{members}};
+    my @sorted_members = sort { $a <=> $b } keys %{ $self->{members} };
     return @sorted_members;
 }
 
 sub size {
     my ($self) = @_;
 
-    return scalar(keys %{$self->{members}});
+    return scalar(keys %{ $self->{members} });
 }
 
 sub is_equal {
@@ -148,10 +148,10 @@ sub is_equal {
     my $members2 = $set2->{members};
 
     foreach my $id (keys %$members1) {
-	return 0 if !$members2->{$id};
+        return 0 if !$members2->{$id};
     }
     foreach my $id (keys %$members2) {
-	return 0 if !$members1->{$id};
+        return 0 if !$members1->{$id};
     }
 
     return 1;
@@ -165,28 +165,28 @@ sub short_string {
     my $res = '';
     my ($last, $next);
     foreach my $cpu (@members) {
-	if (!defined($last)) {
-	    $last = $next = $cpu;
-	} elsif (($next + 1) == $cpu) {
-	    $next = $cpu;
-	} else {
-	    $res .= ',' if length($res);
-	    if ($last != $next) {
-		$res .= "$last-$next";
-	    } else {
-		$res .= "$last";
-	    }
-	    $last = $next = $cpu;
-	}
+        if (!defined($last)) {
+            $last = $next = $cpu;
+        } elsif (($next + 1) == $cpu) {
+            $next = $cpu;
+        } else {
+            $res .= ',' if length($res);
+            if ($last != $next) {
+                $res .= "$last-$next";
+            } else {
+                $res .= "$last";
+            }
+            $last = $next = $cpu;
+        }
     }
 
     if (defined($last)) {
-	$res .= ',' if length($res);
-	if ($last != $next) {
-	    $res .= "$last-$next";
-	} else {
-	    $res .= "$last";
-	}
+        $res .= ',' if length($res);
+        if ($last != $next) {
+            $res .= "$last-$next";
+        } else {
+            $res .= "$last";
+        }
     }
 
     return $res;

@@ -17,11 +17,15 @@ iface vmbr0 inet manual
 EOF
 
 # add an ip and disable previously enabled autostart
-update_iface('vmbr0',
-    [ { family => 'inet',
-	address => $ip,
-	gateway => $gw } ],
-    autostart => 0);
+update_iface(
+    'vmbr0',
+    [{
+        family => 'inet',
+        address => $ip,
+        gateway => $gw,
+    }],
+    autostart => 0,
+);
 
 expect load('base') . <<"EOF";
 iface vmbr0 inet static
@@ -34,10 +38,14 @@ iface vmbr0 inet static
 EOF
 save('with-ipv4', w());
 
-update_iface('vmbr0',
-    [ { family => 'inet6',
-	address => $ip6,
-	gateway => $gw6 } ]);
+update_iface(
+    'vmbr0',
+    [{
+        family => 'inet6',
+        address => $ip6,
+        gateway => $gw6,
+    }],
+);
 
 expect load('with-ipv4') . <<"EOF";
 iface vmbr0 inet6 static

@@ -12,7 +12,6 @@ sub new {
     $self;
 }
 
-
 sub DESTROY {
     # don't close atomatically (explicit close required to commit changes)
 }

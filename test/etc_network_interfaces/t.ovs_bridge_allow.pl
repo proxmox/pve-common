@@ -13,11 +13,16 @@ eth3:
 
 r('');
 
-new_iface('vmbr0', 'OVSBridge',
-    [ { family => 'inet',
+new_iface(
+    'vmbr0',
+    'OVSBridge',
+    [{
+        family => 'inet',
         address => $ip,
-        gateway => $gw } ],
-    autostart => 1);
+        gateway => $gw,
+    }],
+    autostart => 1,
+);
 
 update_iface('eth0', [], autostart => 1);
 update_iface('eth1', [], autostart => 1);

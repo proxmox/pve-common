@@ -15,7 +15,8 @@ iface eth3 inet manual
 
 ORDERED
 
-r("$ordered", <<'/proc/net/dev'
+r(
+    "$ordered", <<'/proc/net/dev',
 eth0:
 eth1:
 eth2:

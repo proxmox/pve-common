@@ -1,4 +1,5 @@
 my $base = load('loopback');
+
 sub wanted($) {
     my ($ip) = @_;
     return $base . <<"IFACES";
@@ -91,7 +92,7 @@ IFACES
 }
 
 r(wanted(13));
-update_iface('bond1', [ { family => 'inet', address => '10.10.10.11/24' } ]);
+update_iface('bond1', [{ family => 'inet', address => '10.10.10.11/24' }]);
 expect wanted(11);
 
 1;

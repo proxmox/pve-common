@@ -18,7 +18,7 @@ $config->{ifaces}->{eth1} = {
     address => $ip,
     gateway => $gw,
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 # Check
@@ -47,13 +47,14 @@ save('ipv4', w());
 r(load('ipv4'));
 expect load('ipv4');
 
-$config->{ifaces}->{eth1}->{$_->[0]} = $_->[1] foreach (
-    [ method6 => 'static' ],
-    [ address6 => $ip6 ],
-    [ netmask6 => $nm6 ],
-    [ gateway6 => $gw6 ],
-    [ families => ['inet', 'inet6'] ]
-);
+$config->{ifaces}->{eth1}->{ $_->[0] } = $_->[1]
+    foreach (
+        [method6 => 'static'],
+        [address6 => $ip6],
+        [netmask6 => $nm6],
+        [gateway6 => $gw6],
+        [families => ['inet', 'inet6']],
+    );
 
 # Check
 my $final = load('loopback') . <<"CHECK";
@@ -99,7 +100,7 @@ $config->{ifaces}->{eth1} = {
     netmask6 => $nm6,
     gateway6 => $gw6,
     families => ['inet', 'inet6'],
-    autostart => 1
+    autostart => 1,
 };
 expect $final;
 r(w());

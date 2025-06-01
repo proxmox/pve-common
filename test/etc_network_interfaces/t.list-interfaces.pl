@@ -17,26 +17,26 @@ eth100:
 
 my %wanted = (
     vmbr0 => {
-	address => '192.168.1.2',
-	netmask => '24',
-	cidr => '192.168.1.2/24',
-	gateway => '192.168.1.1',
-	address6 => 'fc05::1:1',
-	netmask6 => '112',
-	cidr6 => 'fc05::1:1/112',
+        address => '192.168.1.2',
+        netmask => '24',
+        cidr => '192.168.1.2/24',
+        gateway => '192.168.1.1',
+        address6 => 'fc05::1:1',
+        netmask6 => '112',
+        cidr6 => 'fc05::1:1/112',
     },
     vmbr1 => {
-	address => '10.0.0.5',
-	netmask => '24',
-	cidr => '10.0.0.5/24',
+        address => '10.0.0.5',
+        netmask => '24',
+        cidr => '10.0.0.5/24',
     },
     eth2 => {
-	address => '172.16.0.1',
-	netmask => '24',
-	cidr => '172.16.0.1/24',
-	address6 => 'fc05::1:2',
-	netmask6 => '112',
-	cidr6 => 'fc05::1:2/112',
+        address => '172.16.0.1',
+        netmask => '24',
+        cidr => '172.16.0.1/24',
+        address6 => 'fc05::1:2',
+        netmask6 => '112',
+        cidr6 => 'fc05::1:2/112',
     },
 );
 
@@ -92,22 +92,23 @@ my $ifaces = $config->{ifaces};
 
 # check defined interfaces
 defined($ifaces->{"eth$_"})
-    or die "missing interface: eth$_\n" foreach (0, 1, 2, 3, 100);
+    or die "missing interface: eth$_\n"
+    foreach (0, 1, 2, 3, 100);
 
 # check configuration
 foreach my $ifname (keys %wanted) {
     my $if = $wanted{$ifname};
     $ifaces->{$ifname}->{$_} eq $if->{$_}
-	or die "unexpected $_ for interface $ifname: \""
-	     . $ifaces->{$ifname}->{$_}
-	     . "\", expected: \"$if->{$_}\"\n"
-	foreach (keys %$if);
+        or die "unexpected $_ for interface $ifname: \""
+        . $ifaces->{$ifname}->{$_}
+        . "\", expected: \"$if->{$_}\"\n"
+        foreach (keys %$if);
 }
 
 my $ck = sub {
     my ($i, $v, $e) = @_;
     $ifaces->{$i}->{$v} eq $e
-	or die "$i variable $v: got \"$ifaces->{$i}->{$v}\", expected: $e\n";
+        or die "$i variable $v: got \"$ifaces->{$i}->{$v}\", expected: $e\n";
 };
 $ck->('vmbr0', type => 'bridge');
 $ck->('vmbr1', type => 'OVSBridge');
@@ -118,11 +119,11 @@ $ck->('eth100', type => 'OVSPort');
 $ck->('eth100', ovs_type => 'OVSPort');
 $ck->('eth100', ovs_bridge => 'vmbr1');
 
-my @f100 = sort @{$ifaces->{vmbr0}->{families}};
+my @f100 = sort @{ $ifaces->{vmbr0}->{families} };
 
 die "invalid families defined for vmbr0"
     if (scalar(@f100) != 2) || ($f100[0] ne 'inet') || ($f100[1] ne 'inet6');
- 
+
 # idempotency
 r(w());
 expect load('2');

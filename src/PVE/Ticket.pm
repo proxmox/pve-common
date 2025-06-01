@@ -30,19 +30,21 @@ sub verify_csrf_prevention_token {
     my ($secret, $username, $token, $min_age, $max_age, $noerr) = @_;
 
     if ($token =~ m/^([A-Z0-9]{8}):(\S+)$/) {
-	my $sig = $2;
-	my $timestamp = $1;
-	my $ttime = hex($timestamp);
+        my $sig = $2;
+        my $timestamp = $1;
+        my $ttime = hex($timestamp);
 
-	my $digest = Digest::SHA::hmac_sha256_base64("$timestamp:$username", $secret);
+        my $digest = Digest::SHA::hmac_sha256_base64("$timestamp:$username", $secret);
 
-	my $age = time() - $ttime;
-	return 1 if ($digest eq $sig) && ($age > $min_age) &&
-	    ($age < $max_age);
+        my $age = time() - $ttime;
+        return 1
+            if ($digest eq $sig)
+            && ($age > $min_age)
+            && ($age < $max_age);
     }
 
     raise("Permission denied - invalid csrf token\n", code => HTTP_UNAUTHORIZED)
-	if !$noerr;
+        if !$noerr;
 
     return undef;
 }
@@ -56,8 +58,8 @@ sub assemble_rsa_ticket {
     my $plain = "$prefix:";
 
     if (defined($data)) {
-	$data = uri_escape($data, ':');
-	$plain .= "$data:";
+        $data = uri_escape($data, ':');
+        $plain .= "$data:";
     }
 
     $plain .= $timestamp;
@@ -73,36 +75,36 @@ sub verify_rsa_ticket {
     my ($rsa_pub, $prefix, $ticket, $secret_data, $min_age, $max_age, $noerr) = @_;
 
     if ($ticket && $ticket =~ m/^(\Q$prefix\E:\S+)::([^:\s]+)$/) {
-	my $plain = $1;
-	my $sig = $2;
+        my $plain = $1;
+        my $sig = $2;
 
-	my $full = defined($secret_data) ? "$plain:$secret_data" : $plain;
+        my $full = defined($secret_data) ? "$plain:$secret_data" : $plain;
 
-	if ($rsa_pub->verify($full, decode_base64($sig))) {
-	    if ($plain =~ m/^\Q$prefix\E:(?:(\S+):)?([A-Z0-9]{8})$/) {
-		my $data = $1; # Note: not all tickets contains data
-		my $timestamp = $2;
-		my $ttime = hex($timestamp);
+        if ($rsa_pub->verify($full, decode_base64($sig))) {
+            if ($plain =~ m/^\Q$prefix\E:(?:(\S+):)?([A-Z0-9]{8})$/) {
+                my $data = $1; # Note: not all tickets contains data
+                my $timestamp = $2;
+                my $ttime = hex($timestamp);
 
-		my $age = time() - $ttime;
+                my $age = time() - $ttime;
 
-		if (defined($data)) {
-		    $data = uri_unescape($data);
-		}
+                if (defined($data)) {
+                    $data = uri_unescape($data);
+                }
 
-		if (($age > $min_age) && ($age < $max_age)) {
-		    if (defined($data)) {
-			return wantarray ? ($data, $age) : $data;
-		    } else {
-			return wantarray ? (1, $age) : 1;
-		    }
-		}
-	    }
-	}
+                if (($age > $min_age) && ($age < $max_age)) {
+                    if (defined($data)) {
+                        return wantarray ? ($data, $age) : $data;
+                    } else {
+                        return wantarray ? (1, $age) : 1;
+                    }
+                }
+            }
+        }
     }
 
     raise("permission denied - invalid $prefix ticket\n", code => HTTP_UNAUTHORIZED)
-	if !$noerr;
+        if !$noerr;
 
     return undef;
 }
@@ -114,10 +116,11 @@ sub assemble_spice_ticket {
 
     my $timestamp = sprintf("%08x", $seconds);
 
-    my $randomstr = "PVESPICE:$timestamp:$username:$vmid:$node:$secret:" .
-	':' . sprintf("%08x", $microseconds) .
-	':' . sprintf("%08x", $$) .
-	':' . rand(1);
+    my $randomstr =
+        "PVESPICE:$timestamp:$username:$vmid:$node:$secret:" . ':'
+        . sprintf("%08x", $microseconds) . ':'
+        . sprintf("%08x", $$) . ':'
+        . rand(1);
 
     # this should be used as one-time password
     # max length is 60 chars (spice limit)
@@ -153,20 +156,20 @@ sub verify_spice_connect_url {
 
     return undef if !$connect_str;
 
-    if ($connect_str =~m/^pvespiceproxy:([a-z0-9]{8}):(\d+):(\S+)::([a-z0-9]{40}):(\d+)$/) {
-	my ($timestamp, $vmid, $node, $hexsig, $port) = ($1, $2, $3, $4, $5, $6);
-	my $ttime = hex($timestamp);
-	my $age = time() - $ttime;
+    if ($connect_str =~ m/^pvespiceproxy:([a-z0-9]{8}):(\d+):(\S+)::([a-z0-9]{40}):(\d+)$/) {
+        my ($timestamp, $vmid, $node, $hexsig, $port) = ($1, $2, $3, $4, $5, $6);
+        my $ttime = hex($timestamp);
+        my $age = time() - $ttime;
 
-	# use very limited lifetime - is this enough?
-	return undef if !(($age > -20) && ($age < 40));
+        # use very limited lifetime - is this enough?
+        return undef if !(($age > -20) && ($age < 40));
 
-	my $plain = "pvespiceproxy:$timestamp:$vmid:$node";
-	my $sig = unpack("H*", Digest::SHA::sha1($plain, $secret));
+        my $plain = "pvespiceproxy:$timestamp:$vmid:$node";
+        my $sig = unpack("H*", Digest::SHA::sha1($plain, $secret));
 
-	if ($sig eq $hexsig) {
-	    return ($vmid, $node, $port);
-	}
+        if ($sig eq $hexsig) {
+            return ($vmid, $node, $port);
+        }
     }
 
     return undef;

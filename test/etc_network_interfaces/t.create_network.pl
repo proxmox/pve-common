@@ -46,7 +46,7 @@ $config->{ifaces}->{eth1} = {
     address => $ip,
     gateway => $gw,
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 my $eth1_part = <<"PART";
@@ -89,7 +89,7 @@ $config->{ifaces}->{bond0} = {
     bond_miimon => 100,
     method => 'manual',
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 my $bond0_part = <<"PART";
 auto bond0
@@ -136,7 +136,7 @@ $config->{ifaces}->{vxlan1} = {
     'vxlan-id' => 1,
     'vxlan-svcnodeip' => $svcnodeip,
     'vxlan-physdev' => $physdev,
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{vxlan2} = {
@@ -145,7 +145,7 @@ $config->{ifaces}->{vxlan2} = {
     families => ['inet'],
     'vxlan-id' => 2,
     'vxlan-local-tunnelip' => $ip,
-    autostart => 1
+    autostart => 1,
 };
 
 my $vxlan12_part = <<"PART";
@@ -200,7 +200,7 @@ $config->{ifaces}->{vmbr1} = {
     bridge_fd => 0,
     bridge_ports => 'vxlan1',
     bridge_vlan_aware => 'yes',
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{vmbr2} = {
@@ -210,7 +210,7 @@ $config->{ifaces}->{vmbr2} = {
     bridge_stp => 'off',
     bridge_fd => 0,
     bridge_ports => 'vxlan2',
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{vmbr3} = {
@@ -222,7 +222,7 @@ $config->{ifaces}->{vmbr3} = {
     bridge_ports => 'vxlan3',
     bridge_vlan_aware => 'yes',
     bridge_vids => '2-10',
-    autostart => 1
+    autostart => 1,
 };
 
 my $vmbr123_part = <<"PART";
@@ -258,7 +258,7 @@ $config->{ifaces}->{vxlan3} = {
     'vxlan-id' => 3,
     'vxlan-remoteip' => [$remoteip1, $remoteip2],
     'bridge-access' => 3,
-    autostart => 1
+    autostart => 1,
 };
 
 my $vx = $config->{ifaces}->{vxlan2};
@@ -266,7 +266,7 @@ $vx->{'bridge-learning'} = 'off';
 $vx->{'bridge-arp-nd-suppress'} = 'on';
 $vx->{'bridge-unicast-flood'} = 'off';
 $vx->{'bridge-multicast-flood'} = 'off';
-my $vxlan123_part = $vxlan12_part ."\n" . <<"PART";
+my $vxlan123_part = $vxlan12_part . "\n" . <<"PART";
 	bridge-arp-nd-suppress on
 	bridge-learning off
 	bridge-multicast-flood off
@@ -317,7 +317,7 @@ $config->{ifaces}->{'vmbr1.100'} = {
     mtu => 1300,
     method => 'manual',
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{'bond0.100'} = {
@@ -326,7 +326,7 @@ $config->{ifaces}->{'bond0.100'} = {
     method => 'manual',
     families => ['inet'],
     'vlan-protocol' => '802.1ad',
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{'bond0.100.10'} = {
@@ -334,7 +334,7 @@ $config->{ifaces}->{'bond0.100.10'} = {
     mtu => 1300,
     method => 'manual',
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{'eth1.100'} = {
@@ -342,7 +342,7 @@ $config->{ifaces}->{'eth1.100'} = {
     mtu => 1400,
     method => 'manual',
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{'vmbr4'} = {
@@ -353,7 +353,7 @@ $config->{ifaces}->{'vmbr4'} = {
     bridge_stp => 'off',
     bridge_fd => 0,
     bridge_ports => 'bond0.100',
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{'vmbr5'} = {
@@ -364,7 +364,7 @@ $config->{ifaces}->{'vmbr5'} = {
     bridge_stp => 'off',
     bridge_fd => 0,
     bridge_ports => 'vmbr4.99',
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{vmbr6} = {
@@ -373,7 +373,7 @@ $config->{ifaces}->{vmbr6} = {
     ovs_ports => 'bond1 ovsintvlan',
     method => 'manual',
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{bond1} = {
@@ -384,7 +384,7 @@ $config->{ifaces}->{bond1} = {
     ovs_options => 'bond_mode=active-backup',
     method => 'manual',
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 $config->{ifaces}->{ovsintvlan} = {
@@ -394,7 +394,7 @@ $config->{ifaces}->{ovsintvlan} = {
     ovs_options => 'tag=14',
     method => 'manual',
     families => ['inet'],
-    autostart => 1
+    autostart => 1,
 };
 
 expect load('loopback') . <<"CHECK";
@@ -503,7 +503,7 @@ $config->{ifaces}->{eth1} = {
     netmask6 => $nm,
     gateway6 => $gw,
     families => ['inet6'],
-    autostart => 1
+    autostart => 1,
 };
 
 expect load('loopback') . <<"CHECK";

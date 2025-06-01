@@ -7,11 +7,11 @@ use POSIX qw(strftime round);
 
 use base 'Exporter';
 our @EXPORT_OK = qw(
-render_timestamp
-render_timestamp_gmt
-render_duration
-render_fraction_as_percentage
-render_bytes
+    render_timestamp
+    render_timestamp_gmt
+    render_duration
+    render_fraction_as_percentage
+    render_bytes
 );
 
 sub render_timestamp {
@@ -37,15 +37,15 @@ sub render_duration {
     return "0s" if !$rest;
 
     my $step = sub {
-	my ($unit, $unitlength) = @_;
+        my ($unit, $unitlength) = @_;
 
-	if ((my $v = int($rest / $unitlength)) > 0) {
-	    $text .= " " if length($text);
-	    $text .= "${v}${unit}";
-	    $rest -= $v * $unitlength;
-	    return 1;
-	}
-	return undef;
+        if ((my $v = int($rest / $unitlength)) > 0) {
+            $text .= " " if length($text);
+            $text .= "${v}${unit}";
+            $rest -= $v * $unitlength;
+            return 1;
+        }
+        return undef;
     };
 
     my $weeks = $step->('w', 7 * 24 * 3600);
@@ -60,7 +60,7 @@ sub render_duration {
 sub render_fraction_as_percentage {
     my ($fraction) = @_;
 
-    return sprintf("%.2f%%", $fraction*100);
+    return sprintf("%.2f%%", $fraction * 100);
 }
 
 sub render_bytes {
@@ -72,7 +72,7 @@ sub render_bytes {
 
     my $max_unit = 0;
     if ($value > 1023) {
-        $max_unit = int(log($value)/log(1024));
+        $max_unit = int(log($value) / log(1024));
         $value /= 1024**($max_unit);
     }
     my $unit = $units[$max_unit];
