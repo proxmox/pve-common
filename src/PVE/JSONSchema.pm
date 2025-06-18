@@ -1033,7 +1033,7 @@ sub parse_boolean {
 }
 
 sub parse_property_string {
-    my ($format, $data, $path, $additional_properties) = @_;
+    my ($format, $data, $path, $additional_properties, $options) = @_;
 
     # In property strings we default to not allowing additional properties
     $additional_properties = 0 if !defined($additional_properties);
@@ -1057,6 +1057,7 @@ sub parse_property_string {
     }
 
     my $default_key;
+    my $skip = $options->{skip} ? { map { $_ => 1 } $options->{skip}->@* } : {};
 
     my $res = {};
     foreach my $part (split(/,/, $data)) {
@@ -1064,6 +1065,7 @@ sub parse_property_string {
 
         if ($part =~ /^([^=]+)=(.+)$/) {
             my ($k, $v) = ($1, $2);
+            next if $skip->{$k};
             die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
             my $schema = $format->{$k};
             if (my $alias = $schema->{alias}) {
