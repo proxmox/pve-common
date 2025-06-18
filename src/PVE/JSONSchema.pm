@@ -21,6 +21,7 @@ our @EXPORT_OK = qw(
     get_standard_option
     parse_property_string
     print_property_string
+    json_bool
 );
 
 our $CONFIGID_RE = qr/[a-z][a-z0-9_-]+/i;
@@ -2511,6 +2512,12 @@ sub schema_get_type_text {
     }
 
     return "<$type>";
+}
+
+sub json_bool {
+    my ($value) = @_;
+
+    return $value ? JSON::true : JSON::false;
 }
 
 1;
