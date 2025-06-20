@@ -1,3 +1,11 @@
+libpve-common-perl (9.0.1) trixie; urgency=medium
+
+  * schema: parse property string: support skipping keys
+
+  * schema: add helper to convert to JSON boolean
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 20 Jun 2025 13:44:19 +0200
+
 libpve-common-perl (9.0.0) trixie; urgency=medium
 
   * re-build for Debian 13 "Trixie" based releases.
