@@ -531,7 +531,7 @@ sub tap_plug {
         );
     };
 
-    if (-d "/sys/class/net/$bridge/bridge") {
+    if (is_linux_bridge($bridge)) {
         $cleanup_firewall_bridge->($iface); # remove stale devices
 
         my $vlan_aware =
@@ -558,7 +558,7 @@ sub tap_plug {
         }
         $bridge_enable_port_isolation->($iface) if $isolation;
 
-    } else {
+    } elsif (is_ovs_bridge($bridge)) {
         $cleanup_firewall_bridge->($iface); # remove stale devices
 
         if ($firewall) {
@@ -566,6 +566,8 @@ sub tap_plug {
         } else {
             $ovs_bridge_add_port->($bridge, $iface, $tag, undef, $trunks);
         }
+    } else {
+        die "bridge '$bridge' is neither a linux nor an OVS bridge!\n";
     }
 
     tap_rate_limit($iface, $rate);
@@ -944,6 +946,31 @@ sub unique_ips {
     }
 
     return $res;
+}
+
+sub is_linux_bridge {
+    my ($iface_name) = @_;
+
+    check_iface_name($iface_name);
+    die "interface $iface_name does not exist\n" if ! -l "/sys/class/net/$iface_name";
+
+    return -d "/sys/class/net/$iface_name/bridge";
+}
+
+sub is_ovs_bridge {
+    my ($bridge) = @_;
+
+    return 0 if is_linux_bridge($bridge);
+
+    # no OVS installed, can't be an OVS bridge
+    return 0 if ! -e '/bin/ovs-vsctl';
+
+    # will return 2 if bridge doesn't exist
+    my $res = PVE::Tools::run_command(['/bin/ovs-vsctl', 'br-exists', $bridge], noerr => 1);
+    return 0 if $res == 2;
+    return 1 if $res == 0;
+
+    die "failed to query OVS to determine type of '$bridge': $res\n";
 }
 
 1;
