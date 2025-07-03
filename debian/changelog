@@ -1,3 +1,9 @@
+libpve-common-perl (9.0.2) trixie; urgency=medium
+
+  * network: add helper for checking if a interface is a ovs/linux bridge
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 03 Jul 2025 14:32:42 +0200
+
 libpve-common-perl (9.0.1) trixie; urgency=medium
 
   * schema: parse property string: support skipping keys
