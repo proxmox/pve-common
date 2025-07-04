@@ -34,7 +34,8 @@ my $parse_pci_ids = sub {
     return $ids;
 };
 
-my sub normalize_pci_id {
+# normalizes pci ids so that they're always the full id such as '0000:01:00.0'
+sub normalize_pci_id {
     my ($id) = @_;
     $id = "0000:$id" if $id !~ m/^${domainregex}:/;
     return $id;
