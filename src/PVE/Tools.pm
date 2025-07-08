@@ -1188,8 +1188,16 @@ sub upid_encode {
 
     # Note: pstart can be > 32bit if uptime > 497 days, so this can result in
     # more that 8 characters for pstart
-    return sprintf("UPID:%s:%08X:%08X:%08X:%s:%s:%s:",
-        $d->{node}, $d->{pid}, $d->{pstart}, $d->{starttime}, $d->{type}, $d->{id}, $d->{user});
+    return sprintf(
+        "UPID:%s:%08X:%08X:%08X:%s:%s:%s:",
+        $d->{node},
+        $d->{pid},
+        $d->{pstart},
+        $d->{starttime},
+        $d->{type},
+        $d->{id},
+        $d->{user},
+    );
 }
 
 sub upid_decode {
