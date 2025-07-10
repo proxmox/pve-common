@@ -1,3 +1,15 @@
+libpve-common-perl (8.3.2) bookworm; urgency=medium
+
+  * schema: add helper to convert to JSON boolean
+
+  * schema: parse property string: support skipping keys
+
+  * network: add helper for checking if a interface is a ovs/linux bridge
+
+  * sysfs tools: make normalize_pci_id helper method public.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 10 Jul 2025 13:41:32 +0200
+
 libpve-common-perl (8.3.1) bookworm; urgency=medium
 
   * memory info: use the MemAvailable field from /proc/meminfo to compute used
