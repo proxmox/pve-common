@@ -1,3 +1,9 @@
+libpve-common-perl (9.0.3) trixie; urgency=medium
+
+  * sysfs tools: make normalize_pci_id helper method public.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 10 Jul 2025 13:20:52 +0200
+
 libpve-common-perl (9.0.2) trixie; urgency=medium
 
   * network: add helper for checking if a interface is a ovs/linux bridge
