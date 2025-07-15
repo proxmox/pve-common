@@ -144,7 +144,7 @@ sub parse_pressure {
             $res->{$1}->{avg10} = $2;
             $res->{$1}->{avg60} = $3;
             $res->{$1}->{avg300} = $4;
-            $res->{$1}->{total} = $4;
+            $res->{$1}->{total} = $5;
         }
     }
     $fh->close;
