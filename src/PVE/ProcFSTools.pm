@@ -151,6 +151,17 @@ sub parse_pressure {
     return $res;
 }
 
+sub read_cgroup_pressure {
+    my ($cgroup_path) = @_;
+
+    my $res = {};
+    for my $type (qw(cpu memory io)) {
+        my $stats = parse_pressure("sys/fs/cgroup/${cgroup_path}/${type}.pressure");
+        $res->{$type} = $stats if $stats;
+    }
+    return $res;
+}
+
 sub read_pressure {
     my $res = {};
     foreach my $type (qw(cpu memory io)) {
