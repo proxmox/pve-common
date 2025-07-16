@@ -1,3 +1,11 @@
+libpve-common-perl (9.0.5) trixie; urgency=medium
+
+  * add function to retrieve pressures stall information from a cgroup.
+
+  * fix parsing pressure stall information.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 16 Jul 2025 21:05:03 +0200
+
 libpve-common-perl (9.0.4) trixie; urgency=medium
 
   * network: add 'nic' prefix to the regex heuristic to detect physical
