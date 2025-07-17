@@ -1,3 +1,10 @@
+libpve-common-perl (9.0.6) trixie; urgency=medium
+
+  * tools: dump logfile: fix result type in case the file cannot be opened to
+    ensure user can see the error message.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 17 Jul 2025 20:33:08 +0200
+
 libpve-common-perl (9.0.5) trixie; urgency=medium
 
   * add function to retrieve pressures stall information from a cgroup.
