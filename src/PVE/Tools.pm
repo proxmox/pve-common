@@ -1426,7 +1426,7 @@ sub dump_logfile {
 
     my $fh = IO::File->new($filename, "r");
     if (!$fh) {
-        return (1, { n => 1, t => "unable to open file - $!" });
+        return (1, [{ n => 1, t => "unable to open file - $!" }]);
     }
 
     my %state = (
