@@ -980,7 +980,7 @@ sub ip_link_details {
         ['ip', '-details', '-json', 'link', 'show'],
         outfunc => sub {
             $link_json .= shift;
-        }
+        },
     );
 
     my $links = JSON::decode_json($link_json);
