@@ -1,3 +1,14 @@
+libpve-common-perl (9.0.7) trixie; urgency=medium
+
+  * interfaces: make parser aware of interface alternative names to avoid
+    duplicate entries if the /e/n/i config used an altname while the parser
+    still checked for only the primary one.
+
+  * network: add 'if' prefix to the regex heuristic to detect physical network
+    interfaces.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 23 Jul 2025 17:01:35 +0200
+
 libpve-common-perl (9.0.6) trixie; urgency=medium
 
   * tools: dump logfile: fix result type in case the file cannot be opened to
