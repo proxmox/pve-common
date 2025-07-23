@@ -990,16 +990,16 @@ sub check_format {
 sub parse_size {
     my ($value) = @_;
 
-    return undef if $value !~ m/^(\d+(\.\d+)?)([KMGT])?$/;
+    return undef if $value !~ m/^(\d+(\.\d+)?)([KMGT](?:iB)?)?$/;
     my ($size, $unit) = ($1, $3);
     if ($unit) {
-        if ($unit eq 'K') {
+        if ($unit eq 'K' || $unit eq 'KiB') {
             $size = $size * 1024;
-        } elsif ($unit eq 'M') {
+        } elsif ($unit eq 'M' || $unit eq 'MiB') {
             $size = $size * 1024 * 1024;
-        } elsif ($unit eq 'G') {
+        } elsif ($unit eq 'G' || $unit eq 'GiB') {
             $size = $size * 1024 * 1024 * 1024;
-        } elsif ($unit eq 'T') {
+        } elsif ($unit eq 'T' || $unit eq 'TiB') {
             $size = $size * 1024 * 1024 * 1024 * 1024;
         }
     }
