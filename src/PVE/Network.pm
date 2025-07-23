@@ -17,7 +17,7 @@ use Socket qw(NI_NUMERICHOST NI_NUMERICSERV);
 
 # host network related utility functions
 
-our $PHYSICAL_NIC_RE = qr/(?:eth\d+|en[^:.]+|ib[^:.]+|nic\d+)/;
+our $PHYSICAL_NIC_RE = qr/(?:eth\d+|en[^:.]+|ib[^:.]+|(?:nic|if)\d+)/;
 
 our $ipv4_reverse_mask = [
     '0.0.0.0',
