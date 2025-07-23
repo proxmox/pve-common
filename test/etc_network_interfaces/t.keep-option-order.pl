@@ -1,3 +1,15 @@
+use JSON;
+use Storable qw(dclone);
+
+my $ip_links = decode_json(load('ip_link_details'));
+
+for my $idx (1 .. 3) {
+    my $entry = dclone($ip_links->{eth0});
+    $entry->{ifname} = "eth$idx";
+
+    $ip_links->{"eth$idx"} = $entry;
+}
+
 #
 # Order of option lines between interfaces should be preserved:
 # eth0 is unconfigured and will thus end up at the end as 'manual'
@@ -15,14 +27,7 @@ iface eth3 inet manual
 
 ORDERED
 
-r(
-    "$ordered", <<'/proc/net/dev',
-eth0:
-eth1:
-eth2:
-eth3:
-/proc/net/dev
-);
+r($ordered, $ip_links);
 
 expect(load('loopback') . $ordered . "iface eth0 inet manual\n\n");
 

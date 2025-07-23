@@ -65,12 +65,11 @@ sub flush_files() {
 # Read an interfaces file with optional /proc/net/dev file content string and
 # the list of active interfaces, which otherwise default
 sub r($;$$) {
-    my ($ifaces, $proc_net_dev, $active) = @_;
-    $proc_net_dev //= load('proc_net_dev');
+    my ($ifaces, $ip_links, $active) = @_;
+    $ip_links //= decode_json(load('ip_link_details'));
     $active //= [split(/\s+/, load('active_interfaces'))];
     open my $fh1, '<', \$ifaces;
-    open my $fh2, '<', \$proc_net_dev;
-    $config = PVE::INotify::__read_etc_network_interfaces($fh1, $fh2, $active);
+    $config = PVE::INotify::__read_etc_network_interfaces($fh1, $ip_links, $active);
     close $fh1;
 }
 
