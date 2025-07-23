@@ -866,13 +866,13 @@ my $check_mtu = sub {
 # }
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
-    my $proc_net_dev = IO::File->new('/proc/net/dev', 'r');
+    my $ip_links = PVE::Network::ip_link_details();
     my $active = PVE::ProcFSTools::get_active_network_interfaces();
-    return __read_etc_network_interfaces($fh, $proc_net_dev, $active);
+    return __read_etc_network_interfaces($fh, $ip_links, $active);
 }
 
 sub __read_etc_network_interfaces {
-    my ($fh, $proc_net_dev, $active_ifaces) = @_;
+    my ($fh, $ip_links, $active_ifaces) = @_;
 
     my $config = {};
     my $ifaces = $config->{ifaces} = {};
@@ -893,15 +893,6 @@ sub __read_etc_network_interfaces {
     };
 
     my $line;
-
-    if ($proc_net_dev) {
-        while (defined($line = <$proc_net_dev>)) {
-            if ($line =~ m/^\s*($PVE::Network::PHYSICAL_NIC_RE):.*/) {
-                $ifaces->{$1}->{exists} = 1;
-            }
-        }
-        close($proc_net_dev);
-    }
 
     # we try to keep order inside the file
     my $priority = 2; # 1 is reserved for lo
@@ -1045,6 +1036,22 @@ SECTION: while (defined($line = <$fh>)) {
         } elsif ($line =~ /\w/) {
             push @$options, [$priority++, $line];
         }
+    }
+
+OUTER:
+    for my $iface_name (keys $ip_links->%*) {
+        my $ip_link = $ip_links->{$iface_name};
+
+        next if $iface_name !~ m/^$PVE::Network::PHYSICAL_NIC_RE$/;
+
+        for my $altname ($ip_link->{altnames}->@*) {
+            if ($ifaces->{$altname}) {
+                $ifaces->{$altname}->{exists} = 1;
+                next OUTER;
+            }
+        }
+
+        $ifaces->{$iface_name}->{exists} = 1;
     }
 
     foreach my $ifname (@$active_ifaces) {

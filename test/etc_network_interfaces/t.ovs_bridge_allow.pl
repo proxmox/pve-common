@@ -1,17 +1,21 @@
 use strict;
 
+use JSON;
+use Storable qw(dclone);
+
+my $ip_links = decode_json(load('ip_link_details'));
+
+for my $idx (1 .. 3) {
+    my $entry = dclone($ip_links->{eth0});
+    $entry->{ifname} = "eth$idx";
+
+    $ip_links->{"eth$idx"} = $entry;
+}
+
 my $ip = '192.168.0.100/24';
 my $gw = '192.168.0.1';
 
-# replace proc_net_dev with one with a bunch of interfaces
-save('proc_net_dev', <<'/proc/net/dev');
-eth0:
-eth1:
-eth2:
-eth3:
-/proc/net/dev
-
-r('');
+r('', $ip_links);
 
 new_iface(
     'vmbr0',
@@ -82,7 +86,7 @@ iface vmbr0 inet static
 # they're stripped from $config->{options} at load-time since they're
 # auto-generated when writing OVSPorts.
 save('idem', w());
-r(load('idem'));
+r(load('idem'), $ip_links);
 expect load('idem');
 
 # Removing an ovs_port also has to remove the corresponding allow- line!

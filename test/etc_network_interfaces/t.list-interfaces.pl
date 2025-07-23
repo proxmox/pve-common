@@ -7,13 +7,22 @@
 # The expected behavior is to notice their existance and treat them as manually
 # configured interfaces.
 # Saving the file after reading would add the corresponding 'manual' lines.
-save('proc_net_dev', <<'/proc/net/dev');
-eth0:
-eth1:
-eth2:
-eth3:
-eth100:
-/proc/net/dev
+
+use JSON;
+use Storable qw(dclone);
+
+my $ip_links = decode_json(load('ip_link_details'));
+
+for my $idx (1 .. 3) {
+    my $entry = dclone($ip_links->{eth0});
+    $entry->{ifname} = "eth$idx";
+
+    $ip_links->{"eth$idx"} = $entry;
+}
+
+my $entry = dclone($ip_links->{eth0});
+$entry->{ifname} = "eth100";
+$ip_links->{"eth100"} = $entry;
 
 my %wanted = (
     vmbr0 => {
@@ -85,7 +94,7 @@ source after-ovs
 
 /etc/network/interfaces
 
-r(load('interfaces'));
+r(load('interfaces'), $ip_links);
 save('2', w());
 
 my $ifaces = $config->{ifaces};
@@ -125,7 +134,7 @@ die "invalid families defined for vmbr0"
     if (scalar(@f100) != 2) || ($f100[0] ne 'inet') || ($f100[1] ne 'inet6');
 
 # idempotency
-r(w());
+r(w(), $ip_links);
 expect load('2');
 
 1;

@@ -1,3 +1,15 @@
+use JSON;
+use Storable qw(dclone);
+
+my $ip_links = decode_json(load('ip_link_details'));
+
+for my $idx (1 .. 5) {
+    my $entry = dclone($ip_links->{eth0});
+    $entry->{ifname} = "eth$idx";
+
+    $ip_links->{"eth$idx"} = $entry;
+}
+
 my $base = load('loopback');
 
 sub wanted($) {
@@ -91,7 +103,7 @@ iface vmbr5 inet manual
 IFACES
 }
 
-r(wanted(13));
+r(wanted(13), $ip_links);
 update_iface('bond1', [{ family => 'inet', address => '10.10.10.11/24' }]);
 expect wanted(11);
 

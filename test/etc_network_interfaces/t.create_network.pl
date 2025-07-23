@@ -1,13 +1,16 @@
-save('proc_net_dev', <<'/proc/net/dev');
-eth0:
-eth1:
-eth2:
-eth3:
-eth4:
-eth5:
-/proc/net/dev
+use JSON;
+use Storable qw(dclone);
 
-r(load('brbase'));
+my $ip_links = decode_json(load('ip_link_details'));
+
+for my $idx (1 .. 5) {
+    my $entry = dclone($ip_links->{eth0});
+    $entry->{ifname} = "eth$idx";
+
+    $ip_links->{"eth$idx"} = $entry;
+}
+
+r(load('brbase'), $ip_links);
 
 #
 # Variables used for the various interfaces:
@@ -483,14 +486,14 @@ CHECK
 #
 
 save('if', w());
-r(load('if'));
+r(load('if'), $ip_links);
 expect load('if');
 
 #
 # Check a brbase with an ipv6 address on eth1
 #
 
-r(load('brbase'));
+r(load('brbase'), $ip_links);
 
 my $ip = 'fc05::2';
 my $nm = '112';
@@ -535,7 +538,7 @@ iface vmbr0 inet static
 CHECK
 
 save('if', w());
-r(load('if'));
+r(load('if'), $ip_links);
 expect load('if');
 
 1;
