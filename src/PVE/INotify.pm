@@ -878,6 +878,8 @@ sub __read_etc_network_interfaces {
     my $ifaces = $config->{ifaces} = {};
     my $options = $config->{options} = [];
 
+    my $altnames = PVE::Network::altname_mapping($ip_links);
+
     my $options_alternatives = {
         'ovs_mtu' => 'mtu',
         'bond-slaves' => 'slaves',
@@ -1042,7 +1044,7 @@ OUTER:
     for my $iface_name (keys $ip_links->%*) {
         my $ip_link = $ip_links->{$iface_name};
 
-        next if $iface_name !~ m/^$PVE::Network::PHYSICAL_NIC_RE$/;
+        next if !PVE::Network::ip_link_is_physical($ip_link);
 
         for my $altname ($ip_link->{altnames}->@*) {
             if ($ifaces->{$altname}) {
@@ -1072,6 +1074,9 @@ OUTER:
     foreach my $iface (sort keys %$ifaces) {
         my $d = $ifaces->{$iface};
         $d->{type} = 'unknown';
+
+        my $ip_link = $ip_links->{$altnames->{$iface} // $iface};
+
         if (defined $d->{'bridge_ports'}) {
             $d->{type} = 'bridge';
             if (!defined($d->{bridge_stp})) {
@@ -1140,7 +1145,7 @@ OUTER:
                 $ifaces->{$raw_iface}->{exists} = 0;
                 $d->{exists} = 0;
             }
-        } elsif ($iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
+        } elsif ($ip_link && PVE::Network::ip_link_is_physical($ip_link)) {
             if (!$d->{ovs_type}) {
                 $d->{type} = 'eth';
             } elsif ($d->{ovs_type} eq 'OVSPort') {
@@ -1550,16 +1555,12 @@ sub __write_etc_network_interfaces {
         if ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' || $d->{type} eq 'OVSBond') {
             my $brname = $used_ports->{$iface};
             if (!$brname || !$ifaces->{$brname}) {
-                if ($iface =~ /^$PVE::Network::PHYSICAL_NIC_RE/) {
-                    $ifaces->{$iface} = {
-                        type => 'eth',
-                        exists => 1,
-                        method => 'manual',
-                        families => ['inet'],
-                    };
-                } else {
-                    delete $ifaces->{$iface};
-                }
+                $ifaces->{$iface} = {
+                    type => 'eth',
+                    exists => 1,
+                    method => 'manual',
+                    families => ['inet'],
+                };
                 next;
             }
             my $bd = $ifaces->{$brname};
