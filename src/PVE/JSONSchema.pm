@@ -1290,7 +1290,7 @@ sub check_object {
                     add_error(
                         $errors,
                         $path ? "$path.$requires" : $requires,
-                        "missing property - '$newpath' requires this property",
+                        "missing property required by '$newpath'",
                     );
                 }
             }
