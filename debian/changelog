@@ -1,3 +1,13 @@
+libpve-common-perl (9.0.8) trixie; urgency=medium
+
+  * schema: clarify error message for missing property dependency.
+
+  * inotify/interfaces: use ip link for detecting physical interfaces and
+    avoid restriction to only recognizing interfaces following a specific
+    naming pattern.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 29 Jul 2025 20:17:13 +0200
+
 libpve-common-perl (9.0.7) trixie; urgency=medium
 
   * interfaces: make parser aware of interface alternative names to avoid
