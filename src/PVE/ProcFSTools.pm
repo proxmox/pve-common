@@ -156,7 +156,7 @@ sub read_cgroup_pressure {
 
     my $res = {};
     for my $type (qw(cpu memory io)) {
-        my $stats = parse_pressure("sys/fs/cgroup/${cgroup_path}/${type}.pressure");
+        my $stats = parse_pressure("/sys/fs/cgroup/${cgroup_path}/${type}.pressure");
         $res->{$type} = $stats if $stats;
     }
     return $res;
