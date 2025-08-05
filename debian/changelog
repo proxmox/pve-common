@@ -1,3 +1,23 @@
+libpve-common-perl (8.3.4) bookworm; urgency=medium
+
+  * inotify/interfaces: use ip link for detecting physical interfaces and
+    avoid restriction to only recognizing interfaces following a specific
+    naming pattern.
+
+  * interfaces: make parser aware of interface alternative names to avoid
+    duplicate entries if the /e/n/i config used an altname while the parser
+    still checked for only the primary one.
+
+  * network: add 'if' prefix to the regex heuristic to detect physical network
+    interfaces.
+
+  * network: add 'nic' prefix to the regex heuristic to detect physical
+    network interfaces.
+
+  * network: add helpers to get`ip link` and `ip altname` information.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 05 Aug 2025 16:29:17 +0200
+
 libpve-common-perl (8.3.3) bookworm; urgency=medium
 
   * schema: support sizes with verbose suffixes {K, M, G, T}iB.
