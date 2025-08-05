@@ -866,17 +866,19 @@ my $check_mtu = sub {
 # }
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
-    my $proc_net_dev = IO::File->new('/proc/net/dev', 'r');
+    my $ip_links = PVE::Network::ip_link_details();
     my $active = PVE::ProcFSTools::get_active_network_interfaces();
-    return __read_etc_network_interfaces($fh, $proc_net_dev, $active);
+    return __read_etc_network_interfaces($fh, $ip_links, $active);
 }
 
 sub __read_etc_network_interfaces {
-    my ($fh, $proc_net_dev, $active_ifaces) = @_;
+    my ($fh, $ip_links, $active_ifaces) = @_;
 
     my $config = {};
     my $ifaces = $config->{ifaces} = {};
     my $options = $config->{options} = [];
+
+    my $altnames = PVE::Network::altname_mapping($ip_links);
 
     my $options_alternatives = {
         'ovs_mtu' => 'mtu',
@@ -893,15 +895,6 @@ sub __read_etc_network_interfaces {
     };
 
     my $line;
-
-    if ($proc_net_dev) {
-        while (defined($line = <$proc_net_dev>)) {
-            if ($line =~ m/^\s*($PVE::Network::PHYSICAL_NIC_RE):.*/) {
-                $ifaces->{$1}->{exists} = 1;
-            }
-        }
-        close($proc_net_dev);
-    }
 
     # we try to keep order inside the file
     my $priority = 2; # 1 is reserved for lo
@@ -1047,6 +1040,22 @@ SECTION: while (defined($line = <$fh>)) {
         }
     }
 
+OUTER:
+    for my $iface_name (keys $ip_links->%*) {
+        my $ip_link = $ip_links->{$iface_name};
+
+        next if !PVE::Network::ip_link_is_physical($ip_link);
+
+        for my $altname ($ip_link->{altnames}->@*) {
+            if ($ifaces->{$altname}) {
+                $ifaces->{$altname}->{exists} = 1;
+                next OUTER;
+            }
+        }
+
+        $ifaces->{$iface_name}->{exists} = 1;
+    }
+
     foreach my $ifname (@$active_ifaces) {
         if (my $iface = $ifaces->{$ifname}) {
             $iface->{active} = 1;
@@ -1065,6 +1074,9 @@ SECTION: while (defined($line = <$fh>)) {
     foreach my $iface (sort keys %$ifaces) {
         my $d = $ifaces->{$iface};
         $d->{type} = 'unknown';
+
+        my $ip_link = $ip_links->{$altnames->{$iface} // $iface};
+
         if (defined $d->{'bridge_ports'}) {
             $d->{type} = 'bridge';
             if (!defined($d->{bridge_stp})) {
@@ -1133,7 +1145,8 @@ SECTION: while (defined($line = <$fh>)) {
                 $ifaces->{$raw_iface}->{exists} = 0;
                 $d->{exists} = 0;
             }
-        } elsif ($iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
+        } elsif (($ip_link && PVE::Network::ip_link_is_physical($ip_link))
+            || $iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
             if (!$d->{ovs_type}) {
                 $d->{type} = 'eth';
             } elsif ($d->{ovs_type} eq 'OVSPort') {
@@ -1543,16 +1556,12 @@ sub __write_etc_network_interfaces {
         if ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSIntPort' || $d->{type} eq 'OVSBond') {
             my $brname = $used_ports->{$iface};
             if (!$brname || !$ifaces->{$brname}) {
-                if ($iface =~ /^$PVE::Network::PHYSICAL_NIC_RE/) {
-                    $ifaces->{$iface} = {
-                        type => 'eth',
-                        exists => 1,
-                        method => 'manual',
-                        families => ['inet'],
-                    };
-                } else {
-                    delete $ifaces->{$iface};
-                }
+                $ifaces->{$iface} = {
+                    type => 'eth',
+                    exists => 1,
+                    method => 'manual',
+                    families => ['inet'],
+                };
                 next;
             }
             my $bd = $ifaces->{$brname};

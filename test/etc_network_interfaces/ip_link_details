@@ -1,0 +1,20 @@
+{
+  "lo": {
+    "ifindex": 1,
+    "ifname": "lo",
+    "link_type": "loopback"
+  },
+  "eth0": {
+    "ifindex": 2,
+    "ifname": "eth0",
+    "link_type": "ether"
+  },
+  "vmbr0": {
+    "ifindex": 3,
+    "ifname": "vmbr0",
+    "link_type": "ether",
+    "linkinfo": {
+      "info_kind": "bridge"
+    }
+  }
+}
