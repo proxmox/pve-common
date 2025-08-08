@@ -1078,7 +1078,7 @@ OUTER:
         my $d = $ifaces->{$iface};
         $d->{type} = 'unknown';
 
-        my $ip_link = $ip_links->{$altnames->{$iface} // $iface};
+        my $ip_link = $ip_links->{ $altnames->{$iface} // $iface };
 
         if (defined $d->{'bridge_ports'} || $d->{'is_empty_bridge'}) {
             delete $d->{'is_empty_bridge'} if defined $d->{'is_empty_bridge'};
@@ -1149,8 +1149,10 @@ OUTER:
                 $ifaces->{$raw_iface}->{exists} = 0;
                 $d->{exists} = 0;
             }
-        } elsif (($ip_link && PVE::Network::ip_link_is_physical($ip_link))
-            || $iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/) {
+        } elsif (
+            ($ip_link && PVE::Network::ip_link_is_physical($ip_link))
+            || $iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/
+        ) {
             if (!$d->{ovs_type}) {
                 $d->{type} = 'eth';
             } elsif ($d->{ovs_type} eq 'OVSPort') {
