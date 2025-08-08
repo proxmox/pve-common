@@ -995,7 +995,7 @@ SECTION: while (defined($line = <$fh>)) {
                         my $devs = {};
                         foreach my $p (split(/\s+/, $value)) {
                             if ($p eq 'none') {
-                                $d->{'is_empty_bridge'} = $id eq 'bridge_ports';
+                                $d->{'is_empty_bridge'} = 1 if $id eq 'bridge_ports';
                                 next;
                             }
                             $devs->{$p} = 1;
