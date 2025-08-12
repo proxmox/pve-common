@@ -820,6 +820,8 @@ sub getopt_usage {
     }
 
     if ($format eq 'asciidoc') {
+        my $safeprefix = $prefix =~ s/\s/_/rg;
+        $out .= "[[cli_${safeprefix}]]\n";
         $out .= "*${prefix}*";
         $out .= " `$args`" if $args;
         $out .= " `[OPTIONS]`" if $opts;

@@ -233,7 +233,9 @@ sub generate_usage_str {
                     $oldclass = $class;
 
                 } elsif (defined($def->{$cmd}->{alias}) && ($format eq 'asciidoc')) {
-
+                    my $safeprefix = $prefix =~ s/\s/_/rg;
+                    my $safecmd = $cmd =~ s/\s/_/rg;
+                    $str .= "[[cli_${safeprefix}_${safecmd}]]\n";
                     $str .=
                         "*$prefix $cmd*\n\nAn alias for '$prefix $def->{$cmd}->{alias}'.\n\n";
 
@@ -336,7 +338,8 @@ __PACKAGE__->register_method({
 sub print_simple_asciidoc_synopsis {
     $assert_initialized->();
 
-    my $synopsis = "*${exename}* `help`\n\n";
+    my $synopsis = "[[cli_${exename}_help]]\n";
+    $synopsis .= "*${exename}* `help`\n\n";
     $synopsis .= generate_usage_str('asciidoc');
 
     return $synopsis;
@@ -345,7 +348,7 @@ sub print_simple_asciidoc_synopsis {
 sub print_asciidoc_synopsis {
     $assert_initialized->();
 
-    my $synopsis = "";
+    my $synopsis = "[[cli_${exename}]]\n";
 
     $synopsis .= "*${exename}* `<COMMAND> [ARGS] [OPTIONS]`\n\n";
 
