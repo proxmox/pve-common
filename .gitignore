@@ -1,3 +1,7 @@
 build
 *.deb
 *.changes
+*.buildinfo
+*.dsc
+*.tar.xz
+/libpve-common-perl[-_][0-9]*/
