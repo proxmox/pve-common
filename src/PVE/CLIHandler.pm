@@ -558,11 +558,6 @@ function _$exename() {
 __EOD__
 }
 
-sub generate_asciidoc_synopsys {
-    my ($class) = @_;
-    $class->generate_asciidoc_synopsis();
-}
-
 sub generate_asciidoc_synopsis {
     my ($class) = @_;
 
