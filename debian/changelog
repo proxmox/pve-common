@@ -1,3 +1,14 @@
+libpve-common-perl (9.0.10) trixie; urgency=medium
+
+  * network interfaces: fall back to legacy PHYSICAL_NIC_RE just to be sure.
+
+  * network parser: interfaces: also set type 'bridge' for empty bridges.
+
+  * prepare fix for #6656: cli handler: generate anchors for all
+    (sub-)commands.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 05 Sep 2025 20:48:27 +0200
+
 libpve-common-perl (9.0.9) trixie; urgency=medium
 
   * schema: support sizes with verbose suffixes {K, M, G, T}iB.
