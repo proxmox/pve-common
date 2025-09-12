@@ -1090,6 +1090,9 @@ sub parse_property_string {
                 if ($format->{$key}->{default_key}) {
                     $default_key = $key;
                     if (!$res->{$default_key}) {
+                        if ($format->{$key}->{type} && $format->{$key}->{type} eq 'boolean') {
+                            $part = parse_boolean($part) // $part;
+                        }
                         $res->{$default_key} = $part;
                         last;
                     }
