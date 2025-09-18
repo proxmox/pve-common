@@ -163,6 +163,23 @@ sub tcsetsize($$$) {
         or die "failed to set window size: $!\n";
 }
 
+sub read_line($;$$) {
+    my ($query, $infd, $outfd) = @_;
+
+    $infd //= \*STDIN;
+    $outfd //= \*STDOUT;
+
+    my $msg = -t $infd ? $query : "$query\n";
+    print $outfd $msg;
+
+    my $input = '';
+    local $/ = "\n";
+    $input = <$infd>;
+    chomp $input if $input;
+
+    return $input;
+}
+
 sub read_password($;$$) {
     my ($query, $infd, $outfd) = @_;
 
