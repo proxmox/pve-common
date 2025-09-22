@@ -1,3 +1,11 @@
+libpve-common-perl (9.0.11) trixie; urgency=medium
+
+  * procfs meminfo: return min/max ZFS ARC size
+
+  * pty: introduce read_line() function.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 22 Sep 2025 20:23:54 +0200
+
 libpve-common-perl (9.0.10) trixie; urgency=medium
 
   * network interfaces: fall back to legacy PHYSICAL_NIC_RE just to be sure.
