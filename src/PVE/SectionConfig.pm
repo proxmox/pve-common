@@ -129,31 +129,31 @@ as well as their C<L<< options()|/$plugin->options() >>> and more are being trac
 More precisely, this method returns a hash with the following structure:
 
     {
-	propertyList => {
-	    'some-optional-property' => {
-		type => 'string',
-		optional => 1,
-		description => 'example property',
-	    },
-	    some-property => {
-		description => 'another example property',
-		type => 'boolean'
-	    },
-	},
-	options => {
-	    foo => {
-		'some-optional-property' => { optional => 1 },
-		...
-	    },
-	    ...
-	},
-	plugins => {
-	    foo => 'PVE::Example::FooPlugin',  # reference to package of child plugin
-	    ...
-	},
-	plugindata => {
-	    foo => { ... },  # depends on the specific plugin architecture
-	},
+        propertyList => {
+            'some-optional-property' => {
+                type => 'string',
+                optional => 1,
+                description => 'example property',
+            },
+            some-property => {
+                description => 'another example property',
+                type => 'boolean'
+            },
+        },
+        options => {
+            foo => {
+                'some-optional-property' => { optional => 1 },
+                ...
+            },
+            ...
+        },
+        plugins => {
+            foo => 'PVE::Example::FooPlugin',  # reference to package of child plugin
+            ...
+        },
+        plugindata => {
+            foo => { ... },  # depends on the specific plugin architecture
+        },
     }
 
 Where C<foo> is the C<L<< type()|/$plugin->type() >>> of the plugin. See
@@ -170,32 +170,32 @@ plugin architecture upfront, for example:
     # [...]
 
     my $defaultData = {
-	propertyList => {
-	    type => {
-		description => "Type of plugin."
-	    },
-	    nodes => get_standard_option('pve-node-list', {
-		description => "List of nodes for which the plugin applies.",
-		optional => 1,
-	    }),
-	    disable => {
-		description => "Flag to disable the plugin.",
-		type => 'boolean',
-		optional => 1,
-	    },
-	    'max-foo-rate' => {
-		description => "Maximum 'foo' rate of the plugin. Use '-1' for unlimited.",
-		type => 'integer',
-		minimum => -1,
-		default => 42,
-		optional => 1,
-	    },
-	    # [...]
-	},
+        propertyList => {
+            type => {
+                description => "Type of plugin."
+            },
+            nodes => get_standard_option('pve-node-list', {
+                description => "List of nodes for which the plugin applies.",
+                optional => 1,
+            }),
+            disable => {
+                description => "Flag to disable the plugin.",
+                type => 'boolean',
+                optional => 1,
+            },
+            'max-foo-rate' => {
+                description => "Maximum 'foo' rate of the plugin. Use '-1' for unlimited.",
+                type => 'integer',
+                minimum => -1,
+                default => 42,
+                optional => 1,
+            },
+            # [...]
+        },
     };
 
     sub private {
-	return $defaultData;
+        return $defaultData;
     }
 
 Additional properties defined in I<child plugins> are stored in the
@@ -261,7 +261,7 @@ identify the child plugin.
 Must be overridden on I<B<each>> I<child plugin>, for example:
 
     sub type {
-	return "foo";
+        return "foo";
     }
 
 =cut
@@ -283,18 +283,18 @@ See below for details on L<the different modes|/MODES>.
 This method doesn't need to be overridden if no new properties are necessary.
 
     sub properties() {
-	return {
-	    path => {
-		description => "Path used to retrieve a 'foo'.",
-		type => 'string',
-		format => 'some-custom-format-handler-for-paths',
-	    },
-	    is_bar = {
-		description => "Whether the 'foo' is 'bar' or not.",
-		type => 'boolean',
-	    },
-	    bwlimit => get_standard_option('bwlimit'),
-	};
+        return {
+            path => {
+                description => "Path used to retrieve a 'foo'.",
+                type => 'string',
+                format => 'some-custom-format-handler-for-paths',
+            },
+            is_bar = {
+                description => "Whether the 'foo' is 'bar' or not.",
+                type => 'boolean',
+            },
+            bwlimit => get_standard_option('bwlimit'),
+        };
     }
 
 In the default I<L<unified mode|/MODES>>, these properties are added to the
@@ -328,11 +328,11 @@ Additionally, this method also allows to declare whether a property is
 C<optional> or C<fixed>.
 
     sub options {
-	return {
-	    'some-optional-property' => { optional => 1 },
-	    'a-fixed-property' => { fixed => 1 },
-	    'a-required-but-not-fixed-property' => {},
-	};
+        return {
+            'some-optional-property' => { optional => 1 },
+            'a-fixed-property' => { fixed => 1 },
+            'a-required-but-not-fixed-property' => {},
+        };
     }
 
 C<optional> properties are not required to be set.
@@ -790,21 +790,21 @@ Does nothing to C<$value> by default, but can be overridden in the I<base plugin
 in order to implement custom conversion behavior.
 
     sub decode_value {
-	my ($class, $type, $key, $value) = @_;
+        my ($class, $type, $key, $value) = @_;
 
-	if ($key eq 'nodes') {
-	    my $res = {};
+        if ($key eq 'nodes') {
+            my $res = {};
 
-	    for my $node (PVE::Tools::split_list($value)) {
-		if (PVE::JSONSchema::pve_verify_node_name($node)) {
-		    $res->{$node} = 1;
-		}
-	    }
+            for my $node (PVE::Tools::split_list($value)) {
+                if (PVE::JSONSchema::pve_verify_node_name($node)) {
+                    $res->{$node} = 1;
+                }
+            }
 
-	    return $res;
-	}
+            return $res;
+        }
 
-	return $value;
+        return $value;
     }
 
 =over
@@ -850,13 +850,13 @@ in order to implement custom conversion behavior. Usually one should also
 override C<L<< decode_value()|/$base->decode_value(...) >>> in a matching manner.
 
     sub encode_value {
-	my ($class, $type, $key, $value) = @_;
+        my ($class, $type, $key, $value) = @_;
 
-	if ($key eq 'nodes') {
-	    return join(',', keys(%$value));
-	}
+        if ($key eq 'nodes') {
+            return join(',', keys(%$value));
+        }
 
-	return $value;
+        return $value;
     }
 
 =over
@@ -992,20 +992,20 @@ a certain way.
 For example:
 
     sub parse_section_header {
-	my ($class, $line) = @_;
+        my ($class, $line) = @_;
 
-	if ($line =~ m/^(\S):\s*(\S+)\s*$/) {
-	    my ($type, $sectionId) = ($1, $2);
+        if ($line =~ m/^(\S):\s*(\S+)\s*$/) {
+            my ($type, $sectionId) = ($1, $2);
 
-	    my $errmsg = undef;
-	    eval { check_section_id_is_valid($sectionId); };
-	    $errmsg = $@ if $@;
+            my $errmsg = undef;
+            eval { check_section_id_is_valid($sectionId); };
+            $errmsg = $@ if $@;
 
-	    my $config = parse_extra_stuff_from_section_id($sectionId);
+            my $config = parse_extra_stuff_from_section_id($sectionId);
 
-	    return ($type, $sectionId, $errmsg, $config);
-	}
-	return undef;
+            return ($type, $sectionId, $errmsg, $config);
+        }
+        return undef;
     }
 
 =cut
@@ -1103,30 +1103,30 @@ Whether to allow parsing unknown I<types>.
 The returned hash is structured as follows:
 
     {
-	ids => {
-	    foo => {
-		key => value,
-		...
-	    },
-	    bar => {
-		key => value,
-		...
-	    },
-	},
-	order => {
-	    foo => 1,
-	    bar => 2,
-	},
-	digest => "5f5513f8822fdbe5145af33b64d8d970dcf95c6e",
-	errors => (
-	    {
-		context => ...,
-		section => "section ID",
-		key => "some_key",
-		err => "error message",
-	    },
-	    ...
-	),
+        ids => {
+            foo => {
+                key => value,
+                ...
+            },
+            bar => {
+                key => value,
+                ...
+            },
+        },
+        order => {
+            foo => 1,
+            bar => 2,
+        },
+        digest => "5f5513f8822fdbe5145af33b64d8d970dcf95c6e",
+        errors => (
+            {
+                context => ...,
+                section => "section ID",
+                key => "some_key",
+                err => "error message",
+            },
+            ...
+        ),
     }
 
 =over
@@ -1447,20 +1447,20 @@ The hash that represents the entire configuration that should be written.
 This hash is expected to have the following format:
 
     {
-	ids => {
-	    foo => {
-		key => value,
-		...
-	    },
-	    bar => {
-		key => value,
-		...
-	    },
-	},
-	order => {
-	    foo => 1,
-	    bar => 2,
-	},
+        ids => {
+            foo => {
+                key => value,
+                ...
+            },
+            bar => {
+                key => value,
+                ...
+            },
+        },
+        order => {
+            foo => 1,
+            bar => 2,
+        },
     }
 
 Any other top-level keys will be ignored, so it's okay to pass along the
