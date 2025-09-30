@@ -6,7 +6,7 @@ use warnings;
 use Cwd qw();
 use IO::File;
 use List::Util qw(sum);
-use POSIX;
+use POSIX qw();
 use Socket qw(PF_INET PF_INET6 SOCK_DGRAM IPPROTO_IP);
 use Time::HiRes qw (gettimeofday);
 
