@@ -17,8 +17,8 @@ use Linux::Inotify2;
 use POSIX;
 
 use PVE::Exception qw(raise_param_exc);
+use PVE::IPRoute2;
 use PVE::JSONSchema;
-use PVE::Network;
 use PVE::ProcFSTools;
 use PVE::SafeSyslog;
 use PVE::Tools;
@@ -27,6 +27,8 @@ use PVE::UPID;
 use base 'Exporter';
 
 our @EXPORT_OK = qw(read_file write_file register_file nodename);
+
+our $PHYSICAL_NIC_RE = qr/(?:eth\d+|en[^:.]+|ib[^:.]+|(?:nic|if)\d+)/;
 
 my $ccache;
 my $ccachemap;
@@ -867,7 +869,7 @@ my $check_mtu = sub {
 # }
 sub read_etc_network_interfaces {
     my ($filename, $fh) = @_;
-    my $ip_links = PVE::Network::ip_link_details();
+    my $ip_links = PVE::IPRoute2::ip_link_details();
     my $active = PVE::ProcFSTools::get_active_network_interfaces();
     return __read_etc_network_interfaces($fh, $ip_links, $active);
 }
@@ -879,7 +881,7 @@ sub __read_etc_network_interfaces {
     my $ifaces = $config->{ifaces} = {};
     my $options = $config->{options} = [];
 
-    my $altnames = PVE::Network::altname_mapping($ip_links);
+    my $altnames = PVE::IPRoute2::altname_mapping($ip_links);
 
     my $options_alternatives = {
         'ovs_mtu' => 'mtu',
@@ -1048,7 +1050,7 @@ OUTER:
     for my $iface_name (keys $ip_links->%*) {
         my $ip_link = $ip_links->{$iface_name};
 
-        next if !PVE::Network::ip_link_is_physical($ip_link);
+        next if !PVE::IPRoute2::ip_link_is_physical($ip_link);
 
         for my $altname ($ip_link->{altnames}->@*) {
             if ($ifaces->{$altname}) {
@@ -1151,8 +1153,8 @@ OUTER:
                 $d->{exists} = 0;
             }
         } elsif (
-            ($ip_link && PVE::Network::ip_link_is_physical($ip_link))
-            || $iface =~ m/^$PVE::Network::PHYSICAL_NIC_RE$/
+            ($ip_link && PVE::IPRoute2::ip_link_is_physical($ip_link))
+            || $iface =~ m/^$PHYSICAL_NIC_RE$/
         ) {
             if (!$d->{ovs_type}) {
                 $d->{type} = 'eth';

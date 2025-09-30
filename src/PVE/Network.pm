@@ -17,7 +17,8 @@ use Socket qw(NI_NUMERICHOST NI_NUMERICSERV);
 
 # host network related utility functions
 
-our $PHYSICAL_NIC_RE = qr/(?:eth\d+|en[^:.]+|ib[^:.]+|(?:nic|if)\d+)/;
+# for backward compat, if you really need to use it prefer the one from PVE::INotify
+our $PHYSICAL_NIC_RE = $PVE::INotify::PHYSICAL_NIC_RE;
 
 our $ipv4_reverse_mask = [
     '0.0.0.0',
