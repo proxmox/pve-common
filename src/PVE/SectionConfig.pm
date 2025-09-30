@@ -1,4 +1,4 @@
-
+=encoding utf8
 =head1 NAME
 
 C<PVE::SectionConfig> - An Extendible Configuration File Format
@@ -85,7 +85,7 @@ or in other words, a fully isolated schema namespace. Normally one wants to use
 C<oneOf> schemas when enabling isolation.
 
 Note that in this mode it's only necessary to specify a property in the
-return value of the C<L<< options()|/options() >>> method when it's either
+return value of the C<L<< options()|/$plugin->options() >>> method when it's either
 C<fixed> or stems from the global list of properties.
 
 All I<locally> defined properties of a child plugin are automatically added to
@@ -445,8 +445,8 @@ my sub add_property {
 
 =head3 $plugin->createSchema([ $skip_type, $base ])
 
-    $schema = PVE::Example::Plugin->($skip_type, $base)
-    $schema = $class->($skip_type, $base)
+    $schema = PVE::Example::Plugin->createSchema($skip_type, $base)
+    $schema = $class->createSchema($skip_type, $base)
 
 Returns the C<PVE::JSONSchema> used for I<creating> config entries of a
 I<child plugin>.
@@ -546,8 +546,8 @@ sub createSchema {
 
 =head3 $plugin->updateSchema([ $single_class, $base ])
 
-    $updated_schema = PVE::Example::Plugin->($single_class, $base)
-    $updated_schema = $class->updateSchema($single_class, $base)
+    $update_schema = PVE::Example::Plugin->update_schema($single_class, $base)
+    $update_schema = $class->updateSchema($single_class, $base)
 
 Returns the C<L<PVE::JSONSchema>> used for I<updating> config entries of a
 I<child plugin>.
@@ -560,7 +560,7 @@ parameters of an API handler (C<PUT>).
 =item C<$single_class> (optional)
 
 Can be set to C<1> to only include properties which are defined in the returned
-hash of C<L<< options()|/options() >>> of the plugin C<$class>.
+hash of C<L<< options()|/$plugin->options() >>> of the plugin C<$class>.
 
 This parameter is only valid for child plugins, not the base plugin.
 
@@ -667,7 +667,7 @@ sub updateSchema {
 This method is used to initialize C<SectionConfig> using all of the
 I<child plugins> that were I<L<< registered|/$plugin->register() >>> beforehand.
 
-Optionally, it is also possible to pass C<< property_isolation => 1>> to C<%param>
+Optionally, it is also possible to pass C<property_isolation => 1> to C<%param>
 in order to activate I<isolated mode>. See L</MODES> in the package-level
 documentation for more information.
 
@@ -815,12 +815,12 @@ The C<L<< type()|/$plugin->type() >>> of plugin the C<$key> and C<$value> belong
 
 =item C<$key>
 
-The name of a I<L<< property|/$plugin->properties() >> that has been set on a C<$type> of
+The name of a I<L<< property|/$plugin->properties() >>> that has been set on a C<$type> of
 config section.
 
 =item C<$value>
 
-The raw value of the I<L<< property|/$plugin->properties >>> denoted by C<$key> that was read
+The raw value of the I<L<< property|/$plugin->properties() >>> denoted by C<$key> that was read
 from a section config file.
 
 =back
@@ -872,7 +872,7 @@ C<$type> of config section.
 
 =item C<$value>
 
-The value of the I<L<< property|/$plugin->properties >>> denoted by C<$key> to be
+The value of the I<L<< property|/$plugin->properties() >>> denoted by C<$key> to be
 encoded so that it can be written to a section config file.
 
 =back
@@ -915,7 +915,7 @@ that was read from a section config file.
 
 =item C<$storeid>
 
-The identifier of a section, as returned by C<L<< parse_section_header()|/$base->parse_section_header(...) >>>.
+The identifier of a section, as returned by C<L<< parse_section_header()|/$base->parse_section_header($line) >>>.
 
 =item C<$skipSchemaCheck> (optional)
 
@@ -1321,11 +1321,11 @@ sub parse_config {
     $settings = $class->check_config($sectionId, $config, $create, $skipSchemaCheck)
 
 Does not just check whether a section's configuration is valid, despite its
-name, but also calls checks values of I<L<< properties|/$plugin_>properties() >>>
+name, but also calls checks values of I<L<< properties|/$plugin->properties() >>>
 with C<L<< check_value()|/$base->check_value(...) >>> before decoding them using
 C<L<< decode_value()|/$base->decode_value(...) >>>.
 
-Returns a hash which contains all I<L<< properties|/$plugin_>properties() >>>
+Returns a hash which contains all I<L<< properties|/$plugin->properties() >>>
 for the given C<$sectionId>. In other words, all configured key-value pairs for
 the provided section.
 
@@ -1468,7 +1468,7 @@ C<digest> key from C<L<< parse_config()|/$base->parse_config(...) >>>, for examp
 
 =item C<$allow_unknown> (optional)
 
-Whether to allow writing sections with an unknown I<L</type>>.
+Whether to allow writing sections with an unknown I<L<< type|/$plugin->type() >>>.
 
 =back
 
@@ -1589,7 +1589,7 @@ Note: The passed C<$config> is modified in place and also returned.
 
 =item C<$config>
 
-The section's configuration that the given I<L<< properties|/$plugin->properties(...) >>>
+The section's configuration that the given I<L<< properties|/$plugin->properties() >>>
 in C<$to_delete> should be deleted from.
 
 =item C<$option_schema>
