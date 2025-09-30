@@ -1,10 +1,10 @@
 
 PREFIX=/usr
-BINDIR=${PREFIX}/bin
-MANDIR=${PREFIX}/share/man
-DOCDIR=${PREFIX}/share/doc
-MAN1DIR=${MANDIR}/man1/
-PERLDIR=${PREFIX}/share/perl5
+BINDIR=$(PREFIX)/bin
+MANDIR=$(PREFIX)/share/man
+DOCDIR=$(PREFIX)/share/doc
+MAN1DIR=$(MANDIR)/man1/
+PERLDIR=$(PREFIX)/share/perl5
 
 LIB_SOURCES = \
 	AtomicFile.pm \
@@ -38,14 +38,14 @@ LIB_SOURCES = \
 
 all:
 
-install: $(addprefix PVE/,${LIB_SOURCES})
-	install -d -m 0755 ${DESTDIR}${PERLDIR}/PVE
-	install -d -m 0755 ${DESTDIR}${PERLDIR}/PVE/Job
-	for i in ${LIB_SOURCES}; do install -D -m 0644 PVE/$$i ${DESTDIR}${PERLDIR}/PVE/$$i; done
+install: $(addprefix PVE/,$(LIB_SOURCES))
+	install -d -m 0755 $(DESTDIR)$(PERLDIR)/PVE
+	install -d -m 0755 $(DESTDIR)$(PERLDIR)/PVE/Job
+	for i in $(LIB_SOURCES); do install -D -m 0644 PVE/$$i $(DESTDIR)$(PERLDIR)/PVE/$$i; done
 
 
 .PHONY: clean
-clean: 	
+clean:
 	rm -rf *~ 
 
 .PHONY: distclean
