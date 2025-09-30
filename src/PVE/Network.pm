@@ -973,49 +973,19 @@ sub is_ovs_bridge {
     die "failed to query OVS to determine type of '$bridge': $res\n";
 }
 
+# for backward compat, prefer the methods from the leaner IPRoute2 module.
 sub ip_link_details {
-    my $link_json = '';
-
-    PVE::Tools::run_command(
-        ['ip', '-details', '-json', 'link', 'show'],
-        outfunc => sub {
-            $link_json .= shift;
-        },
-    );
-
-    my $links = JSON::decode_json($link_json);
-    my %ip_links = map { $_->{ifname} => $_ } $links->@*;
-
-    return \%ip_links;
+    return PVE::IPRoute2::ip_link_details();
 }
 
 sub ip_link_is_physical {
     my ($ip_link) = @_;
-
-    # ether alone isn't enough, as virtual interfaces can also have link_type
-    # ether
-    return $ip_link->{link_type} eq 'ether'
-        && (!defined($ip_link->{linkinfo}) || !defined($ip_link->{linkinfo}->{info_kind}));
+    return PVE::IPRoute2::ip_link_is_physical($ip_link);
 }
 
 sub altname_mapping {
     my ($ip_links) = @_;
-
-    $ip_links = ip_link_details() if !defined($ip_links);
-
-    my $altnames = {};
-
-    foreach my $iface_name (keys $ip_links->%*) {
-        my $iface = $ip_links->{$iface_name};
-
-        next if !$iface->{altnames};
-
-        foreach my $altname ($iface->{altnames}->@*) {
-            $altnames->{$altname} = $iface_name;
-        }
-    }
-
-    return $altnames;
+    return PVE::IPRoute2::altname_mapping($ip_links);
 }
 
 1;

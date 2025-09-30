@@ -18,6 +18,7 @@ LIB_SOURCES = \
 	Exception.pm \
 	Format.pm \
 	INotify.pm \
+	IPRoute2.pm \
 	JSONSchema.pm \
 	Job/Registry.pm \
 	LDAP.pm \
