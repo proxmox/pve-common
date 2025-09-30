@@ -11,6 +11,7 @@ use Socket qw(PF_INET PF_INET6 SOCK_DGRAM IPPROTO_IP);
 use Time::HiRes qw (gettimeofday);
 
 use PVE::Tools;
+use PVE::UPID;
 
 use constant IFF_UP => 1;
 use constant IFNAMSIZ => 16;
@@ -524,7 +525,7 @@ sub read_proc_net_ipv6_route {
 sub upid_wait {
     my ($upid, $waitfunc, $sleep_intervall) = @_;
 
-    my $task = PVE::Tools::upid_decode($upid);
+    my $task = PVE::UPID::decode($upid);
 
     $sleep_intervall = $sleep_intervall ? $sleep_intervall : 1;
 

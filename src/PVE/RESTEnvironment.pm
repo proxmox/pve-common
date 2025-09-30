@@ -21,6 +21,7 @@ use PVE::INotify;
 use PVE::ProcFSTools;
 use PVE::SafeSyslog;
 use PVE::Tools;
+use PVE::UPID;
 
 our @EXPORT_OK = qw(log_warn);
 
@@ -311,7 +312,7 @@ sub active_workers {
             }
 
             if ($new_upid && !$thash->{$new_upid}) {
-                my $task = PVE::Tools::upid_decode($new_upid);
+                my $task = PVE::UPID::decode($new_upid);
                 $task->{upid} = $new_upid;
                 $thash->{$new_upid} = $task;
                 &$check_task($task, $nocheck);
@@ -324,7 +325,7 @@ sub active_workers {
             foreach my $task (@ta) {
                 next if $task->{endtime};
                 $task->{endtime} = time();
-                $task->{status} = PVE::Tools::upid_read_status($task->{upid});
+                $task->{status} = PVE::UPID::read_status($task->{upid});
                 $save = 1;
             }
 
@@ -405,7 +406,7 @@ my $kill_process_group = sub {
 sub check_worker {
     my ($self, $upid, $killit) = @_;
 
-    my $task = PVE::Tools::upid_decode($upid);
+    my $task = PVE::UPID::decode($upid);
 
     my $running = PVE::ProcFSTools::check_process_running($task->{pid}, $task->{pstart});
 
@@ -526,7 +527,7 @@ sub fork_worker {
     my $pstart = PVE::ProcFSTools::read_proc_starttime($workerpuid)
         || die "unable to read process start time";
 
-    my $upid = PVE::Tools::upid_encode({
+    my $upid = PVE::UPID::encode({
         node => $node,
         pid => $workerpuid,
         pstart => $pstart,
@@ -584,7 +585,7 @@ sub fork_worker {
 
                 open(STDIN, '<', '/dev/null') or die "unable to redirect STDIN - $!";
 
-                $outfh = PVE::Tools::upid_open($upid);
+                $outfh = PVE::UPID::open_log($upid);
                 $resfh = fileno($outfh);
             }
 
@@ -686,7 +687,7 @@ sub fork_worker {
         }
 
         if ($sync) {
-            $outfh = PVE::Tools::upid_open($upid);
+            $outfh = PVE::UPID::open_log($upid);
         }
     };
     my $err = $@;

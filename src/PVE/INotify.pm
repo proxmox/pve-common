@@ -22,6 +22,7 @@ use PVE::Network;
 use PVE::ProcFSTools;
 use PVE::SafeSyslog;
 use PVE::Tools;
+use PVE::UPID;
 
 use base 'Exporter';
 
@@ -688,7 +689,7 @@ sub read_active_workers {
             my $saved = $2;
             my $endtime = $4;
             my $status = $6;
-            if ((my $task = PVE::Tools::upid_decode($upid, 1))) {
+            if ((my $task = PVE::UPID::decode($upid, 1))) {
                 $task->{upid} = $upid;
                 $task->{saved} = $saved;
                 $task->{endtime} = hex($endtime) if $endtime;
