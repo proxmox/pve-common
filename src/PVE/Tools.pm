@@ -28,6 +28,7 @@ use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
 use URI::Escape;
 use base 'Exporter';
 
+use PVE::File;
 use PVE::Syscall;
 use PVE::UPID;
 
@@ -113,9 +114,9 @@ use constant {
 };
 
 use constant {
-    O_PATH => 0x00200000,
-    O_CLOEXEC => 0x00080000,
-    O_TMPFILE => 0x00400000 | O_DIRECTORY,
+    O_PATH => PVE::File::O_PATH,
+    O_CLOEXEC => PVE::File::O_CLOEXEC,
+    O_TMPFILE => PVE::File::O_TMPFILE,
 };
 
 use constant {
@@ -273,120 +274,31 @@ sub lock_file {
     return lock_file_full($filename, $timeout, 0, $code, @param);
 }
 
+# file_ helper for backward compat, prefer PVE::File directly for new usage.
+# TODO: remove with PVE 10 / Debian Forky releases.
 sub file_set_contents {
     my ($filename, $data, $perm, $force_utf8) = @_;
-
-    $perm = 0644 if !defined($perm);
-
-    my $tmpname = "$filename.tmp.$$";
-
-    eval {
-        my ($fh, $tries) = (undef, 0);
-        while (!$fh && $tries++ < 3) {
-            $fh = IO::File->new($tmpname, O_WRONLY | O_CREAT | O_EXCL, $perm);
-            if (!$fh && $! == EEXIST) {
-                unlink($tmpname) or die "unable to delete old temp file: $!\n";
-            }
-        }
-        die "unable to open file '$tmpname' - $!\n" if !$fh;
-
-        if ($force_utf8) {
-            $data = encode("utf8", $data);
-        } else {
-            # Encode wide characters with print before passing them to syswrite
-            my $unencoded_data = $data;
-            # Preload PerlIO::scalar at compile time to prevent runtime loading issues when
-            # file_set_contents is called with PVE::LXC::Setup::protected_call. Normally,
-            # PerlIO::scalar is loaded implicitly during the execution of
-            # `open(my $data_fh, '>', \$data)`. However, this fails if it is executed within a
-            # chroot environment where the necessary PerlIO.pm module file is inaccessible.
-            # Preloading the module ensures it is available regardless of the execution context.
-            use PerlIO::scalar;
-            open(my $data_fh, '>', \$data) or die "failed to open in-memory variable - $!\n";
-            print $data_fh $unencoded_data;
-            close($data_fh);
-        }
-
-        my $offset = 0;
-        my $len = length($data);
-
-        while ($offset < $len) {
-            my $written_bytes = syswrite($fh, $data, $len - $offset, $offset)
-                or die "unable to write '$tmpname' - $!\n";
-            $offset += $written_bytes;
-        }
-
-        close $fh or die "closing file '$tmpname' failed - $!\n";
-    };
-    my $err = $@;
-
-    if ($err) {
-        unlink $tmpname;
-        die $err;
-    }
-
-    if (!rename($tmpname, $filename)) {
-        my $msg = "close (rename) atomic file '$filename' failed: $!\n";
-        unlink $tmpname;
-        die $msg;
-    }
+    return PVE::File::file_set_contents($filename, $data, $perm, $force_utf8);
 }
 
 sub file_get_contents {
     my ($filename, $max) = @_;
-
-    my $fh = IO::File->new($filename, "r")
-        || die "can't open '$filename' - $!\n";
-
-    my $content = safe_read_from($fh, $max, 0, $filename);
-
-    close $fh;
-
-    return $content;
+    return PVE::File::file_get_contents($filename, $max);
 }
 
 sub file_copy {
     my ($filename, $dst, $max, $perm) = @_;
-
-    file_set_contents($dst, file_get_contents($filename, $max), $perm);
+    PVE::File::file_copy($filename, $dst, $max, $perm);
 }
 
 sub file_read_firstline {
     my ($filename) = @_;
-
-    my $fh = IO::File->new($filename, "r");
-    if (!$fh) {
-        return undef if $! == POSIX::ENOENT;
-        die "file '$filename' exists but open for reading failed - $!\n";
-    }
-    my $res = <$fh>;
-    chomp $res if $res;
-    $fh->close;
-    return $res;
+    return PVE::File::file_read_first_line($filename);
 }
 
 sub safe_read_from {
     my ($fh, $max, $oneline, $filename) = @_;
-
-    # pmxcfs file size limit
-    $max = 1024 * 1024 if !$max;
-
-    my $subject = defined($filename) ? "file '$filename'" : 'input';
-
-    my $br = 0;
-    my $input = '';
-    my $count;
-    while ($count = sysread($fh, $input, 8192, $br)) {
-        $br += $count;
-        die "$subject too long - aborting\n" if $br > $max;
-        if ($oneline && $input =~ m/^(.*)\n/) {
-            $input = $1;
-            last;
-        }
-    }
-    die "unable to read $subject - $!\n" if !defined($count);
-
-    return $input;
+    return PVE::File::safe_read_from($fh, $max, $oneline, $filename);
 }
 
 # The $cmd parameter can be:
@@ -1296,32 +1208,12 @@ sub dump_journal {
 
 sub dir_glob_regex {
     my ($dir, $regex) = @_;
-
-    my $dh = IO::Dir->new($dir);
-    return wantarray ? () : undef if !$dh;
-
-    while (defined(my $tmp = $dh->read)) {
-        if (my @res = $tmp =~ m/^($regex)$/) {
-            $dh->close;
-            return wantarray ? @res : $tmp;
-        }
-    }
-    $dh->close;
-
-    return wantarray ? () : undef;
+    return PVE::File::dir_glob_regex($dir, $regex);
 }
 
 sub dir_glob_foreach {
     my ($dir, $regex, $func) = @_;
-
-    my $dh = IO::Dir->new($dir);
-    if (defined $dh) {
-        while (defined(my $tmp = $dh->read)) {
-            if (my @res = $tmp =~ m/^($regex)$/) {
-                &$func(@res);
-            }
-        }
-    }
+    PVE::File::dir_glob_foreach($dir, $regex, $func);
 }
 
 sub assert_if_modified {
@@ -1545,48 +1437,14 @@ sub sendmail {
 sub tempfile {
     my ($perm, %opts) = @_;
 
-    # default permissions are stricter than with file_set_contents
-    $perm = 0600 if !defined($perm);
-
-    my $dir = $opts{dir};
-    if (!$dir) {
-        if (-d "/run/user/$<") {
-            $dir = "/run/user/$<";
-        } elsif ($< == 0) {
-            $dir = "/run";
-        } else {
-            $dir = "/tmp";
-        }
-    }
-    my $mode = $opts{mode} // O_RDWR;
-    $mode |= O_EXCL if !$opts{allow_links};
-
-    my $fh = IO::File->new($dir, $mode | O_TMPFILE, $perm);
-    if (!$fh && $! == EOPNOTSUPP) {
-        $dir = '/tmp' if !defined($opts{dir});
-        $dir .= "/.tmpfile.$$";
-        $fh = IO::File->new($dir, $mode | O_CREAT | O_EXCL, $perm);
-        unlink($dir) if $fh;
-    }
-    die "failed to create tempfile: $!\n" if !$fh;
-    return $fh;
+    return PVE::File::tempfile($perm, %opts);
 }
 
 # create an (ideally) anon file with the $data as content and return its FD-path and FH
 sub tempfile_contents {
     my ($data, $perm, %opts) = @_;
 
-    my $fh = tempfile($perm, %opts);
-    eval {
-        die "unable to write to tempfile: $!\n" if !print {$fh} $data;
-        die "unable to flush to tempfile: $!\n" if !defined($fh->flush());
-    };
-    if (my $err = $@) {
-        close $fh;
-        die $err;
-    }
-
-    return ("/proc/$$/fd/" . $fh->fileno, $fh);
+    return PVE::File::tempfile_contents($data, $perm, %opts);
 }
 
 sub validate_ssh_public_keys {

@@ -16,6 +16,7 @@ LIB_SOURCES = \
 	CpuSet.pm \
 	Daemon.pm \
 	Exception.pm \
+	File.pm \
 	Format.pm \
 	INotify.pm \
 	IPRoute2.pm \
