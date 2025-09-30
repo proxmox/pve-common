@@ -6,6 +6,7 @@ TESTS = lock_file.test			\
 	format_test.test		\
 	section_config_test.test	\
 	api_parameter_test.test		\
+	json-schema-test.pl		\
 	is_deeply_test.test		\
 	section_config_property_isolation_test.pl \
 
