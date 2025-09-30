@@ -34,7 +34,8 @@ LIB_SOURCES = \
 	Syscall.pm \
 	Systemd.pm \
 	Ticket.pm \
-	Tools.pm
+	Tools.pm \
+	UPID.pm \
 
 all:
 

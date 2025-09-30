@@ -29,6 +29,7 @@ use URI::Escape;
 use base 'Exporter';
 
 use PVE::Syscall;
+use PVE::UPID;
 
 # avoid warning when parsing long hex values with hex()
 no warnings 'portable'; # Support for 64-bit ints required
@@ -77,12 +78,6 @@ our @EXPORT_OK = qw(
     MS_MOVE
     MS_REC
 );
-
-my $pvelogdir = "/var/log/pve";
-my $pvetaskdir = "$pvelogdir/tasks";
-
-mkdir $pvelogdir;
-mkdir $pvetaskdir;
 
 my $IPV4OCTET = "(?:25[0-5]|(?:2[0-4]|1[0-9]|[1-9])?[0-9])";
 our $IPV4RE = "(?:(?:$IPV4OCTET\\.){3}$IPV4OCTET)";
@@ -1176,130 +1171,30 @@ sub du {
     return $size;
 }
 
-# UPID helper
-# We use this to uniquely identify a process.
-# An 'Unique Process ID' has the following format:
-# "UPID:$node:$pid:$pstart:$startime:$dtype:$id:$user"
-
+# UPID helper redefinitions for backward compat, prefer the ones from PVE::UPID
 sub upid_encode {
-    my $d = shift;
-
-    # Note: pstart can be > 32bit if uptime > 497 days, so this can result in
-    # more that 8 characters for pstart
-    return sprintf(
-        "UPID:%s:%08X:%08X:%08X:%s:%s:%s:",
-        $d->{node},
-        $d->{pid},
-        $d->{pstart},
-        $d->{starttime},
-        $d->{type},
-        $d->{id},
-        $d->{user},
-    );
+    my ($d) = @_;
+    return PVE::UPID::encode($d);
 }
-
 sub upid_decode {
     my ($upid, $noerr) = @_;
-
-    my $res;
-    my $filename;
-
-    # "UPID:$node:$pid:$pstart:$startime:$dtype:$id:$user"
-    # Note: allow up to 9 characters for pstart (work until 20 years uptime)
-    if ($upid =~
-        m|^UPID:([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8,9}):([0-9A-Fa-f]{8}):([^:\s/]+):([^:\s/]*):([^:\s/]+):$|
-    ) {
-        $res->{node} = $1;
-        $res->{pid} = hex($3);
-        $res->{pstart} = hex($4);
-        $res->{starttime} = hex($5);
-        $res->{type} = $6;
-        $res->{id} = $7;
-        $res->{user} = $8;
-
-        my $subdir = substr($5, 7, 8);
-        $filename = "$pvetaskdir/$subdir/$upid";
-
-    } else {
-        return undef if $noerr;
-        die "unable to parse worker upid '$upid'\n";
-    }
-
-    return wantarray ? ($res, $filename) : $res;
+    return PVE::UPID::decode($upid, $noerr);
 }
-
 sub upid_open {
     my ($upid) = @_;
-
-    my ($task, $filename) = upid_decode($upid);
-
-    my $dirname = dirname($filename);
-    make_path($dirname);
-
-    my $wwwid = getpwnam('www-data')
-        || die "getpwnam failed";
-
-    my $perm = 0640;
-
-    my $outfh = IO::File->new($filename, O_WRONLY | O_CREAT | O_EXCL, $perm)
-        || die "unable to create output file '$filename' - $!\n";
-    chown $wwwid, -1, $outfh;
-
-    return $outfh;
+    return PVE::UPID::open_log($upid);
 }
-
 sub upid_read_status {
     my ($upid) = @_;
-
-    my ($task, $filename) = upid_decode($upid);
-    my $fh = IO::File->new($filename, "r");
-    return "unable to open file - $!" if !$fh;
-    my $maxlen = 4096;
-    sysseek($fh, -$maxlen, 2);
-    my $readbuf = '';
-    my $br = sysread($fh, $readbuf, $maxlen);
-    close($fh);
-
-    if ($br) {
-        return "unable to extract last line"
-            if $readbuf !~ m/\n?(.+)$/;
-        my $line = $1;
-        if ($line =~ m/^TASK OK$/) {
-            return 'OK';
-        } elsif ($line =~ m/^TASK ERROR: (.+)$/) {
-            return $1;
-        } elsif ($line =~ m/^TASK (WARNINGS: \d+)$/) {
-            return $1;
-        } else {
-            return "unexpected status";
-        }
-    }
-    return "unable to read tail (got $br bytes)";
+    return PVE::UPID::read_status($upid);
 }
-
-# Check if the status returned by upid_read_status is an error status.
-# If the status could not be parsed it's also treated as an error.
 sub upid_status_is_error {
     my ($status) = @_;
-
-    return !($status eq 'OK' || $status =~ m/^WARNINGS: \d+$/);
+    return PVE::UPID::status_is_error($status);
 }
-
-# takes the parsed status and returns the type, either ok, warning, error or unknown
 sub upid_normalize_status_type {
     my ($status) = @_;
-
-    if (!$status) {
-        return 'unknown';
-    } elsif ($status eq 'OK') {
-        return 'ok';
-    } elsif ($status =~ m/^WARNINGS: \d+$/) {
-        return 'warning';
-    } elsif ($status eq 'unexpected status') {
-        return 'unknown';
-    } else {
-        return 'error';
-    }
+    return PVE::UPID::normalize_status_type($status);
 }
 
 # useful functions to store comments in config files
