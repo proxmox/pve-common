@@ -47,8 +47,9 @@ clean:
 	rm -rf *~ *.deb *.changes $(PACKAGE)-[0-9]*/ *.buildinfo *.build *.dsc *.tar.?z
 
 .PHONY: check
-check:
-	$(MAKE) -C test check
+check: check-test check-src
+check-%:
+	$(MAKE) -C $* check
 
 .PHONY: install
 install:
