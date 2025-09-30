@@ -43,6 +43,17 @@ install: $(addprefix PVE/,$(LIB_SOURCES))
 	install -d -m 0755 $(DESTDIR)$(PERLDIR)/PVE/Job
 	for i in $(LIB_SOURCES); do install -D -m 0644 PVE/$$i $(DESTDIR)$(PERLDIR)/PVE/$$i; done
 
+.PHONY: check check-pod check-syntax
+check: check-pod check-syntax
+
+check-pod: $(addprefix PVE/,$(LIB_SOURCES))
+	podchecker -nowarnings $^ || [ $$? -eq 2 ]
+
+check-syntax: $(addprefix check-syntax-PVE/,$(LIB_SOURCES))
+
+check-syntax-PVE/%:
+	perl -I. -wc PVE/$*
+
 
 .PHONY: clean
 clean:
