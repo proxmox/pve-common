@@ -32,7 +32,7 @@ sub encode($d) {
     );
 }
 
-sub decode($upid, $noerr) {
+sub decode($upid, $noerr = 0) {
     # "UPID:$node:$pid:$pstart:$startime:$dtype:$id:$user"
     # Note: allow up to 9 characters for pstart, that works for 20 years continuous uptime.
     if ($upid =~
