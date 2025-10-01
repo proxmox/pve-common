@@ -1176,22 +1176,27 @@ sub upid_encode {
     my ($d) = @_;
     return PVE::UPID::encode($d);
 }
+
 sub upid_decode {
     my ($upid, $noerr) = @_;
     return PVE::UPID::decode($upid, $noerr);
 }
+
 sub upid_open {
     my ($upid) = @_;
     return PVE::UPID::open_log($upid);
 }
+
 sub upid_read_status {
     my ($upid) = @_;
     return PVE::UPID::read_status($upid);
 }
+
 sub upid_status_is_error {
     my ($status) = @_;
     return PVE::UPID::status_is_error($status);
 }
+
 sub upid_normalize_status_type {
     my ($status) = @_;
     return PVE::UPID::normalize_status_type($status);

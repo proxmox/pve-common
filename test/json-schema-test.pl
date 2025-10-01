@@ -54,10 +54,22 @@ my $property_string_tests = [
         },
         out => { enabled => 1 },
         subtests => [
-            { in => "1", must_fail => qr/value without key, but schema does not define a default key/ },
-            { in => "true", must_fail => qr/value without key, but schema does not define a default key/ },
-            { in => "yes", must_fail => qr/value without key, but schema does not define a default key/ },
-            { in => "on", must_fail => qr/value without key, but schema does not define a default key/ },
+            {
+                in => "1",
+                must_fail => qr/value without key, but schema does not define a default key/,
+            },
+            {
+                in => "true",
+                must_fail => qr/value without key, but schema does not define a default key/,
+            },
+            {
+                in => "yes",
+                must_fail => qr/value without key, but schema does not define a default key/,
+            },
+            {
+                in => "on",
+                must_fail => qr/value without key, but schema does not define a default key/,
+            },
             { in => "enabled=1" },
             { in => "enabled=true" },
             { in => "enabled=yes" },
@@ -68,7 +80,7 @@ my $property_string_tests = [
 ];
 
 for my $test ($property_string_tests->@*) {
-    my $subtests = $test->{subtests} // [ { in => $test->{in}, out => $test->{out} } ];
+    my $subtests = $test->{subtests} // [{ in => $test->{in}, out => $test->{out} }];
 
     subtest $test->{name}, sub {
         my $i = 0;

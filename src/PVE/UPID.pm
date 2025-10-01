@@ -87,7 +87,8 @@ sub read_status($upid) {
     close($fh);
 
     if ($br) {
-        return "unable to extract last line" if $readbuf !~ m/\n?(.+)$/; my $line = $1;
+        return "unable to extract last line" if $readbuf !~ m/\n?(.+)$/;
+        my $line = $1;
 
         if ($line =~ m/^TASK OK$/) {
             return 'OK';
