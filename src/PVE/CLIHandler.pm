@@ -455,7 +455,10 @@ my $print_bash_completion = sub {
 
     my $info = $class->map_method_by_name($name);
 
-    my $prop = { %{ $info->{parameters}->{properties} } }; # copy
+    my $prop;
+    if (defined(my $properties = $info->{parameters}->{properties})) {
+        $prop = { $properties->%* }; # clone
+    }
     $prop = { %$prop, %$formatter_properties } if $formatter_properties;
 
     my $print_parameter_completion = sub {
