@@ -11,6 +11,7 @@ use lib '../src';
 use PVE::UPID;
 
 use JSON qw(to_json);
+use Test::MockModule;
 use Test::More;
 
 # Properties of a test:
@@ -71,6 +72,55 @@ for my $test ($test_upids->@*) {
         my $upid = PVE::UPID::encode($task);
         is_deeply($upid, $in, $test_name);
     }
+}
+
+
+my $test_task_logs = {
+    'task-ok' => {
+        expected_status => 'OK',
+        log => "Some log line\nTASK OK\n",
+    },
+    'task-err' => {
+        expected_status => 'Some error message',
+        log => "Some log line\nTASK ERROR: Some error message\n",
+    },
+    'task-unexpected-status' => {
+        expected_status => 'unexpected status',
+        log => "",
+    },
+    'task-warn' => {
+        expected_status => 'WARNINGS: 42',
+        log => "Some log line\nTASK WARNINGS: 42\n",
+    },
+};
+my @test_task_log_names = sort keys $test_task_logs->%*;
+
+# prepare test data to make using them easier
+$test_task_logs->{$_}->{upid} = "UPID:example-node:0000C346:165A0CE4:68D7279C:${_}::root\@pam:"
+    for keys $test_task_logs->%*;
+
+my $task_log_filesystem = {
+    map { ("/var/log/pve/tasks/C/$test_task_logs->{$_}->{upid}" => $test_task_logs->{$_}) } @test_task_log_names
+};
+
+my $mock_pve_file = Test::MockModule->new("PVE::File")->redefine(
+    'file_read_last_line' => sub($filename) {
+        die "file '$filename' not found" if !$task_log_filesystem->{$filename};
+
+        my $file_content = $task_log_filesystem->{$filename}->{log};
+
+        return $file_content if $file_content !~ m/\n?(.+)$/;
+
+        return $1;
+    },
+);
+
+for my $task_log (sort keys $test_task_logs->%*) {
+    my $task = $test_task_logs->{$task_log};
+
+    my $status = PVE::UPID::read_status($task->{upid});
+
+    is_deeply($status, $task->{expected_status}, "task log test '$task_log'");
 }
 
 # TODO: other tests besides decode-encode cycle?
