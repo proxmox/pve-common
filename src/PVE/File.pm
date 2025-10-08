@@ -2,6 +2,7 @@ package PVE::File;
 
 use v5.36;
 
+use Fcntl qw(SEEK_SET SEEK_END);
 use IO::File qw(O_CREAT O_DIRECTORY O_EXCL O_RDWR O_WRONLY);
 use IO::Dir ();
 use POSIX qw(EEXIST EOPNOTSUPP);
@@ -12,6 +13,7 @@ our @EXPORT_OK = qw(
     file_set_contents
     file_get_contents
     file_read_first_line
+    file_read_last_line
     dir_glob_regex
     dir_glob_foreach
     file_copy
@@ -122,6 +124,44 @@ sub file_read_first_line($filename) {
     chomp $res if $res;
     $fh->close;
     return $res;
+}
+
+sub file_read_last_line($filename) {
+    my $fh = IO::File->new($filename, 'r');
+    if (!$fh) {
+        return undef if $! == POSIX::ENOENT;
+        die "file '$filename' exists but open for reading failed - $!\n";
+    }
+    binmode($fh, ':raw');  # operate on bytes
+
+    my $pos_end = sysseek($fh, 0, SEEK_END) // die "sysseek failed - $!";
+    return '' if $pos_end == 0;  # empty file
+
+    my $buf   = '';
+    my $chunk = 4096;
+
+    my $pos = $pos_end;
+    while ($pos > 0) {
+        my $first_read = $pos == $pos_end;
+        my $read = $pos < $chunk ? $pos : $chunk;
+        $pos = sysseek($fh, $pos - $read, SEEK_SET) // "sysseek failed - $!";
+        my $tmp = '';
+        sysread($fh, $tmp, $read) // die "sysread failed - $!";
+        $buf = $tmp . $buf;
+
+        my $newline_pos = rindex($buf, "\n");
+
+        if ($first_read && $newline_pos == $read - 1) {
+            # allow files to end with a trailing \n and skip that to avoid returning empty string
+            $buf = substr($buf, 0, -1);
+            $newline_pos = rindex($buf, "\n");
+        }
+
+        return substr($buf, $newline_pos + 1) if $newline_pos >= 0;
+    }
+
+    # no newline in file, entire file is a single (possibly unterminated) line
+    return $buf;
 }
 
 sub safe_read_from($fh, $max, $oneline, $filename) {
