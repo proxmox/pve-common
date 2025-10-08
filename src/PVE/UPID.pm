@@ -2,10 +2,7 @@ package PVE::UPID;
 
 use v5.36;
 
-use Fcntl qw(O_CREAT O_EXCL O_WRONLY);
-use File::Basename qw(dirname);
-use File::Path qw(make_path);
-use IO::File;
+use PVE::File;
 
 # UPID means 'Unique Process ID' amd uniquely identifies a process in a cluster of nodes.
 #
@@ -61,46 +58,28 @@ sub decode($upid, $noerr = 0) {
 sub open_log($upid) {
     my ($task, $filename) = decode($upid);
 
-    my $dirname = dirname($filename);
-    make_path($dirname);
+    my $wwwid = getpwnam('www-data') || die "getpwnam failed";
 
-    my $wwwid = getpwnam('www-data')
-        || die "getpwnam failed";
+    my $new_log_fh = PVE::File::create_owned_file_fh($filename, $wwwid);
 
-    my $perm = 0640;
-
-    my $outfh = IO::File->new($filename, O_WRONLY | O_CREAT | O_EXCL, $perm)
-        || die "unable to create output file '$filename' - $!\n";
-    chown $wwwid, -1, $outfh;
-
-    return $outfh;
+    return $new_log_fh;
 }
 
 sub read_status($upid) {
     my ($task, $filename) = decode($upid);
-    my $fh = IO::File->new($filename, "r") or return "unable to open file - $!";
 
-    my $maxlen = 4096;
-    sysseek($fh, -$maxlen, 2);
-    my $readbuf = '';
-    my $br = sysread($fh, $readbuf, $maxlen);
-    close($fh);
+    my $line = eval { PVE::File::file_read_last_line($filename) };
+    return "unable to get last line from task log - $@" if $@;
 
-    if ($br) {
-        return "unable to extract last line" if $readbuf !~ m/\n?(.+)$/;
-        my $line = $1;
-
-        if ($line =~ m/^TASK OK$/) {
-            return 'OK';
-        } elsif ($line =~ m/^TASK ERROR: (.+)$/) {
-            return $1;
-        } elsif ($line =~ m/^TASK (WARNINGS: \d+)$/) {
-            return $1;
-        } else {
-            return "unexpected status";
-        }
+    if ($line =~ m/^TASK OK$/) {
+        return 'OK';
+    } elsif ($line =~ m/^TASK ERROR: (.+)$/) {
+        return $1;
+    } elsif ($line =~ m/^TASK (WARNINGS: \d+)$/) {
+        return $1;
+    } else {
+        return "unexpected status";
     }
-    return "unable to read tail (got $br bytes)";
 }
 
 # Check if the status returned by read_status is an error status.
