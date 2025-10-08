@@ -44,6 +44,42 @@ my $test_upids = [
             user => 'root@pam',
         },
     },
+    {
+        # complex auth ID (long user name and API token)
+        in => 'UPID:example-node:000934AF:0D015579:68BF3A41:vzdump:100:91a1da29-a47d-11f0-84e0-fafbfc944d00@pam!some-token:',
+        out => {
+            id => '100',
+            node => 'example-node',
+            pid => 603311,
+            pstart => 218191225,
+            starttime => 1757362753,
+            type => 'vzdump',
+            user => '91a1da29-a47d-11f0-84e0-fafbfc944d00@pam!some-token',
+        },
+    },
+    {
+        # test a 9-digit pstart (~ 20y uptime)
+        in => 'UPID:example-node:000934AF:FFFFFFFFF:68BF3A41:fake-but-valid-type:100:root@pam:',
+        out => {
+            id => '100',
+            node => 'example-node',
+            pid => 603311,
+            pstart => 68719476735,
+            starttime => 1757362753,
+            type => 'fake-but-valid-type',
+            user => 'root@pam',
+        },
+    },
+    {
+        # UPID cannot contain spaces
+        in => 'UPID:example-node:000934AF:0D015579:68BF3A41:broken type string:100:root@pam:',
+        must_fail => 1,
+    },
+    {
+        # some simple negative case to ensure we fail there.
+        in => 'invalid garbage',
+        must_fail => 1,
+    },
 ];
 
 my $i = 0;
