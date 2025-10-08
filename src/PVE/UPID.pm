@@ -38,6 +38,8 @@ sub decode($upid, $noerr = 0) {
         my $res = {
             node => $1,
             pid => hex($3),
+            # NOTE: for 9-digit hex-number perl warns about non-portable, but it still works as
+            # asserted by a test case, we could silence the WARN handler or use Math::BigInt?
             pstart => hex($4),
             starttime => hex($5),
             type => $6,
