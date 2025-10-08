@@ -3,6 +3,8 @@ package PVE::File;
 use v5.36;
 
 use Fcntl qw(SEEK_SET SEEK_END);
+use File::Basename qw(dirname);
+use File::Path qw(make_path);
 use IO::File qw(O_CREAT O_DIRECTORY O_EXCL O_RDWR O_WRONLY);
 use IO::Dir ();
 use POSIX qw(EEXIST EOPNOTSUPP);
@@ -184,6 +186,25 @@ sub safe_read_from($fh, $max, $oneline, $filename) {
     die "unable to read $subject - $!\n" if !defined($count);
 
     return $input;
+}
+
+# Creates a new (exclusive) file owned by $uid and returns the filehandle.
+#
+# Defaults to group id of caller and 0640 permissions. Tries to create the parent directory on a
+# best-effort basis.
+sub create_owned_file_fh($filename, $uid, $gid = -1, $perm = 0640) {
+    my $dirname = dirname($filename);
+    make_path($dirname);
+
+    my $fh = IO::File->new($filename, O_WRONLY | O_CREAT | O_EXCL, $perm)
+        || die "unable to create file '$filename' - $!\n";
+
+    if (!chown $uid, $gid, $fh) {
+        unlink($fh);
+        die "failed to change owner of '$filename' to $uid:$gid - $!";
+    }
+
+    return $fh;
 }
 
 # creates a temporary file that does not shows up on the file system hierarchy.
