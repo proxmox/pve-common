@@ -200,8 +200,9 @@ sub create_owned_file_fh($filename, $uid, $gid = -1, $perm = 0640) {
         || die "unable to create file '$filename' - $!\n";
 
     if (!chown $uid, $gid, $fh) {
-        unlink($fh);
-        die "failed to change owner of '$filename' to $uid:$gid - $!";
+        my $err = "failed to change owner of '$filename' to $uid:$gid - $!";
+        unlink($fh) or warn "failed to unlink '$filename' after failing to set owner: $!\n";
+        die $err;
     }
 
     return $fh;
