@@ -46,7 +46,8 @@ my $test_upids = [
     },
     {
         # complex auth ID (long user name and API token)
-        in => 'UPID:example-node:000934AF:0D015579:68BF3A41:vzdump:100:91a1da29-a47d-11f0-84e0-fafbfc944d00@pam!some-token:',
+        in =>
+            'UPID:example-node:000934AF:0D015579:68BF3A41:vzdump:100:91a1da29-a47d-11f0-84e0-fafbfc944d00@pam!some-token:',
         out => {
             id => '100',
             node => 'example-node',
@@ -110,7 +111,6 @@ for my $test ($test_upids->@*) {
     }
 }
 
-
 my $test_task_logs = {
     'task-ok' => {
         expected_status => 'OK',
@@ -135,9 +135,9 @@ my @test_task_log_names = sort keys $test_task_logs->%*;
 $test_task_logs->{$_}->{upid} = "UPID:example-node:0000C346:165A0CE4:68D7279C:${_}::root\@pam:"
     for keys $test_task_logs->%*;
 
-my $task_log_filesystem = {
-    map { ("/var/log/pve/tasks/C/$test_task_logs->{$_}->{upid}" => $test_task_logs->{$_}) } @test_task_log_names
-};
+my $task_log_filesystem =
+    { map { ("/var/log/pve/tasks/C/$test_task_logs->{$_}->{upid}" => $test_task_logs->{$_}) }
+        @test_task_log_names };
 
 my $mock_pve_file = Test::MockModule->new("PVE::File")->redefine(
     'file_read_last_line' => sub($filename) {

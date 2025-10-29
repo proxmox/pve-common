@@ -134,12 +134,12 @@ sub file_read_last_line($filename) {
         return undef if $! == POSIX::ENOENT;
         die "file '$filename' exists but open for reading failed - $!\n";
     }
-    binmode($fh, ':raw');  # operate on bytes
+    binmode($fh, ':raw'); # operate on bytes
 
     my $pos_end = sysseek($fh, 0, SEEK_END) // die "sysseek failed - $!";
-    return '' if $pos_end == 0;  # empty file
+    return '' if $pos_end == 0; # empty file
 
-    my $buf   = '';
+    my $buf = '';
     my $chunk = 4096;
 
     my $pos = $pos_end;
