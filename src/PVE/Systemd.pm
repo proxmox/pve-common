@@ -3,9 +3,12 @@ package PVE::Systemd;
 use strict;
 use warnings;
 
+use IO::Socket::UNIX;
 use Net::DBus qw(dbus_uint32 dbus_uint64 dbus_boolean);
 use Net::DBus::Callback;
 use Net::DBus::Reactor;
+use POSIX qw(EINTR);
+use Socket qw(SOCK_DGRAM);
 
 use PVE::Tools qw(file_set_contents file_get_contents trim);
 
@@ -280,6 +283,52 @@ sub write_ini {
     }
 
     file_set_contents($filename, $content);
+}
+
+=head3 notify()
+
+This is a pure Perl reimplementation of systemd's C<sd_notify()> mechanism as defined in
+C<systemd/sd-daemon.h>, based on the example implementations in C<man 3 sd_notify>. Does not return
+a value, but dies upon error.
+
+=cut
+
+sub notify {
+    my ($message) = @_;
+
+    # nothing to do if there is no socket
+    my $socket_path = $ENV{NOTIFY_SOCKET} or return;
+
+    die "notify systemd invalid socket path '$socket_path'\n" if $socket_path !~ m|^[/@]|;
+    die "notify systemd called without a message\n" if !$message;
+
+    # might be an abstract socket
+    $socket_path =~ s/^@/\0/;
+
+    my $socket = IO::Socket::UNIX->new(
+        Type => SOCK_DGRAM(),
+        Peer => $socket_path,
+    ) or die "notify systemd: unable to connect to socket $socket_path - $IO::Socket::errstr\n";
+
+    # we won't be reading from the socket
+    $socket->shutdown(SHUT_RD);
+
+    my $res;
+    while (1) {
+        $res = $socket->send($message);
+        if ($res) {
+            die "notify systemd: protocol error writing to socket '$socket_path'\n"
+                if $res < length($message);
+            last;
+        } else {
+            next if $! == EINTR;
+            die "notify systemd: sending to '$socket_path' failed - $!\n";
+        }
+    }
+
+    close($socket);
+
+    return;
 }
 
 1;
