@@ -155,7 +155,7 @@ sub file_read_last_line($filename) {
 
         if ($first_read && $newline_pos == $read - 1) {
             # allow files to end with a trailing \n and skip that to avoid returning empty string
-            $buf = substr($buf, 0, -1);
+            chop $buf;
             $newline_pos = rindex($buf, "\n");
         }
 
