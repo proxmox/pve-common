@@ -1,3 +1,24 @@
+libpve-common-perl (9.0.12) trixie; urgency=medium
+
+  * JSONSchema: correctly parse booleans in the form of a default_key when
+    parsing a property string to make the behavior consistent when the same
+    key is set explicitly.
+
+  * Split out some specific code from the overly generic PVE::Tools module to
+    dedicated perl modules in a backward compatible manner. The new modules
+    are:
+    - PVE::UPID for (task worker) UPID parsing and task log status helper.
+    - PVE::IPRoute2 for thin wrapper around calling the `ip` tool.
+    - PVE::File for simple file reading and writing methods.
+
+  * fix #6762: CLI helper: fix copying of property schema to avoid outputting
+    a "Can't use an undefined value as a HASH reference" warning.
+
+  * systemd: add notify() helper, which is a pure Perl reimplementation of
+    systemd's sd_notify() mechanism.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 03 Nov 2025 11:29:58 +0100
+
 libpve-common-perl (9.0.11) trixie; urgency=medium
 
   * procfs meminfo: return min/max ZFS ARC size
