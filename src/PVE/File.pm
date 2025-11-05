@@ -103,7 +103,7 @@ sub file_set_contents {
     }
 }
 
-sub file_get_contents($filename, $max) {
+sub file_get_contents($filename, $max = undef) {
     my $fh = IO::File->new($filename, "r") || die "can't open '$filename' - $!\n";
 
     my $content = safe_read_from($fh, $max, 0, $filename);
@@ -113,7 +113,7 @@ sub file_get_contents($filename, $max) {
     return $content;
 }
 
-sub file_copy($filename, $dst, $max, $perm) {
+sub file_copy($filename, $dst, $max = undef, $perm = undef) {
     file_set_contents($dst, file_get_contents($filename, $max), $perm);
 }
 
