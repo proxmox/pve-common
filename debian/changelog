@@ -1,3 +1,13 @@
+libpve-common-perl (9.0.13) trixie; urgency=medium
+
+  * file: add missing use statement for encode method that caused failure when
+    the caller tried to force utf8 output.
+
+  * file: file_copy, file_get_contents: fix fallback values for optional
+    parameters in signature.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 05 Nov 2025 13:15:14 +0100
+
 libpve-common-perl (9.0.12) trixie; urgency=medium
 
   * JSONSchema: correctly parse booleans in the form of a default_key when
