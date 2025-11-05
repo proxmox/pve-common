@@ -10,6 +10,7 @@ TESTS = lock_file.test			\
 	upid-test.pl			\
 	is_deeply_test.test		\
 	section_config_property_isolation_test.pl \
+	file-test.pl \
 
 all:
 
