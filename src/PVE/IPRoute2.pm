@@ -32,6 +32,13 @@ sub ip_link_is_physical($ip_link) {
         && (!defined($ip_link->{linkinfo}) || !defined($ip_link->{linkinfo}->{info_kind}));
 }
 
+sub ip_link_is_bridge_member($ip_link) {
+    return
+        defined($ip_link->{linkinfo})
+        && defined($ip_link->{linkinfo}->{info_slave_kind})
+        && $ip_link->{linkinfo}->{info_slave_kind} eq "bridge";
+}
+
 sub altname_mapping($ip_links) {
     $ip_links = ip_link_details() if !defined($ip_links);
 
