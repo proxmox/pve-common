@@ -57,4 +57,22 @@ sub altname_mapping($ip_links) {
     return $altnames;
 }
 
+sub get_vlan_information() {
+    my $bridge_output = '';
+
+    run_command(
+        [
+            'bridge', '-compressvlans', '-json', 'vlan', 'show',
+        ],
+        outfunc => sub {
+            $bridge_output .= shift;
+        },
+    );
+
+    my $data = decode_json($bridge_output);
+    my %vlan_information = map { $_->{ifname} => $_ } $data->@*;
+
+    return \%vlan_information;
+}
+
 1;
