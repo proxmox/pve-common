@@ -1850,6 +1850,14 @@ my $method_schema = {
             description => "Method needs special privileges - only pvedaemon can execute it",
             optional => 1,
         },
+        expose_credentials => {
+            type => 'boolean',
+            description => "Method needs access to the connecting users credentials (ticker or"
+                . " token), so it will be exposed through the RPC environment. Useful to avoid"
+                . " setting 'protected' when one needs to (manually) proxy to other cluster nodes."
+                . " nodes in the handler.",
+            optional => 1,
+        },
         allowtoken => {
             type => 'boolean',
             description => "Method is available for clients authenticated using an API token.",
