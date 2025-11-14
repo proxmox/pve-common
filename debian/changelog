@@ -1,3 +1,14 @@
+libpve-common-perl (9.0.15) trixie; urgency=medium
+
+  * JSON schema: make new expose_credentials flag available for API
+    endpoints that want to manual proxy to other nodes without having to
+    mark them as protected.
+
+  * rest environment: add getter and setter for credentials to allow accessing
+    the exact credentials uses for an API request.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 14 Nov 2025 17:38:52 +0100
+
 libpve-common-perl (9.0.14) trixie; urgency=medium
 
   * iproute2: add helper for detecting bridge members.
