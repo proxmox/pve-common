@@ -1,3 +1,11 @@
+libpve-common-perl (9.0.14) trixie; urgency=medium
+
+  * iproute2: add helper for detecting bridge members.
+
+  * iproute2: add helper for querying vlan information.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 14 Nov 2025 01:29:38 +0100
+
 libpve-common-perl (9.0.13) trixie; urgency=medium
 
   * file: add missing use statement for encode method that caused failure when
