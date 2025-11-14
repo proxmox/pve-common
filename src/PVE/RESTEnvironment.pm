@@ -235,6 +235,20 @@ sub get_user {
     die "user name not set\n";
 }
 
+sub set_credentials {
+    my ($self, $credentials) = @_;
+
+    $self->{credentials} = $credentials;
+}
+
+sub get_credentials {
+    my ($self, $noerr) = @_;
+
+    return $self->{credentials} if defined($self->{credentials}) || $noerr;
+
+    die "credentials not set\n";
+}
+
 sub set_u2f_challenge {
     my ($self, $challenge) = @_;
 
