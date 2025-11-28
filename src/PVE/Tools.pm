@@ -1086,8 +1086,7 @@ sub cmd2string {
 
     return $cmd if !ref($cmd);
 
-    my @qa = ();
-    foreach my $arg (@$cmd) { push @qa, shellquote($arg); }
+    my @qa = map { shellquote($_) } $cmd->@*;
 
     return join(' ', @qa);
 }
