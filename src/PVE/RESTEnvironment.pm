@@ -235,6 +235,11 @@ sub get_user {
     die "user name not set\n";
 }
 
+# {
+#     userid => $authuser,
+#     ticket => ticket,
+#     token => $csrf_token,
+# }
 sub set_credentials {
     my ($self, $credentials) = @_;
 
