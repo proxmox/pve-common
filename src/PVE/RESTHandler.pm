@@ -813,7 +813,7 @@ sub getopt_usage {
                 $get_property_description->($base, 'arg', $prop->{$k}, $format, $param_map->{$k});
         }
 
-        if (!$is_optional) {
+        if (!$is_optional && !defined($prop->{$k}->{alias})) {
             $args .= " " if $args;
             $args .= "--$base <$type_text>";
         }
