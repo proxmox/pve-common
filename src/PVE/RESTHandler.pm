@@ -763,6 +763,9 @@ sub getopt_usage {
         }
 
         my $is_optional = $prop->{$k}->{optional} // 0;
+        if (my $alias = $prop->{$k}->{alias}) {
+            $is_optional = $prop->{$alias}->{optional} // 0;
+        }
 
         if (my $type_property = $prop->{$k}->{'type-property'}) {
             # save type specific descriptions for later
