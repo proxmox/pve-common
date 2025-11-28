@@ -1,3 +1,14 @@
+libpve-common-perl (9.1.0) trixie; urgency=medium
+
+  * CLI usage: never show aliases as required argument.
+
+  * CLI usage and synopsis: re-use optional-flag from target for aliases to
+    avoid to potentially generate wrong documentation.
+
+  * CLI usage: rework output for aliased args, make it more concise.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 28 Nov 2025 12:45:11 +0100
+
 libpve-common-perl (9.0.15) trixie; urgency=medium
 
   * JSON schema: make new expose_credentials flag available for API
