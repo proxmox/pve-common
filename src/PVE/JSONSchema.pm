@@ -2502,6 +2502,8 @@ sub schema_get_type_text {
         return "<" . join(' | ', sort @{ $phash->{enum} }) . ">";
     } elsif ($phash->{pattern}) {
         return $phash->{pattern};
+    } elsif (my $alias = $phash->{alias}) {
+        return "<alias to '$alias'>";
     } elsif ($type eq 'integer' || $type eq 'number') {
         # NOTE: always access values as number (avoid converion to string)
         if (defined($phash->{minimum}) && defined($phash->{maximum})) {

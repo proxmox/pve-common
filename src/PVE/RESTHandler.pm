@@ -524,7 +524,11 @@ my $get_property_description = sub {
 
     $format = 'asciidoc' if !defined($format);
 
-    my $descr = $phash->{description} || "no description available";
+    my $descr = $phash->{description};
+
+    if (!$descr) {
+        $descr = $phash->{alias} ? "alias for '$phash->{alias}'" : "no description available";
+    }
 
     if (
         $phash->{verbose_description}
@@ -604,7 +608,11 @@ my $get_property_description = sub {
         my $indend = "             ";
 
         $res .= Text::Wrap::wrap('', $indend, ($tmp));
-        $res .= Text::Wrap::wrap($indend, $indend, ($descr)) . "\n\n";
+        if (defined($phash->{alias})) {
+            $res .= "\n"; # alias target is already named in type_text, keep them concise.
+        } else {
+            $res .= Text::Wrap::wrap($indend, $indend, ($descr)) . "\n\n";
+        }
 
         if (my $req = $phash->{requires}) {
             my $tmp = "Requires option(s): ";
@@ -725,6 +733,7 @@ sub getopt_usage {
     foreach my $k (@$arg_param) {
         next if defined($fixed_param->{$k}); # just to be sure
         next if !$prop->{$k}; # just to be sure
+        next if defined($prop->{$k}->{alias}); # already handled through type_text
         $argdescr .= $get_property_description->($k, 'fixed', $prop->{$k}, $format);
     }
 
@@ -742,6 +751,8 @@ sub getopt_usage {
 
         if ($prop->{$k}->{oneOf}) {
             $type_text = 'multiple';
+        } elsif (my $alias = $prop->{$k}->{alias}) {
+            $type_text = "alias for '$alias'";
         }
 
         my $param_map = {};
