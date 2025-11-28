@@ -28,6 +28,7 @@ use base 'Exporter';
 
 our @EXPORT_OK = qw(read_file write_file register_file nodename);
 
+# NOTE: outdated, prefer the PVE::IPRoute2::ip_link_is_physical() method!
 our $PHYSICAL_NIC_RE = qr/(?:eth\d+|en[^:.]+|ib[^:.]+|(?:nic|if)\d+)/;
 
 my $ccache;
