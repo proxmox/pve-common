@@ -39,6 +39,19 @@ sub ip_link_is_bridge_member($ip_link) {
         && $ip_link->{linkinfo}->{info_slave_kind} eq "bridge";
 }
 
+sub get_physical_bridge_ports($bridge, $ip_links = undef) {
+    $ip_links = ip_link_details() if !defined($ip_links);
+
+    if (!ip_link_is_bridge($ip_links->{$bridge})) {
+        warn "passed link that isn't a bridge to get_physical_bridge_ports";
+        return ();
+    }
+
+    return grep {
+        ip_link_is_physical($ip_links->{$_}) && $ip_links->{$_}->{master} eq $bridge
+    } keys $ip_links->%*;
+}
+
 sub altname_mapping($ip_links) {
     $ip_links = ip_link_details() if !defined($ip_links);
 

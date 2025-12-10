@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use PVE::INotify;
+use PVE::IPRoute2;
 use PVE::ProcFSTools;
 use PVE::Tools qw(run_command lock_file);
 
@@ -684,16 +685,7 @@ sub activate_bridge_vlan {
 
     my $bridgevlan = "${bridge}v$tag";
 
-    my @ifaces = ();
-    my $dir = "/sys/class/net/$bridge/brif";
-    PVE::Tools::dir_glob_foreach(
-        $dir,
-        '(((eth|bond)\d+|en[^.]+)(\.\d+)?)',
-        sub {
-            push @ifaces, $_[0];
-        },
-    );
-
+    my @ifaces = PVE::IPRoute2::get_physical_bridge_ports($bridge);
     die "no physical interface on bridge '$bridge'\n" if scalar(@ifaces) == 0;
 
     lock_network(sub {
