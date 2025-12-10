@@ -1,3 +1,11 @@
+libpve-common-perl (9.1.1) trixie; urgency=medium
+
+  * fix #7118: fix bridge port detection when plugging netdev with vlan.
+
+  * iproute2: add helpers for detecting vlan-aware bridges.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 10 Dec 2025 20:24:49 +0100
+
 libpve-common-perl (9.1.0) trixie; urgency=medium
 
   * CLI usage: never show aliases as required argument.
