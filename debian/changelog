@@ -1,3 +1,9 @@
+libpve-common-perl (8.3.5) bookworm; urgency=medium
+
+  * fix #7118: fix bridge port detection when plugging netdev with vlan.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 10 Dec 2025 20:26:23 +0100
+
 libpve-common-perl (8.3.4) bookworm; urgency=medium
 
   * inotify/interfaces: use ip link for detecting physical interfaces and
