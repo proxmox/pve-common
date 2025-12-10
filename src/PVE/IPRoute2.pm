@@ -32,6 +32,25 @@ sub ip_link_is_physical($ip_link) {
         && (!defined($ip_link->{linkinfo}) || !defined($ip_link->{linkinfo}->{info_kind}));
 }
 
+sub ip_link_is_bridge($ip_link) {
+    return
+        defined($ip_link->{linkinfo})
+        && defined($ip_link->{linkinfo}->{info_kind})
+        && $ip_link->{linkinfo}->{info_kind} eq 'bridge';
+}
+
+sub bridge_is_vlan_aware($ip_link) {
+    if (!ip_link_is_bridge($ip_link)) {
+        warn "passed link that isn't a bridge to bridge_is_vlan_aware";
+        return 0;
+    }
+
+    return
+        defined($ip_link->{linkinfo}->{info_data})
+        && defined($ip_link->{linkinfo}->{info_data}->{vlan_filtering})
+        && $ip_link->{linkinfo}->{info_data}->{vlan_filtering} == 1;
+}
+
 sub ip_link_is_bridge_member($ip_link) {
     return
         defined($ip_link->{linkinfo})
