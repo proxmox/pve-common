@@ -683,16 +683,7 @@ sub activate_bridge_vlan {
 
     my $bridgevlan = "${bridge}v$tag";
 
-    my @ifaces = ();
-    my $dir = "/sys/class/net/$bridge/brif";
-    PVE::Tools::dir_glob_foreach(
-        $dir,
-        '(((eth|bond)\d+|en[^.]+)(\.\d+)?)',
-        sub {
-            push @ifaces, $_[0];
-        },
-    );
-
+    my @ifaces = get_physical_bridge_ports($bridge);
     die "no physical interface on bridge '$bridge'\n" if scalar(@ifaces) == 0;
 
     lock_network(sub {
@@ -971,6 +962,16 @@ sub is_ovs_bridge {
     return 1 if $res == 0;
 
     die "failed to query OVS to determine type of '$bridge': $res\n";
+}
+
+sub get_physical_bridge_ports {
+    my ($bridge, $ip_links) = @_;
+
+    $ip_links = ip_link_details() if !defined($ip_links);
+
+    return grep {
+        ip_link_is_physical($ip_links->{$_}) && $ip_links->{$_}->{master} eq $bridge
+    } keys $ip_links->%*;
 }
 
 sub ip_link_details {
