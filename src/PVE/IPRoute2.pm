@@ -32,6 +32,14 @@ sub ip_link_is_physical($ip_link) {
         && (!defined($ip_link->{linkinfo}) || !defined($ip_link->{linkinfo}->{info_kind}));
 }
 
+sub ip_link_is_bond($ip_link) {
+    return
+        $ip_link->{link_type} eq 'ether'
+        && defined($ip_link->{linkinfo})
+        && defined($ip_link->{linkinfo}->{info_kind})
+        && $ip_link->{linkinfo}->{info_kind} eq 'bond';
+}
+
 sub ip_link_is_bridge($ip_link) {
     return
         defined($ip_link->{linkinfo})
@@ -67,7 +75,8 @@ sub get_physical_bridge_ports($bridge, $ip_links = undef) {
     }
 
     return grep {
-        ip_link_is_physical($ip_links->{$_}) && $ip_links->{$_}->{master} eq $bridge
+        (ip_link_is_physical($ip_links->{$_}) || ip_link_is_bond($ip_links->{$_}))
+            && defined($ip_links->{$_}->{master}) && $ip_links->{$_}->{master} eq $bridge
     } keys $ip_links->%*;
 }
 
