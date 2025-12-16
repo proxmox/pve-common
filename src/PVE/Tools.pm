@@ -1505,6 +1505,17 @@ sub fchownat($$$$$) {
     ) == 0;
 }
 
+sub fchmodat($$$$) {
+    my ($dirfd, $pathname, $mode, $flags) = @_;
+    return syscall(
+        PVE::Syscall::fchmodat,
+        int($dirfd),
+        $pathname,
+        int($mode),
+        int($flags),
+    ) == 0;
+}
+
 my $salt_starter = time();
 
 sub encrypt_pw {

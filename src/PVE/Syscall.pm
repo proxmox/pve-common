@@ -22,6 +22,7 @@ BEGIN {
         setresuid => &SYS_setresuid,
         fallocate => &SYS_fallocate,
         fchownat => &SYS_fchownat,
+        fchmodat => &SYS_fchmodat,
         mount => &SYS_mount,
         renameat2 => &SYS_renameat2,
         open_tree => &SYS_open_tree,
