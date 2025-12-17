@@ -113,7 +113,7 @@ sub enter_systemd_scope {
     my $properties = [[PIDs => [dbus_uint32($$)]]];
 
     foreach my $key (keys %extra) {
-        if ($key eq 'Slice' || $key eq 'KillMode') {
+        if ($key eq 'Slice' || $key eq 'KillMode' || $key eq 'After' || $key eq 'Before') {
             push @{$properties}, [$key, $extra{$key}];
         } elsif ($key eq 'SendSIGKILL') {
             push @{$properties}, [$key, dbus_boolean($extra{$key})];
