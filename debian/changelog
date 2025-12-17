@@ -1,3 +1,9 @@
+libpve-common-perl (9.1.2) trixie; urgency=medium
+
+  * systemd: enter scope: allow specifying 'Before' and 'After' properties
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 17 Dec 2025 15:06:13 +0100
+
 libpve-common-perl (9.1.1) trixie; urgency=medium
 
   * fix #7118: fix bridge port detection when plugging netdev with vlan.
