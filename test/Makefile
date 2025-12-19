@@ -1,4 +1,7 @@
-SUBDIRS = etc_network_interfaces
+SUBDIRS = etc_network_interfaces	\
+	  SectionConfig			\
+
+
 TESTS = lock_file.test			\
 	calendar_event_test.test	\
 	convert_size_test.test		\
