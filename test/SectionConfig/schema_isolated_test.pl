@@ -303,6 +303,139 @@ package IdenticalPropertyOnDifferentPlugin {
     }
 }
 
+package SamePropertyNamesOnDifferentPlugins {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return
+            "defining properties with the same name but different optionality"
+            . " on different plugins does not lead to 'oneOf' being used inside"
+            . " either createSchema or updateSchema - because properties defined"
+            . " by plugins are always marked as optional";
+    }
+
+    package SamePropertyNamesOnDifferentPlugins::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {};
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    };
+
+    package SamePropertyNamesOnDifferentPlugins::PluginOne {
+        use base qw(SamePropertyNamesOnDifferentPlugins::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 0,
+                },
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                'prop-one' => {
+                    optional => 0,
+                },
+                'prop-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    };
+
+    package SamePropertyNamesOnDifferentPlugins::PluginTwo {
+        use base qw(SamePropertyNamesOnDifferentPlugins::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    type => 'string',
+                    optional => 0,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                'prop-one' => {
+                    optional => 1,
+                },
+                'prop-two' => {
+                    optional => 0,
+                },
+            };
+        }
+    };
+
+    sub expected_isolated_createSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+    }
+
+    sub expected_isolated_updateSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
+            },
+        };
+    }
+}
+
 sub test_compare_deeply($got, $expected, $test_name, $test_package) {
     $test_name = "$test_package - $test_name";
     my $description = $test_package->desc();
