@@ -328,6 +328,11 @@ the plugin's schema and made C<optional> by default.
 
 See the C<L<< options()|/$plugin->options() >>> method for more information.
 
+B<NOTE:> All properties added by child plugins are always marked as C<< optional => 1 >>,
+even if explicitly declared as C<< optional => 0 >>. If that were not the case,
+any plugin could add a new required (non-optional) property and break existing
+plugins.
+
 =cut
 
 sub properties {
