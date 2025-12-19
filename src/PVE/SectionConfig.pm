@@ -345,14 +345,16 @@ which I<properties> are used in the method's return value. Because properties
 are registered globally in this mode, any properties may be specified,
 regardless of which plugin introduced them.
 
+B<NOTE:> Properties in the global list of properties (see C<L<< private()|/$base->private() >>>)
+are B<not> automatically added to C<L<< updateSchema()|/$base->updateSchema() >>>
+and must be explicitly declared in C<L<< options()|/$plugin->options() >>> if one
+wishes to use them.
+
 In I<L<isolated mode|/MODES>>, the locally defined properties (those registered
 by overriding C<L<< properties()|/$plugin->properties() >>>) are automatically
 added to the plugin's schema and made C<optional> by default. Should this not be
 desired, a property may still be explicitly defined, in order to make it required
 or C<fixed> instead.
-
-Properties in the global list of properties (see C<L<< private()|/$base->private() >>>)
-are not automatically added and must be explicitly defined instead.
 
 =cut
 
