@@ -576,8 +576,8 @@ sub createSchema {
 
 =head3 $plugin->updateSchema([ $single_class, $base ])
 
-    $update_schema = PVE::Example::Plugin->update_schema($single_class, $base)
-    $update_schema = $class->updateSchema($single_class, $base)
+    $update_schema = PVE::Example::Plugin->updateSchema($single_class, $base)
+    $update_schema = $plugin->updateSchema($single_class, $base)
 
 Returns the C<L<PVE::JSONSchema>> used for I<updating> config entries of a
 I<child plugin>.
@@ -590,9 +590,9 @@ parameters of an API handler (C<PUT>).
 =item C<$single_class> (optional)
 
 Can be set to C<1> to only include properties which are defined in the returned
-hash of C<L<< options()|/$plugin->options() >>> of the plugin C<$class>.
+hash of C<L<< options()|/$plugin->options() >>> of the C<$plugin> instance.
 
-This parameter is only valid for child plugins, not the base plugin.
+B<NOTE:> This parameter is only valid for child plugins, not the base plugin.
 
 =item C<$base> (optional)
 
