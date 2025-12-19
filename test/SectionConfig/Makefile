@@ -1,5 +1,6 @@
 TESTS = \
 	schema_comparison_test.pl				\
+	schema_isolated_test.pl					\
 
 
 all:
