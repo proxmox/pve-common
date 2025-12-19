@@ -467,18 +467,22 @@ my sub add_property {
     }
 }
 
-=head3 $plugin->createSchema()
+=head3 $base->createSchema()
 
-=head3 $plugin->createSchema([ $skip_type, $base ])
+=head3 $base->createSchema([ $skip_type, $base ])
 
     $schema = PVE::Example::Plugin->createSchema($skip_type, $base)
     $schema = $class->createSchema($skip_type, $base)
 
-Returns the C<PVE::JSONSchema> used for I<creating> config entries of a
+Returns the C<L<PVE::JSONSchema>> used for I<creating> config entries of a
 I<child plugin>.
 
 This schema may then be used as desired, for example as the definition of
 parameters of an API handler (C<POST>).
+
+B<NOTE:> This schema is universal for all registered plugins. This means that
+calling this method on different plugin instances will always return the same
+result.
 
 =over
 
