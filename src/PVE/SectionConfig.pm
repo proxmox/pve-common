@@ -1062,7 +1062,6 @@ sub get_property_schema {
     my ($class, $type, $key) = @_;
 
     my $pdata = $class->private();
-    my $opts = $pdata->{options}->{$type};
 
     my $schema;
     if ($class->has_isolated_properties()) {
