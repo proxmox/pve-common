@@ -1550,6 +1550,202 @@ package RequiredCommonRequiredByOne {
     }
 }
 
+package RequiredCommonRequiredByAll {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return "for both unified and isolated mode, required default properties"
+            . " that all plugins declare as required remain required in both schemas";
+    }
+
+    package RequiredCommonRequiredByAll::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {
+            propertyList => {
+                common => {
+                    type => 'string',
+                    optional => 0,
+                },
+            },
+        };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    };
+
+    package RequiredCommonRequiredByAll::PluginOne {
+        use base qw(RequiredCommonRequiredByAll::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                'prop-one' => {
+                    optional => 1,
+                },
+            };
+        }
+    };
+
+    package RequiredCommonRequiredByAll::PluginTwo {
+        use base qw(RequiredCommonRequiredByAll::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                'prop-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    };
+
+    sub expected_unified_createSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'common' => {
+                    type => 'string',
+                    optional => 0,
+                },
+            },
+        };
+    }
+
+    sub expected_unified_updateSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                common => {
+                    type => 'string',
+                    optional => 0,
+                },
+                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
+            },
+        };
+    }
+
+    sub expected_isolated_createSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    'instance-types' => [
+                        "one",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    'instance-types' => [
+                        "two",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+                'common' => {
+                    type => 'string',
+                    optional => 0,
+                },
+            },
+        };
+    }
+
+    sub expected_isolated_updateSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    'instance-types' => [
+                        "one",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    'instance-types' => [
+                        "two",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+                common => {
+                    type => 'string',
+                    optional => 0,
+                },
+                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
+            },
+        };
+    }
+}
+
 sub test_compare_deeply($got, $expected, $test_name, $test_package) {
     $test_name = "$test_package - $test_name";
     my $description = $test_package->desc();
