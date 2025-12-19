@@ -138,9 +138,10 @@ More precisely, this method returns a hash with the following structure:
                 optional => 1,
                 description => 'example property',
             },
-            some-property => {
-                description => 'another example property',
+            'some-property' => {
                 type => 'boolean'
+                optional => 1,
+                description => 'another example property',
             },
         },
         options => {
@@ -203,6 +204,19 @@ plugin architecture upfront, for example:
 
 Additional properties defined in I<child plugins> are stored in the
 C<propertyList> key. See C<L<< properties()|/$plugin->properties() >>>.
+
+B<NOTE:> It is advised to mark all default properties in C<propertyList> as
+optional using C<< optional => 1 >>, with only very few exceptions. One such
+exception would be a property that you intend to use as unique identifier of a
+section. In that case, ensure that you explicitly define it with
+C<< optional => 0 >> and that it is not used in any child plugins'
+C<L<< options()|/$plugin->options() >>> method.
+
+B<NOTE:> When specifying the default properties in the C<propertyList> key, you
+MAY only add attributes related to C<L<PVE::JSONSchema>> to property
+definitions. Any other attributes, even those specific to C<PVE::SectionConfig>
+(like C<fixed>), are not considered valid. All properties in C<propertyList>
+MUST be defined through a valid JSONSchema.
 
 =cut
 
