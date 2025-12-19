@@ -90,7 +90,9 @@ return value of the C<L<< options()|/$plugin->options() >>> method when it's eit
 C<fixed> or stems from the global list of properties.
 
 All I<locally> defined properties of a child plugin are automatically added to
-its schema.
+its schema. This means that is is not necessary to declare the usage of a
+plugin's own properties in its own C<L<< options()|/$plugin->options() >>>
+method, unless one wants to declare it as C<fixed>.
 
 =cut
 
@@ -352,9 +354,8 @@ wishes to use them.
 
 In I<L<isolated mode|/MODES>>, the locally defined properties (those registered
 by overriding C<L<< properties()|/$plugin->properties() >>>) are automatically
-added to the plugin's schema and made C<optional> by default. Should this not be
-desired, a property may still be explicitly defined, in order to make it required
-or C<fixed> instead.
+added to the plugin's schema and made C<optional> by default. However, marking
+the property as C<fixed> must still be done via C<L<< options()|/$plugin->options() >>>.
 
 =cut
 
