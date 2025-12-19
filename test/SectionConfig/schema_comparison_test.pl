@@ -376,6 +376,165 @@ package OneOptionalAllFixedNoCommon {
     }
 };
 
+package AllUnusedNoCommon {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return
+            "in unified mode, properties that plugins define but"
+            . " do not declare in options() are *not* included in updateSchema"
+            . " - in isolated mode, these properties are however included";
+    }
+
+    package AllUnusedNoCommon::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {};
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    };
+
+    package AllUnusedNoCommon::PluginOne {
+        use base qw(AllUnusedNoCommon::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 0,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {};
+        }
+    };
+
+    package AllUnusedNoCommon::PluginTwo {
+        use base qw(AllUnusedNoCommon::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {};
+        }
+    };
+
+    sub expected_unified_createSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+    }
+
+    sub expected_unified_updateSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
+            },
+        };
+    }
+
+    sub expected_isolated_createSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    'instance-types' => [
+                        "one",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    'instance-types' => [
+                        "two",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+    }
+
+    sub expected_isolated_updateSchema($class) {
+        return {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => [
+                        "one", "two",
+                    ],
+                },
+                'prop-one' => {
+                    'instance-types' => [
+                        "one",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-two' => {
+                    'instance-types' => [
+                        "two",
+                    ],
+                    'type-property' => 'type',
+                    type => 'string',
+                    optional => 1,
+                },
+                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
+            },
+        };
+    }
+}
+
 sub test_compare_deeply($got, $expected, $test_name, $test_package) {
     $test_name = "$test_package - $test_name";
     my $description = $test_package->desc();
