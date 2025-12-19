@@ -299,6 +299,9 @@ See below for details on L<the different modes|/MODES>.
 
 This method doesn't need to be overridden if no new properties are necessary.
 
+A property's definition must always be a valid JSON Schema. See
+C<L<PVE::JSONSchema>> for more information on how to define such a schema.
+
     sub properties() {
         return {
             path => {
