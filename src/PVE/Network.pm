@@ -970,7 +970,9 @@ sub get_physical_bridge_ports {
     $ip_links = ip_link_details() if !defined($ip_links);
 
     return grep {
-        ip_link_is_physical($ip_links->{$_}) && $ip_links->{$_}->{master} eq $bridge
+        (ip_link_is_physical($ip_links->{$_}) || ip_link_is_bond($ip_links->{$_}))
+            && defined($ip_links->{$_}->{master})
+            && $ip_links->{$_}->{master} eq $bridge
     } keys $ip_links->%*;
 }
 
@@ -997,6 +999,15 @@ sub ip_link_is_physical {
     # ether
     return $ip_link->{link_type} eq 'ether'
         && (!defined($ip_link->{linkinfo}) || !defined($ip_link->{linkinfo}->{info_kind}));
+}
+
+sub ip_link_is_bond {
+    my ($ip_link) = @_;
+    return
+        $ip_link->{link_type} eq 'ether'
+        && defined($ip_link->{linkinfo})
+        && defined($ip_link->{linkinfo}->{info_kind})
+        && $ip_link->{linkinfo}->{info_kind} eq 'bond';
 }
 
 sub altname_mapping {
