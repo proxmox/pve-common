@@ -36,7 +36,6 @@ is_deeply($first_line, $first_line_written, "read only first line");
 my $last_line_written = PVE::File::file_read_last_line("$test_dir/two_lines");
 is_deeply($last_line, $last_line_written, "read only first line");
 
-
 # try $force_utf8
 my $wide_chars;
 {

@@ -76,7 +76,8 @@ sub get_physical_bridge_ports($bridge, $ip_links = undef) {
 
     return grep {
         (ip_link_is_physical($ip_links->{$_}) || ip_link_is_bond($ip_links->{$_}))
-            && defined($ip_links->{$_}->{master}) && $ip_links->{$_}->{master} eq $bridge
+            && defined($ip_links->{$_}->{master})
+            && $ip_links->{$_}->{master} eq $bridge
     } keys $ip_links->%*;
 }
 
