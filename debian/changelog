@@ -1,3 +1,9 @@
+libpve-common-perl (8.3.6) bookworm; urgency=medium
+
+  * fix #7181: backport: consider bonds as physical bridge ports too.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 29 Dec 2025 16:35:35 +0100
+
 libpve-common-perl (8.3.5) bookworm; urgency=medium
 
   * fix #7118: fix bridge port detection when plugging netdev with vlan.
