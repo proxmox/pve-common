@@ -954,7 +954,7 @@ sub is_ovs_bridge {
     return 0 if is_linux_bridge($bridge);
 
     # no OVS installed, can't be an OVS bridge
-    return 0 if ! -e '/bin/ovs-vsctl';
+    return 0 if !-e '/bin/ovs-vsctl';
 
     # will return 2 if bridge doesn't exist
     my $res = PVE::Tools::run_command(['/bin/ovs-vsctl', 'br-exists', $bridge], noerr => 1);
