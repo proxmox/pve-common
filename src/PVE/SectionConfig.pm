@@ -370,7 +370,7 @@ are registered globally in this mode, any properties may be specified,
 regardless of which plugin introduced them.
 
 B<NOTE:> Properties in the global list of properties (see C<L<< private()|/$base->private() >>>)
-are B<not> automatically added to C<L<< updateSchema()|/$base->updateSchema() >>>
+are B<not> automatically added to C<L<< updateSchema()|/$plugin->updateSchema() >>>
 and must be explicitly declared in C<L<< options()|/$plugin->options() >>> if one
 wishes to use them.
 
