@@ -1,3 +1,17 @@
+libpve-common-perl (9.1.5) trixie; urgency=medium
+
+  * tools: add fchmodat syscall
+
+  * sectionconfig: remove unused variable in get_property_schema()
+
+  * sectionconfig: add tests for schema generation
+
+  * sectionconfig: improve documentation
+
+  * build: add missing (test) dependencies
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 15 Jan 2026 13:48:04 +0100
+
 libpve-common-perl (9.1.4) trixie; urgency=medium
 
   * fix #7193: allow vlan-interfaces as physical bridge ports.
