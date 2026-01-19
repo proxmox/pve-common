@@ -383,8 +383,8 @@ sub map_path_to_methods {
         } elsif ($path_lookup->{folders}) {
             $path_lookup = $path_lookup->{folders}->{$comp};
             $$pathmatchref .= '/' . $comp if defined($pathmatchref);
-        } else {
-            die "internal error";
+        } else { # leaf endpoint
+            return undef;
         }
 
         return undef if !$path_lookup;
