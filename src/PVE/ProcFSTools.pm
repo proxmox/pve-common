@@ -28,6 +28,8 @@ sub read_cpuinfo {
 
     my $res = {
         user_hz => $clock_ticks,
+        vendor => 'unknown',
+        family => 0,
         model => 'unknown',
         mhz => 0,
         cpus => 1,
@@ -46,6 +48,10 @@ sub read_cpuinfo {
             $count++;
         } elsif ($line =~ m/^model\s+name\s*:\s*(.*)\s*$/i) {
             $res->{model} = $1 if $res->{model} eq 'unknown';
+        } elsif ($line =~ m/^vendor_id\s*:\s*(\S*)\s*$/i) {
+            $res->{vendor} = $1 if $res->{vendor} eq 'unknown';
+        } elsif ($line =~ m/^cpu family\s*:\s*(\d+)\s*$/i) {
+            $res->{family} = $1 if !$res->{family};
         } elsif ($line =~ m/^cpu\s+MHz\s*:\s*(\d+\.\d+)\s*$/i) {
             $res->{mhz} = $1 if !$res->{mhz};
         } elsif ($line =~ m/^flags\s*:\s*(.*)$/) {
