@@ -1,3 +1,13 @@
+libpve-common-perl (9.1.6) trixie; urgency=medium
+
+  * procfs tools: cpuinfo: also return CPU vendor and family.
+
+  * rest handler: map path to methods: avoid returning misleading 'internal
+    error' for methods that are not implemented. Those are already correctly
+    handled on an upper level.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 20 Jan 2026 16:12:32 +0100
+
 libpve-common-perl (9.1.5) trixie; urgency=medium
 
   * tools: add fchmodat syscall
