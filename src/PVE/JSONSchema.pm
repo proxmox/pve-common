@@ -289,6 +289,11 @@ sub parse_acme_plugin_id {
 sub parse_id {
     my ($id, $type, $noerr) = @_;
 
+    if (length($id) < 2) {
+        return undef if $noerr;
+        die "$type ID '$id' cannot be shorter than 2 characters\n";
+    }
+
     if ($id !~ m/^[a-z][a-z0-9\-\_\.]*[a-z0-9]$/i) {
         return undef if $noerr;
         die "$type ID '$id' contains illegal characters\n";
