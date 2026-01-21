@@ -17,7 +17,7 @@ BEGIN {
         openat => &SYS_openat,
         close => &SYS_close,
         mkdirat => &SYS_mkdirat,
-        mknod => &SYS_mknod,
+        mknodat => &SYS_mknodat,
         faccessat => &SYS_faccessat,
         setresuid => &SYS_setresuid,
         fallocate => &SYS_fallocate,

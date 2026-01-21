@@ -1488,9 +1488,14 @@ sub mkdirat($$$) {
     return syscall(PVE::Syscall::mkdirat, int($dirfd), $name, int($mode)) == 0;
 }
 
+sub mknodat($$$$) {
+    my ($dirfd, $filename, $mode, $dev) = @_;
+    return syscall(PVE::Syscall::mknodat, int($dirfd), $filename, int($mode), int($dev)) == 0;
+}
+
 sub mknod($$$) {
     my ($filename, $mode, $dev) = @_;
-    return syscall(PVE::Syscall::mknod, $filename, int($mode), int($dev)) == 0;
+    return mknodat(AT_FDCWD, $filename, $mode, $dev);
 }
 
 sub fchownat($$$$$) {
