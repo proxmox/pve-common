@@ -2,10 +2,10 @@ package PVE::CalendarEvent;
 
 use strict;
 use warnings;
-use Data::Dumper;
-use Time::Local;
+
 use PVE::JSONSchema;
 use PVE::Tools qw(trim);
+
 use Proxmox::RS::CalendarEvent;
 
 # Note: This class implements a parser/utils for systemd like calendar exents
