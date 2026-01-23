@@ -1,7 +1,7 @@
 = Setup PVE Development Environment =
 
 0.  Read https://pve.proxmox.com/wiki/Developer_Documentation
-1.  Install Debian 12 Bookworm (you can also start from a PVE installation and
+1.  Install Debian 13 Trixie (you can also start from a PVE installation and
     skip step 2 - 5, 7 - 11)
 2.  Configure the network interface(s)
 3.  Change the IP address of your hostname for proper name resolution
@@ -17,17 +17,26 @@
     run: apt-get update && apt-get install openssh-server
     Connect via ssh to host and switch user to root
 
-6.  Configure 'pvetest' repository in /etc/apt/sources.list.d/:
+6.  Configure 'pve-test' repository in /etc/apt/sources.list.d/:
 
-    run: echo "deb http://download.proxmox.com/debian bookworm pvetest" > /etc/apt/sources.list.d/pve-development.list
+    run:
+    ```
+cat >> /etc/apt/sources.list.d/pve-development.sources << EOF
+Types: deb
+URIs: http://download.proxmox.com/debian/pve
+Suites: trixie
+Components: pve-test
+Signed-By: /etc/apt/trusted.gpg.d/proxmox-release-trixie.gpg
+EOF
+    ```
 
 7.  Add the repository key, run:
 
-    wget -O /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg "https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg"
+    wget -O /etc/apt/trusted.gpg.d/proxmox-release-trixie.gpg "https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg"
 
 8.  run: apt-get update && apt-get dist-upgrade
 9.  run: apt-get install proxmox-ve
-10. run: mv /etc/apt/sources.list.d/pve-enterprise.list /etc/apt/sources.list.d/pve-enterprise.list.bak
+10. run: mv /etc/apt/sources.list.d/pve-enterprise.sources /etc/apt/sources.list.d/pve-enterprise.sources.bak
 
 11. You should now have a working Proxmox VE installation.
     Open a browser: https://<host_IP_address>:8006 e.g. https://10.0.0.90:8006
@@ -55,33 +64,28 @@ helpers) and use:
 # mk-build-deps --install
 in the top-level directory of a git repository.
 
-apt-get install autotools-dev autogen dh-autoreconf dkms doxygen check pkg-config \
-groff quilt dpatch automake autoconf libtool lintian libdevel-cycle-perl \
+apt-get install autotools-dev autogen dh-autoreconf dkms doxygen check \
+pkg-config groff quilt automake autoconf libtool lintian libdevel-cycle-perl \
 libjson-perl libcommon-sense-perl liblinux-inotify2-perl libio-stringy-perl \
-libstring-shellquote-perl dh-systemd rpm2cpio libsqlite3-dev sqlite3 \
-libglib2.0-dev librrd-dev librrds-perl rrdcached libdigest-hmac-perl \
-libxml-parser-perl gdb libcrypt-openssl-random-perl \
-libcrypt-openssl-rsa-perl libnet-ldap-perl libauthen-pam-perl \
-libjson-xs-perl libterm-readline-gnu-perl oathtool libmime-base32-perl \
-liboath0 libpci-dev texi2html libsdl1.2-dev libgnutls28-dev \
-libspice-protocol-dev xfslibs-dev libnuma-dev libaio-dev \
-pve-libspice-server-dev libusbredirparser-dev glusterfs-common \
-libusb-1.0-0-dev librbd-dev libpopt-dev iproute bridge-utils numactl \
-glusterfs-common ceph-common python-ceph libgoogle-perftools4 \
-libfile-chdir-perl lvm2 glusterfs-client liblockfile-simple-perl \
-libsystemd-dev libreadline-gplv2-dev libio-multiplex-perl \
-libnetfilter-log-dev libipset3 ipset socat libsasl2-dev libogg-dev \
-python-pyparsing libfilesys-df-perl libcrypt-ssleay-perl \
-libfile-readbackwards-perl libanyevent-perl libanyevent-http-perl \
-unzip liblocale-po-perl libfile-sync-perl cstream \
-lzop dtach hdparm gdisk parted ttf-dejavu-core \
-liblzma-dev dosfstools mtools libxen-dev libfuse-dev libcpg-dev libquorum-dev \
-libcmap-dev libuuid-perl libqb-dev libapparmor-dev docbook2x libcap-dev \
-dh-apparmor graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev \
-libdlm-dev libudev-dev asciidoc-dblatex source-highlight libiscsi-dev \
-libiscsi7 librsvg2-bin libarchive-dev libgpgme-dev libcurl4-gnutls-dev \
-libtest-mockmodule-perl libjemalloc-dev libjpeg-dev
-
+libstring-shellquote-perl rpm2cpio libsqlite3-dev sqlite3 libglib2.0-dev \
+librrd-dev librrds-perl rrdcached libdigest-hmac-perl libxml-parser-perl gdb \
+libcrypt-openssl-random-perl libcrypt-openssl-rsa-perl libnet-ldap-perl \
+libauthen-pam-perl libjson-xs-perl libterm-readline-gnu-perl oathtool \
+libmime-base32-perl liboath0 libpci-dev texi2html libsdl1.2-dev libgnutls28-dev \
+libspice-protocol-dev xfslibs-dev libnuma-dev libaio-dev libusbredirparser-dev \
+libusb-1.0-0-dev librbd-dev libpopt-dev bridge-utils numactl ceph-common \
+libgoogle-perftools4 libfile-slurp-perl libcorosync-common-dev \
+libfile-chdir-perl lvm2 liblockfile-simple-perl libsystemd-dev \
+libio-multiplex-perl libnetfilter-log-dev ipset socat libsasl2-dev libogg-dev \
+libfilesys-df-perl libcrypt-ssleay-perl libfile-readbackwards-perl \
+libanyevent-perl libanyevent-http-perl unzip liblocale-po-perl \
+libfile-sync-perl cstream lzop dtach hdparm gdisk parted liblzma-dev \
+dosfstools mtools libfuse-dev libcpg-dev libquorum-dev libcmap-dev \
+libuuid-perl libqb-dev libapparmor-dev docbook2x libcap-dev dh-apparmor \
+graphviz libseccomp-dev libglib-perl libgtk3-perl libnss3-dev libdlm-dev \
+libudev-dev asciidoc-dblatex source-highlight libiscsi-dev libiscsi7 \
+librsvg2-bin libarchive-dev libgpgme-dev libcurl4-gnutls-dev \
+libtest-mockmodule-perl libjpeg-dev
 
 = Compile PVE packages from Source =
 
