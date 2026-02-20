@@ -352,7 +352,7 @@ sub read_meminfo {
     $res->{swapfree} = $d->{swapfree};
     $res->{swapused} = $res->{swaptotal} - $res->{swapfree};
 
-    my $spages = PVE::Tools::file_read_firstline("/sys/kernel/mm/ksm/pages_sharing") // 0;
+    my $spages = eval { PVE::Tools::file_read_firstline("/sys/kernel/mm/ksm/pages_sharing") } // 0;
     $res->{memshared} = int($spages) * 4096;
 
     my $arc_stats = eval { PVE::Tools::file_get_contents("/proc/spl/kstat/zfs/arcstats") };
