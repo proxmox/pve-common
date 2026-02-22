@@ -651,6 +651,7 @@ register_file(
     \&update_etc_resolv_conf,
 );
 
+# Deprecated: use PVE::Systemd::get_timezone() instead
 sub read_etc_timezone {
     my ($filename, $fd) = @_;
 
@@ -661,6 +662,7 @@ sub read_etc_timezone {
     return $timezone;
 }
 
+# Deprecated: use PVE::Systemd::set_timezone($timezone) instead
 sub write_etc_timezone {
     my ($filename, $fh, $timezone) = @_;
 

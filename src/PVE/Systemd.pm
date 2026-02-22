@@ -10,7 +10,8 @@ use Net::DBus::Reactor;
 use POSIX qw(EINTR);
 use Socket qw(SOCK_DGRAM);
 
-use PVE::Tools qw(file_set_contents file_get_contents trim);
+use PVE::Exception qw(raise_param_exc);
+use PVE::Tools qw(file_set_contents file_get_contents run_command trim);
 
 sub escape_unit {
     my ($val, $is_path) = @_;
@@ -283,6 +284,38 @@ sub write_ini {
     }
 
     file_set_contents($filename, $content);
+}
+
+# Use systemds timedatectl for managing timezone settings
+sub get_timezone {
+    my $timezone;
+
+    PVE::Tools::run_command(
+        ['timedatectl', 'show', '--property=Timezone', '--value'],
+        outfunc => sub { $timezone //= shift },
+    );
+
+    return $timezone;
+}
+
+sub set_timezone {
+    my ($timezone) = @_;
+
+    raise_param_exc({ 'timezone' => "No such timezone" })
+        if (!grep { $_ eq $timezone } list_timezones());
+
+    PVE::Tools::run_command(['timedatectl', 'set-timezone', $timezone]);
+}
+
+sub list_timezones {
+    my @timezones = ();
+
+    PVE::Tools::run_command(
+        ['timedatectl', 'list-timezones'],
+        outfunc => sub { push(@timezones, shift); },
+    );
+
+    return @timezones;
 }
 
 =head3 notify()
