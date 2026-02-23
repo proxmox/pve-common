@@ -1678,6 +1678,15 @@ sub move_mount($$$$$) {
     );
 }
 
+sub mount_setattr($$$$$$$) {
+    my ($dirfd, $path, $flags, $attr_set, $attr_clr, $propagation, $userns_fd) = @_;
+
+    my $attr = pack("Q4", $attr_set, $attr_clr, $propagation, $userns_fd);
+    return 0 ==
+        syscall(&PVE::Syscall::mount_setattr, int($dirfd), $path, int($flags), $attr,
+            length($attr));
+}
+
 sub fsopen($$) {
     my ($fsname, $flags) = @_;
     return PVE::Syscall::file_handle_result(syscall(&PVE::Syscall::fsopen, $fsname, int($flags)));

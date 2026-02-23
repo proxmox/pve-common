@@ -27,6 +27,7 @@ BEGIN {
         renameat2 => &SYS_renameat2,
         open_tree => &SYS_open_tree,
         move_mount => &SYS_move_mount,
+        mount_setattr => &SYS_mount_setattr,
         fsopen => &SYS_fsopen,
         fsconfig => &SYS_fsconfig,
         fsmount => &SYS_fsmount,
