@@ -55,6 +55,7 @@ our @EXPORT_OK = qw(
     file_copy
     get_host_arch
     O_PATH
+    O_CLOEXEC
     O_TMPFILE
     AT_EMPTY_PATH
     AT_FDCWD
