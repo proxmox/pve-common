@@ -10,7 +10,7 @@ use POSIX qw();
 use Socket qw(PF_INET PF_INET6 SOCK_DGRAM IPPROTO_IP);
 use Time::HiRes qw (gettimeofday);
 
-use PVE::Tools;
+use PVE::File;
 use PVE::UPID;
 
 use constant IFF_UP => 1;
@@ -83,7 +83,7 @@ sub read_cpuinfo {
 sub read_proc_uptime {
     my $ticks = shift;
 
-    my $line = PVE::Tools::file_read_firstline("/proc/uptime");
+    my $line = PVE::File::file_read_first_line("/proc/uptime");
     if ($line && $line =~ m|^(\d+\.\d+)\s+(\d+\.\d+)\s*$|) {
         if ($ticks) {
             return (int($1 * $clock_ticks), int($2 * $clock_ticks));
@@ -96,7 +96,7 @@ sub read_proc_uptime {
 }
 
 sub kernel_version {
-    my $line = PVE::Tools::file_read_firstline("/proc/version");
+    my $line = PVE::File::file_read_first_line("/proc/version");
 
     if ($line && $line =~ m|^Linux\sversion\s((\d+(?:\.\d+)+)-?(\S+)?)|) {
         my ($fullversion, $version_numbers, $extra) = ($1, $2, $3);
@@ -131,7 +131,7 @@ sub check_kernel_release {
 
 sub read_loadavg {
 
-    my $line = PVE::Tools::file_read_firstline('/proc/loadavg');
+    my $line = PVE::File::file_read_first_line('/proc/loadavg');
 
     if ($line =~ m|^(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+\d+/\d+\s+\d+\s*$|) {
         return wantarray ? ($1, $2, $3) : $1;
@@ -270,7 +270,7 @@ sub read_proc_stat {
 sub read_proc_pid_stat {
     my $pid = shift;
 
-    my $statstr = PVE::Tools::file_read_firstline("/proc/$pid/stat");
+    my $statstr = PVE::File::file_read_first_line("/proc/$pid/stat");
 
     if ($statstr
         && $statstr =~
@@ -352,10 +352,10 @@ sub read_meminfo {
     $res->{swapfree} = $d->{swapfree};
     $res->{swapused} = $res->{swaptotal} - $res->{swapfree};
 
-    my $spages = eval { PVE::Tools::file_read_firstline("/sys/kernel/mm/ksm/pages_sharing") } // 0;
+    my $spages = eval { PVE::File::file_read_first_line("/sys/kernel/mm/ksm/pages_sharing") } // 0;
     $res->{memshared} = int($spages) * 4096;
 
-    my $arc_stats = eval { PVE::Tools::file_get_contents("/proc/spl/kstat/zfs/arcstats") };
+    my $arc_stats = eval { PVE::File::file_get_contents("/proc/spl/kstat/zfs/arcstats") };
 
     if (my $arc_fh = IO::File->new("/proc/spl/kstat/zfs/arcstats", "r")) {
         my $arc = {};
@@ -381,7 +381,7 @@ sub read_memory_usage {
 
     my $ps = 4096;
 
-    my $line = PVE::Tools::file_read_firstline("/proc/$$/statm");
+    my $line = PVE::File::file_read_first_line("/proc/$$/statm");
 
     if ($line =~ m/^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*/) {
         $res->{size} = $1 * $ps;
@@ -454,7 +454,7 @@ sub read_proc_net_route {
 }
 
 sub read_proc_mounts {
-    return PVE::Tools::file_get_contents("/proc/mounts", 512 * 1024);
+    return PVE::File::file_get_contents("/proc/mounts", 512 * 1024);
 }
 
 # mounts encode spaces (\040), tabs (\011), newlines (\012), backslashes (\\ or \134)

@@ -17,9 +17,9 @@ my $proc = {
 };
 
 my $pve_common_tools;
-$pve_common_tools = Test::MockModule->new('PVE::Tools');
+$pve_common_tools = Test::MockModule->new('PVE::File');
 $pve_common_tools->mock(
-    file_read_firstline => sub {
+    file_read_first_line => sub {
         my ($filename) = @_;
 
         $filename =~ s!^/proc/!!;
