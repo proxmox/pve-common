@@ -44,11 +44,7 @@ use constant {
     RENAME_WHITEOUT => (1 << 2),
 };
 
-sub file_set_contents {
-    my ($filename, $data, $perm, $force_utf8) = @_;
-
-    $perm = 0644 if !defined($perm);
-
+sub file_set_contents($filename, $data, $perm = 0644, $force_utf8 = 0) {
     my $tmpname = "$filename.tmp.$$";
 
     eval {
