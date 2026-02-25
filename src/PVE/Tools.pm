@@ -1513,11 +1513,7 @@ sub fchownat($$$$$) {
 sub fchmodat($$$$) {
     my ($dirfd, $pathname, $mode, $flags) = @_;
     return syscall(
-        PVE::Syscall::fchmodat,
-        int($dirfd),
-        $pathname,
-        int($mode),
-        int($flags),
+        PVE::Syscall::fchmodat, int($dirfd), $pathname, int($mode), int($flags),
     ) == 0;
 }
 
