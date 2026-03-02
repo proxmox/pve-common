@@ -13,8 +13,10 @@ use POSIX qw(EEXIST EOPNOTSUPP);
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
+    file_exists
     file_set_contents
     file_get_contents
+    file_get_size
     file_read_first_line
     file_read_last_line
     dir_glob_regex
@@ -279,6 +281,18 @@ sub dir_glob_foreach($dir, $regex, $func) {
             }
         }
     }
+}
+
+# easier to mock for testing than '-f'.
+sub file_exists {
+    my ($path) = @_;
+    return -f $path;
+}
+
+# easier to mock for testing than '-s'.
+sub file_get_size {
+    my ($path) = @_;
+    return -s $path;
 }
 
 1;
