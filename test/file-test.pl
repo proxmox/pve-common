@@ -24,9 +24,20 @@ my $first_line = "Et repudiandae deleniti dolorem harum deleniti enim.";
 my $last_line = "Reprehenderit minus ratione quia magnam.";
 my $two_lines = "$first_line\n$last_line\n";
 
-# simple write-read-compare test
+# simple write-read-compare test including basic error behavior before it was written.
+
+is(PVE::File::file_exists("$test_dir/two_lines"), undef, "not yet written file does not exist");
+
+PVE::File::file_get_size("$test_dir/two_lines");
+is($!, "No such file or directory", "ENOENT str is correctly set");
+is($!{ENOENT}, 2, "ENOENTR errno is correctly set");
 
 PVE::File::file_set_contents("$test_dir/two_lines", $two_lines);
+
+is(!!PVE::File::file_exists("$test_dir/two_lines"), 1, "written file exists");
+
+is(PVE::File::file_get_size("$test_dir/two_lines"), 94, "file size matches");
+
 my $two_lines_written = PVE::File::file_get_contents("$test_dir/two_lines");
 is_deeply($two_lines, $two_lines_written, "simple write-read-compare test with two lines");
 
