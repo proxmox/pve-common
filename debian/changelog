@@ -1,3 +1,21 @@
+libpve-common-perl (9.1.8) trixie; urgency=medium
+
+  * timezone: add systemd/timedatectl helpers to PVE::Systemd, as usage of
+    '/etc/timezone' is deprecated by tzdata maintainers. The INotify-based
+    timezone functions are marked as deprecated accordingly.
+
+  * procfs tools: meminfo: gracefully handle KSM info not being readable, as
+    can happen in restricted build environments like sbuild, which caused
+    dependent package builds (e.g. pmg-api) to fail.
+
+  * file: add file_exists and file_get_size helpers to PVE::File, which are
+    easier to mock in tests than Perl's native -f and -s file test operators.
+
+  * procfs tools: switch from PVE::Tools to the leaner PVE::File module to
+    reduce the dependency footprint.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 03 Mar 2026 22:46:37 +0100
+
 libpve-common-perl (9.1.7) trixie; urgency=medium
 
   * tools: add mknodat syscall wrapper and use it for the legacy mknod helper,
