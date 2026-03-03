@@ -284,14 +284,12 @@ sub dir_glob_foreach($dir, $regex, $func) {
 }
 
 # easier to mock for testing than '-f'.
-sub file_exists {
-    my ($path) = @_;
+sub file_exists($path) {
     return -f $path;
 }
 
 # easier to mock for testing than '-s'.
-sub file_get_size {
-    my ($path) = @_;
+sub file_get_size($path) {
     return -s $path;
 }
 
