@@ -1,3 +1,22 @@
+libpve-common-perl (9.1.9) trixie; urgency=medium
+
+  * tools: export O_CLOEXEC constant.
+
+  * syscall, tools: add flags and wrapper for the mount_setattr syscall.
+
+  * various schema improvements w.r.t. alias handling:
+    - fix alias handling for API parameters (check_object) — aliased keys were
+      not remapped to their canonical name, so backend code reading the
+      canonical key got undef.
+    - fix alias conflict in property strings silently letting the second value
+      win when both a key and its alias target are set.
+    - make alias entries implicitly optional for objects, allowing bare
+     '{ alias => 'target' }' declarations without redundant type and optional
+     properties. This was already allowed for the property-string
+     micro-format.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 26 Mar 2026 23:31:00 +0100
+
 libpve-common-perl (9.1.8) trixie; urgency=medium
 
   * timezone: add systemd/timedatectl helpers to PVE::Systemd, as usage of
