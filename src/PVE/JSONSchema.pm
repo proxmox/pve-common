@@ -1435,9 +1435,12 @@ sub check_prop {
         check_prop($value, $schema->{extends}, $path, $errors);
     }
 
+    # aliases are always optional and their value is remapped to the target key, so skip validation
+    return if $schema->{alias};
+
     if (!defined($value)) {
         return if $schema->{type} && $schema->{type} eq 'null';
-        if (!$schema->{optional} && !$schema->{alias} && !$schema->{group} && !$optional_for_type) {
+        if (!$schema->{optional} && !$schema->{group} && !$optional_for_type) {
             add_error($errors, $path, "property is missing and it is not optional");
         }
         return;
