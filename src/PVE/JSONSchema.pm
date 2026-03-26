@@ -1280,6 +1280,21 @@ sub check_object {
         return;
     }
 
+    # remap aliased keys so validation and backend code see canonical names
+    for my $k (keys %$value) {
+        my $subschema = $schema->{$k} // next;
+        my $alias = $subschema->{alias} // next;
+        if (defined($value->{$alias})) {
+            add_error(
+                $errors,
+                $path ? "$path.$k" : $k,
+                "cannot set both '$k' and its alias target '$alias'",
+            );
+        } else {
+            $value->{$alias} = delete $value->{$k};
+        }
+    }
+
     foreach my $k (keys %$schema) {
         my $instance_type = get_instance_type($schema, $k, $value);
         check_prop($value->{$k}, $schema->{$k}, $path ? "$path.$k" : $k, $errors, $instance_type);
