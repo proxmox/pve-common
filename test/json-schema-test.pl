@@ -93,6 +93,10 @@ my $property_string_tests = [
             { in => "active=yes" },
             { in => "active=on" },
             { in => "active=wrong", must_fail => qr/type check \('boolean'\) failed/ },
+            {
+                in => "enabled=1,active=1",
+                must_fail => qr/already defined \(via alias\)/,
+            },
         ],
     },
     # TODO: more tests, like complex formats and ranges and the like

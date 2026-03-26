@@ -1082,6 +1082,7 @@ sub parse_property_string {
                 }
                 $k = $alias;
                 $schema = $format->{$k};
+                die "key '$k' is already defined (via alias)\n" if defined($res->{$k});
             }
 
             die "invalid key in comma-separated list property: $k\n" if !$schema;
