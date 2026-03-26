@@ -76,6 +76,25 @@ my $property_string_tests = [
             { in => "enabled=on" },
         ],
     },
+    {
+        name => 'alias-in-property-str',
+        format => {
+            enabled => {
+                type => 'boolean',
+                default_key => 1,
+            },
+            active => { alias => 'enabled' },
+        },
+        out => { enabled => 1 },
+        subtests => [
+            { in => "1" },
+            { in => "active=1" },
+            { in => "active=true" },
+            { in => "active=yes" },
+            { in => "active=on" },
+            { in => "active=wrong", must_fail => qr/type check \('boolean'\) failed/ },
+        ],
+    },
     # TODO: more tests, like complex formats and ranges and the like
 ];
 
