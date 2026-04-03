@@ -29,6 +29,7 @@ LIB_SOURCES = \
 	RESTEnvironment.pm \
 	RESTHandler.pm \
 	SafeSyslog.pm \
+	Seccomp.pm \
 	SectionConfig.pm \
 	SysFSTools.pm \
 	Syscall.pm \
