@@ -441,8 +441,7 @@ register_standard_option(
     {
         type => 'string',
         description => 'Unicast MAC address.',
-        verbose_description =>
-            'A common MAC address with the I/G (Individual/Group) bit not set.',
+        verbose_description => 'A common MAC address with the I/G (Individual/Group) bit not set.',
         format_description => "XX:XX:XX:XX:XX:XX",
         optional => 1,
         format => 'mac-addr',
@@ -760,8 +759,7 @@ register_standard_option(
 register_standard_option(
     'remote-viewer-config',
     {
-        description =>
-            "Returned values can be directly passed to the 'remote-viewer' application.",
+        description => "Returned values can be directly passed to the 'remote-viewer' application.",
         additionalProperties => 1,
         properties => {
             type => { type => 'string' },

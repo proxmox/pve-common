@@ -644,11 +644,7 @@ sub update_etc_resolv_conf {
 }
 
 register_file(
-    'resolvconf',
-    "/etc/resolv.conf",
-    \&read_etc_resolv_conf,
-    undef,
-    \&update_etc_resolv_conf,
+    'resolvconf', "/etc/resolv.conf", \&read_etc_resolv_conf, undef, \&update_etc_resolv_conf,
 );
 
 # Deprecated: use PVE::Systemd::get_timezone() instead

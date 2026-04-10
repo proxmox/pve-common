@@ -92,7 +92,8 @@ sub setup_tc_rate_limit {
     eval { run_command("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1"); };
     eval {
         run_command(
-            "/sbin/tc filter del dev $iface parent ffff: protocol all pref 50 u32 >/dev/null 2>&1");
+            "/sbin/tc filter del dev $iface parent ffff: protocol all pref 50 u32 >/dev/null 2>&1"
+        );
     };
     eval { run_command("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1"); };
     eval { run_command("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1"); };
