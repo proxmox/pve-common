@@ -1,3 +1,10 @@
+libpve-common-perl (9.1.11) trixie; urgency=medium
+
+  * ticket: support encoding and verifying port for spice tickets as a
+    defense-in-depth measure.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 21 Apr 2026 20:02:06 +0200
+
 libpve-common-perl (9.1.10) trixie; urgency=medium
 
   * syscall: add wrappers for seccomp, write, exit, exit_group and brk.
