@@ -1,3 +1,15 @@
+libpve-common-perl (8.3.8) bookworm; urgency=medium
+
+  * ticket: support encoding and verifying port for spice tickets as a
+    defense-in-depth measure.
+
+  * syscall: add wrappers for seccomp, write, exit, exit_group and brk.
+
+  * add new PVE::Seccomp module with helpers for generating simple BPF
+    programs for seccomp filtering.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 21 Apr 2026 20:05:57 +0200
+
 libpve-common-perl (8.3.7) bookworm; urgency=medium
 
   * fix #7193: allow vlan-interfaces as physical bridge ports.
