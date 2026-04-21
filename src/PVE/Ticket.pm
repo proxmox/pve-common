@@ -110,7 +110,7 @@ sub verify_rsa_ticket {
 }
 
 sub assemble_spice_ticket {
-    my ($secret, $username, $vmid, $node) = @_;
+    my ($secret, $username, $vmid, $node, $port) = @_;
 
     my ($seconds, $microseconds) = gettimeofday;
 
@@ -137,6 +137,7 @@ sub assemble_spice_ticket {
     # Note: RSA signature are too long (>=256 charaters) and make problems with remote-viewer
 
     my $plain = "pvespiceproxy:${timestamp}:${vmid}:" . lc($node);
+    $plain .= ":${port}" if defined($port);
 
     # produces 40 characters
     my $sig = unpack("H*", Digest::SHA::sha1($plain, $secret));
@@ -156,7 +157,24 @@ sub verify_spice_connect_url {
 
     return undef if !$connect_str;
 
-    if ($connect_str =~ m/^pvespiceproxy:([a-z0-9]{8}):(\d+):(\S+)::([a-z0-9]{40}):(\d+)$/) {
+    if ($connect_str =~ m/^pvespiceproxy:([a-z0-9]{8}):(\d+):(\S+):(\d+)::([a-z0-9]{40}):(\d+)$/) {
+        my ($timestamp, $vmid, $node, $signed_port, $hexsig, $port) = ($1, $2, $3, $4, $5, $6, $7);
+        my $ttime = hex($timestamp);
+        my $age = time() - $ttime;
+
+        # use very limited lifetime - is this enough?
+        return undef if !(($age > -20) && ($age < 40));
+
+        return undef if $signed_port != $port;
+
+        my $plain = "pvespiceproxy:$timestamp:$vmid:$node:$port";
+        my $sig = unpack("H*", Digest::SHA::sha1($plain, $secret));
+
+        if ($sig eq $hexsig) {
+            return ($vmid, $node, $port);
+        }
+    } elsif ($connect_str =~ m/^pvespiceproxy:([a-z0-9]{8}):(\d+):(\S+)::([a-z0-9]{40}):(\d+)$/) {
+        # FIXME: MAJOR VERSION: drop this fallback for old-style ticket without port
         my ($timestamp, $vmid, $node, $hexsig, $port) = ($1, $2, $3, $4, $5, $6);
         my $ttime = hex($timestamp);
         my $age = time() - $ttime;
