@@ -1,3 +1,12 @@
+libpve-common-perl (9.1.10) trixie; urgency=medium
+
+  * syscall: add wrappers for seccomp, write, exit, exit_group and brk.
+
+  * add new PVE::Seccomp module with helpers for generating simple BPF
+    programs for seccomp filtering.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 21 Apr 2026 17:34:17 +0200
+
 libpve-common-perl (9.1.9) trixie; urgency=medium
 
   * tools: export O_CLOEXEC constant.
