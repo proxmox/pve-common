@@ -175,4 +175,51 @@ sub verify_spice_connect_url {
     return undef;
 }
 
+my sub generate_random_bytes_in_range {
+    my ($length, $min, $max) = @_;
+
+    die "generate_random_bytes_in_range: invalid length $length\n" if $length < 1;
+    die "generate_random_bytes_in_range: invalid max $max\n" if $max > 255;
+    die "generate_random_bytes_in_range: invalid min $min\n" if $min < 0;
+    die "generate_random_bytes_in_range: min $min >= max $max\n" if $min >= $max;
+
+    my $interval_len = $max - $min + 1;
+
+    # Reject values that cannot be mapped to the same interval without adding bias.
+    # Look how many copies of the inclusive interval [$min,$max] can fit and drop the remainder.
+    my $reject_from = 256 - (256 % $interval_len);
+
+    my $count = 0;
+    my $str = '';
+
+    # If 256 is a multiple of the interval length, only 1 try is needed, since every value can be
+    # mapped.
+    # The worst interval length is 129, for which everything from 129 is rejected, but even then,
+    # the expected number of good bytes is still half of the generated ones. With length 1, the
+    # chance to fail is about 2^(-retries). Just use 100, so it should never fail in practice.
+    my $retry = 100;
+    for (my $i = 0; $i < $retry; $i++) {
+        my $rand_bytes = Crypt::OpenSSL::Random::random_bytes($length);
+        die "generate_random_bytes_in_range: failed to generate random bytes!\n" if !$rand_bytes;
+
+        for my $byte (map { ord($_) } split('', $rand_bytes)) {
+            next if $byte >= $reject_from;
+            $str .= chr($min + ($byte % $interval_len));
+            $count++;
+            last if $count == $length;
+        }
+
+        last if $count == $length;
+    }
+
+    die "generate_random_bytes_in_range: failed to generate random bytes after $retry samples!\n"
+        if $count != $length;
+
+    return $str;
+}
+
+sub generate_vnc_password {
+    return generate_random_bytes_in_range(8, ord('!'), ord('`'));
+}
+
 1;
