@@ -257,6 +257,13 @@ my sub split_namespaced_parameter : prototype($$) {
     return ($namespace, $snapshot);
 }
 
+# Get the server identity information for this backup server.
+sub get_server_identity {
+    my ($self) = @_;
+
+    return run_client_cmd($self, "server-identity");
+}
+
 # lists all snapshots, optionally limited to a specific group
 sub get_snapshots {
     my ($self, $group) = @_;
