@@ -66,6 +66,8 @@ sub normalize_pci_id {
 #         subsystem_device => '0xfefe',
 #         subsystem_vendor_name => 'Foo Europe GmbH',
 #         subsystem_device_name => 'Bar 9001AF OC',
+#         physfn => '0000:01:00.0',
+#         virtfns => { virtfn0 => '0000:01:00.1', virtfn1 => '0000:01:00.2' },
 #     },
 #     ...
 # ]
@@ -138,6 +140,30 @@ sub lspci {
                 $res->{subsystem_device} = $sub_device if defined($sub_device);
                 $res->{subsystem_vendor_name} = $sub_vendor_name if defined($sub_vendor_name);
                 $res->{subsystem_device_name} = $sub_device_name if defined($sub_device_name);
+
+                if (my $physfn_device = readlink("$devdir/physfn")) {
+                    # usually this results in "../<pci-id>"
+                    if ($physfn_device =~ m!/(${pciregex})$!) {
+                        $res->{physfn} = $1;
+                    }
+                }
+
+                my $virtfns = {};
+                dir_glob_foreach(
+                    $devdir,
+                    'virtfn\d+',
+                    sub {
+                        my ($virtfn) = @_;
+                        my $virtfn_device = readlink("$devdir/$virtfn")
+                            or return;
+                        # usually this results in "../<pci-id>"
+                        if ($virtfn_device =~ m!/(${pciregex})$!) {
+                            $virtfns->{$virtfn} = $1;
+                        }
+                    },
+                );
+
+                $res->{virtfns} = $virtfns if %$virtfns;
             }
 
             push @$devices, $res;
