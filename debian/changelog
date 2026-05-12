@@ -1,3 +1,14 @@
+libpve-common-perl (9.1.12) trixie; urgency=medium
+
+  * pbs-client: add support for the 'server-identity' command, which allows
+    retrieving a unique identifier for a Proxmox Backup Server instance.
+
+  * sysfs tools: add 'physfn' and 'virtfns' fields to verbose 'lspci' output,
+    exposing SR-IOV physical/virtual function relationships, useful e.g. for
+    displaying related devices like vGPU instances together.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 13 May 2026 01:03:53 +0200
+
 libpve-common-perl (9.1.11) trixie; urgency=medium
 
   * ticket: support encoding and verifying port for spice tickets as a
