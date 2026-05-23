@@ -1,3 +1,10 @@
+libpve-common-perl (9.1.13) trixie; urgency=medium
+
+  * json schema: register a 'pve-node-location' format so the datacenter and
+    per-node geographic location property string share a single definition.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 24 May 2026 01:32:24 +0200
+
 libpve-common-perl (9.1.12) trixie; urgency=medium
 
   * pbs-client: add support for the 'server-identity' command, which allows
