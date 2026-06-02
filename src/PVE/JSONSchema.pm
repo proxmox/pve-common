@@ -316,27 +316,30 @@ sub pve_verify_vmid {
 register_format('pve-node', \&pve_verify_node_name);
 
 # geographic location of a node or, as datacenter-wide default, the cluster
-register_format('pve-node-location', {
-    name => {
-        type => 'string',
-        description => 'The name of the location of this node',
-        typetext => '<name>',
-        optional => 1,
-        maxLength => 128,
+register_format(
+    'pve-node-location',
+    {
+        name => {
+            type => 'string',
+            description => 'The name of the location of this node',
+            typetext => '<name>',
+            optional => 1,
+            maxLength => 128,
+        },
+        latitude => {
+            type => 'number',
+            description => "The latitude of the nodes location in degrees.",
+            minimum => -90,
+            maximum => 90,
+        },
+        longitude => {
+            type => 'number',
+            description => "The longitude of the nodes location in degrees.",
+            minimum => -180,
+            maximum => 180,
+        },
     },
-    latitude => {
-        type => 'number',
-        description => "The latitude of the nodes location in degrees.",
-        minimum => -90,
-        maximum => 90,
-    },
-    longitude => {
-        type => 'number',
-        description => "The longitude of the nodes location in degrees.",
-        minimum => -180,
-        maximum => 180,
-    },
-});
+);
 
 sub pve_verify_node_name {
     my ($node, $noerr) = @_;
