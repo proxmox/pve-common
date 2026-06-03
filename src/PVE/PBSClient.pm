@@ -132,6 +132,51 @@ my sub open_encryption_key {
     return $keyfd;
 }
 
+sub master_pubkey_file_name {
+    my ($self) = @_;
+
+    return "$self->{secret_dir}/$self->{storeid}.master.pem";
+}
+
+sub set_master_pubkey {
+    my ($self, $key) = @_;
+
+    my $master_pubkey_file = $self->master_pubkey_file_name();
+    mkdir($self->{secret_dir});
+
+    PVE::Tools::file_set_contents($master_pubkey_file, "$key\n", 0600);
+}
+
+sub delete_master_pubkey {
+    my ($self) = @_;
+
+    my $master_pubkey_file = $self->master_pubkey_file_name();
+
+    if (!unlink($master_pubkey_file)) {
+        return if $! == ENOENT;
+        die "failed to delete the master public key! $!\n";
+    }
+}
+
+# Returns a file handle if there is a master key, or `undef` if there is not. Dies on error.
+sub open_master_pubkey {
+    my ($self) = @_;
+
+    my $master_pubkey_file = $self->master_pubkey_file_name();
+
+    my $keyfd;
+    if (!open($keyfd, '<', $master_pubkey_file)) {
+        if ($! == ENOENT) {
+            die "master public key configured but no key file found!\n"
+                if $self->{scfg}->{'master-pubkey'};
+            return undef;
+        }
+        die "failed to open master public key: $master_pubkey_file: $!\n";
+    }
+
+    return $keyfd;
+}
+
 my $USE_CRYPT_PARAMS = {
     'proxmox-backup-client' => {
         backup => 1,
@@ -144,11 +189,16 @@ my $USE_CRYPT_PARAMS = {
     },
 };
 
+my $USE_MASTER_KEY = {
+    backup => 1,
+};
+
 my sub do_raw_client_cmd {
     my ($self, $client_cmd, $param, %opts) = @_;
 
     my $client_bin = delete($opts{binary}) || 'proxmox-backup-client';
     my $use_crypto = $USE_CRYPT_PARAMS->{$client_bin}->{$client_cmd} // 0;
+    my $use_master = $USE_MASTER_KEY->{$client_cmd};
 
     my $client_exe = "/usr/bin/$client_bin";
     die "executable not found '$client_exe'! $client_bin not installed?\n" if !-x $client_exe;
@@ -165,7 +215,7 @@ my sub do_raw_client_cmd {
     push(@$cmd, $client_exe, $client_cmd);
 
     # This must live in the top scope to not get closed before the `run_command`
-    my $keyfd;
+    my ($keyfd, $master_fd);
     if ($use_crypto) {
         if (defined($keyfd = open_encryption_key($self))) {
             my $flags = fcntl($keyfd, F_GETFD, 0)
@@ -173,6 +223,13 @@ my sub do_raw_client_cmd {
             fcntl($keyfd, F_SETFD, $flags & ~FD_CLOEXEC)
                 or die "failed to remove FD_CLOEXEC from encryption key file descriptor\n";
             push(@$cmd, '--crypt-mode=encrypt', '--keyfd=' . fileno($keyfd));
+            if ($use_master && defined($master_fd = $self->open_master_pubkey())) {
+                my $flags = fcntl($master_fd, F_GETFD, 0)
+                    // die "failed to get file descriptor flags: $!\n";
+                fcntl($master_fd, F_SETFD, $flags & ~FD_CLOEXEC)
+                    or die "failed to remove FD_CLOEXEC from master public key file descriptor\n";
+                push @$cmd, '--master-pubkey-fd=' . fileno($master_fd);
+            }
         } else {
             push(@$cmd, '--crypt-mode=none');
         }
