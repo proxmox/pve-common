@@ -1,3 +1,13 @@
+libpve-common-perl (9.1.14) trixie; urgency=medium
+
+  * pbs-client: rename an existing encryption key before auto-generating a new
+    one, matching the behavior of the storage plugin.
+
+  * pbs-client: add support for a master public key, to embed a master-key
+    encrypted copy of the data encryption key into each backup for recovery.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 05 Jun 2026 08:54:58 +0200
+
 libpve-common-perl (9.1.13) trixie; urgency=medium
 
   * json schema: register a 'pve-node-location' format so the datacenter and
