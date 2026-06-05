@@ -1435,13 +1435,13 @@ sub check_prop {
                 }
 
                 for my $inner_path (keys $inner_errors->%*) {
-                    add_error($collected_errors, $inner_path, $inner_errors->{$path});
+                    add_error($collected_errors, $inner_path, $inner_errors->{$inner_path});
                 }
             }
 
             if (!$is_valid) {
                 for my $inner_path (keys $collected_errors->%*) {
-                    add_error($errors, $inner_path, $collected_errors->{$path});
+                    add_error($errors, $inner_path, $collected_errors->{$inner_path});
                 }
             }
         }
