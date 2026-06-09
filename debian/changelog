@@ -1,3 +1,14 @@
+libpve-common-perl (9.1.15) trixie; urgency=medium
+
+  * pbs client: surface the full error output of failed proxmox-backup-client
+    commands, so callers see the actual cause, like a certificate fingerprint
+    mismatch, instead of only a terse connect error.
+
+  * json schema: display the actual per-alternative error messages when a
+    oneOf schema check fails, instead of empty strings.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 09 Jun 2026 23:53:21 +0200
+
 libpve-common-perl (9.1.14) trixie; urgency=medium
 
   * pbs-client: rename an existing encryption key before auto-generating a new
