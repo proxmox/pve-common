@@ -268,6 +268,14 @@ my sub run_client_cmd : prototype($$;$$$$) {
     my $json_str = '';
     my $outfunc = sub { $json_str .= "$_[0]\n" };
 
+    # 'errmsg' only keeps the last stderr line, so capture the rest to surface the actual
+    # cause, like a certificate fingerprint mismatch
+    my $errlines = '';
+    my $errfunc = sub {
+        chomp(my $line = $_[0]); # combined with 'errmsg' the lines keep their newline
+        $errlines .= "$line\n";
+    };
+
     $binary = 'proxmox-backup-client' if !defined($binary);
 
     $param = [] if !defined($param);
@@ -275,15 +283,22 @@ my sub run_client_cmd : prototype($$;$$$$) {
 
     $param = [@$param, '--output-format=json'] if !$no_output;
 
-    do_raw_client_cmd(
-        $self,
-        $client_cmd,
-        $param,
-        outfunc => $outfunc,
-        errmsg => "$binary failed",
-        binary => $binary,
-        namespace => $namespace,
-    );
+    eval {
+        do_raw_client_cmd(
+            $self,
+            $client_cmd,
+            $param,
+            outfunc => $outfunc,
+            errfunc => $errfunc,
+            errmsg => "$binary failed",
+            binary => $binary,
+            namespace => $namespace,
+        );
+    };
+    if (my $err = $@) {
+        chomp(my $details = $errlines);
+        die length($details) ? "$err$details\n" : $err;
+    }
 
     return undef if $no_output;
 
