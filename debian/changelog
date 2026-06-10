@@ -1,3 +1,11 @@
+libpve-common-perl (9.1.16) trixie; urgency=medium
+
+  * pbs client: keep the original line order when surfacing a multi-line
+    proxmox-backup-client error, instead of moving its last line to the front
+    and leaving a dangling 'Caused by:'.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 10 Jun 2026 19:03:20 +0200
+
 libpve-common-perl (9.1.15) trixie; urgency=medium
 
   * pbs client: surface the full error output of failed proxmox-backup-client
