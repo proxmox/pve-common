@@ -17,6 +17,7 @@ use Linux::Inotify2;
 use POSIX;
 
 use PVE::Exception qw(raise_param_exc);
+use PVE::File;
 use PVE::IPRoute2;
 use PVE::JSONSchema;
 use PVE::ProcFSTools;
@@ -181,7 +182,7 @@ sub update_file {
         my $new = &$update($filename, $fd, $data, @args);
 
         if (defined($new)) {
-            PVE::Tools::file_set_contents($filename, $new, $ccinfo->{perm});
+            PVE::File::file_set_contents($filename, $new, $ccinfo->{perm});
         } else {
             unlink $filename;
         }

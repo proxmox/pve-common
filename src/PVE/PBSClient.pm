@@ -10,8 +10,9 @@ use IO::File;
 use JSON;
 use POSIX qw(mkfifo strftime ENOENT);
 
+use PVE::File qw(file_set_contents file_get_contents file_read_first_line);
 use PVE::JSONSchema qw(get_standard_option);
-use PVE::Tools qw(run_command file_set_contents file_get_contents file_read_firstline $IPV6RE);
+use PVE::Tools qw(run_command $IPV6RE);
 
 # returns a repository string suitable for proxmox-backup-client, pbs-restore, etc.
 # $scfg must have the following structure:
@@ -72,7 +73,7 @@ sub set_password {
     my $pwfile = password_file_name($self);
     mkdir($self->{secret_dir});
 
-    PVE::Tools::file_set_contents($pwfile, "$password\n", 0600);
+    file_set_contents($pwfile, "$password\n", 0600);
 }
 
 sub delete_password {
@@ -88,7 +89,7 @@ sub get_password {
 
     my $pwfile = password_file_name($self);
 
-    return PVE::Tools::file_read_firstline($pwfile);
+    return file_read_first_line($pwfile);
 }
 
 sub encryption_key_file_name {
@@ -103,7 +104,7 @@ sub set_encryption_key {
     my $encfile = $self->encryption_key_file_name();
     mkdir($self->{secret_dir});
 
-    PVE::Tools::file_set_contents($encfile, "$key\n", 0600);
+    file_set_contents($encfile, "$key\n", 0600);
 }
 
 sub delete_encryption_key {
@@ -144,7 +145,7 @@ sub set_master_pubkey {
     my $master_pubkey_file = $self->master_pubkey_file_name();
     mkdir($self->{secret_dir});
 
-    PVE::Tools::file_set_contents($master_pubkey_file, "$key\n", 0600);
+    file_set_contents($master_pubkey_file, "$key\n", 0600);
 }
 
 sub delete_master_pubkey {

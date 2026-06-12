@@ -11,7 +11,8 @@ use POSIX qw(EINTR);
 use Socket qw(SOCK_DGRAM);
 
 use PVE::Exception qw(raise_param_exc);
-use PVE::Tools qw(file_set_contents file_get_contents run_command trim);
+use PVE::File qw(file_set_contents file_get_contents);
+use PVE::Tools qw(run_command trim);
 
 sub escape_unit {
     my ($val, $is_path) = @_;

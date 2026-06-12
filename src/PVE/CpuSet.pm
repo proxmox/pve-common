@@ -2,8 +2,9 @@ package PVE::CpuSet;
 
 use strict;
 use warnings;
-use PVE::Tools;
+use PVE::File;
 use PVE::ProcFSTools;
+use PVE::Tools;
 
 sub new {
     my ($class, $members) = @_;
@@ -37,7 +38,7 @@ sub new_from_path {
         $filename = "$path/cpuset.cpus";
     }
 
-    my $set_text = PVE::Tools::file_read_firstline($filename) // '';
+    my $set_text = PVE::File::file_read_first_line($filename) // '';
 
     my ($count, $members) = parse_cpuset($set_text);
 

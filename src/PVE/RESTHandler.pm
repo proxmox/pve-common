@@ -8,9 +8,9 @@ use HTTP::Status qw(:constants :is status_message);
 use Text::Wrap;
 
 use PVE::Exception qw(raise raise_param_exc);
+use PVE::File;
 use PVE::JSONSchema;
 use PVE::SafeSyslog;
-use PVE::Tools;
 
 my $method_registry = {};
 my $method_by_name = {};
@@ -653,7 +653,7 @@ my $compute_param_mapping_hash = sub {
             next;
         } else {
             $name = $item;
-            $func = sub { return PVE::Tools::file_get_contents($_[0]) };
+            $func = sub { return PVE::File::file_get_contents($_[0]) };
         }
         $desc //= '<filepath>';
         $res->{$name} = { desc => $desc, func => $func, interactive => $interactive };

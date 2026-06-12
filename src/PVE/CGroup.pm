@@ -16,11 +16,8 @@ use IO::File;
 use IO::Select;
 use POSIX qw();
 
+use PVE::File qw(file_get_contents);
 use PVE::ProcFSTools;
-use PVE::Tools qw(
-    file_get_contents
-    file_read_firstline
-);
 
 # We don't want to do a command socket round trip for every cgroup read/write,
 # so any cgroup function needs to have the container's path cached, so this
@@ -43,7 +40,7 @@ sub new {
 my sub get_v1_controllers {
     my $v1 = {};
     my $v2 = 0;
-    my $data = PVE::Tools::file_get_contents('/proc/self/cgroup');
+    my $data = file_get_contents('/proc/self/cgroup');
     while ($data =~ /^\d+:([^:\n]*):.*$/gm) {
         my $type = $1;
         if (length($type)) {

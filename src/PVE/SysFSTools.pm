@@ -5,7 +5,7 @@ use warnings;
 
 use IO::File;
 
-use PVE::Tools qw(file_read_firstline dir_glob_foreach);
+use PVE::File qw(file_read_first_line file_get_contents dir_glob_foreach dir_glob_regex);
 
 my $pcisysfs = "/sys/bus/pci";
 my $domainregex = "[a-f0-9]{4,}";
@@ -94,9 +94,9 @@ sub lspci {
 
             my $devdir = "$pcisysfs/devices/$fullid";
 
-            my $vendor = file_read_firstline("$devdir/vendor");
-            my $device = file_read_firstline("$devdir/device");
-            my $class = file_read_firstline("$devdir/class");
+            my $vendor = file_read_first_line("$devdir/vendor");
+            my $device = file_read_first_line("$devdir/device");
+            my $class = file_read_first_line("$devdir/class");
 
             my $res = {
                 id => $id,
@@ -126,8 +126,8 @@ sub lspci {
             if ($verbose) {
                 my $device_hash = $ids->{$vendor}->{devices}->{$device} // {};
 
-                my $sub_vendor = file_read_firstline("$devdir/subsystem_vendor");
-                my $sub_device = file_read_firstline("$devdir/subsystem_device");
+                my $sub_vendor = file_read_first_line("$devdir/subsystem_vendor");
+                my $sub_device = file_read_first_line("$devdir/subsystem_device");
 
                 my $vendor_name = $ids->{$vendor}->{name};
                 my $device_name = $device_hash->{name};
@@ -206,8 +206,8 @@ sub get_mdev_types {
 
                 my $type_path = "$mdev_path/$type";
 
-                my $available = int(file_read_firstline("$type_path/available_instances"));
-                my $description = PVE::Tools::file_get_contents("$type_path/description");
+                my $available = int(file_read_first_line("$type_path/available_instances"));
+                my $description = file_get_contents("$type_path/description");
 
                 my $entry = {
                     type => $type,
@@ -215,14 +215,14 @@ sub get_mdev_types {
                     available => $available,
                 };
 
-                my $name = file_read_firstline("$type_path/name");
+                my $name = file_read_first_line("$type_path/name");
                 $entry->{name} = $name if defined($name);
 
                 push @$types, $entry;
             },
         );
     } elsif (-f $nvidia_path) {
-        my $creatable = PVE::Tools::file_get_contents($nvidia_path);
+        my $creatable = file_get_contents($nvidia_path);
         for my $line (split("\n", $creatable)) {
             next if $line =~ m/^ID/; # header
             next if $line !~ m/^(.*?)\s*:\s*(.*)$/;
@@ -243,7 +243,7 @@ sub get_mdev_types {
 
 sub check_iommu_support {
     # we have IOMMU support if /sys/class/iommu/ is populated
-    return PVE::Tools::dir_glob_regex('/sys/class/iommu/', "[^\.].*");
+    return dir_glob_regex('/sys/class/iommu/', "[^\.].*");
 }
 
 # writes $buf into $filename, on success returns 1, on error returns 0 and warns
@@ -278,13 +278,13 @@ sub pci_device_info {
 
     my $devdir = "$pcisysfs/devices/$name";
 
-    my $irq = file_read_firstline("$devdir/irq");
+    my $irq = file_read_first_line("$devdir/irq");
     return undef if !defined($irq) || $irq !~ m/^\d+$/;
 
-    my $vendor = file_read_firstline("$devdir/vendor");
+    my $vendor = file_read_first_line("$devdir/vendor");
     return undef if !defined($vendor) || $vendor !~ s/^0x//;
 
-    my $product = file_read_firstline("$devdir/device");
+    my $product = file_read_first_line("$devdir/device");
     return undef if !defined($product) || $product !~ s/^0x//;
 
     $res = {
@@ -300,9 +300,9 @@ sub pci_device_info {
     };
 
     if ($verbose) {
-        my $sub_vendor = file_read_firstline("$devdir/subsystem_vendor");
+        my $sub_vendor = file_read_first_line("$devdir/subsystem_vendor");
         $sub_vendor =~ s/^0x// if defined($sub_vendor);
-        my $sub_device = file_read_firstline("$devdir/subsystem_device");
+        my $sub_device = file_read_first_line("$devdir/subsystem_device");
         $sub_device =~ s/^0x// if defined($sub_device);
 
         $res->{subsystem_vendor} = $sub_vendor if defined($sub_vendor);
@@ -424,7 +424,7 @@ sub pci_create_mdev_device {
         return undef;
     }
 
-    my $instances = file_read_firstline("$mdev_dir/$type/available_instances");
+    my $instances = file_read_first_line("$mdev_dir/$type/available_instances");
     my ($avail) = $instances =~ m/^(\d+)$/;
     die "pci device '$pciid' has no available instances of '$type'\n"
         if $avail < 1;
@@ -452,18 +452,18 @@ sub __scan_usb_device {
     return if $level && $devpath !~ m/^.*[-.](\d+)$/;
     my $port = $level ? int($1 - 1) : 0;
 
-    my $busnum = int(file_read_firstline("$devpath/busnum"));
-    my $devnum = int(file_read_firstline("$devpath/devnum"));
+    my $busnum = int(file_read_first_line("$devpath/busnum"));
+    my $devnum = int(file_read_first_line("$devpath/devnum"));
 
     my $d = {
         port => $port,
         level => $level,
         busnum => $busnum,
         devnum => $devnum,
-        speed => file_read_firstline("$devpath/speed"),
-        class => hex(file_read_firstline("$devpath/bDeviceClass")),
-        vendid => file_read_firstline("$devpath/idVendor"),
-        prodid => file_read_firstline("$devpath/idProduct"),
+        speed => file_read_first_line("$devpath/speed"),
+        class => hex(file_read_first_line("$devpath/bDeviceClass")),
+        vendid => file_read_first_line("$devpath/idVendor"),
+        prodid => file_read_first_line("$devpath/idProduct"),
     };
 
     if ($level) {
@@ -472,13 +472,13 @@ sub __scan_usb_device {
         $d->{usbpath} = $usbpath;
     }
 
-    my $product = file_read_firstline("$devpath/product");
+    my $product = file_read_first_line("$devpath/product");
     $d->{product} = $product if $product;
 
-    my $manu = file_read_firstline("$devpath/manufacturer");
+    my $manu = file_read_first_line("$devpath/manufacturer");
     $d->{manufacturer} = $manu if $manu;
 
-    my $serial => file_read_firstline("$devpath/serial");
+    my $serial => file_read_first_line("$devpath/serial");
     $d->{serial} = $serial if $serial;
 
     push @$res, $d;

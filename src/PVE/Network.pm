@@ -3,6 +3,7 @@ package PVE::Network;
 use strict;
 use warnings;
 
+use PVE::File;
 use PVE::INotify;
 use PVE::IPRoute2;
 use PVE::ProcFSTools;
@@ -129,7 +130,7 @@ sub tap_rate_limit {
 sub read_bridge_mtu {
     my ($bridge) = @_;
 
-    my $mtu = PVE::Tools::file_read_firstline("/sys/class/net/$bridge/mtu");
+    my $mtu = PVE::File::file_read_first_line("/sys/class/net/$bridge/mtu");
     die "bridge '$bridge' does not exist\n" if !$mtu;
 
     if ($mtu =~ /^(\d+)$/) { # avoid insecure dependency (untaint)
@@ -271,7 +272,7 @@ my $bridge_add_interface = sub {
     iface_set_master($iface, $bridge);
 
     my $vlan_aware =
-        PVE::Tools::file_read_firstline("/sys/class/net/$bridge/bridge/vlan_filtering");
+        PVE::File::file_read_first_line("/sys/class/net/$bridge/bridge/vlan_filtering");
 
     if ($vlan_aware) {
 
@@ -342,7 +343,7 @@ my $activate_interface = sub {
 sub add_bridge_fdb {
     my ($iface, $mac) = @_;
 
-    my $learning = PVE::Tools::file_read_firstline("/sys/class/net/$iface/brport/learning");
+    my $learning = PVE::File::file_read_first_line("/sys/class/net/$iface/brport/learning");
     return if !defined($learning) || $learning == 1;
 
     my ($vmid, $devid) = $parse_tap_device_name->($iface, 1);
@@ -363,7 +364,7 @@ sub add_bridge_fdb {
 sub del_bridge_fdb {
     my ($iface, $mac) = @_;
 
-    my $learning = PVE::Tools::file_read_firstline("/sys/class/net/$iface/brport/learning");
+    my $learning = PVE::File::file_read_first_line("/sys/class/net/$iface/brport/learning");
     return if !defined($learning) || $learning == 1;
 
     my ($vmid, $devid) = $parse_tap_device_name->($iface, 1);
@@ -538,7 +539,7 @@ sub tap_plug {
         $cleanup_firewall_bridge->($iface); # remove stale devices
 
         my $vlan_aware =
-            PVE::Tools::file_read_firstline("/sys/class/net/$bridge/bridge/vlan_filtering");
+            PVE::File::file_read_first_line("/sys/class/net/$bridge/bridge/vlan_filtering");
 
         if (!$vlan_aware) {
             die "vlan aware feature need to be enabled to use trunks" if $trunks;
@@ -621,8 +622,8 @@ sub copy_bridge_config {
 
     foreach my $sysname (@$br_configs) {
         eval {
-            my $v0 = PVE::Tools::file_read_firstline("/sys/class/net/$br0/bridge/$sysname");
-            my $v1 = PVE::Tools::file_read_firstline("/sys/class/net/$br1/bridge/$sysname");
+            my $v0 = PVE::File::file_read_first_line("/sys/class/net/$br0/bridge/$sysname");
+            my $v1 = PVE::File::file_read_first_line("/sys/class/net/$br1/bridge/$sysname");
             if ($v0 ne $v1) {
                 PVE::ProcFSTools::write_proc_entry("/sys/class/net/$br1/bridge/$sysname", $v0);
             }

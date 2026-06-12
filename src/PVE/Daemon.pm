@@ -557,7 +557,7 @@ sub start {
 my $read_pid = sub {
     my ($self) = @_;
 
-    my $pid_str = PVE::Tools::file_read_firstline($self->{pidfile});
+    my $pid_str = PVE::File::file_read_first_line($self->{pidfile});
 
     return 0 if !$pid_str;
 
