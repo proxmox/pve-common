@@ -1,7 +1,6 @@
 package PVE::Cmd;
 
-use strict;
-use warnings;
+use v5.36;
 
 use IO::File;
 use IO::Handle;
@@ -25,15 +24,11 @@ our @EXPORT_OK = qw(
     to_string
 );
 
-sub shell_quote {
-    my $str = shift;
-
+sub shell_quote($str) {
     return String::ShellQuote::shell_quote($str);
 }
 
-sub to_string {
-    my ($cmd) = @_;
-
+sub to_string($cmd) {
     die "no arguments" if !$cmd;
 
     return $cmd if !ref($cmd);
@@ -44,9 +39,7 @@ sub to_string {
 }
 
 # split an shell argument string into an array,
-sub split_args {
-    my ($str) = @_;
-
+sub split_args($str) {
     return $str ? [Text::ParseWords::shellwords($str)] : [];
 }
 
@@ -75,9 +68,7 @@ sub split_args {
 #    For instance: the $cmd [ [ 'echo', 'hello', \'>/dev/null' ] ] will not
 #    produce any output, while the $cmd [ [ 'echo', 'hello', '>/dev/null' ] ]
 #    will literally print: hello >/dev/null
-sub run {
-    my ($cmd, %param) = @_;
-
+sub run($cmd, %param) {
     my $old_umask;
     my $cmdstr;
 
@@ -343,13 +334,11 @@ sub run_command {
 }
 
 # Run a command with a tcp socket as standard input.
-sub pipe_socket {
-    my ($cmd, $ip, $port) = @_;
-
+sub pipe_socket($cmd, $ip, $port) {
     my $params = {
         Listen => 1,
         ReuseAddr => 1,
-        Proto => &Socket::IPPROTO_TCP,
+        Proto => Socket::IPPROTO_TCP(),
         GetAddrInfoFlags => 0,
         LocalAddr => $ip,
         LocalPort => $port,
