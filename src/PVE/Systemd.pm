@@ -10,9 +10,10 @@ use Net::DBus::Reactor;
 use POSIX qw(EINTR);
 use Socket qw(SOCK_DGRAM);
 
+use PVE::Cmd qw(run);
 use PVE::Exception qw(raise_param_exc);
 use PVE::File qw(file_set_contents file_get_contents);
-use PVE::Tools qw(run_command trim);
+use PVE::Tools qw(trim);
 
 sub escape_unit {
     my ($val, $is_path) = @_;
@@ -291,7 +292,7 @@ sub write_ini {
 sub get_timezone {
     my $timezone;
 
-    PVE::Tools::run_command(
+    run(
         ['timedatectl', 'show', '--property=Timezone', '--value'],
         outfunc => sub { $timezone //= shift },
     );
@@ -305,15 +306,14 @@ sub set_timezone {
     raise_param_exc({ 'timezone' => "No such timezone" })
         if (!grep { $_ eq $timezone } list_timezones());
 
-    PVE::Tools::run_command(['timedatectl', 'set-timezone', $timezone]);
+    run(['timedatectl', 'set-timezone', $timezone]);
 }
 
 sub list_timezones {
     my @timezones = ();
 
-    PVE::Tools::run_command(
-        ['timedatectl', 'list-timezones'],
-        outfunc => sub { push(@timezones, shift); },
+    run(
+        ['timedatectl', 'list-timezones'], outfunc => sub { push(@timezones, shift); },
     );
 
     return @timezones;

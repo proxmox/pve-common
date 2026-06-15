@@ -656,7 +656,7 @@ sub register_start_command {
             if (&$init_ppid() || $param->{debug}) {
                 $self->start($param->{debug});
             } else {
-                PVE::Tools::run_command(['systemctl', 'start', $self->{name}]);
+                PVE::Cmd::run(['systemctl', 'start', $self->{name}]);
             }
 
             return undef;
@@ -707,7 +707,7 @@ sub register_restart_command {
             if (&$init_ppid()) {
                 &$reload_daemon($self, $use_hup);
             } else {
-                PVE::Tools::run_command(
+                PVE::Cmd::run(
                     ['systemctl', $use_hup ? 'reload-or-restart' : 'restart', $self->{name}]);
             }
 
@@ -764,7 +764,7 @@ sub register_stop_command {
             if (&$init_ppid()) {
                 $self->stop();
             } else {
-                PVE::Tools::run_command(['systemctl', 'stop', $self->{name}]);
+                PVE::Cmd::run(['systemctl', 'stop', $self->{name}]);
             }
 
             return undef;

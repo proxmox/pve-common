@@ -3,11 +3,12 @@ package PVE::Network;
 use strict;
 use warnings;
 
+use PVE::Cmd qw(run);
 use PVE::File;
 use PVE::INotify;
 use PVE::IPRoute2;
 use PVE::ProcFSTools;
-use PVE::Tools qw(run_command lock_file);
+use PVE::Tools qw(lock_file);
 
 use File::Basename;
 use IO::Socket::IP;
@@ -90,26 +91,26 @@ sub setup_tc_rate_limit {
     my ($iface, $rate, $burst) = @_;
 
     # these are allowed / expected to fail, e.g. when there is no previous rate limit to remove
-    eval { run_command("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1"); };
+    eval { run("/sbin/tc class del dev $iface parent 1: classid 1:1 >/dev/null 2>&1"); };
     eval {
-        run_command(
+        run(
             "/sbin/tc filter del dev $iface parent ffff: protocol all pref 50 u32 >/dev/null 2>&1"
         );
     };
-    eval { run_command("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1"); };
-    eval { run_command("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1"); };
+    eval { run("/sbin/tc qdisc del dev $iface ingress >/dev/null 2>&1"); };
+    eval { run("/sbin/tc qdisc del dev $iface root >/dev/null 2>&1"); };
 
     return if !$rate;
 
     # tbf does not work for unknown reason
     #$TC qdisc add dev $DEV root tbf rate $RATE latency 100ms burst $BURST
     # so we use htb instead
-    run_command("/sbin/tc qdisc add dev $iface root handle 1: htb default 1");
-    run_command("/sbin/tc class add dev $iface parent 1: classid 1:1 "
+    run("/sbin/tc qdisc add dev $iface root handle 1: htb default 1");
+    run("/sbin/tc class add dev $iface parent 1: classid 1:1 "
         . "htb rate ${rate}bps burst ${burst}b");
 
-    run_command("/sbin/tc qdisc add dev $iface handle ffff: ingress");
-    run_command(
+    run("/sbin/tc qdisc add dev $iface handle ffff: ingress");
+    run(
         "/sbin/tc filter add dev $iface parent ffff: prio 50 basic police rate ${rate}bps burst ${burst}b mtu 64kb drop"
     );
 
@@ -191,7 +192,7 @@ sub check_iface_name : prototype($) {
 
 sub iface_delete : prototype($) {
     my ($iface) = @_;
-    run_command(['/sbin/ip', 'link', 'delete', 'dev', $iface], noerr => 1) == 0
+    run(['/sbin/ip', 'link', 'delete', 'dev', $iface], noerr => 1) == 0
         or die "failed to delete interface '$iface'\n";
     return;
 }
@@ -202,14 +203,14 @@ sub iface_create : prototype($$@) {
     eval { check_iface_name($iface) };
     die "failed to create interface '$iface' - $@" if $@;
 
-    run_command(['/sbin/ip', 'link', 'add', $iface, 'type', $type, @args], noerr => 1) == 0
+    run(['/sbin/ip', 'link', 'add', $iface, 'type', $type, @args], noerr => 1) == 0
         or die "failed to create interface '$iface'\n";
     return;
 }
 
 sub iface_set : prototype($@) {
     my ($iface, @opts) = @_;
-    run_command(['/sbin/ip', 'link', 'set', $iface, @opts], noerr => 1) == 0
+    run(['/sbin/ip', 'link', 'set', $iface, @opts], noerr => 1) == 0
         or die "failed to set interface options for '$iface' (" . join(' ', @opts) . ")\n";
     return;
 }
@@ -249,7 +250,7 @@ sub disable_ipv6 {
 my $bridge_enable_port_isolation = sub {
     my ($iface) = @_;
 
-    eval { run_command(['/sbin/bridge', 'link', 'set', 'dev', $iface, 'isolated', 'on']) };
+    eval { run(['/sbin/bridge', 'link', 'set', 'dev', $iface, 'isolated', 'on']) };
     die "unable to enable port isolation on interface $iface - $@\n" if $@;
 };
 
@@ -265,7 +266,7 @@ my $bridge_add_interface = sub {
     my ($bridge, $iface, $tag, $trunks) = @_;
 
     my $bridgemtu = read_bridge_mtu($bridge);
-    eval { run_command(['/sbin/ip', 'link', 'set', $iface, 'mtu', $bridgemtu]) };
+    eval { run(['/sbin/ip', 'link', 'set', $iface, 'mtu', $bridgemtu]) };
 
     # drop link local address (it can't be used when on a bridge anyway)
     disable_ipv6($iface);
@@ -276,27 +277,23 @@ my $bridge_add_interface = sub {
 
     if ($vlan_aware) {
 
-        eval { run_command(['/sbin/bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094']) };
+        eval { run(['/sbin/bridge', 'vlan', 'del', 'dev', $iface, 'vid', '1-4094']) };
         die "failed to remove default vlan tags of $iface - $@\n" if $@;
 
         if ($trunks) {
             my @trunks_array = split /;/, $trunks;
             foreach my $trunk (@trunks_array) {
-                eval {
-                    run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $trunk]);
-                };
+                eval { run(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $trunk]); };
                 die "unable to add vlan $trunk to interface $iface - $@\n" if $@;
             }
         } elsif (!$tag) {
-            eval {
-                run_command(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', '2-4094']);
-            };
+            eval { run(['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', '2-4094']); };
             die "unable to add default vlan tags to interface $iface - $@\n" if $@;
         }
 
         $tag = 1 if !$tag;
         eval {
-            run_command(
+            run(
                 ['/sbin/bridge', 'vlan', 'add', 'dev', $iface, 'vid', $tag, 'pvid', 'untagged']
             );
         };
@@ -324,7 +321,7 @@ my $ovs_bridge_add_port = sub {
         push @$cmd, '--', 'set', 'Interface', $iface, 'type=internal';
     }
 
-    eval { run_command($cmd) };
+    eval { run($cmd) };
     die "can't add ovs port '$iface' - $@\n" if $@;
 
     disable_ipv6($iface);
@@ -336,7 +333,7 @@ my $activate_interface = sub {
     my $cmd = ['/sbin/ip', 'link', 'set', $iface, 'up'];
     push @$cmd, ('mtu', $mtu) if $mtu;
 
-    eval { run_command($cmd) };
+    eval { run($cmd) };
     die "can't activate interface '$iface' - $@\n" if $@;
 };
 
@@ -349,13 +346,12 @@ sub add_bridge_fdb {
     my ($vmid, $devid) = $parse_tap_device_name->($iface, 1);
     return if !defined($vmid);
 
-    run_command(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $iface, 'master', 'static']);
+    run(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $iface, 'master', 'static']);
 
     my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = $compute_fwbr_names->($vmid, $devid);
 
     if (-d "/sys/class/net/$vethfwpeer") {
-        run_command(
-            ['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $vethfwpeer, 'master', 'static']);
+        run(['/sbin/bridge', 'fdb', 'append', $mac, 'dev', $vethfwpeer, 'master', 'static']);
     }
 
     return;
@@ -370,12 +366,12 @@ sub del_bridge_fdb {
     my ($vmid, $devid) = $parse_tap_device_name->($iface, 1);
     return if !defined($vmid);
 
-    run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $iface, 'master', 'static']);
+    run(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $iface, 'master', 'static']);
 
     my ($fwbr, $vethfw, $vethfwpeer, $ovsintport) = $compute_fwbr_names->($vmid, $devid);
 
     if (-d "/sys/class/net/$vethfwpeer") {
-        run_command(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $vethfwpeer, 'master', 'static']);
+        run(['/sbin/bridge', 'fdb', 'del', $mac, 'dev', $vethfwpeer, 'master', 'static']);
     }
 
     return;
@@ -390,7 +386,7 @@ sub tap_create {
 
     eval {
         disable_ipv6($iface);
-        run_command([
+        run([
             '/sbin/ip', 'link', 'set', $iface, 'up', 'promisc', 'on', 'mtu', $bridgemtu,
         ]);
     };
@@ -420,7 +416,7 @@ sub veth_create {
 
             push @$cmd, 'addr', $mac if $mac;
 
-            run_command($cmd);
+            run($cmd);
         };
         die "can't create interface $veth - $@\n" if $@;
     }
@@ -495,7 +491,7 @@ my $cleanup_firewall_bridge = sub {
 
     # cleanup old port config from any openvswitch bridge
     if (-d "/sys/class/net/$ovsintport") {
-        run_command(
+        run(
             "/usr/bin/ovs-vsctl del-port $ovsintport",
             outfunc => sub { },
             errfunc => sub { },
@@ -528,7 +524,7 @@ sub tap_plug {
 
     # cleanup old port config from any openvswitch bridge
     eval {
-        run_command(
+        run(
             "/usr/bin/ovs-vsctl del-port $iface",
             outfunc => sub { },
             errfunc => sub { },
@@ -594,7 +590,7 @@ sub tap_unplug {
     $cleanup_firewall_bridge->($iface);
     #cleanup old port config from any openvswitch bridge
     eval {
-        run_command(
+        run(
             "/usr/bin/ovs-vsctl del-port $iface",
             outfunc => sub { },
             errfunc => sub { },
@@ -646,7 +642,7 @@ sub activate_bridge_vlan_slave {
             push @$cmd, 'link', $iface;
             push @$cmd, 'name', $ifacevlan;
             push @$cmd, 'type', 'vlan', 'id', $tag;
-            run_command($cmd);
+            run($cmd);
         };
         die "can't add vlan tag $tag to interface $iface - $@\n" if $@;
 
@@ -697,7 +693,7 @@ sub activate_bridge_vlan {
         }
 
         my $bridgemtu = read_bridge_mtu($bridge);
-        eval { run_command(['/sbin/ip', 'link', 'set', $bridgevlan, 'mtu', $bridgemtu]) };
+        eval { run(['/sbin/ip', 'link', 'set', $bridgevlan, 'mtu', $bridgemtu]) };
 
         # for each physical interface (eth or bridge) bind them to bridge vlan
         foreach my $iface (@ifaces) {
@@ -784,7 +780,7 @@ sub is_ip_in_cidr {
 # returns an array ref of: { addr => "IP", cidr => "IP/PREFIXLEN", family => "inet|inet6" }
 sub get_reachable_networks {
     my $raw = '';
-    run_command([qw(ip -j addr show up scope global)], outfunc => sub { $raw .= shift });
+    run([qw(ip -j addr show up scope global)], outfunc => sub { $raw .= shift });
     my $decoded = decode_json($raw);
 
     my $addrs = []; # filter/transform first so that we can sort correctly more easily below
@@ -867,7 +863,7 @@ sub get_local_ip_from_cidr {
 
     my $IPs = {};
     my $i = 1;
-    run_command(
+    run(
         ['/sbin/ip', 'address', 'show', 'to', $cidr, 'up'],
         outfunc => sub {
             if ($_[0] =~ m!^\s*inet(?:6)?\s+($PVE::Tools::IPRE)(?:/\d+|\s+peer\s+)!) {
@@ -961,7 +957,7 @@ sub is_ovs_bridge {
     return 0 if !-e '/bin/ovs-vsctl';
 
     # will return 2 if bridge doesn't exist
-    my $res = PVE::Tools::run_command(['/bin/ovs-vsctl', 'br-exists', $bridge], noerr => 1);
+    my $res = run(['/bin/ovs-vsctl', 'br-exists', $bridge], noerr => 1);
     return 0 if $res == 2;
     return 1 if $res == 0;
 

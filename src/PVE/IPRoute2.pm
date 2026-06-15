@@ -3,7 +3,7 @@ package PVE::IPRoute2;
 use v5.36;
 
 use JSON qw(decode_json);
-use PVE::Tools qw(run_command);
+use PVE::Cmd qw(run);
 
 # Some simple wrappers around the iproute2 `ip` utillity.
 
@@ -13,7 +13,7 @@ use PVE::Tools qw(run_command);
 sub ip_link_details() {
     my $link_json = '';
 
-    run_command(
+    run(
         ['ip', '-details', '-json', 'link', 'show'],
         outfunc => sub {
             $link_json .= shift;
@@ -112,7 +112,7 @@ sub altname_mapping($ip_links) {
 sub get_vlan_information() {
     my $bridge_output = '';
 
-    run_command(
+    run(
         [
             'bridge', '-compressvlans', '-json', 'vlan', 'show',
         ],

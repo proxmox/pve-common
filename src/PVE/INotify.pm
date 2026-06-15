@@ -16,6 +16,7 @@ use JSON;
 use Linux::Inotify2;
 use POSIX;
 
+use PVE::Cmd;
 use PVE::Exception qw(raise_param_exc);
 use PVE::File;
 use PVE::IPRoute2;
@@ -66,7 +67,7 @@ sub ccache_compute_diff {
     my $diff = '';
 
     my $cmd = ['/usr/bin/diff', '-b', '-N', '-u', $filename, $shadow];
-    PVE::Tools::run_command(
+    PVE::Cmd::run(
         $cmd,
         noerr => 1,
         outfunc => sub {

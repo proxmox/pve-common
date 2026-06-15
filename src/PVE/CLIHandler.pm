@@ -413,7 +413,7 @@ my $print_bash_completion = sub {
     my $cmdline = substr($ENV{COMP_LINE}, 0, $ENV{COMP_POINT});
     print STDERR "\nCMDLINE: $ENV{COMP_LINE}\n" if $debug;
 
-    my $args = PVE::Tools::split_args($cmdline);
+    my $args = PVE::Cmd::split_args($cmdline);
     shift @$args; # no need for program name
     my $print_result = sub {
         foreach my $p (@_) {

@@ -10,9 +10,10 @@ use IO::File;
 use JSON;
 use POSIX qw(mkfifo strftime ENOENT);
 
+use PVE::Cmd qw(run);
 use PVE::File qw(file_set_contents file_get_contents file_read_first_line);
 use PVE::JSONSchema qw(get_standard_option);
-use PVE::Tools qw(run_command $IPV6RE);
+use PVE::Tools qw($IPV6RE);
 
 # returns a repository string suitable for proxmox-backup-client, pbs-restore, etc.
 # $scfg must have the following structure:
@@ -255,7 +256,7 @@ my sub do_raw_client_cmd {
         $logfunc->("run: " . join(' ', @$cmd));
     }
 
-    run_command($cmd, %opts);
+    run($cmd, %opts);
 }
 
 my sub run_raw_client_cmd : prototype($$$%) {
@@ -312,7 +313,7 @@ sub autogen_encryption_key {
     if (-f $encfile) {
         rename $encfile, "$encfile.old";
     }
-    run_command(
+    run(
         ['proxmox-backup-client', 'key', 'create', '--kdf', 'none', $encfile],
         errmsg => 'failed to create encryption key',
     );
