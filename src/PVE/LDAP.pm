@@ -7,6 +7,7 @@ use Net::IP;
 use Net::LDAP;
 use Net::LDAP::Control::Paged;
 use Net::LDAP::Constant qw(LDAP_CONTROL_PAGED);
+use Net::LDAP::Util qw(escape_filter_value);
 
 sub ldap_connect {
     my ($servers, $scheme, $port, $opts) = @_;
@@ -66,11 +67,12 @@ sub ldap_bind {
 sub get_user_dn {
     my ($ldap, $name, $attr, $base_dn) = @_;
 
+    my $escaped_name = escape_filter_value($name);
     # search for dn
     my $result = $ldap->search(
         base => $base_dn // "",
         scope => "sub",
-        filter => "$attr=$name",
+        filter => "$attr=$escaped_name",
         attrs => ['dn'],
     );
     die $result->error . "\n" if $result->code;
