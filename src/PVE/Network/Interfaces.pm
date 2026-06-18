@@ -4,8 +4,7 @@ package PVE::Network::Interfaces;
 # support. The 'interfaces' file is registered with the PVE::INotify file cache
 # registry (see PVE::INotify), which delegates reading and writing to here.
 
-use strict;
-use warnings;
+use v5.36;
 
 use Encode qw(encode decode);
 
@@ -40,9 +39,7 @@ my $ovs_bond_modes = {
 #    return $bond_modes;
 #}
 
-my $parse_ovs_option = sub {
-    my ($data) = @_;
-
+my $parse_ovs_option = sub($data) {
     my $opts = {};
     foreach my $kv (split(/\s+/, $data || '')) {
         my ($k, $v) = split('=', $kv, 2);
@@ -51,9 +48,7 @@ my $parse_ovs_option = sub {
     return $opts;
 };
 
-my $set_ovs_option = sub {
-    my ($d, %params) = @_;
-
+my $set_ovs_option = sub($d, %params) {
     my $opts = &$parse_ovs_option($d->{ovs_options});
 
     foreach my $k (keys %params) {
@@ -79,9 +74,7 @@ my $set_ovs_option = sub {
     }
 };
 
-my $extract_ovs_option = sub {
-    my ($d, $name) = @_;
-
+my $extract_ovs_option = sub($d, $name) {
     my $opts = &$parse_ovs_option($d->{ovs_options});
 
     my $v = delete $opts->{$name};
@@ -100,9 +93,7 @@ my $extract_ovs_option = sub {
     return $v;
 };
 
-my $check_mtu = sub {
-    my ($ifaces, $parent, $child) = @_;
-
+my $check_mtu = sub($ifaces, $parent, $child) {
     die "check mtu - missing parent interface\n" if !$parent;
     die "check mtu - missing child interface\n" if !$child;
 
@@ -155,16 +146,13 @@ my $check_mtu = sub {
 #     [priority,line]
 #   ]
 # }
-sub read_etc_network_interfaces {
-    my ($filename, $fh) = @_;
+sub read_etc_network_interfaces($filename, $fh) {
     my $ip_links = PVE::IPRoute2::ip_link_details();
     my $active = PVE::ProcFSTools::get_active_network_interfaces();
     return __read_etc_network_interfaces($fh, $ip_links, $active);
 }
 
-sub __read_etc_network_interfaces {
-    my ($fh, $ip_links, $active_ifaces) = @_;
-
+sub __read_etc_network_interfaces($fh, $ip_links = undef, $active_ifaces = undef) {
     my $config = {};
     my $ifaces = $config->{ifaces} = {};
     my $options = $config->{options} = [];
@@ -537,20 +525,16 @@ OUTER:
     return $config;
 }
 
-sub _address_is_cidr {
-    my ($addr) = @_;
+sub _address_is_cidr($addr) {
     return $addr =~ /\/\d+$/ ? 1 : 0;
 }
 
-sub _cidr_split {
-    my ($cidr) = @_;
+sub _cidr_split($cidr) {
     $cidr =~ /^(.+)\/(\d+)$/;
     return ($1, $2); # (address, mask)
 }
 
-sub _get_cidr {
-    my ($addr, $mask) = @_;
-
+sub _get_cidr($addr, $mask) {
     return $addr if _address_is_cidr($addr);
     return undef if !$mask;
 
@@ -562,9 +546,7 @@ sub _get_cidr {
     return undef;
 }
 
-sub __interface_to_string {
-    my ($iface, $d, $family, $first_block, $ifupdown2) = @_;
-
+sub __interface_to_string($iface, $d, $family, $first_block, $ifupdown2 = undef) {
     my $suffix = $family;
     $suffix =~ s/^inet// if defined($suffix);
 
@@ -574,8 +556,7 @@ sub __interface_to_string {
     $raw .= " $family " . $d->{"method$suffix"} if defined $family;
     $raw .= "\n";
 
-    my $add_addr = sub {
-        my ($suffix) = @_;
+    my $add_addr = sub($suffix) {
         if (my $addr = $d->{"address$suffix"}) {
             if ($addr !~ /\/\d+$/ && $d->{"netmask$suffix"}) {
                 if ($d->{"netmask$suffix"} =~ m/^\d+$/) {
@@ -787,9 +768,7 @@ sub __interface_to_string {
         }
     }
 
-    my $add_options_comments = sub {
-        my ($suffix) = @_;
-
+    my $add_options_comments = sub($suffix) {
         foreach my $option (@{ $d->{"options$suffix"} }) {
             $raw .= "\t$option\n";
         }
@@ -813,16 +792,13 @@ sub __interface_to_string {
     return $raw;
 }
 
-sub write_etc_network_interfaces {
-    my ($filename, $fh, $config) = @_;
+sub write_etc_network_interfaces($filename, $fh, $config) {
     my $ifupdown2 = -e '/usr/share/ifupdown2/ifupdown2';
     my $raw = __write_etc_network_interfaces($config, $ifupdown2);
     PVE::Tools::safe_print($filename, $fh, encode('UTF-8', $raw));
 }
 
-sub __write_etc_network_interfaces {
-    my ($config, $ifupdown2) = @_;
-
+sub __write_etc_network_interfaces($config, $ifupdown2 = undef) {
     my $ifaces = $config->{ifaces};
     my @options = @{ $config->{options} };
 
@@ -1102,9 +1078,7 @@ NETWORKDOC
         vxlan => 600000,
     };
 
-    my $lookup_type_prio = sub {
-        my ($iface, $ifaces) = @_;
-
+    my $lookup_type_prio = sub($iface, $ifaces) {
         my ($rootiface, @rest) = split(/[.:]/, $iface);
         my $childlevel = scalar(@rest);
         my $type = $ifaces->{$rootiface}->{type};
