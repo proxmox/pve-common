@@ -12,6 +12,7 @@ use Storable qw(dclone);
 use JSON; # allows simple debug-dumping of variables  `print to_json($foo, {pretty => 1}) ."\n"`
 
 use PVE::INotify;
+use PVE::Network::Interfaces;
 
 # Current config, r() parses a network interface string into this variable
 our $config;
@@ -69,7 +70,7 @@ sub r($;$$) {
     $ip_links //= decode_json(load('ip_link_details'));
     $active //= [split(/\s+/, load('active_interfaces'))];
     open my $fh1, '<', \$ifaces;
-    $config = PVE::INotify::__read_etc_network_interfaces($fh1, $ip_links, $active);
+    $config = PVE::Network::Interfaces::__read_etc_network_interfaces($fh1, $ip_links, $active);
     close $fh1;
 }
 
@@ -77,7 +78,7 @@ sub r($;$$) {
 sub w() {
     # write shouldn't be able to change a previously parsed config
     my $config_clone = dclone($config);
-    return PVE::INotify::__write_etc_network_interfaces($config_clone, 1);
+    return PVE::Network::Interfaces::__write_etc_network_interfaces($config_clone, 1);
 }
 
 ##
