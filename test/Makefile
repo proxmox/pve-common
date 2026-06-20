@@ -14,6 +14,7 @@ TESTS = lock_file.test			\
 	is_deeply_test.test		\
 	section_config_property_isolation_test.test \
 	file-test.test \
+	cmd-test.test \
 
 all:
 
