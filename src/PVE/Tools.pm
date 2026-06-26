@@ -23,11 +23,11 @@ use POSIX qw(EINTR EEXIST EOPNOTSUPP);
 use Scalar::Util 'weaken';
 use Socket qw(AF_INET AF_INET6 AI_ALL AI_V4MAPPED AI_CANONNAME SOCK_DGRAM IPPROTO_TCP);
 use Time::HiRes qw(usleep gettimeofday tv_interval alarm);
-use URI::Escape;
 use base 'Exporter';
 
 use PVE::Cmd;
 use PVE::File;
+use PVE::ParseUtils;
 use PVE::Syscall;
 use PVE::UPID;
 
@@ -80,29 +80,12 @@ our @EXPORT_OK = qw(
     MS_REC
 );
 
-my $IPV4OCTET = "(?:25[0-5]|(?:2[0-4]|1[0-9]|[1-9])?[0-9])";
-our $IPV4RE = "(?:(?:$IPV4OCTET\\.){3}$IPV4OCTET)";
-my $IPV6H16 = "(?:[0-9a-fA-F]{1,4})";
-my $IPV6LS32 = "(?:(?:$IPV4RE|$IPV6H16:$IPV6H16))";
-
-#<<< The Regex is formatted as it is by design to improve readability.
-our $IPV6RE = "(?:" .
-    "(?:(?:" .                               "(?:$IPV6H16:){6})$IPV6LS32)|"
-    . "(?:(?:" .                           "::(?:$IPV6H16:){5})$IPV6LS32)|"
-    . "(?:(?:(?:" .              "$IPV6H16)?::(?:$IPV6H16:){4})$IPV6LS32)|"
-    . "(?:(?:(?:(?:$IPV6H16:){0,1}$IPV6H16)?::(?:$IPV6H16:){3})$IPV6LS32)|"
-    . "(?:(?:(?:(?:$IPV6H16:){0,2}$IPV6H16)?::(?:$IPV6H16:){2})$IPV6LS32)|"
-    . "(?:(?:(?:(?:$IPV6H16:){0,3}$IPV6H16)?::(?:$IPV6H16:){1})$IPV6LS32)|"
-    . "(?:(?:(?:(?:$IPV6H16:){0,4}$IPV6H16)?::" .           ")$IPV6LS32)|"
-    . "(?:(?:(?:(?:$IPV6H16:){0,5}$IPV6H16)?::" .            ")$IPV6H16)|"
-    . "(?:(?:(?:(?:$IPV6H16:){0,6}$IPV6H16)?::" .                    ")))"
-    ;
-#>>>
-
-our $IPRE = "(?:$IPV4RE|$IPV6RE)";
-
-our $EMAIL_USER_RE = qr/[\w\+\-\~]+(\.[\w\+\-\~]+)*/;
-our $EMAIL_RE = qr/$EMAIL_USER_RE@[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+)*/;
+# moved to PVE::ParseUtils; re-exported here for backwards compatibility
+our $IPV4RE = $PVE::ParseUtils::IPV4RE;
+our $IPV6RE = $PVE::ParseUtils::IPV6RE;
+our $IPRE = $PVE::ParseUtils::IPRE;
+our $EMAIL_USER_RE = $PVE::ParseUtils::EMAIL_USER_RE;
+our $EMAIL_RE = $PVE::ParseUtils::EMAIL_RE;
 
 use constant {
     CLONE_NEWNS => 0x00020000,
@@ -313,16 +296,7 @@ sub pipe_socket_to_command {
 }
 
 sub split_list {
-    my $listtxt = shift // '';
-
-    return split(/\0/, $listtxt) if $listtxt =~ m/\0/;
-
-    $listtxt =~ s/[,;]/ /g;
-    $listtxt =~ s/^\s+//;
-
-    my @data = split(/\s+/, $listtxt);
-
-    return @data;
+    return PVE::ParseUtils::split_list(@_);
 }
 
 sub trim {
@@ -698,17 +672,11 @@ sub upid_normalize_status_type {
 
 # useful functions to store comments in config files
 sub encode_text {
-    my ($text) = @_;
-
-    # all control and hi-bit characters, ':' and '%'
-    my $unsafe = "^\x20-\x24\x26-\x39\x3b-\x7e";
-    return uri_escape(Encode::encode("utf8", $text), $unsafe);
+    return PVE::ParseUtils::encode_text(@_);
 }
 
 sub decode_text {
-    my ($data) = @_;
-
-    return Encode::decode("utf8", uri_unescape($data));
+    return PVE::ParseUtils::decode_text(@_);
 }
 
 # NOTE: deprecated - do not use! we now decode all parameters by default

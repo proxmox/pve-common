@@ -29,6 +29,7 @@ LIB_SOURCES = \
 	OTP.pm \
 	PBSClient.pm \
 	PTY.pm \
+	ParseUtils.pm \
 	ProcFSTools.pm \
 	RESTEnvironment.pm \
 	RESTHandler.pm \
