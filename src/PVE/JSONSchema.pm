@@ -7,7 +7,7 @@ use Getopt::Long;
 use Encode::Locale;
 use Encode;
 use Devel::Cycle -quiet; # todo: remove?
-use PVE::Tools qw(split_list $IPV6RE $IPV4RE);
+use PVE::ParseUtils qw(split_list $IPV6RE $IPV4RE);
 use PVE::Exception qw(raise);
 use HTTP::Status qw(:constants);
 use JSON;
@@ -373,7 +373,7 @@ sub parse_idmap {
 
     my $map = {};
 
-    foreach my $entry (PVE::Tools::split_list($idmap)) {
+    foreach my $entry (split_list($idmap)) {
         if ($entry eq '1') {
             $map->{identity} = 1;
         } elsif ($entry =~ m/^([^:]+):([^:]+)$/) {
@@ -645,7 +645,7 @@ register_format('email', \&pve_verify_email);
 sub pve_verify_email {
     my ($email, $noerr) = @_;
 
-    if ($email !~ /^$PVE::Tools::EMAIL_RE$/) {
+    if ($email !~ /^$PVE::ParseUtils::EMAIL_RE$/) {
         return undef if $noerr;
         die "value does not look like a valid email address\n";
     }
@@ -658,8 +658,8 @@ sub pve_verify_email_or_username {
     my ($email, $noerr) = @_;
 
     if (
-        $email !~ /^$PVE::Tools::EMAIL_RE$/
-        && $email !~ /^$PVE::Tools::EMAIL_USER_RE$/
+        $email !~ /^$PVE::ParseUtils::EMAIL_RE$/
+        && $email !~ /^$PVE::ParseUtils::EMAIL_USER_RE$/
     ) {
         return undef if $noerr;
         die "value does not look like a valid email address or user name\n";
@@ -2231,7 +2231,7 @@ sub parse_config : prototype($$$;$) {
         my $comment_re = qr/^\Q$comment_key\E:\s*(.*\S)\s*$/;
         $handle_comment = sub {
             if ($_[0] =~ /^\#(.*)\s*$/ || $_[0] =~ $comment_re) {
-                $comment_data .= PVE::Tools::decode_text($1) . "\n";
+                $comment_data .= PVE::ParseUtils::decode_text($1) . "\n";
                 return 1;
             }
             return undef;
