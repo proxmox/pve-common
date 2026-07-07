@@ -2001,7 +2001,8 @@ sub init_and_run_tests($package) {
         $plugin->register();
     }
 
-    $base->init(property_isolation => 1);
+    $base->private()->{propertyIsolation} = 1;
+    $base->init();
 
     test_compare_deeply(
         $base->createSchema(),

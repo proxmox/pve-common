@@ -53,7 +53,7 @@ package IdenticalPropertiesOnDifferentPlugins {
     package IdenticalPropertiesOnDifferentPlugins::PluginBase {
         use base qw(PVE::SectionConfig);
 
-        my $DEFAULT_DATA = {};
+        my $DEFAULT_DATA = { propertyIsolation => 1 };
 
         sub private($class) {
             return $DEFAULT_DATA;
@@ -183,7 +183,7 @@ package IdenticalPropertyOnDifferentPlugin {
     package IdenticalPropertyOnDifferentPlugin::PluginBase {
         use base qw(PVE::SectionConfig);
 
-        my $DEFAULT_DATA = {};
+        my $DEFAULT_DATA = { propertyIsolation => 1 };
 
         sub private($class) {
             return $DEFAULT_DATA;
@@ -317,7 +317,7 @@ package SamePropertyNamesOnDifferentPlugins {
     package SamePropertyNamesOnDifferentPlugins::PluginBase {
         use base qw(PVE::SectionConfig);
 
-        my $DEFAULT_DATA = {};
+        my $DEFAULT_DATA = { propertyIsolation => 1 };
 
         sub private($class) {
             return $DEFAULT_DATA;
@@ -450,6 +450,7 @@ package OptionalCommonRequiredAndOptional {
         use base qw(PVE::SectionConfig);
 
         my $DEFAULT_DATA = {
+            propertyIsolation => 1,
             propertyList => {
                 common => {
                     type => 'string',
@@ -603,6 +604,7 @@ package RequiredCommonRequiredAndOptional {
         use base qw(PVE::SectionConfig);
 
         my $DEFAULT_DATA = {
+            propertyIsolation => 1,
             propertyList => {
                 common => {
                     type => 'string',
@@ -784,7 +786,7 @@ sub init_and_run_tests($package) {
         $plugin->register();
     }
 
-    $base->init(property_isolation => 1);
+    $base->init();
 
     test_compare_deeply(
         $base->createSchema(),

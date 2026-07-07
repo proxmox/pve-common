@@ -25,6 +25,7 @@ my $defaultData = {
             maxLength => 512,
         },
     },
+    propertyIsolation => 1,
 };
 
 sub private {
@@ -172,7 +173,7 @@ use Test::More;
 
 Conf::One->register();
 Conf::Two->register();
-Conf->init(property_isolation => 1);
+Conf->init();
 
 # FIXME: allow development debug warnings?!
 local $SIG{__WARN__} = sub { die @_; };

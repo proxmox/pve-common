@@ -77,9 +77,10 @@ identical properties for multiple plugins.
 
 =head3 isolated mode
 
-This mode can be used by calling C<L<< init()|/$base->init() >>> with an additional parameter:
+This mode can be used by setting C<propertyIsolation> in the base plugin's
+C<L<< private()|/$base->private() >>> data:
 
-    PVE::Example::BasePlugin->init(property_isolation => 1);
+    propertyIsolation => 1,
 
 With this mode each I<child plugin> gets its own isolated list of properties,
 or in other words, a fully isolated schema namespace. Normally one wants to use
@@ -196,6 +197,7 @@ plugin architecture upfront, for example:
             },
             # [...]
         },
+        propertyIsolation => 0, # set to 1 to enable isolated mode
     };
 
     sub private {
@@ -217,6 +219,10 @@ MAY only add attributes related to C<L<PVE::JSONSchema>> to property
 definitions. Any other attributes, even those specific to C<PVE::SectionConfig>
 (like C<fixed>), are not considered valid. All properties in C<propertyList>
 MUST be defined through a valid JSONSchema.
+
+Property isolation mode can be enabled by setting C<propertyIsolation> to true.
+This replaces the deprecated C<property_isolation> parameter of C<init()>, which
+must not be combined with an explicit C<propertyIsolation> of false.
 
 =cut
 
@@ -694,26 +700,32 @@ sub updateSchema {
 
 =head3 $base->init()
 
-=head3 $base->init(property_isolation => 1)
-
     $base_plugin->init();
-    $base_plugin->init(property_isolation => 1);
 
 This method is used to initialize C<SectionConfig> using all of the
 I<child plugins> that were I<L<< registered|/$plugin->register() >>> beforehand.
 
-Optionally, it is also possible to pass C<property_isolation => 1> to C<%param>
-in order to activate I<isolated mode>. See L</MODES> in the package-level
-documentation for more information.
+B<DEPRECATED:> passing C<< property_isolation => 1 >> in C<%param> also activates
+I<isolated mode>. Set C<propertyIsolation> in the base plugin's
+C<L<< private()|/$base->private() >>> data instead, which is where the decision
+belongs. See L</MODES> in the package-level documentation for more information.
 
 =cut
 
 sub init {
     my ($class, %param) = @_;
 
-    my $property_isolation = $param{property_isolation};
-
     my $pdata = $class->private();
+
+    # Note that the deprecated parameter must not be stored in `$pdata`, as that is shared
+    # between `init()` calls and would turn a second call into a spurious conflict.
+    my $property_isolation = $pdata->{propertyIsolation};
+    if ($param{property_isolation}) {
+        die "must not use both 'propertyIsolation' in 'private()'"
+            . " and 'property_isolation' in 'init()'\n"
+            if defined($property_isolation) && !$property_isolation;
+        $property_isolation = 1;
+    }
 
     for my $k (qw(options plugins plugindata propertyList isolatedPropertyList)) {
         $pdata->{$k} = {} if !$pdata->{$k};
