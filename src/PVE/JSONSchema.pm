@@ -1455,11 +1455,6 @@ sub check_prop {
         }
     }
 
-    # if it extends another schema, it must pass that schema as well
-    if ($schema->{extends}) {
-        check_prop($value, $schema->{extends}, $path, $errors);
-    }
-
     # aliases are always optional and their value is remapped to the target key, so skip validation
     return if $schema->{alias};
 
@@ -1798,13 +1793,6 @@ my $default_schema_noref = {
             description =>
                 "This attribute may take the same values as the \"type\" attribute, however if the instance matches the type or if this value is an array and the instance matches any type or schema in the array, then this instance is not valid.",
         },
-        extends => {
-            type => "object",
-            optional => 1,
-            description =>
-                "This indicates the schema extends the given schema. All instances of this schema must be valid to by the extended schema also.",
-            default => {},
-        },
         # this is from hyper schema
         links => {
             type => "array",
@@ -1857,9 +1845,6 @@ $default_schema->{properties}->{disallow}->{additionalProperties} = 0;
 
 $default_schema->{properties}->{requires}->{properties} = $default_schema->{properties};
 $default_schema->{properties}->{requires}->{additionalProperties} = 0;
-
-$default_schema->{properties}->{extends}->{properties} = $default_schema->{properties};
-$default_schema->{properties}->{extends}->{additionalProperties} = 0;
 
 my $method_schema = {
     type => "object",
