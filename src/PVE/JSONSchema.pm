@@ -2,6 +2,8 @@ package PVE::JSONSchema;
 
 use strict;
 use warnings;
+use feature 'signatures';
+
 use Storable; # for dclone
 use Getopt::Long;
 use Encode::Locale;
