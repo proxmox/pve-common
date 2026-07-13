@@ -15,6 +15,7 @@ BEGIN {
         syncfs => &SYS_syncfs,
         fsync => &SYS_fsync,
         openat => &SYS_openat,
+        openat2 => &SYS_openat2,
         close => &SYS_close,
         mkdirat => &SYS_mkdirat,
         mknodat => &SYS_mknodat,

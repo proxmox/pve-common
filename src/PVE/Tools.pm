@@ -131,6 +131,16 @@ use constant {
     MS_REC => (1 << 14),
 };
 
+# from <linux/openat2.h>
+use constant {
+    RESOLVE_NO_XDEV => 0x01,
+    RESOLVE_NO_MAGICLINKS => 0x02,
+    RESOLVE_NO_SYMLINKS => 0x04,
+    RESOLVE_BENEATH => 0x08,
+    RESOLVE_IN_ROOT => 0x10,
+    RESOLVE_CACHED => 0x20,
+};
+
 sub run_with_timeout {
     my ($timeout, $code, @param) = @_;
 
@@ -1094,14 +1104,8 @@ sub validate_ssh_public_keys {
     }
 }
 
-sub openat($$$;$) {
-    my ($dirfd, $pathname, $flags, $mode) = @_;
-    $dirfd = int($dirfd);
-    $flags = int($flags);
-    $mode = int($mode // 0);
-
-    my $fd = syscall(PVE::Syscall::openat, $dirfd, $pathname, $flags, $mode);
-    return undef if $fd < 0;
+my sub raw_fd_to_fh($$) {
+    my ($fd, $flags) = @_;
     # sysopen() doesn't deal with numeric file descriptors apparently
     # so we need to convert to a mode string for IO::Handle->new_from_fd
     my $flagstr = ($flags & O_RDWR) ? 'rw' : ($flags & O_WRONLY) ? 'w' : 'r';
@@ -1111,6 +1115,31 @@ sub openat($$$;$) {
     syscall(PVE::Syscall::close, $fd); # close
     $! = $err;
     return undef;
+}
+
+sub openat($$$;$) {
+    my ($dirfd, $pathname, $flags, $mode) = @_;
+    $dirfd = int($dirfd);
+    $flags = int($flags);
+    $mode = int($mode // 0);
+
+    my $fd = syscall(PVE::Syscall::openat, $dirfd, $pathname, $flags, $mode);
+    return undef if $fd < 0;
+    return raw_fd_to_fh($fd, $flags);
+}
+
+sub openat2($$$;$$) {
+    my ($dirfd, $pathname, $flags, $mode, $resolve) = @_;
+    $dirfd = int($dirfd);
+    $flags = int($flags);
+    $mode = int($mode // 0);
+    $resolve = int($resolve // 0);
+
+    my $how = pack('QQQ', $flags, $mode, $resolve);
+    # size of open_how struct is 3 * sizeof(u64) = 24
+    my $fd = syscall(PVE::Syscall::openat2, $dirfd, $pathname, $how, 24);
+    return undef if $fd < 0;
+    return raw_fd_to_fh($fd, $flags);
 }
 
 sub mkdirat($$$) {
