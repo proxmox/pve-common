@@ -20,6 +20,7 @@ BEGIN {
         mkdirat => &SYS_mkdirat,
         mknodat => &SYS_mknodat,
         faccessat => &SYS_faccessat,
+        setresgid => &SYS_setresgid,
         setresuid => &SYS_setresuid,
         fallocate => &SYS_fallocate,
         fchownat => &SYS_fchownat,

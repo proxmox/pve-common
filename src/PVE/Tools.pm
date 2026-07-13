@@ -942,6 +942,11 @@ sub parse_host_and_port {
     return; # nothing
 }
 
+sub setresgid($$$) {
+    my ($rgid, $egid, $sgid) = @_;
+    return 0 == syscall(PVE::Syscall::setresgid, int($rgid), int($egid), int($sgid));
+}
+
 sub setresuid($$$) {
     my ($ruid, $euid, $suid) = @_;
     return 0 == syscall(PVE::Syscall::setresuid, int($ruid), int($euid), int($suid));
