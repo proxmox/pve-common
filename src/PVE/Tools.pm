@@ -1176,6 +1176,17 @@ sub fchmodat($$$$) {
     ) == 0;
 }
 
+sub open_in_root($$$;$) {
+    my ($rootdir, $path, $flags, $mode) = @_;
+
+    sysopen(my $dirfh, $rootdir, O_PATH | O_DIRECTORY)
+        or die "failed to open directory '$rootdir' - $!\n";
+    my $fh = openat2(fileno($dirfh), $path, $flags, $mode, RESOLVE_IN_ROOT)
+        or die "failed to open file '$path' in root '$rootdir' - $!\n";
+
+    return $fh;
+}
+
 my $salt_starter = time();
 
 sub encrypt_pw {
