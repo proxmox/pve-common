@@ -1,3 +1,17 @@
+libpve-common-perl (9.1.17) trixie; urgency=medium
+
+  * continue with the refactor and split the big Tools and INotify modules in
+    a backward compatible manner, introducing a PVE::Cmd module, a
+    PVE::ParseUtils module and PVE::Network::Interfaces module, avoiding
+    circular dependencies and pulling in a huge amount of (transitive)
+    dependencies when one just wants to use one of our simple utility
+    functions.
+
+  * ldap: escape the user-provided user name when using it in the LDAP search
+    filter that looks up the user DN.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 14 Jul 2026 08:52:13 +0200
+
 libpve-common-perl (9.1.16) trixie; urgency=medium
 
   * pbs client: keep the original line order when surfacing a multi-line
