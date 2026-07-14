@@ -1290,8 +1290,11 @@ my sub get_instance_type {
     return undef;
 }
 
+# If `$collect_unknown` is set, rather than adding errors for unknown properties, they are listed
+# in the passed hash. Mainly used for handling the interaction of `allOf` with
+# `additionalProperties`.
 sub check_object {
-    my ($path, $schema, $value, $additional_properties, $errors) = @_;
+    my ($path, $schema, $value, $additional_properties, $errors, $collect_unknown) = @_;
 
     # print "Check Object " . Dumper($value) . "\nSchema: " . Dumper($schema);
 
@@ -1365,12 +1368,16 @@ sub check_object {
         }
 
         if (defined($additional_properties) && !$additional_properties) {
-            add_error(
-                $errors,
-                $newpath,
-                "property is not defined in schema "
-                    . "and the schema does not allow additional properties",
-            );
+            if ($collect_unknown) {
+                $collect_unknown->{$k} = 1;
+            } else {
+                add_error(
+                    $errors,
+                    $newpath,
+                    "property is not defined in schema "
+                        . "and the schema does not allow additional properties",
+                );
+            }
             next;
         }
         check_prop($value->{$k}, $additional_properties, $newpath, $errors)
@@ -1391,8 +1398,37 @@ sub check_object_warn {
     return 1;
 }
 
+my sub check_all_of($value, $all_of, $path, $errors, $instance_type, $collect_unknown) {
+    my $first = 1;
+    my $unknown_everywhere = {};
+    for my $subschema ($all_of->@*) {
+        my $unknown_here = {};
+        check_prop($value, $subschema, $path, $errors, $instance_type, $unknown_here);
+        if ($first) {
+            $first = undef;
+            $unknown_everywhere = $unknown_here;
+        } else {
+            for my $k (keys $unknown_everywhere->%*) {
+                delete $unknown_everywhere->{$k} if !exists($unknown_here->{$k});
+            }
+        }
+    }
+    if ($collect_unknown) {
+        $collect_unknown->{$_} = 1 for keys $unknown_everywhere->%*;
+    } else {
+        for my $k (sort keys $unknown_everywhere->%*) {
+            add_error(
+                $errors,
+                $path ? "$path.$k" : $k,
+                "property is not defined in schema "
+                    . "and the schema does not allow additional properties",
+            );
+        }
+    }
+}
+
 sub check_prop {
-    my ($value, $schema, $path, $errors, $instance_type) = @_;
+    my ($value, $schema, $path, $errors, $instance_type, $collect_unknown) = @_;
 
     die "internal error - no schema" if !$schema;
     die "internal error" if !$errors;
@@ -1494,11 +1530,19 @@ sub check_prop {
                 $value,
                 $schema->{additionalProperties},
                 $errors,
+                $collect_unknown,
             );
             return;
+        } elsif (my $all_of = $schema->{allOf}) {
+            return check_all_of($value, $all_of, $path, $errors, $instance_type, $collect_unknown);
         }
 
     } else {
+
+        if ($schema->{allOf}) {
+            add_error($errors, $path, "value must be an object");
+            return;
+        }
 
         if (my $format = $schema->{format}) {
             eval { check_format($format, $value, $path); };
@@ -1622,6 +1666,15 @@ my $default_schema_noref = {
             items => {
                 type => 'object',
                 description => "A valid option of the properties",
+            },
+        },
+        allOf => {
+            type => 'array',
+            description => "A collection of schemas, all of which need to be valid.",
+            optional => 1,
+            items => {
+                type => 'object',
+                description => "A valid subschema.",
             },
         },
         'instance-types' => {
@@ -1824,6 +1877,7 @@ my $default_schema = Storable::dclone($default_schema_noref);
 $default_schema->{properties}->{properties}->{additionalProperties} = $default_schema;
 $default_schema->{properties}->{additionalProperties}->{properties} = $default_schema->{properties};
 $default_schema->{properties}->{oneOf}->{items}->{properties} = $default_schema->{properties};
+$default_schema->{properties}->{allOf}->{items}->{properties} = $default_schema->{properties};
 
 $default_schema->{properties}->{items}->{properties} = $default_schema->{properties};
 $default_schema->{properties}->{items}->{additionalProperties} = 0;

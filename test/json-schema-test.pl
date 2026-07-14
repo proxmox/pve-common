@@ -212,4 +212,251 @@ for my $test ($check_object_alias_tests->@*) {
     };
 }
 
+# check allOf schemas
+my $check_all_of = [
+    {
+        name => 'simple all of',
+        schema => {
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        first => {
+                            type => 'string',
+                        },
+                        'opt-first' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        second => {
+                            type => 'string',
+                        },
+                        'opt-second' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+            ],
+        },
+        subtests => [
+            {
+                name => 'mandatory properties',
+                in => {
+                    first => 'hello',
+                    second => 'hello',
+                },
+            },
+            {
+                name => 'optional properties',
+                in => {
+                    first => 'hello',
+                    'opt-first' => 'hello',
+                    second => 'hello',
+                    'opt-second' => 'hello',
+                },
+            },
+            {
+                name => 'missing properties',
+                in => {
+                    first => 'hello',
+                },
+                must_fail => qr/^second: property is missing and it is not optional/,
+            },
+            {
+                name => 'neither allow additional properties',
+                in => {
+                    first => 'hello',
+                    second => 'hello',
+                    'bad-property' => 1,
+                },
+                must_fail => qr/^bad-property: property is not defined in schema and/,
+            },
+        ],
+    },
+    {
+        name => 'one has additional properties',
+        schema => {
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        first => {
+                            type => 'string',
+                        },
+                        'opt-first' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    additionalProperties => 1,
+                    properties => {
+                        second => {
+                            type => 'string',
+                        },
+                        'opt-second' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+            ],
+        },
+        subtests => [
+            {
+                name => 'mandatory properties',
+                in => {
+                    first => 'hello',
+                    second => 'hello',
+                },
+            },
+            {
+                name => 'optional properties',
+                in => {
+                    first => 'hello',
+                    'opt-first' => 'hello',
+                    second => 'hello',
+                    'opt-second' => 'hello',
+                },
+            },
+            {
+                name => 'missing properties',
+                in => {
+                    second => 'hello',
+                },
+                must_fail => qr/^first: property is missing and it is not optional/,
+            },
+            {
+                name => 'additional properties work',
+                in => {
+                    first => 'hello',
+                    second => 'hello',
+                    'valid-additional-property' => 1,
+                },
+            },
+        ],
+    },
+    {
+        name => 'nested allOf error handling',
+        schema => {
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        first => {
+                            type => 'string',
+                        },
+                        'opt-first' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    allOf => [
+                        {
+                            additionalProperties => 0,
+                            properties => {
+                                second => {
+                                    type => 'string',
+                                },
+                                'opt-second' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
+                        {
+                            additionalProperties => 0,
+                            properties => {
+                                third => {
+                                    type => 'string',
+                                },
+                                'opt-third' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+        subtests => [
+            {
+                name => 'mandatory properties',
+                in => {
+                    first => 'hello',
+                    second => 'hello',
+                    third => 'hello',
+                },
+            },
+            {
+                name => 'optional properties',
+                in => {
+                    first => 'hello',
+                    'opt-first' => 'hello',
+                    second => 'hello',
+                    'opt-second' => 'hello',
+                    third => 'hello',
+                    'opt-third' => 'hello',
+                },
+            },
+            {
+                name => 'missing properties from nested',
+                in => {
+                    first => 'hello',
+                    second => 'hello',
+                },
+                must_fail => qr/^third: property is missing and it is not optional/,
+            },
+            {
+                name => 'missing properties top level',
+                in => {
+                    second => 'hello',
+                    third => 'hello',
+                },
+                must_fail => qr/^first: property is missing and it is not optional/,
+            },
+            {
+                name => 'none allow additional properties',
+                in => {
+                    first => 'hello',
+                    second => 'hello',
+                    third => 'hello',
+                    'bad-property' => 1,
+                },
+                must_fail => qr/^bad-property: property is not defined in schema and/,
+            },
+        ],
+    },
+];
+
+for my $test ($check_all_of->@*) {
+    subtest $test->{name}, sub {
+        for my $subtest ($test->{subtests}->@*) {
+            my $name = $subtest->{name} // 'unnamed';
+            my $value = { $subtest->{in}->%* }; # shallow clone
+
+            my $errors = {};
+            PVE::JSONSchema::check_prop($value, $test->{schema}, undef, $errors);
+            my $err_str = join("\n", map { "$_: $errors->{$_}" } sort keys %$errors);
+
+            if ($subtest->{must_fail}) {
+                like($err_str, $subtest->{must_fail}, "$name - failed as expected");
+            } else {
+                is($err_str, '', "$name - no errors");
+            }
+        }
+        done_testing();
+    };
+}
+
 done_testing();
