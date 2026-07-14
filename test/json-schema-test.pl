@@ -458,5 +458,303 @@ for my $test ($check_all_of->@*) {
         done_testing();
     };
 }
+#
+# check oneOf schemas
+my $check_one_of = [
+    {
+        name => 'simple one-of',
+        schema => {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                enum => ['one', 'two'],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        first => {
+                            type => 'string',
+                        },
+                        'opt-first' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        second => {
+                            type => 'string',
+                        },
+                        'opt-second' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+            ],
+        },
+        subtests => [
+            {
+                name => 'missing type',
+                in => {
+                    first => 'hello',
+                },
+                # The missing type makes the rest of the values unknown.
+                must_fail => {
+                    'type' => qr/^property is missing /,
+                    'first' => qr/^property is not defined /,
+                },
+            },
+            {
+                name => 'explicit null type',
+                in => {
+                    type => undef,
+                    first => 'hello',
+                },
+                # A null type behaves like a missing one: it is reported as missing rather
+                # than as an unknown property, the rest of the values become unknown.
+                must_fail => {
+                    'type' => qr/^property is missing /,
+                    'first' => qr/^property is not defined /,
+                },
+            },
+            {
+                name => 'mandatory properties 1',
+                in => {
+                    type => 'one',
+                    first => 'hello',
+                },
+            },
+            {
+                name => 'mandatory properties 2',
+                in => {
+                    type => 'two',
+                    second => 'hello',
+                },
+            },
+            {
+                name => 'wrong type 1',
+                in => {
+                    type => 'one',
+                    second => 'hello',
+                },
+                must_fail => {
+                    'oneOf[one].first' => qr/^property is missing /,
+                    'oneOf[one].second' => qr/^property is not defined /,
+                },
+            },
+            {
+                name => 'wrong type 2',
+                in => {
+                    type => 'two',
+                    first => 'hello',
+                },
+                must_fail => {
+                    'oneOf[two].first' => qr/^property is not defined /,
+                    'oneOf[two].second' => qr/^property is missing /,
+                },
+            },
+        ],
+    },
+    {
+        name => 'nesting allOf->oneOf->allOf->oneOf',
+        schema => {
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        first => {
+                            type => 'string',
+                        },
+                    },
+                },
+                {
+                    'type-property' => 'type',
+                    'type-property-schema' => {
+                        type => 'string',
+                        enum => [qw(one two)],
+                    },
+                    oneOf => [
+                        {
+                            'instance-type' => 'one',
+                            additionalProperties => 0,
+                            properties => {
+                                'one-a' => {
+                                    type => 'string',
+                                },
+                                'one-b' => {
+                                    type => 'number',
+                                },
+                            },
+                        },
+                        {
+                            'instance-type' => 'two',
+                            allOf => [
+                                {
+                                    additionalProperties => 0,
+                                    properties => {
+                                        'two-a' => {
+                                            type => 'number',
+                                        },
+                                    },
+                                },
+                                {
+                                    additionalProperties => 0,
+                                    properties => {
+                                        'two-b' => {
+                                            type => 'string',
+                                        },
+                                    },
+                                },
+                                {
+                                    'type-property' => 'inner-type',
+                                    'type-property-schema' => {
+                                        type => 'string',
+                                        enum => [qw(inner-a inner-b)],
+                                    },
+                                    optional => 1,
+                                    oneOf => [
+                                        {
+                                            'instance-type' => 'inner-a',
+                                            additionalProperties => 0,
+                                            properties => {
+                                                'inner-a-elem' => {
+                                                    type => 'string',
+                                                    enum => ['correct', 'correct2'],
+                                                },
+                                            },
+                                        },
+                                        {
+                                            'instance-type' => 'inner-b',
+                                            additionalProperties => 0,
+                                            properties => {
+                                                'inner-b-elem' => {
+                                                    type => 'string',
+                                                    enum => ['correct3', 'correct4'],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+        subtests => [
+            {
+                name => 'instance one',
+                in => {
+                    first => 'hello',
+                    type => 'one',
+                    'one-a' => 'hello',
+                    'one-b' => 33,
+                },
+            },
+            {
+                name => 'instance one bad type check',
+                in => {
+                    first => 'hello',
+                    type => 'one',
+                    'one-a' => 'hello',
+                    'one-b' => 'hello',
+                },
+                must_fail => {
+                    'oneOf[one].one-b' => qr/^type check \('number'\) failed/,
+                },
+            },
+            {
+                name => 'instance two/a, nested optional one-of not set',
+                in => {
+                    first => 'hello',
+                    type => 'two',
+                    'two-a' => 33,
+                    'two-b' => 'hello',
+                },
+            },
+            {
+                name => 'instance two/a/inner-a, inner not filled',
+                in => {
+                    first => 'hello',
+                    type => 'two',
+                    'two-a' => 33,
+                    'two-b' => 'hello',
+                    'inner-type' => 'inner-a',
+                },
+                must_fail => {
+                    'oneOf[two].oneOf[inner-a].inner-a-elem' => qr/^property is missing /,
+                },
+            },
+            {
+                name => 'instance two/a/inner-a valid',
+                in => {
+                    first => 'hello',
+                    type => 'two',
+                    'two-a' => 33,
+                    'two-b' => 'hello',
+                    'inner-type' => 'inner-a',
+                    'inner-a-elem' => 'correct',
+                },
+            },
+            {
+                name => 'instance two/a/inner-b with properties of inner-a',
+                in => {
+                    first => 'hello',
+                    type => 'two',
+                    'two-a' => 33,
+                    'two-b' => 'hello',
+                    'inner-type' => 'inner-b',
+                    'inner-a-elem' => 'correct',
+                },
+                must_fail => {
+                    'oneOf[two].oneOf[inner-b].inner-b-elem' => qr/^property is missing /,
+                    'inner-a-elem' => qr/^property is not defined /,
+                },
+            },
+            {
+                name => 'instance two/a/inner-b valid',
+                in => {
+                    first => 'hello',
+                    type => 'two',
+                    'two-a' => 33,
+                    'two-b' => 'hello',
+                    'inner-type' => 'inner-b',
+                    'inner-b-elem' => 'correct3',
+                },
+            },
+        ],
+    },
+];
+
+for my $test ($check_one_of->@*) {
+    subtest $test->{name}, sub {
+        for my $subtest ($test->{subtests}->@*) {
+            my $name = $subtest->{name} // 'unnamed';
+            my $value = { $subtest->{in}->%* }; # shallow clone
+
+            my $errors = {};
+            PVE::JSONSchema::check_prop($value, $test->{schema}, undef, $errors);
+            my $err_str = join("\n", map { "$_: $errors->{$_}" } sort keys %$errors);
+
+            if (my $expected_errors = $subtest->{must_fail}) {
+                for my $key (keys $expected_errors->%*) {
+                    my $err = delete($errors->{$key}) // '';
+                    like($err, $expected_errors->{$key}, "$name.$key failed as expected");
+                }
+                my $err_str = join("\n", map { "$_: $errors->{$_}" } sort keys %$errors);
+                is($err_str, '', "$name - only expected errors");
+            } else {
+                is($err_str, '', "$name - no errors");
+            }
+        }
+        done_testing();
+    };
+}
 
 done_testing();

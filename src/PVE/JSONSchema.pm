@@ -1398,6 +1398,21 @@ sub check_object_warn {
     return 1;
 }
 
+my sub propagate_unknown_properties($path, $errors, $collect_unknown, $new_unknown) {
+    if ($collect_unknown) {
+        $collect_unknown->{$_} = 1 for keys $new_unknown->%*;
+    } else {
+        for my $k (sort keys $new_unknown->%*) {
+            add_error(
+                $errors,
+                $path ? "$path.$k" : $k,
+                "property is not defined in schema "
+                    . "and the schema does not allow additional properties",
+            );
+        }
+    }
+}
+
 my sub check_all_of($value, $all_of, $path, $errors, $instance_type, $collect_unknown) {
     my $first = 1;
     my $unknown_everywhere = {};
@@ -1413,18 +1428,81 @@ my sub check_all_of($value, $all_of, $path, $errors, $instance_type, $collect_un
             }
         }
     }
-    if ($collect_unknown) {
-        $collect_unknown->{$_} = 1 for keys $unknown_everywhere->%*;
-    } else {
-        for my $k (sort keys $unknown_everywhere->%*) {
-            add_error(
+    propagate_unknown_properties($path, $errors, $collect_unknown, $unknown_everywhere);
+}
+
+my sub check_one_of($original_value, $schema, $one_of, $path, $errors, $collect_unknown) {
+    my $type_schema = $schema->{'type-property-schema'};
+
+    return if !$type_schema; # This was a legacy oneOf entry!
+
+    my $type_property = $schema->{'type-property'}
+        or die "missing 'type-property' in oneOf schema\n";
+
+    my $instance_type = $original_value->{$type_property};
+    my $type_prop_errors = {};
+    if (!defined($instance_type)) {
+        # A oneOf itself can be optional, this makes its type property optional.
+        # Its type property is otherwise never optional.
+        #
+        # We now consider all keys unknown, since we don't have a type. The type property
+        # itself is always expected, so exclude it from the unknown set.
+        my $unknown = { map { $_ => 1 } grep { $_ ne $type_property } keys $original_value->%* };
+        propagate_unknown_properties($path, $errors, $collect_unknown, $unknown);
+        return if $schema->{optional};
+
+        # To not copy error handling, we fall through to calling check_prop on the original
+        # $error hash and then return.
+        $type_prop_errors = $errors;
+    }
+
+    check_prop(
+        $instance_type,
+        $type_schema,
+        $path ? "$path.$type_property" : $type_property,
+        $type_prop_errors,
+        undef,
+        $collect_unknown,
+    );
+
+    return if !defined($instance_type);
+
+    # Types are supposed to be enums enumerating legal types. If they fail to
+    # validate, we don't know the rest of the schema, so don't even try:
+    if ($type_prop_errors->%*) {
+        add_error($errors, $path ? "$path.$type_property" : $type_property, $type_prop_errors->{$_})
+            for keys $type_prop_errors->%*;
+
+        # This also means we consider all keys unknown, except for the type property.
+        my $unknown = { map { $_ => 1 } grep { $_ ne $type_property } keys $original_value->%* };
+        propagate_unknown_properties($path, $errors, $collect_unknown, $unknown);
+        return;
+    }
+
+    for my $variant ($one_of->@*) {
+        my $variant_name = $variant->{'instance-type'}
+            or die "missing 'instance-type' in oneOf variant\n";
+        if ($variant_name eq $instance_type) {
+            # Do a shallow clone and remove the type property, so the inner
+            # schema won't complain about it being an additional property.
+            my $value = { $original_value->%* };
+            delete $value->{$type_property};
+
+            my $subpath = "oneOf[$variant_name]";
+            check_prop(
+                $value,
+                $variant,
+                $path ? "$path.$subpath" : $subpath,
                 $errors,
-                $path ? "$path.$k" : $k,
-                "property is not defined in schema "
-                    . "and the schema does not allow additional properties",
+                undef,
+                $collect_unknown,
             );
+            return;
         }
     }
+
+    # Reachable if the type value passes its schema but matches no variant.
+    add_error($errors, $path, "'$instance_type' is not a valid oneOf variant");
 }
 
 sub check_prop {
@@ -1443,7 +1521,7 @@ sub check_prop {
 
     # must pass any of the given schemas
     my $optional_for_type = 0;
-    if ($schema->{oneOf}) {
+    if ($schema->{oneOf} && !$schema->{'type-property-schema'}) {
         # in case we have an instance_type given, just check for that variant
         if ($schema->{'type-property'}) {
             $optional_for_type = 1;
@@ -1535,11 +1613,13 @@ sub check_prop {
             return;
         } elsif (my $all_of = $schema->{allOf}) {
             return check_all_of($value, $all_of, $path, $errors, $instance_type, $collect_unknown);
+        } elsif (my $one_of = $schema->{oneOf}) {
+            return check_one_of($value, $schema, $one_of, $path, $errors, $collect_unknown);
         }
 
     } else {
 
-        if ($schema->{allOf}) {
+        if ($schema->{allOf} || $schema->{oneOf}) {
             add_error($errors, $path, "value must be an object");
             return;
         }
@@ -1686,9 +1766,19 @@ my $default_schema_noref = {
                 type => 'string',
             },
         },
+        'instance-type' => {
+            type => 'string',
+            description => "Value of the enclosing oneOf's type property for this instance.",
+            optional => 1,
+        },
         'type-property' => {
             type => 'string',
             description => "The property to check for instance types.",
+            optional => 1,
+        },
+        'type-property-schema' => {
+            type => 'object',
+            description => "When a 'type-property' is set, this is its (string) schema.",
             optional => 1,
         },
         optional => {
@@ -1884,6 +1974,10 @@ $default_schema->{properties}->{items}->{additionalProperties} = 0;
 
 $default_schema->{properties}->{requires}->{properties} = $default_schema->{properties};
 $default_schema->{properties}->{requires}->{additionalProperties} = 0;
+
+$default_schema->{properties}->{'type-property-schema'}->{properties} =
+    $default_schema->{properties};
+$default_schema->{properties}->{'type-property-schema'}->{additionalProperties} = 0;
 
 my $method_schema = {
     type => "object",
