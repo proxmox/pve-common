@@ -178,7 +178,7 @@ sub __read_etc_network_interfaces($fh, $ip_links = undef, $active_ifaces = undef
     # we try to keep order inside the file
     my $priority = 2; # 1 is reserved for lo
 
-SECTION: while (defined($line = <$fh>)) {
+    SECTION: while (defined($line = <$fh>)) {
         chomp($line);
         next if $line =~ m/^\s*#/;
 
@@ -322,7 +322,7 @@ SECTION: while (defined($line = <$fh>)) {
         }
     }
 
-OUTER:
+    OUTER:
     for my $iface_name (keys $ip_links->%*) {
         my $ip_link = $ip_links->{$iface_name};
 
