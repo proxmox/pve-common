@@ -1468,14 +1468,6 @@ sub check_prop {
 
     return if !check_type($path, $schema->{type}, $value, $errors);
 
-    if ($schema->{disallow}) {
-        my $tmperr = {};
-        if (check_type($path, $schema->{disallow}, $value, $tmperr)) {
-            add_error($errors, $path, "disallowed value was matched");
-            return;
-        }
-    }
-
     if (my $vt = ref($value)) {
 
         if ($vt eq 'ARRAY') {
@@ -1787,12 +1779,6 @@ my $default_schema_noref = {
                 "Bash completion function. This function should return a list of possible values.",
             optional => 1,
         },
-        disallow => {
-            type => "object",
-            optional => 1,
-            description =>
-                "This attribute may take the same values as the \"type\" attribute, however if the instance matches the type or if this value is an array and the instance matches any type or schema in the array, then this instance is not valid.",
-        },
         # this is from hyper schema
         links => {
             type => "array",
@@ -1839,9 +1825,6 @@ $default_schema->{properties}->{oneOf}->{items}->{properties} = $default_schema-
 
 $default_schema->{properties}->{items}->{properties} = $default_schema->{properties};
 $default_schema->{properties}->{items}->{additionalProperties} = 0;
-
-$default_schema->{properties}->{disallow}->{properties} = $default_schema->{properties};
-$default_schema->{properties}->{disallow}->{additionalProperties} = 0;
 
 $default_schema->{properties}->{requires}->{properties} = $default_schema->{properties};
 $default_schema->{properties}->{requires}->{additionalProperties} = 0;
