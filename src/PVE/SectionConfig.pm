@@ -655,8 +655,13 @@ sub updateSchema {
             }
         }
 
+        # optional globals are only usable when a plugin lists them in
+        # options(), which the loop above already added; so keep only the
+        # required globals, such as the section ID and the type - the latter
+        # is carried by update requests to pick the matching per-type variant
         for my $opt (keys $propertyList->%*) {
             next if $props->{$opt};
+            next if $propertyList->{$opt}->{optional};
             $props->{$opt} = { $propertyList->{$opt}->%* };
         }
 

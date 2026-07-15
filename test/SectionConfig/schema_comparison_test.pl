@@ -540,9 +540,9 @@ package OptionalCommonUnused {
 
     sub desc($class) {
         return
-            "in unified mode, optional default properties that plugins"
-            . " do not declare in options() are *not* included in updateSchema"
-            . " - in isolated mode, such properties are included, however";
+            "for both unified and isolated mode, optional default properties"
+            . " that plugins do not declare in options() are *not* included"
+            . " in updateSchema";
     }
 
     package OptionalCommonUnused::PluginBase {
@@ -716,10 +716,6 @@ package OptionalCommonUnused {
                         "two",
                     ],
                     'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
                     type => 'string',
                     optional => 1,
                 },
