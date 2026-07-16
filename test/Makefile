@@ -24,7 +24,7 @@ all:
 export PERLLIB=../src
 
 check: $(TESTS)
-	for d in $(SUBDIRS); do $(MAKE) -C $$d check; done
+	for d in $(SUBDIRS); do $(MAKE) -C $$d check || exit 1; done
 
 %.test: %.pl
 	TZ=UTC-1 ./$<
