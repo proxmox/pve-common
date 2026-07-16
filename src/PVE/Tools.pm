@@ -53,17 +53,20 @@ our @EXPORT_OK = qw(
     extract_sensitive_params
     file_copy
     get_host_arch
-    O_PATH
-    O_CLOEXEC
-    O_TMPFILE
-    AT_EMPTY_PATH
-    AT_FDCWD
     CLONE_NEWNS
     CLONE_NEWUTS
     CLONE_NEWIPC
     CLONE_NEWUSER
     CLONE_NEWPID
     CLONE_NEWNET
+    O_PATH
+    O_CLOEXEC
+    O_TMPFILE
+    AT_EMPTY_PATH
+    AT_FDCWD
+    RENAME_NOREPLACE
+    RENAME_EXCHANGE
+    RENAME_WHITEOUT
     MS_RDONLY
     MS_NOSUID
     MS_NODEV
@@ -78,6 +81,12 @@ our @EXPORT_OK = qw(
     MS_BIND
     MS_MOVE
     MS_REC
+    RESOLVE_NO_XDEV
+    RESOLVE_NO_MAGICLINKS
+    RESOLVE_NO_SYMLINKS
+    RESOLVE_BENEATH
+    RESOLVE_IN_ROOT
+    RESOLVE_CACHED
 );
 
 # moved to PVE::ParseUtils; re-exported here for backwards compatibility
