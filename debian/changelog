@@ -1,3 +1,18 @@
+libpve-common-perl (9.1.18) UNRELEASED; urgency=medium
+
+  * section config: drop unusable global properties from update schema
+
+  * syscall, tools: add openat2 syscall, and its RESOLVE_ constants
+
+  * tools: add open_in_root helper to open files *as if* chrooted() into
+    another directory
+
+  * syscall, tools: add setresgid() syscall
+
+  * tools: add RESOLVE_* and RENAME_* flags to EXPORT_OK
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 16 Jul 2026 09:18:25 +0200
+
 libpve-common-perl (9.1.17) trixie; urgency=medium
 
   * continue with the refactor and split the big Tools and INotify modules in
