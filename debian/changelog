@@ -1,4 +1,22 @@
-libpve-common-perl (9.1.18) UNRELEASED; urgency=medium
+libpve-common-perl (9.1.19) trixie; urgency=medium
+
+  * json schema: add support for composing and discriminating object schemas:
+    - add 'allOf', which validates a value against a list of object schemas at
+      once, so a parameter set composed from several distinct schemas can be
+      expressed explicitly instead of merging the schemas by hand.
+    - add a strict, object-like 'oneOf' that selects the variant to validate
+      through a dedicated type property, declared by the new
+      'type-property-schema' and a per-variant 'instance-type'. The previous
+      'oneOf' handling was really a conditional-property mechanism and not a
+      variant selection, so its use with 'type-property' and 'instance-types'
+      is now deprecated.
+    - drop support for the 'extends' and 'disallow' keywords, which were
+      unused here and have been removed from the official JSON schema
+      specification.
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 22 Jul 2026 16:54:50 +0200
+
+libpve-common-perl (9.1.18) trixie; urgency=medium
 
   * section config: drop unusable global properties from update schema
 
