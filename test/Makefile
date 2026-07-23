@@ -7,6 +7,7 @@ TESTS = lock_file.test			\
 	convert_size_test.test		\
 	procfs_tests.test		\
 	format_test.test		\
+	get-options-test.test		\
 	section_config_test.test	\
 	api_parameter_test.test		\
 	json-schema-test.test		\

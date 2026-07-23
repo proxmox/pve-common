@@ -2173,12 +2173,139 @@ sub method_get_child_link {
     return $found;
 }
 
+# Check if a schema is an object, allOf or oneOf schema.
+# The latter currently only allow further object-like schemas inside.
+sub is_object_like_schema($schema) {
+    return $schema
+        && (defined($schema->{properties})
+            || defined($schema->{allOf})
+            || defined($schema->{oneOf}));
+}
+
+# Get a property in an object-like schema (going through allOf/oneOf).
+#
+# If an `$object_data` is provided, it will be used to determine the subschemas
+# in `oneOf` subschemas.
+my sub get_object_property_schema($schema, $key, $object_data = undef) {
+    use feature 'current_sub';
+
+    if (my $props = $schema->{properties}) {
+        return $props->{$key};
+    }
+
+    if (my $all_of = $schema->{allOf}) {
+        for my $subschema ($all_of->@*) {
+            my $property = __SUB__->($subschema, $key, $object_data);
+            return $property if defined($property);
+        }
+        return; # don't fall through to oneOf - both together aren't valid
+    }
+
+    if (my $one_of = $schema->{oneOf}) {
+        # Without a type property this is a plain list of alternatives, so look in all of them.
+        my $type_property = $schema->{'type-property'};
+        my $type;
+        if (defined($type_property)) {
+            return $schema->{'type-property-schema'} if $key eq $type_property;
+            $type = $object_data && $object_data->{$type_property};
+        }
+
+        for my $subschema ($one_of->@*) {
+            if (defined($type)) {
+                next if $type ne $subschema->{'instance-type'};
+                return __SUB__->($subschema, $key, $object_data);
+            }
+
+            my $property = __SUB__->($subschema, $key, $object_data);
+            return $property if defined($property);
+        }
+        return;
+    }
+}
+
+# $schema: an object-like schema
+# $sub: sub($key, $schema, $one_of_instance_info) ->
+#    ()     empty list -> continue
+#    else   break out and return the value
+#
+# Returns the first non-empty list the sub returns.
+sub for_each_property($schema, $sub, $one_of_types = {}) {
+    use feature 'current_sub';
+
+    if (my $props = $schema->{properties}) {
+        for my $key (keys $props->%*) {
+            my @result = $sub->($key, $props->{$key}, $one_of_types);
+            return @result if @result;
+        }
+        return;
+    }
+
+    if (my $all_of = $schema->{allOf}) {
+        for my $subschema ($all_of->@*) {
+            my @result = __SUB__->($subschema, $sub, $one_of_types);
+            return @result if @result;
+        }
+        return;
+    }
+
+    if (my $one_of = $schema->{oneOf}) {
+        # Without a type property this is a plain list of alternatives with nothing to
+        # discriminate on, so there is no type property to hand to the callback.
+        my $type_property = $schema->{'type-property'};
+        my @result;
+        if (defined($type_property)) {
+            @result = $sub->($type_property, $schema->{'type-property-schema'}, $one_of_types);
+            return @result if @result;
+        }
+
+        for my $subschema ($one_of->@*) {
+            $one_of_types->{$type_property} = $subschema->{'instance-type'}
+                if defined($type_property);
+            my @result = __SUB__->($subschema, $sub, $one_of_types);
+            if (@result) {
+                delete $one_of_types->{$type_property} if defined($type_property);
+                return @result;
+            }
+        }
+        delete $one_of_types->{$type_property} if defined($type_property);
+        return;
+    }
+
+    return;
+}
+
+sub deny_alias_shadowing($schema) {
+    my $seen_as_alias = {};
+    my $seen_as_regular = {};
+
+    return for_each_property(
+        $schema,
+        sub {
+            my ($prop, $pd) = @_;
+
+            # A key must not be an alias in one place and a regular option in another - the
+            # option parser has no way to represent both. Declaring the same alias in several
+            # oneOf variants is fine.
+            if ($pd && $pd->{alias}) {
+                $seen_as_alias->{$prop} = 1;
+            } else {
+                $seen_as_regular->{$prop} = 1;
+            }
+
+            die "property '$prop' exists as an alias and a regular option\n"
+                if $seen_as_alias->{$prop} && $seen_as_regular->{$prop};
+
+            return;
+        },
+    );
+}
+
 # a way to parse command line parameters, using a
 # schema to configure Getopt::Long
 sub get_options {
     my ($schema, $args, $arg_param, $fixed_param, $param_mapping_hash) = @_;
 
-    if (!$schema || !$schema->{properties}) {
+    if (!is_object_like_schema($schema)) {
         raise("too many arguments\n", code => HTTP_BAD_REQUEST)
             if scalar(@$args) != 0;
         return {};
@@ -2186,7 +2313,7 @@ sub get_options {
 
     my $list_param;
     if ($arg_param && !ref($arg_param)) {
-        my $pd = $schema->{properties}->{$arg_param};
+        my $pd = get_object_property_schema($schema, $arg_param);
         die "expected list format $pd->{format}"
             if !($pd && $pd->{format} && $pd->{format} =~ m/-list/);
         $list_param = $arg_param;
@@ -2194,29 +2321,36 @@ sub get_options {
 
     my @interactive = ();
     my @getopt = ();
-    foreach my $prop (keys %{ $schema->{properties} }) {
-        my $pd = $schema->{properties}->{$prop};
-        next if $list_param && $prop eq $list_param;
-        next if defined($fixed_param->{$prop});
+    deny_alias_shadowing($schema);
+    for_each_property(
+        $schema,
+        sub {
+            my ($prop, $pd) = @_;
 
-        my $mapping = $param_mapping_hash->{$prop};
-        if ($mapping && $mapping->{interactive}) {
-            # interactive parameters such as passwords: make the argument
-            # optional and call the mapping function afterwards.
-            push @getopt, "$prop:s";
-            push @interactive, [$prop, $mapping->{func}];
-        } elsif ($pd->{type} && $pd->{type} eq 'boolean') {
-            push @getopt, "$prop:s";
-        } else {
-            if ($pd->{format} && $pd->{format} =~ m/-list/) {
-                push @getopt, "$prop=s@";
-            } elsif ($pd->{type} && $pd->{type} eq 'array') {
-                push @getopt, "$prop=s@";
+            return if $list_param && $prop eq $list_param;
+            return if defined($fixed_param->{$prop});
+
+            my $mapping = $param_mapping_hash->{$prop};
+            if ($mapping && $mapping->{interactive}) {
+                # interactive parameters such as passwords: make the argument
+                # optional and call the mapping function afterwards.
+                push @getopt, "$prop:s";
+                push @interactive, [$prop, $mapping->{func}];
+            } elsif ($pd->{type} && $pd->{type} eq 'boolean') {
+                push @getopt, "$prop:s";
             } else {
-                push @getopt, "$prop=s";
+                if ($pd->{format} && $pd->{format} =~ m/-list/) {
+                    push @getopt, "$prop=s@";
+                } elsif ($pd->{type} && $pd->{type} eq 'array') {
+                    push @getopt, "$prop=s@";
+                } else {
+                    push @getopt, "$prop=s";
+                }
             }
-        }
-    }
+
+            return;
+        },
+    );
 
     Getopt::Long::Configure('prefix_pattern=(--|-)');
 
@@ -2247,8 +2381,22 @@ sub get_options {
                     # must die as the mapping is then ambigious
                     for (; $i < scalar(@$arg_param); $i++) {
                         my $prop = $arg_param->[$i];
+                        my $prop_schema = get_object_property_schema($schema, $prop, $opts);
+                        # 'arg_param' properties must exist, however, it may be the case that
+                        # the property is inside a oneOf of another type, in which case
+                        # we assume the 'arg_param' is optional.
+                        # For instance, if we were to have `path` for storages as arg_param,
+                        # but the storage type is not path-based, then it has no `path`
+                        # property.
+                        # Before the introduction of `oneOf`, the property would always exist
+                        # as optional, and the section config's validation would fail *later*.
+                        # Since we can have `oneOf` schemas now, we can disregard the parameter
+                        # early.
+                        next if !$prop_schema;
+
+                        # Otherwise, check the optionality.
                         raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
-                            if !$schema->{properties}->{$prop}->{optional};
+                            if !$prop_schema->{optional};
                     }
                     if ($arg_param->[-1] eq 'extra-args') {
                         $opts->{'extra-args'} = [];
@@ -2267,8 +2415,18 @@ sub get_options {
             foreach my $arg_name (@$arg_param) {
                 if ($arg_name eq 'extra-args') {
                     $opts->{'extra-args'} = [];
-                } elsif (!$schema->{properties}->{$arg_name}->{optional}) {
-                    raise("not enough arguments\n", code => HTTP_BAD_REQUEST);
+                } else {
+                    my $prop_schema = get_object_property_schema($schema, $arg_name, $opts);
+                    # Like above: if the property schema cannot be found,
+                    # assuming the 'arg_param' list is otherwise valid, then a
+                    # type property of a oneOf sent the above into a subschema
+                    # where the parameter does not exist, thus we consider it
+                    # optional.
+                    next if !$prop_schema;
+
+                    # Otherwise, check the optionality.
+                    raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
+                        if !$prop_schema->{optional};
                 }
             }
         }
@@ -2276,9 +2434,12 @@ sub get_options {
 
     foreach my $entry (@interactive) {
         my ($opt, $func) = @$entry;
-        my $pd = $schema->{properties}->{$opt};
+        my $pd = get_object_property_schema($schema, $opt, $opts);
         my $value = $opts->{$opt};
-        if (defined($value) || !$pd->{optional}) {
+        # Again, `$pd` can be `undef` if the top level schema is a oneOf schema
+        # and the type does not match, in which case we act like the parameter
+        # is optional.
+        if (defined($value) || ($pd && !$pd->{optional})) {
             $opts->{$opt} = $func->($value);
         }
     }
@@ -2301,7 +2462,7 @@ sub get_options {
     }
 
     foreach my $p (keys %$opts) {
-        if (my $pd = $schema->{properties}->{$p}) {
+        if (my $pd = get_object_property_schema($schema, $p, $opts)) {
             if ($pd->{type} && $pd->{type} eq 'boolean') {
                 if ($opts->{$p} eq '') {
                     $opts->{$p} = 1;
