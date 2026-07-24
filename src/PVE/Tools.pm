@@ -54,6 +54,8 @@ our @EXPORT_OK = qw(
     file_copy
     get_host_arch
     get_host_dpkg_arch
+    pvecfg_min_version
+    version_cmp
     CLONE_NEWNS
     CLONE_NEWUTS
     CLONE_NEWIPC
@@ -1656,6 +1658,45 @@ sub is_deeply {
     }
 
     return 1;
+}
+
+sub pvecfg_min_version {
+    my ($verstr, $major, $minor, $release) = @_;
+
+    return 0 if !$verstr;
+
+    if ($verstr =~ m/^(\d+)\.(\d+)(?:[.-](\d+))?/) {
+        return 1 if version_cmp($1, $major, $2, $minor, $3 // 0, $release) >= 0;
+        return 0;
+    }
+
+    die "internal error: cannot check version of invalid string '$verstr'";
+}
+
+# gets in pairs the versions you want to compares, i.e.:
+# ($a-major, $b-major, $a-minor, $b-minor, $a-extra, $b-extra, ...)
+# returns 0 if same, -1 if $a is older than $b, +1 if $a is newer than $b
+sub version_cmp {
+    my @versions = @_;
+
+    my $size = scalar(@versions);
+
+    return 0 if $size == 0;
+
+    if ($size & 1) {
+        my (undef, $fn, $line) = caller(0);
+        die "cannot compare odd count of versions, called from $fn:$line\n";
+    }
+
+    for (my $i = 0; $i < $size; $i += 2) {
+        my ($left, $right) = splice(@versions, 0, 2);
+        $left //= 0;
+        $right //= 0;
+
+        return 1 if $left > $right;
+        return -1 if $left < $right;
+    }
+    return 0;
 }
 
 1;
