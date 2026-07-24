@@ -2,6 +2,7 @@ package PVE::RESTHandler;
 
 use strict;
 use warnings;
+use feature 'signatures';
 
 use Clone qw(clone);
 use HTTP::Status qw(:constants :is status_message);
@@ -9,7 +10,7 @@ use Text::Wrap;
 
 use PVE::Exception qw(raise raise_param_exc);
 use PVE::File;
-use PVE::JSONSchema;
+use PVE::JSONSchema qw(get_object_property_schema);
 use PVE::SafeSyslog;
 
 my $method_registry = {};
@@ -683,29 +684,26 @@ sub getopt_usage {
 
     my $schema = $info->{parameters};
     my $name = $info->{name};
-    my $prop = {};
-    if ($schema->{properties}) {
-        $prop = { %{ $schema->{properties} } }; # copy
-    }
+    PVE::JSONSchema::deny_alias_shadowing($schema);
 
     my $has_output_format_option = $formatter_properties->{'output-format'} ? 1 : 0;
 
+    # Formatter properties beyond the standard output options are listed like regular options,
+    # so fold them into the schema. It may be an allOf or oneOf, so extend instead of merging.
     if ($formatter_properties) {
-        foreach my $key (keys %$formatter_properties) {
-            if (!$standard_output_options->{$key}) {
-                $prop->{$key} = $formatter_properties->{$key};
-            }
-        }
+        my $extra_properties = {
+            map { $_ => $formatter_properties->{$_} }
+            grep { !$standard_output_options->{$_} } keys %$formatter_properties
+        };
+        $schema = { allOf => [$schema // {}, { properties => $extra_properties }] }
+            if $extra_properties->%*;
     }
 
-    # also remove $standard_output_options from $prop (pvesh, pveclient)
-    if ($prop->{'output-format'}) {
+    # Mark $standard_output_options to be ignored from $schema (pvesh, pveclient)
+    my $ignore_standard_output_options;
+    if (get_object_property_schema($schema, 'output-format')) {
         $has_output_format_option = 1;
-        foreach my $key (keys %$prop) {
-            if ($standard_output_options->{$key}) {
-                delete $prop->{$key};
-            }
-        }
+        $ignore_standard_output_options = 1;
     }
 
     my $out = '';
@@ -716,9 +714,23 @@ sub getopt_usage {
 
     $arg_param = [$arg_param] if $arg_param && !ref($arg_param);
 
+    my @checked_arg_params;
     foreach my $p (@$arg_param) {
-        next if !$prop->{$p}; # just to be sure
-        my $pd = $prop->{$p};
+        my @arg_schema_candidates = get_object_property_schema($schema, $p);
+        next if !@arg_schema_candidates;
+
+        my $is_optional = $arg_schema_candidates[0]->{optional};
+
+        # sanity check optionality of arg_params:
+        for my $arg_schema (@arg_schema_candidates) {
+            my $optional = $arg_schema->{optional};
+
+            if (!$is_optional != !$optional) {
+                die "arg_param '$p' is conditionally optional\n";
+            }
+        }
+
+        my $pd = $arg_schema_candidates[0];
 
         $arg_hash->{$p} = 1;
         $args .= " " if $args;
@@ -727,14 +739,16 @@ sub getopt_usage {
         } else {
             $args .= $pd->{optional} ? "[<$p>]" : "<$p>";
         }
+        push @checked_arg_params, [$p, $pd];
     }
 
     my $argdescr = '';
-    foreach my $k (@$arg_param) {
+    foreach my $checked_param (@checked_arg_params) {
+        my ($k, $arg_schema) = @$checked_param;
+
         next if defined($fixed_param->{$k}); # just to be sure
-        next if !$prop->{$k}; # just to be sure
-        next if defined($prop->{$k}->{alias}); # already handled through type_text
-        $argdescr .= $get_property_description->($k, 'fixed', $prop->{$k}, $format);
+        next if defined($arg_schema->{alias}); # already handled through type_text
+        $argdescr .= $get_property_description->($k, 'fixed', $arg_schema, $format);
     }
 
     my $idx_param = {}; # -vlan\d+ -scsi\d+
@@ -743,15 +757,16 @@ sub getopt_usage {
 
     my $type_specific_opts = {};
 
-    foreach my $k (sort keys %$prop) {
-        next if $arg_hash->{$k};
-        next if defined($fixed_param->{$k});
+    my sub handle_property($k, $prop_schema, $type_keys) {
+        return if $arg_hash->{$k};
+        return if defined($fixed_param->{$k});
+        return if $ignore_standard_output_options && $standard_output_options->{$k};
 
-        my $type_text = $prop->{$k}->{type} || 'string';
+        my $type_text = $prop_schema->{type} || 'string';
 
-        if ($prop->{$k}->{oneOf}) {
+        if (my $one_of = $prop_schema->{oneOf}) {
             $type_text = 'multiple';
-        } elsif (my $alias = $prop->{$k}->{alias}) {
+        } elsif (my $alias = $prop_schema->{alias}) {
             $type_text = "alias for '$alias'";
         }
 
@@ -760,32 +775,42 @@ sub getopt_usage {
         if (defined($param_cb)) {
             my $mapping = $param_cb->($name);
             $param_map = $compute_param_mapping_hash->($mapping);
-            next if $k eq 'password' && $param_map->{$k} && !$prop->{$k}->{optional};
+            return if $k eq 'password' && $param_map->{$k} && !$prop_schema->{optional};
         }
 
         my $base = $k;
         if ($k =~ m/^([a-z]+)(\d+)$/) {
             my ($name, $idx) = ($1, $2);
-            next if $idx_param->{$name};
-            if ($idx == 0 && defined($prop->{"${name}1"})) {
+            return if $idx_param->{$name};
+            if ($idx == 0 && get_object_property_schema($schema, "${name}1")) {
                 $idx_param->{$name} = 1;
                 $base = "${name}[n]";
             }
         }
 
-        my $is_optional = $prop->{$k}->{optional} // 0;
-        if (my $alias = $prop->{$k}->{alias}) {
-            $is_optional = $prop->{$alias}->{optional} // 0;
+        my $is_optional = $prop_schema->{optional} // 0;
+        if (my $alias = $prop_schema->{alias}) {
+            my $target = get_object_property_schema($schema, $alias);
+            $is_optional = ($target && $target->{optional}) // 0;
         }
 
-        if (my $type_property = $prop->{$k}->{'type-property'}) {
+        if ($type_keys) {
+            $type_specific_opts->{$type_keys} //= '';
+            $type_specific_opts->{$type_keys} .=
+                $get_property_description->($base, 'arg', $prop_schema, $format, $param_map->{$k});
+
+            return;
+        }
+
+        # The oneOf handling here is for legacy oneOf parts:
+        if (my $type_property = $prop_schema->{'type-property'}) {
             # save type specific descriptions for later
-            my $type_schema = $prop->{$type_property};
-            if ($prop->{$k}->{oneOf}) {
+            my $type_schema = get_object_property_schema($schema, $type_property);
+            if ($prop_schema->{oneOf}) {
                 # it's optional if there are less options than types
                 $is_optional = 1
-                    if scalar($type_schema->{enum}->@*) > scalar($prop->{$k}->{oneOf}->@*);
-                for my $alternative ($prop->{$k}->{oneOf}->@*) {
+                    if scalar($type_schema->{enum}->@*) > scalar($prop_schema->{oneOf}->@*);
+                for my $alternative ($prop_schema->{oneOf}->@*) {
                     # it's optional if at least one variant is optional
                     $is_optional = 1 if $alternative->{optional};
                     for my $type ($alternative->{'instance-types'}->@*) {
@@ -796,20 +821,20 @@ sub getopt_usage {
                         );
                     }
                 }
-            } elsif (my $types = $prop->{$k}->{'instance-types'}) {
+            } elsif (my $types = $prop_schema->{'instance-types'}) {
                 # it's optional if not all types has that option
                 $is_optional = 1 if scalar($type_schema->{enum}->@*) > scalar($types->@*);
                 for my $type ($types->@*) {
                     my $key = "${type_property}=${type}";
                     $type_specific_opts->{$key} //= "";
                     $type_specific_opts->{$key} .= $get_property_description->(
-                        $base, 'arg', $prop->{$k}, $format, $param_map->{$k},
+                        $base, 'arg', $prop_schema, $format, $param_map->{$k},
                     );
                 }
             }
-        } elsif ($prop->{$k}->{oneOf}) {
+        } elsif ($prop_schema->{oneOf}) {
             my $res = [];
-            for my $alternative ($prop->{$k}->{oneOf}->@*) {
+            for my $alternative ($prop_schema->{oneOf}->@*) {
                 # it's optional if at least one variant is optional
                 $is_optional = 1 if $alternative->{optional};
                 push $res->@*,
@@ -824,27 +849,63 @@ sub getopt_usage {
             }
         } else {
             $opts .=
-                $get_property_description->($base, 'arg', $prop->{$k}, $format, $param_map->{$k});
+                $get_property_description->($base, 'arg', $prop_schema, $format, $param_map->{$k});
         }
 
-        if (!$is_optional && !defined($prop->{$k}->{alias})) {
+        if (!$is_optional && !defined($prop_schema->{alias})) {
             $args .= " " if $args;
             $args .= "--$base <$type_text>";
         }
+
+        return;
     }
+
+    # First collect all the properties, grouped by oneOfs:
+    my @global_properties;
+    my %type_specific_properties;
+    PVE::JSONSchema::for_each_property(
+        $schema,
+        sub($key, $prop_schema, $one_of_info) {
+            if ($one_of_info->@*) {
+                my $type_key = join(' and ', map { "$_->[0]=$_->[1]" } $one_of_info->@*);
+                my $list = ($type_specific_properties{$type_key} //= []);
+                push $list->@*, [$key, $prop_schema];
+            } else {
+                push @global_properties, [$key, $prop_schema];
+            }
+            return;
+        },
+        [], # one_of_info as array
+    );
+
+    # Now sort and handle them.
+    @global_properties = sort { $a->[0] cmp $b->[0] } @global_properties;
+    for my $entry (@global_properties) {
+        handle_property($entry->[0], $entry->[1], undef);
+    }
+    for my $key (sort keys %type_specific_properties) {
+        my $key_properties = $type_specific_properties{$key};
+        $key_properties->@* = sort { $a->[0] cmp $b->[0] } $key_properties->@*;
+        for my $entry ($key_properties->@*) {
+            handle_property($entry->[0], $entry->[1], $key);
+        }
+    }
+
+    # options can be entirely type specific, in which case only $type_specific_opts is filled
+    my $has_options = $opts || $type_specific_opts->%*;
 
     if ($format eq 'asciidoc') {
         my $safeprefix = $prefix =~ s/\s/_/rg;
         $out .= "[[cli_${safeprefix}]]\n";
         $out .= "*${prefix}*";
         $out .= " `$args`" if $args;
-        $out .= " `[OPTIONS]`" if $opts;
+        $out .= " `[OPTIONS]`" if $has_options;
         $out .= " `[FORMAT_OPTIONS]`" if $has_output_format_option;
         $out .= "\n";
     } else {
         $out .= "USAGE: " if $format ne 'short';
         $out .= "$prefix $args";
-        $out .= " [OPTIONS]" if $opts;
+        $out .= " [OPTIONS]" if $has_options;
         $out .= " [FORMAT_OPTIONS]" if $has_output_format_option;
         $out .= "\n";
     }

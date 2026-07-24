@@ -41,6 +41,24 @@ package TestBase {
         confess "implement me";
     }
 
+    sub long_usage_str($class, $prefix) {
+        confess "implement me";
+    }
+
+    # The remaining `usage_str` inputs, overridden by tests which want to cover them.
+
+    sub usage_arg_param($class) {
+        return [];
+    }
+
+    sub usage_param_cb($class) {
+        return undef;
+    }
+
+    sub usage_formatter_properties($class) {
+        return undef;
+    }
+
     sub run_all($class) {
         for my $subclass (@all_tests) {
             subtest $subclass, sub {
@@ -104,6 +122,48 @@ package TestBase {
             }
         }
     }
+
+    my sub build_rest_handler($class) {
+        {
+            no strict 'refs';
+            push @{ __PACKAGE__ . "::ISA" }, 'PVE::RESTHandler'; # ;-)
+        }
+
+        for my $subclass (@all_tests) {
+            $class->register_method({
+                name => $subclass,
+                path => $subclass,
+                method => 'POST',
+                parameters => $subclass->schema(),
+                returns => { type => 'null' },
+                code => sub { return; },
+            });
+        }
+    }
+
+    sub test_usage_string($class) {
+        build_rest_handler($class);
+
+        for my $subclass (@all_tests) {
+            my $prefix = "test $subclass";
+            my $expected = $subclass->long_usage_str($prefix);
+            next if !defined($expected);
+
+            my $got = $class->usage_str(
+                $subclass, # name
+                $prefix, # prefix
+                $subclass->usage_arg_param(),
+                {}, # fixed_param
+                'long', # format
+                $subclass->usage_param_cb(),
+                $subclass->usage_formatter_properties(),
+            );
+
+            my $desc = $subclass->desc();
+
+            is($got, $expected, "$desc - long usage description matches");
+        }
+    }
 }
 
 my sub usebase(@bases) {
@@ -156,6 +216,20 @@ package SimpleSchema {
                 },
             },
         };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix  [OPTIONS]\n"
+            . "  --arr      <array>\n"
+            . "\t     An array of numbers.\n" . "\n"
+            . "  --flag     <boolean>\n"
+            . "\t     An optional boolean flag.\n" . "\n"
+            . "  --num      <number>\n"
+            . "\t     A number.\n" . "\n"
+            . "  --str      <string>\n"
+            . "\t     A string.\n" . "\n"
+            . "  --str2     <string>\n"
+            . "\t     Another string.\n" . "\n";
     }
 
     # Derived tests use this, so we let this walk the tree:
@@ -324,6 +398,102 @@ package SimpleSchema {
     }
 }
 
+# Covers the parts of the usage string which do not come from the properties themselves:
+# positional 'arg_param's, the collapsing of indexed options, aliases, parameter mappings and
+# the formatter properties.
+package UsageStringDetails {
+    usebase;
+
+    sub desc($class) {
+        'usage string details';
+    }
+
+    sub schema($class) {
+        {
+            additionalProperties => 0,
+            properties => {
+                vmid => {
+                    type => 'integer',
+                    description => 'The ID.',
+                },
+                net0 => {
+                    type => 'string',
+                    description => 'Network device 0.',
+                    optional => 1,
+                },
+                net1 => {
+                    type => 'string',
+                    description => 'Network device 1.',
+                    optional => 1,
+                },
+                ide => {
+                    type => 'string',
+                    description => 'An IDE device.',
+                    optional => 1,
+                },
+                disk => {
+                    alias => 'ide',
+                },
+                password => {
+                    type => 'string',
+                    description => 'The password.',
+                    optional => 1,
+                },
+            },
+        };
+    }
+
+    sub usage_arg_param($class) {
+        return ['vmid'];
+    }
+
+    sub usage_param_cb($class) {
+        return sub {
+            return [{ name => 'password', desc => '<filepath>', func => sub { return $_[0] } }];
+        };
+    }
+
+    sub usage_formatter_properties($class) {
+        return $PVE::RESTHandler::standard_output_options;
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix <vmid> [OPTIONS] [FORMAT_OPTIONS]\n"
+            . "  <vmid>     <integer>\n"
+            . "\t     The ID.\n" . "\n"
+            . "  --disk     <alias to 'ide'>\n" . "\n"
+            . "  --ide      <string>\n"
+            . "\t     An IDE device.\n" . "\n"
+            . "  --net[n]   <string>\n"
+            . "\t     Network device 0.\n" . "\n"
+            . "  --password <filepath>\n"
+            . "\t     The password.\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "positional argument and an indexed option",
+                args => [qw(--net1 model=e1000 100)],
+                arg_param => ['vmid'],
+                expected => {
+                    vmid => '100',
+                    net1 => 'model=e1000',
+                },
+            },
+            {
+                desc => "alias is accepted",
+                args => [qw(--disk local:1 100)],
+                arg_param => ['vmid'],
+                expected => {
+                    vmid => '100',
+                    disk => 'local:1',
+                },
+            },
+        );
+    }
+}
+
 package SingleAllOf {
     usebase 'SimpleSchema';
 
@@ -425,6 +595,19 @@ package DirectOneOf {
                 },
             ],
         };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix --type <string> [OPTIONS]\n"
+            . "  --type     <one | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=one]\n" . "\n"
+            . "  --prop-one <a | b>\n"
+            . "\t     a or b\n" . "\n"
+            . " [type=two]\n" . "\n"
+            . "  --prop-two <number> (3 - 100)\n"
+            . "\t     number\n" . "\n";
     }
 
     sub invocations($class) {
@@ -646,6 +829,29 @@ package OneOfInAllOf {
         };
     }
 
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix"
+            . " --mandatory <string>"
+            . " --type <string> [OPTIONS]\n"
+            . "  --flag     <boolean>\n"
+            . "\t     optional flag\n" . "\n"
+            . "  --mandatory <string>\n"
+            . "\t     mandatory string\n" . "\n"
+            . "  --type     <one | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=one]\n" . "\n"
+            . "  --flag1    <boolean>\n"
+            . "\t     required flag\n" . "\n"
+            . "  --prop-one <a | b>\n"
+            . "\t     a or b\n" . "\n"
+            . " [type=two]\n" . "\n"
+            . "  --flag2    <boolean>\n"
+            . "\t     optional flag\n" . "\n"
+            . "  --prop-two <number> (3 - 100)\n"
+            . "\t     number\n" . "\n";
+    }
+
     sub invocations($class) {
         return (
             {
@@ -680,5 +886,209 @@ package OneOfInAllOf {
     }
 }
 
+package AllOfInOneOf {
+    usebase;
+
+    sub desc($class) {
+        'allOf in oneOf';
+    }
+
+    sub schema($class) {
+        {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'The type.',
+                enum => ['one', 'two'],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            optional => 1,
+                            type => 'string',
+                            description => 'a string',
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    allOf => [
+                        {
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-two' => {
+                                    type => 'number',
+                                    description => 'number',
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix"
+            . " --type <string> [OPTIONS]\n"
+            . "  --type     <one | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=one]\n" . "\n"
+            . "  --prop-one <string>\n"
+            . "\t     a string\n" . "\n"
+            . " [type=two]\n" . "\n"
+            . "  --prop-two <number>\n"
+            . "\t     number\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "first type",
+                args => [qw(--type one --prop-one foo)],
+                expected => {
+                    type => 'one',
+                    'prop-one' => 'foo',
+                },
+            },
+            {
+                desc => "second type",
+                args => [qw(--type two --prop-two bar)],
+                expected => {
+                    type => 'two',
+                    'prop-two' => 'bar',
+                },
+            },
+        );
+    }
+}
+
+package NestedOneOf {
+    usebase;
+
+    sub desc($class) {
+        'nested oneOf';
+    }
+
+    sub schema($class) {
+        {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'The type.',
+                enum => ['one', 'two'],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            optional => 1,
+                            type => 'string',
+                            description => 'a string',
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    allOf => [
+                        {
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-two' => {
+                                    type => 'number',
+                                    description => 'number',
+                                },
+                            },
+                        },
+                        {
+                            'type-property' => 'inner-type',
+                            'type-property-schema' => {
+                                type => 'string',
+                                description => 'Inner type.',
+                                enum => [qw(inner1 inner2)],
+                            },
+                            oneOf => [
+                                {
+                                    'instance-type' => 'inner1',
+                                    additionalProperties => 0,
+                                    properties => {
+                                        'prop-inner' => {
+                                            type => 'string',
+                                            description => 'an inner string',
+                                        },
+                                    },
+                                },
+                                {
+                                    'instance-type' => 'inner2',
+                                    additionalProperties => 0,
+                                    properties => {
+                                        'prop-inner' => {
+                                            type => 'number',
+                                            description => 'an inner number',
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix"
+            . " --type <string> [OPTIONS]\n"
+            . "  --type     <one | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=one]\n" . "\n"
+            . "  --prop-one <string>\n"
+            . "\t     a string\n" . "\n"
+            . " [type=two]\n" . "\n"
+            . "  --inner-type <inner1 | inner2>\n"
+            . "\t     Inner type.\n" . "\n"
+            . "  --prop-two <number>\n"
+            . "\t     number\n" . "\n"
+            . " [type=two and inner-type=inner1]\n" . "\n"
+            . "  --prop-inner <string>\n"
+            . "\t     an inner string\n" . "\n"
+            . " [type=two and inner-type=inner2]\n" . "\n"
+            . "  --prop-inner <number>\n"
+            . "\t     an inner number\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "first type",
+                args => [qw(--type one --prop-one foo)],
+                expected => {
+                    type => 'one',
+                    'prop-one' => 'foo',
+                },
+            },
+            {
+                desc => "second type",
+                args => [qw(--type two --prop-two bar)],
+                expected => {
+                    type => 'two',
+                    'prop-two' => 'bar',
+                },
+            },
+        );
+    }
+}
+
 TestBase->run_all();
+subtest "usage string", sub {
+    TestBase->test_usage_string();
+    done_testing();
+};
 done_testing();

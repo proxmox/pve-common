@@ -24,6 +24,7 @@ our @EXPORT_OK = qw(
     parse_property_string
     print_property_string
     json_bool
+    get_object_property_schema
 );
 
 our $CONFIGID_RE = qr/[a-z][a-z0-9_-]+/i;
@@ -2186,17 +2187,24 @@ sub is_object_like_schema($schema) {
 #
 # If an `$object_data` is provided, it will be used to determine the subschemas
 # in `oneOf` subschemas.
-my sub get_object_property_schema($schema, $key, $object_data = undef) {
+#
+# Otherwise, in list context, multiple of the same keys within a `oneOf` will
+# return all of their schemas. In scalar context, it will return a random one.
+sub get_object_property_schema($schema, $key, $object_data = undef) {
     use feature 'current_sub';
 
     if (my $props = $schema->{properties}) {
-        return $props->{$key};
+        if (defined(my $prop_schema = $props->{$key})) {
+            return $prop_schema;
+        }
+        return; # empty list otherwise
     }
 
     if (my $all_of = $schema->{allOf}) {
         for my $subschema ($all_of->@*) {
-            my $property = __SUB__->($subschema, $key, $object_data);
-            return $property if defined($property);
+            if (my @properties = __SUB__->($subschema, $key, $object_data)) {
+                return wantarray ? @properties : $properties[0];
+            }
         }
         return; # don't fall through to oneOf - both together aren't valid
     }
@@ -2206,21 +2214,34 @@ my sub get_object_property_schema($schema, $key, $object_data = undef) {
         my $type_property = $schema->{'type-property'};
         my $type;
         if (defined($type_property)) {
-            return $schema->{'type-property-schema'} if $key eq $type_property;
+            if ($key eq $type_property) {
+                if (defined(my $type_schema = $schema->{'type-property-schema'})) {
+                    return $type_schema;
+                }
+                return;
+            }
             $type = $object_data && $object_data->{$type_property};
         }
 
+        my @all_properties;
         for my $subschema ($one_of->@*) {
             if (defined($type)) {
                 next if $type ne $subschema->{'instance-type'};
                 return __SUB__->($subschema, $key, $object_data);
             }
 
-            my $property = __SUB__->($subschema, $key, $object_data);
-            return $property if defined($property);
+            if (my @properties = __SUB__->($subschema, $key, $object_data)) {
+                if (wantarray) {
+                    push @all_properties, @properties;
+                } else {
+                    return $properties[0];
+                }
+            }
         }
-        return;
+        return @all_properties if wantarray;
     }
+
+    return;
 }
 
 # $schema: an object-like schema
@@ -2229,6 +2250,9 @@ my sub get_object_property_schema($schema, $key, $object_data = undef) {
 #    else   break out and return the value
 #
 # Returns the first non-empty list the sub returns.
+#
+# If `$one_of_instance_info` is passed as an array, the contents are key-value
+# pairs ordered the same way as the schema is nested.
 sub for_each_property($schema, $sub, $one_of_types = {}) {
     use feature 'current_sub';
 
@@ -2259,16 +2283,25 @@ sub for_each_property($schema, $sub, $one_of_types = {}) {
         }
 
         for my $subschema ($one_of->@*) {
-            $one_of_types->{$type_property} = $subschema->{'instance-type'}
-                if defined($type_property);
-            my @result = __SUB__->($subschema, $sub, $one_of_types);
-            if (@result) {
-                delete $one_of_types->{$type_property} if defined($type_property);
-                return @result;
+            my $instance_type = $subschema->{'instance-type'};
+
+            if (ref($one_of_types) eq 'ARRAY') {
+                push $one_of_types->@*, [$type_property, $instance_type]
+                    if defined($type_property);
+            } elsif (defined($type_property)) {
+                $one_of_types->{$type_property} = $instance_type;
             }
+
+            @result = __SUB__->($subschema, $sub, $one_of_types);
+            pop $one_of_types->@*
+                if ref($one_of_types) eq 'ARRAY' && defined($type_property);
+            last if @result;
         }
-        delete $one_of_types->{$type_property} if defined($type_property);
-        return;
+
+        delete $one_of_types->{$type_property}
+            if ref($one_of_types) ne 'ARRAY' && defined($type_property);
+
+        return @result;
     }
 
     return;
