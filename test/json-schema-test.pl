@@ -474,6 +474,10 @@ my $check_one_of = [
                     'instance-type' => 'one',
                     additionalProperties => 0,
                     properties => {
+                        type => {
+                            type => 'string',
+                            enum => ['one'],
+                        },
                         first => {
                             type => 'string',
                         },
@@ -481,12 +485,22 @@ my $check_one_of = [
                             type => 'string',
                             optional => 1,
                         },
+                        'old-first' => {
+                            alias => 'opt-first',
+                        },
+                        'old-type' => {
+                            alias => 'type',
+                        },
                     },
                 },
                 {
                     'instance-type' => 'two',
                     additionalProperties => 0,
                     properties => {
+                        type => {
+                            type => 'string',
+                            enum => ['two'],
+                        },
                         second => {
                             type => 'string',
                         },
@@ -528,6 +542,36 @@ my $check_one_of = [
                 in => {
                     type => 'one',
                     first => 'hello',
+                },
+            },
+            {
+                name => 'alias is remapped',
+                in => {
+                    type => 'one',
+                    first => 'hello',
+                    'old-first' => 'optional',
+                },
+                out => {
+                    type => 'one',
+                    first => 'hello',
+                    'opt-first' => 'optional',
+                },
+            },
+            {
+                name => 'alias cannot overwrite type property',
+                in => {
+                    type => 'one',
+                    first => 'hello',
+                    'old-type' => 'replacement',
+                },
+                out => {
+                    type => 'one',
+                    first => 'hello',
+                    'old-type' => 'replacement',
+                },
+                must_fail => {
+                    'oneOf[one].old-type' =>
+                        qr/^cannot set both 'old-type' and its alias target 'type'/,
                 },
             },
             {
@@ -749,8 +793,12 @@ for my $test ($check_one_of->@*) {
                 }
                 my $err_str = join("\n", map { "$_: $errors->{$_}" } sort keys %$errors);
                 is($err_str, '', "$name - only expected errors");
+                is_deeply($value, $subtest->{out}, "$name - input remains unchanged")
+                    if $subtest->{out};
             } else {
                 is($err_str, '', "$name - no errors");
+                is_deeply($value, $subtest->{out}, "$name - value remapped correctly")
+                    if $subtest->{out};
             }
         }
         done_testing();
