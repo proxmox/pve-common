@@ -1,3 +1,12 @@
+libpve-common-perl (9.1.20) trixie; urgency=medium
+
+  * json schema: fix an issue with legacy oneOf schemas not validating
+    successfully anymore
+
+  * json schema: fix alias remapping in oneOf variants
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Jul 2026 17:37:34 +0200
+
 libpve-common-perl (9.1.19) trixie; urgency=medium
 
   * json schema: add support for composing and discriminating object schemas:
