@@ -162,6 +162,11 @@ package TestBase {
             my $desc = $subclass->desc();
 
             is($got, $expected, "$desc - long usage description matches");
+            #if (!is($got, $expected, "$desc - long usage description matches")) {
+            #    use PVE::Tools;
+            #    PVE::Tools::file_set_contents("/tmp/diff.$subclass.got", $got);
+            #    PVE::Tools::file_set_contents("/tmp/diff.$subclass.expected", $expected);
+            #}
         }
     }
 }
@@ -1085,6 +1090,205 @@ package NestedOneOf {
         );
     }
 }
+
+package SectionConfigTest {
+
+    package SectionConfigTest::PluginBase {
+        use base 'PVE::SectionConfig';
+
+        my $DEFAULT_DATA = {
+            propertyIsolation => 1,
+            propertyList => {
+                common => {
+                    type => 'string',
+                    description => 'A common string.',
+                    optional => 1,
+                },
+            },
+        };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    }
+
+    package SectionConfigTest::PluginOne {
+        use base 'SectionConfigTest::PluginBase';
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    description => "A string for type one.",
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return { common => { optional => 0 } };
+        }
+    }
+
+    package SectionConfigTest::PluginTwo {
+        use base 'SectionConfigTest::PluginBase';
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    description => "A string for type two.",
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return { common => { optional => 0 } };
+        }
+    }
+
+    SectionConfigTest::PluginOne->register();
+    SectionConfigTest::PluginTwo->register();
+    SectionConfigTest::PluginBase->init();
+}
+
+package SectionConfigTestCreate {
+    usebase;
+
+    sub desc($class) {
+        'section config createSchema';
+    }
+
+    sub schema($class) {
+        return SectionConfigTest::PluginBase->createSchema();
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix"
+            . " --type <string> [OPTIONS]\n"
+            . "  --type     <one | two>\n"
+            . "\t     Section Type\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=one]\n" . "\n"
+            . "  --common   <string>\n"
+            . "\t     A common string.\n" . "\n"
+            . "  --prop-one <string>\n"
+            . "\t     A string for type one.\n" . "\n"
+            . " [type=two]\n" . "\n"
+            . "  --common   <string>\n"
+            . "\t     A common string.\n" . "\n"
+            . "  --prop-two <string>\n"
+            . "\t     A string for type two.\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "first type",
+                args => [qw(--common okay --type one --prop-one foo)],
+                expected => {
+                    common => 'okay',
+                    type => 'one',
+                    'prop-one' => 'foo',
+                },
+            },
+            {
+                desc => "second type",
+                args => [qw(--type two --prop-two bar --common omg)],
+                expected => {
+                    common => 'omg',
+                    type => 'two',
+                    'prop-two' => 'bar',
+                },
+            },
+        );
+    }
+};
+
+my $UPDATE_SCHEMA_DEFAULT_PROPERTIES = {
+    digest => {
+        optional => 1,
+        type => 'string',
+        description => 'Prevent changes if current configuration file has a'
+            . ' different digest. This can be used to prevent concurrent'
+            . ' modifications.',
+        maxLength => 64,
+    },
+    delete => {
+        description => 'A list of settings you want to delete.',
+        maxLength => 4096,
+        format => 'pve-configid-list',
+        optional => 1,
+        type => 'string',
+    },
+};
+
+package SectionConfigTestUpdate {
+    usebase;
+
+    sub desc($class) {
+        'section config createSchema';
+    }
+
+    sub schema($class) {
+        return SectionConfigTest::PluginBase->updateSchema();
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix"
+            . " --type <string> [OPTIONS]\n"
+            . "  --delete   <string>\n"
+            . "\t     A list of settings you want to delete.\n" . "\n"
+            . "  --digest   <string>\n"
+            . "\t     Prevent changes if current configuration file has a different\n"
+            . "\t     digest. This can be used to prevent concurrent modifications.\n" . "\n"
+            . "  --type     <one | two>\n"
+            . "\t     Section Type\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=one]\n" . "\n"
+            . "  --common   <string>\n"
+            . "\t     A common string.\n" . "\n"
+            . "  --prop-one <string>\n"
+            . "\t     A string for type one.\n" . "\n"
+            . " [type=two]\n" . "\n"
+            . "  --common   <string>\n"
+            . "\t     A common string.\n" . "\n"
+            . "  --prop-two <string>\n"
+            . "\t     A string for type two.\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "first type",
+                args => [qw(--common okay --type one --prop-one foo)],
+                expected => {
+                    common => 'okay',
+                    type => 'one',
+                    'prop-one' => 'foo',
+                },
+            },
+            {
+                desc => "second type",
+                args => [qw(--type two --prop-two bar --common omg)],
+                expected => {
+                    common => 'omg',
+                    type => 'two',
+                    'prop-two' => 'bar',
+                },
+            },
+        );
+    }
+};
 
 TestBase->run_all();
 subtest "usage string", sub {
