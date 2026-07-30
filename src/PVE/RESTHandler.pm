@@ -484,13 +484,16 @@ my sub untaint_recursive : prototype($) {
 my $normalize_legacy_param_formats = sub {
     my ($param, $schema) = @_;
 
-    return $param if !$schema->{properties};
+    return $param if !PVE::JSONSchema::is_object_like_schema($schema);
     return $param if (ref($param) // '') ne 'HASH';
 
-    for my $key (keys $schema->{properties}->%*) {
+    for my $key (keys $param->%*) {
+        my $prop_schema = PVE::JSONSchema::get_object_property_schema($schema, $key, $param)
+            or next;
+
         if (my $value = $param->{$key}) {
-            my $type = $schema->{properties}->{$key}->{type} // '';
-            my $format = $schema->{properties}->{$key}->{format} // '';
+            my $type = $prop_schema->{type} // '';
+            my $format = $prop_schema->{format} // '';
             my $ref = ref($value);
             if ($ref && $ref eq 'ARRAY' && $type eq 'string' && $format =~ m/-list$/) {
                 $param->{$key} = join(',', $value->@*);
