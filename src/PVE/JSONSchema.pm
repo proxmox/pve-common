@@ -1617,7 +1617,7 @@ sub check_prop {
 
     } else {
 
-        if ($schema->{allOf} || $schema->{oneOf}) {
+        if ($schema->{allOf} || ($schema->{oneOf} && $schema->{'type-property-schema'})) {
             add_error($errors, $path, "value must be an object");
             return;
         }
