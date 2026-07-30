@@ -53,6 +53,25 @@ sub api_clone_schema {
     my $ref = ref($schema);
     die "not a HASH reference" if !($ref && $ref eq 'HASH');
 
+    for my $array_key (qw(allOf oneOf)) {
+        if (my $array = $schema->{$array_key}) {
+            foreach my $k (keys %$schema) {
+                next if $k eq $array_key;
+                my $d = $schema->{$k};
+                $res->{$k} = ref($d) ? clone($d) : $d;
+            }
+
+            my $cloned_array = [];
+            for my $subschema ($array->@*) {
+                push $cloned_array->@*, api_clone_schema($subschema, $no_typetext);
+            }
+
+            $res->{$array_key} = $cloned_array;
+
+            return $res;
+        }
+    }
+
     foreach my $k (keys %$schema) {
         my $d = $schema->{$k};
         if ($k ne 'properties') {
