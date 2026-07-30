@@ -1081,8 +1081,10 @@ sub cli_handler {
         my $param_map = {};
         $param_map = $compute_param_mapping_hash->($param_cb->($name)) if $param_cb;
         my $schema = { %{ $info->{parameters} } }; # copy
-        $schema->{properties} = { %{ $schema->{properties} }, %$formatter_properties }
-            if $formatter_properties;
+        if ($formatter_properties) {
+            # they are a property map, so wrap them in an object schema first
+            $schema = { allOf => [$schema, { properties => $formatter_properties }] };
+        }
         my $param =
             PVE::JSONSchema::get_options($schema, $args, $arg_param, $fixed_param, $param_map);
 
