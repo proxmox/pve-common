@@ -2481,21 +2481,27 @@ sub get_options {
 
     foreach my $p (keys %$opts) {
         if (my $pd = get_object_property_schema($schema, $p, $opts)) {
+            my $value = $opts->{$p};
             if ($pd->{type} && $pd->{type} eq 'boolean') {
-                if ($opts->{$p} eq '') {
+                if ($value eq '') {
                     $opts->{$p} = 1;
-                } elsif (defined(my $bool = parse_boolean($opts->{$p}))) {
+                } elsif (defined(my $bool = parse_boolean($value))) {
                     $opts->{$p} = $bool;
                 } else {
                     raise("unable to parse boolean option\n", code => HTTP_BAD_REQUEST);
                 }
-            } elsif ($pd->{format}) {
-
-                if ($pd->{format} =~ m/-list/) {
-                    # allow --vmid 100 --vmid 101 and --vmid 100,101
-                    # allow --dow mon --dow fri and --dow mon,fri
-                    $opts->{$p} = join(",", @{ $opts->{$p} }) if ref($opts->{$p}) eq 'ARRAY';
-                }
+            } elsif ($pd->{format} && $pd->{format} =~ m/-list/) {
+                # allow --vmid 100 --vmid 101 and --vmid 100,101
+                # allow --dow mon --dow fri and --dow mon,fri
+                $opts->{$p} = join(",", @{$value}) if ref($value) eq 'ARRAY';
+            } elsif (
+                $getopt_def{$p}->[1]
+                && ref($value) eq 'ARRAY'
+                && ($pd->{type} // '') ne 'array'
+                && $value->@* == 1
+            ) {
+                # Undo array-ification in clashing options:
+                $opts->{$p} = $value->[0];
             }
         }
     }

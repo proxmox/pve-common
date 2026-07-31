@@ -493,6 +493,88 @@ package DirectOneOf {
     }
 }
 
+package OneOfArrayVsScalar {
+    usebase;
+
+    sub desc($class) {
+        'oneOf with clashing parameter array vs scalar';
+    }
+
+    sub schema($class) {
+        {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'The type.',
+                enum => ['one', 'two'],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'values' => {
+                            optional => 1,
+                            type => 'array',
+                            description => 'An array.',
+                            items => {
+                                type => 'string',
+                                description => 'An item in the array.',
+                            },
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'values' => {
+                            type => 'string',
+                            # a non-list format must not skip the un-array-ification
+                            format => 'pve-configid',
+                            description => 'A single string.',
+                        },
+                    },
+                },
+            ],
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix --type <string> [OPTIONS]\n"
+            . "  --type     <one | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=one]\n" . "\n"
+            . "  --values   <array>\n"
+            . "\t     An array.\n" . "\n"
+            . " [type=two]\n" . "\n"
+            . "  --values   <string>\n"
+            . "\t     A single string.\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "array variant",
+                args => [qw(--type one --values foo --values bar)],
+                expected => {
+                    type => 'one',
+                    values => [qw(foo bar)],
+                },
+            },
+            {
+                desc => "scalar variant",
+                args => [qw(--type two --values foo)],
+                expected => {
+                    type => 'two',
+                    values => 'foo',
+                },
+            },
+        );
+    }
+}
+
 package OneOfInAllOf {
     usebase;
 
