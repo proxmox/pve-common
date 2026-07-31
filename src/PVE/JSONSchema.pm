@@ -2052,6 +2052,12 @@ my $method_schema = {
                 "A function which is called to resolve the proxyto attribute. The default implementation returns the value of the 'proxyto' parameter.",
             optional => 1,
         },
+        resolve_type => {
+            type => 'coderef',
+            description =>
+                "A function which is called with the parameters to determine the value of the 'type' property of a oneOf parameter schema, so that clients may omit it.",
+            optional => 1,
+        },
         permissions => {
             type => 'object',
             description =>

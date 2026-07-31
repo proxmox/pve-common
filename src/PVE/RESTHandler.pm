@@ -157,7 +157,8 @@ sub api_dump_full {
                         if $k eq 'code'
                         || $k eq "match_name"
                         || $k eq "match_re"
-                        || $k eq "path";
+                        || $k eq "path"
+                        || $k eq "resolve_type";
 
                     my $d = $info->{$k};
 
@@ -517,6 +518,21 @@ sub handle {
 
     if (my $schema = $info->{parameters}) {
         # warn "validate ". Dumper($param}) . "\n" . Dumper($schema);
+
+        # Type resolution must happen before normalization, since normalization needs to know
+        # the schema of values, for which the type must already be known, otherwise the oneOf
+        # variants will be ignored and normalization silently skips over parameters.
+        # The property name is fixed, matching the 'type-property' SectionConfig generates.
+        my $resolve_type_hook = $info->{resolve_type};
+        if ($resolve_type_hook && ref($param) eq 'HASH' && !defined($param->{type})) {
+            # The callback only inspects the parameters, so hand it a clone.
+            my $resolved_type = $resolve_type_hook->(clone($param));
+            # NOTE: the resolved type is passed on to the method's code, which must tolerate it.
+            if (defined($resolved_type)) {
+                $param->{type} = $resolved_type;
+            }
+        }
+
         $param = $normalize_legacy_param_formats->($param, $schema);
         PVE::JSONSchema::validate($param, $schema);
         # untaint data (already validated)
@@ -706,6 +722,7 @@ sub getopt_usage {
 
     my $schema = $info->{parameters};
     my $name = $info->{name};
+    my $resolve_type = $info->{resolve_type};
     PVE::JSONSchema::deny_alias_shadowing($schema);
 
     my $has_output_format_option = $formatter_properties->{'output-format'} ? 1 : 0;
@@ -779,7 +796,7 @@ sub getopt_usage {
 
     my $type_specific_opts = {};
 
-    my sub handle_property($k, $prop_schema, $type_keys) {
+    my sub handle_property($k, $prop_schema, $type_keys, $is_optional) {
         return if $arg_hash->{$k};
         return if defined($fixed_param->{$k});
         return if $ignore_standard_output_options && $standard_output_options->{$k};
@@ -792,12 +809,14 @@ sub getopt_usage {
             $type_text = "alias for '$alias'";
         }
 
+        $is_optional //= $prop_schema->{optional} // 0;
+
         my $param_map = {};
 
         if (defined($param_cb)) {
             my $mapping = $param_cb->($name);
             $param_map = $compute_param_mapping_hash->($mapping);
-            return if $k eq 'password' && $param_map->{$k} && !$prop_schema->{optional};
+            return if $k eq 'password' && $param_map->{$k} && !$is_optional;
         }
 
         my $base = $k;
@@ -810,7 +829,6 @@ sub getopt_usage {
             }
         }
 
-        my $is_optional = $prop_schema->{optional} // 0;
         if (my $alias = $prop_schema->{alias}) {
             my $target = get_object_property_schema($schema, $alias);
             $is_optional = ($target && $target->{optional}) // 0;
@@ -903,13 +921,17 @@ sub getopt_usage {
     # Now sort and handle them.
     @global_properties = sort { $a->[0] cmp $b->[0] } @global_properties;
     for my $entry (@global_properties) {
-        handle_property($entry->[0], $entry->[1], undef);
+        # The type for section config update methods is optional, since it can
+        # be inferred from the existing config:
+        my $force_optional = undef;
+        $force_optional = 1 if $entry->[0] eq 'type' && $resolve_type;
+        handle_property($entry->[0], $entry->[1], undef, $force_optional);
     }
     for my $key (sort keys %type_specific_properties) {
         my $key_properties = $type_specific_properties{$key};
         $key_properties->@* = sort { $a->[0] cmp $b->[0] } $key_properties->@*;
         for my $entry ($key_properties->@*) {
-            handle_property($entry->[0], $entry->[1], $key);
+            handle_property($entry->[0], $entry->[1], $key, undef);
         }
     }
 
