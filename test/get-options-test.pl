@@ -16,12 +16,15 @@ $Data::Dumper::Terse = 1;
 use Test::More;
 
 use PVE::JSONSchema;
-use PVE::RESTHandler;
 
 package TestBase {
     use Carp qw(confess);
+    use Clone qw(clone);
     use Data::Dumper;
     use Test::More;
+
+    use PVE::RESTHandler;
+    use base 'PVE::RESTHandler';
 
     my @all_tests;
 
@@ -59,44 +62,82 @@ package TestBase {
         return undef;
     }
 
-    sub run_all($class) {
+    sub additional_method_info($class) {
+        return;
+    }
+
+    my sub build_rest_handler($class) {
         for my $subclass (@all_tests) {
-            subtest $subclass, sub {
-                $subclass->run();
-                done_testing();
-            }
+            my %additional_method_info = $subclass->additional_method_info();
+
+            $class->register_method({
+                name => $subclass,
+                path => $subclass,
+                method => 'POST',
+                parameters => $subclass->schema(),
+                returns => { type => 'object' },
+                code => sub {
+                    my ($param) = @_;
+                    return $param;
+                },
+                %additional_method_info,
+            });
         }
     }
 
-    sub run($class) {
-        my $desc = $class->desc();
-        my $schema = $class->schema()
-            or die "missing schema in test '$desc'";
+    sub run_all($class) {
+        build_rest_handler($class);
+
+        for my $subclass (@all_tests) {
+            subtest $subclass, sub {
+                $class->run($subclass);
+                done_testing();
+            }
+        }
+
+        subtest 'usage strings', sub {
+            $class->test_usage_strings();
+            done_testing();
+        };
+
+        done_testing();
+    }
+
+    sub run($class, $subclass) {
+        my $desc = $subclass->desc();
 
         # Silence warnings from the Getopt module:
         local $SIG{__WARN__} = sub { };
 
         my $index = -1;
-        for my $invocation ($class->invocations()) {
+        for my $invocation ($subclass->invocations()) {
             ++$index;
 
+            my $original_parameters;
+            my $info = $class->map_method_by_name($subclass);
             if (my $callback = $invocation->{pre}) {
-                $schema = {%$schema};
-
-                $callback->($schema);
+                $original_parameters = clone($info->{parameters});
+                $callback->($info->{parameters});
             }
 
-            my $opts = eval {
-                PVE::JSONSchema::get_options(
-                    $schema,
+            my $prefix = "cli $subclass";
+            my ($opts, $fmt_param) = eval {
+                $class->cli_handler(
+                    $prefix, # prefix
+                    $subclass, # name
                     $invocation->{args},
                     $invocation->{arg_param},
                     $invocation->{fixed_param},
-                    $invocation->{param_mapping_hash},
+                    $subclass->usage_param_cb(),
+                    $subclass->usage_formatter_properties(),
                 );
             };
             my $err = $@;
             my $expected_err = $invocation->{error};
+
+            if ($original_parameters) {
+                $info->{parameters} = $original_parameters;
+            }
 
             my $test_desc = $desc;
             if (my $desc = $invocation->{desc}) {
@@ -105,12 +146,47 @@ package TestBase {
                 $test_desc .= " - index $index";
             }
 
-            if ($invocation->{error}) {
-                is($err, $invocation->{error}, $test_desc);
-            } elsif ($err) {
+            if ($err) {
+                if (!$expected_err) {
+                    fail($test_desc);
+                    note('Test produced unexpected error:');
+                    note($err);
+                    note(Dumper($err));
+                    note("=" x 40);
+                } elsif (ref($expected_err)) {
+                    if (!ref($err)) {
+                        fail("$test_desc - should have produced a PVE::Exception");
+                    } else {
+                        my $errors = $err->{errors};
+                        subtest "$test_desc - multiple errors", sub {
+                            for my $key ($expected_err->%*) {
+                                is(
+                                    delete($errors->{$key}),
+                                    $expected_err->{$key},
+                                    "$test_desc - $key",
+                                );
+                            }
+                            is_deeply($errors, {}, "$test_desc - no unexpected errors");
+                            done_testing();
+                        };
+                    }
+                } else {
+                    if (ref($err) && ref($err) eq 'PVE::Exception') {
+                        # Makes comparison annoying.
+                        # Only testing $err->{msg} would not test the HTTP status code.
+                        delete $err->{usage};
+                    }
+                    is("$err", $expected_err, $test_desc);
+                }
+            } elsif ($expected_err) {
                 fail($test_desc);
-                note('test produced unexpected error:');
-                note($err);
+                note('Test returned unexpected success');
+                note('Got:');
+                note(Dumper($opts));
+                note('Expected:');
+                chomp($expected_err);
+                note($expected_err);
+                note("=" x 40);
             } else {
                 if (!is_deeply($opts, $invocation->{expected}, $test_desc)) {
                     note('Got:');
@@ -119,31 +195,16 @@ package TestBase {
                     note(Dumper($invocation->{expected}));
                     note("=" x 40);
                 }
+                is_deeply(
+                    $fmt_param,
+                    $invocation->{expected_format_options} // {},
+                    "$test_desc - format options",
+                ) if $subclass->usage_formatter_properties();
             }
         }
     }
 
-    my sub build_rest_handler($class) {
-        {
-            no strict 'refs';
-            push @{ __PACKAGE__ . "::ISA" }, 'PVE::RESTHandler'; # ;-)
-        }
-
-        for my $subclass (@all_tests) {
-            $class->register_method({
-                name => $subclass,
-                path => $subclass,
-                method => 'POST',
-                parameters => $subclass->schema(),
-                returns => { type => 'null' },
-                code => sub { return; },
-            });
-        }
-    }
-
-    sub test_usage_string($class) {
-        build_rest_handler($class);
-
+    sub test_usage_strings($class) {
         for my $subclass (@all_tests) {
             my $prefix = "test $subclass";
             my $expected = $subclass->long_usage_str($prefix);
@@ -162,11 +223,6 @@ package TestBase {
             my $desc = $subclass->desc();
 
             is($got, $expected, "$desc - long usage description matches");
-            #if (!is($got, $expected, "$desc - long usage description matches")) {
-            #    use PVE::Tools;
-            #    PVE::Tools::file_set_contents("/tmp/diff.$subclass.got", $got);
-            #    PVE::Tools::file_set_contents("/tmp/diff.$subclass.expected", $expected);
-            #}
         }
     }
 }
@@ -181,6 +237,8 @@ my sub usebase(@bases) {
 
 package SimpleSchema {
     usebase;
+
+    use PVE::JSONSchema;
 
     sub desc($class) {
         'simple schemas';
@@ -259,6 +317,21 @@ package SimpleSchema {
         }
 
         return;
+    }
+
+    my sub add_extra_args($schema) {
+        my $orig = {%$schema};
+        $schema->%* = (
+            allOf => [
+                $orig,
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        'extra-args' => PVE::JSONSchema::get_standard_option('extra-args'),
+                    },
+                },
+            ],
+        );
     }
 
     sub invocations($class) {
@@ -365,17 +438,6 @@ package SimpleSchema {
                 },
             },
             {
-                desc => "mandatory flags don't affect the get_options parser",
-                pre => sub($schema) {
-                    $class->make_param_mandatory($schema, 'num');
-                },
-                args => [qw(--flag --str hello)],
-                expected => {
-                    'flag' => 1,
-                    str => 'hello',
-                },
-            },
-            {
                 desc => 'fixed options work',
                 fixed_param => { str2 => 'hello' },
                 args => [qw(--str something)],
@@ -386,6 +448,9 @@ package SimpleSchema {
             },
             {
                 desc => 'extra args work',
+                pre => sub($schema) {
+                    add_extra_args($schema);
+                },
                 arg_param => ['extra-args'],
                 args => [qw(--str foo --flag -- more args)],
                 expected => {
@@ -395,7 +460,10 @@ package SimpleSchema {
                 },
             },
             {
-                desc => "extra args work without 'extra-args' fail",
+                desc => "extra args work without 'extra-args' arg_param fail",
+                pre => sub($schema) {
+                    add_extra_args($schema);
+                },
                 args => [qw(--str foo --flag -- more args)],
                 error => "400 too many arguments\n",
             },
@@ -487,12 +555,24 @@ package UsageStringDetails {
                 },
             },
             {
-                desc => "alias is accepted",
+                desc => "alias is remapped to its target",
                 args => [qw(--disk local:1 100)],
                 arg_param => ['vmid'],
                 expected => {
                     vmid => '100',
-                    disk => 'local:1',
+                    ide => 'local:1',
+                },
+            },
+            {
+                desc => "formatter properties are parsed and split off",
+                args => [qw(--output-format json --noborder 1 100)],
+                arg_param => ['vmid'],
+                expected => {
+                    vmid => '100',
+                },
+                expected_format_options => {
+                    'output-format' => 'json',
+                    noborder => 1,
                 },
             },
         );
@@ -629,14 +709,6 @@ package DirectOneOf {
                 args => [qw(--type one --prop-one a)],
                 expected => {
                     type => 'one',
-                    'prop-one' => 'a',
-                },
-            },
-            {
-                desc => "type is not checked at getopt time",
-                args => [qw(--type two --prop-one a)],
-                expected => {
-                    type => 'two',
                     'prop-one' => 'a',
                 },
             },
@@ -861,11 +933,19 @@ package OneOfInAllOf {
         return (
             {
                 desc => "basics work",
-                args => [qw(--type one --mandatory foo --flag)],
+                args => [qw(--type one --mandatory foo --flag --flag1)],
                 expected => {
                     type => 'one',
                     mandatory => 'foo',
                     flag => 1,
+                    flag1 => 1,
+                },
+            },
+            {
+                desc => "type specific mandator parameter is checked",
+                args => [qw(--type one --mandatory foo --flag)],
+                error => {
+                    'oneOf[one].flag1' => 'property is missing and it is not optional',
                 },
             },
             {
@@ -880,11 +960,19 @@ package OneOfInAllOf {
             },
             {
                 desc => "other type works",
-                args => [qw(--type two --mandatory foo --flag2)],
+                args => [qw(--type two --mandatory foo --flag2 --prop-two 44)],
                 expected => {
                     type => 'two',
                     mandatory => 'foo',
                     flag2 => 1,
+                    'prop-two' => 44,
+                },
+            },
+            {
+                desc => "other type mandatory parameter is checked",
+                args => [qw(--type two --mandatory foo --flag2)],
+                error => {
+                    'oneOf[two].prop-two' => 'property is missing and it is not optional',
                 },
             },
         );
@@ -962,10 +1050,10 @@ package AllOfInOneOf {
             },
             {
                 desc => "second type",
-                args => [qw(--type two --prop-two bar)],
+                args => [qw(--type two --prop-two 123)],
                 expected => {
                     type => 'two',
-                    'prop-two' => 'bar',
+                    'prop-two' => 123,
                 },
             },
         );
@@ -1012,6 +1100,7 @@ package NestedOneOf {
                             },
                         },
                         {
+                            optional => 1,
                             'type-property' => 'inner-type',
                             'type-property-schema' => {
                                 type => 'string',
@@ -1081,10 +1170,20 @@ package NestedOneOf {
             },
             {
                 desc => "second type",
-                args => [qw(--type two --prop-two bar)],
+                args => [qw(--type two --prop-two 99)],
                 expected => {
                     type => 'two',
-                    'prop-two' => 'bar',
+                    'prop-two' => 99,
+                },
+            },
+            {
+                desc => "second type with inner oneOf",
+                args => [qw(--type two --prop-two 7 --inner-type inner1 --prop-inner works)],
+                expected => {
+                    type => 'two',
+                    'prop-two' => 7,
+                    'inner-type' => 'inner1',
+                    'prop-inner' => 'works',
                 },
             },
         );
@@ -1236,16 +1335,28 @@ package SectionConfigTestUpdate {
     usebase;
 
     sub desc($class) {
-        'section config createSchema';
+        'section config updateSchema';
     }
 
     sub schema($class) {
         return SectionConfigTest::PluginBase->updateSchema();
     }
 
+    sub additional_method_info($class) {
+        return (
+            resolve_type => sub {
+                my ($param) = @_;
+                return 'one' if $param->{common} eq 'use-type-one';
+                return 'two' if $param->{common} eq 'use-type-two';
+                die "no such type\n" if $param->{common} eq 'resolve-error';
+                return;
+            },
+        );
+    }
+
     sub long_usage_str($class, $prefix) {
         "USAGE: $prefix"
-            . " --type <string> [OPTIONS]\n"
+            . "  [OPTIONS]\n"
             . "  --delete   <string>\n"
             . "\t     A list of settings you want to delete.\n" . "\n"
             . "  --digest   <string>\n"
@@ -1286,13 +1397,31 @@ package SectionConfigTestUpdate {
                     'prop-two' => 'bar',
                 },
             },
+            {
+                desc => "resolve to first type",
+                args => [qw(--common use-type-one --prop-one foo)],
+                expected => {
+                    common => 'use-type-one',
+                    type => 'one',
+                    'prop-one' => 'foo',
+                },
+            },
+            {
+                desc => "resolve to second type",
+                args => [qw(--common use-type-two --prop-two bar)],
+                expected => {
+                    common => 'use-type-two',
+                    type => 'two',
+                    'prop-two' => 'bar',
+                },
+            },
+            {
+                desc => "type resolution failure",
+                args => [qw(--common resolve-error)],
+                error => "no such type\n",
+            },
         );
     }
 };
 
 TestBase->run_all();
-subtest "usage string", sub {
-    TestBase->test_usage_string();
-    done_testing();
-};
-done_testing();
