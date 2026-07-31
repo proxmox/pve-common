@@ -2319,9 +2319,9 @@ sub get_options {
         $list_param = $arg_param;
     }
 
-    my @interactive = ();
-    my @getopt = ();
     deny_alias_shadowing($schema);
+    my %getopt_def;
+    my %interactive_params;
     for_each_property(
         $schema,
         sub {
@@ -2330,27 +2330,45 @@ sub get_options {
             return if $list_param && $prop eq $list_param;
             return if defined($fixed_param->{$prop});
 
+            my $to_add; # [ optional, array ];
+
             my $mapping = $param_mapping_hash->{$prop};
             if ($mapping && $mapping->{interactive}) {
                 # interactive parameters such as passwords: make the argument
                 # optional and call the mapping function afterwards.
-                push @getopt, "$prop:s";
-                push @interactive, [$prop, $mapping->{func}];
+                $to_add = [1, 0];
+                $interactive_params{$prop} = $mapping->{func};
             } elsif ($pd->{type} && $pd->{type} eq 'boolean') {
-                push @getopt, "$prop:s";
+                $to_add = [1, 0];
             } else {
                 if ($pd->{format} && $pd->{format} =~ m/-list/) {
-                    push @getopt, "$prop=s@";
+                    $to_add = [0, 1];
                 } elsif ($pd->{type} && $pd->{type} eq 'array') {
-                    push @getopt, "$prop=s@";
+                    $to_add = [0, 1];
                 } else {
-                    push @getopt, "$prop=s";
+                    $to_add = [0, 0];
                 }
+            }
+
+            if (defined(my $previous = $getopt_def{$prop})) {
+                $previous->[0] = ($previous->[0] || $to_add->[0]);
+                $previous->[1] = ($previous->[1] || $to_add->[1]);
+            } else {
+                $getopt_def{$prop} = $to_add;
             }
 
             return;
         },
     );
+
+    my @interactive = map { [$_, $interactive_params{$_}] } keys %interactive_params;
+    my @getopt;
+    for my $opt (keys %getopt_def) {
+        my ($optional, $array) = $getopt_def{$opt}->@*;
+        $opt .= $optional ? ":s" : "=s";
+        $opt .= '@' if $array;
+        push @getopt, $opt;
+    }
 
     Getopt::Long::Configure('prefix_pattern=(--|-)');
 
