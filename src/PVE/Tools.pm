@@ -53,6 +53,7 @@ our @EXPORT_OK = qw(
     extract_sensitive_params
     file_copy
     get_host_arch
+    get_host_dpkg_arch
     CLONE_NEWNS
     CLONE_NEWUTS
     CLONE_NEWIPC
@@ -1290,6 +1291,24 @@ my $host_arch;
 sub get_host_arch {
     $host_arch = (POSIX::uname())[4] if !$host_arch;
     return $host_arch;
+}
+
+my $host_dpkg_arch;
+
+# the Debian architecture of the host, for example 'amd64' or 'arm64'. Unlike get_host_arch(),
+# which returns the uname machine ('x86_64', 'aarch64'), this matches the architecture used in
+# package and repository names. Constant for the host's lifetime, so it is determined only once.
+sub get_host_dpkg_arch {
+    if (!defined($host_dpkg_arch)) {
+        # an absolute path and a known-good PATH, so that this also works under taint mode
+        local $ENV{PATH} = '/usr/sbin:/usr/bin:/sbin:/bin';
+        run_command(
+            ['/usr/bin/dpkg', '--print-architecture'],
+            outfunc => sub { $host_dpkg_arch = shift },
+        );
+        die "failed to determine the host's Debian architecture\n" if !defined($host_dpkg_arch);
+    }
+    return $host_dpkg_arch;
 }
 
 # Devices are: [ (12 bits minor) (12 bits major) (8 bits minor) ]
