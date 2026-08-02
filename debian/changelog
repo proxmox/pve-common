@@ -1,3 +1,46 @@
+libpve-common-perl (9.1.21) trixie; urgency=medium
+
+  * section config: generate a proper 'oneOf' schema for configs using property
+    isolation, replacing the deprecated conditional-property form:
+    - every section type contributes its own variant, so a plugin's required
+      properties stay required in its own schema instead of being forced to be
+      optional across the whole config.
+    - the 'type' property is part of the schema and thus mandatory, also for
+      update calls, which is a change for any config moving to isolation. API
+      methods can set the new 'resolve_type' callback to derive it from the
+      remaining parameters, so that existing clients which omit it keep
+      working.
+    - plugins can now opt into isolation individually through the new
+      'isolate-properties' plugin data flag, and keep their properties usable
+      by other, non-isolated plugins through 'expose-properties'. This allows
+      moving type-specific properties out of a shared list without breaking
+      third party plugins.
+
+  * section config: choose property isolation through 'propertyIsolation' in
+    the base plugin's private data, as this belongs to the plugin architecture
+    rather than to whoever calls init(). Passing 'property_isolation' to init()
+    is deprecated.
+
+  * rest handler: support 'allOf' and 'oneOf' parameter schemas when parsing
+    command line options, rendering usage strings, completing options and
+    dumping the API, so that CLI tools and the API viewer work with the new
+    section config schemas.
+
+  * section config: allow init() to be called more than once per process, it
+    used to read back its own output and reject it, which two modules
+    initializing the same config would run into.
+
+  * json schema: fix the optionality check for the deprecated per-property
+    'instance-types', which kept such a property mandatory for section types it
+    does not even belong to.
+
+  * tools: add a helper that returns the host's Debian architecture (amd64,
+    arm64, ...), distinct from the uname-based CPU name, so that dependent
+    packages can select architecture-specific behavior using the same value
+    that dpkg and the package repositories use.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 02 Aug 2026 16:46:04 +0200
+
 libpve-common-perl (9.1.20) trixie; urgency=medium
 
   * json schema: fix an issue with legacy oneOf schemas not validating
