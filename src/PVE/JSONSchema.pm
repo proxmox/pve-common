@@ -1565,7 +1565,9 @@ sub check_prop {
             add_error($errors, $path, "missing 'instance-types'");
             return;
         }
-        if (grep { $_ eq $instance_type } $schema->{'instance_types'}->@*) {
+        # like for the oneOf variants above, a property which does not apply to the instance
+        # type at hand may be absent, no matter its own optionality
+        if (!grep { $_ eq $instance_type } $schema->{'instance-types'}->@*) {
             $optional_for_type = 1;
         }
     }

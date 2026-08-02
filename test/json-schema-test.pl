@@ -776,6 +776,64 @@ my $check_one_of = [
     },
 ];
 
+my $check_legacy_instance_types = [
+    {
+        name => 'legacy per-property instance-types',
+        schema => {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    enum => ['one', 'two'],
+                },
+                'only-one' => {
+                    type => 'string',
+                    'type-property' => 'type',
+                    'instance-types' => ['one'],
+                },
+            },
+        },
+        subtests => [
+            {
+                name => 'property present for its own type',
+                in => { type => 'one', 'only-one' => 'value' },
+            },
+            {
+                name => 'property absent for a foreign type',
+                in => { type => 'two' },
+            },
+            {
+                name => 'property absent for its own type',
+                in => { type => 'one' },
+                must_fail => {
+                    'only-one' => qr/property is missing and it is not optional/,
+                },
+            },
+        ],
+    },
+];
+
+for my $test ($check_legacy_instance_types->@*) {
+    subtest $test->{name}, sub {
+        for my $subtest ($test->{subtests}->@*) {
+            my $name = $subtest->{name} // 'unnamed';
+            my $errors = {};
+            PVE::JSONSchema::check_prop({ $subtest->{in}->%* }, $test->{schema}, undef,
+                $errors);
+
+            if (my $expected_errors = $subtest->{must_fail}) {
+                for my $key (keys $expected_errors->%*) {
+                    like(delete($errors->{$key}) // '', $expected_errors->{$key}, "$name.$key");
+                }
+            }
+            my $err_str = join("\n", map { "$_: $errors->{$_}" } sort keys %$errors);
+            is($err_str, '', "$name - no unexpected errors");
+        }
+        done_testing();
+    };
+}
+
 for my $test ($check_one_of->@*) {
     subtest $test->{name}, sub {
         for my $subtest ($test->{subtests}->@*) {
