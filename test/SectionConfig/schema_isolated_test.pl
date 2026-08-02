@@ -310,6 +310,643 @@ package RequiredCommonRequiredAndOptional {
     }
 }
 
+package PartiallyIsolatedCannotUseForeignProperty {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return "A single isolated plugin can access the base but no other plugin's properties";
+    }
+
+    package PartiallyIsolatedCannotUseForeignProperty::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {
+            propertyList => {
+                common => {
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    }
+
+    package PartiallyIsolatedCannotUseForeignProperty::PluginOne {
+        use base qw(PartiallyIsolatedCannotUseForeignProperty::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-one' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    package PartiallyIsolatedCannotUseForeignProperty::PluginTwo {
+        use base qw(PartiallyIsolatedCannotUseForeignProperty::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub plugindata($class) {
+            return { 'isolate-properties' => 1 };
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-one' => {
+                    optional => 1,
+                },
+                'prop-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    sub expect_error($class) {
+        "isolated plugin cannot use property 'prop-one' from foreign plugin";
+    }
+}
+
+package PartiallyIsolatedDoesNotExposeProperties {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return "A non-isolated plugin cannot access properties of isolated plugins by default";
+    }
+
+    package PartiallyIsolatedDoesNotExposeProperties::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {
+            propertyList => {
+                common => {
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    }
+
+    package PartiallyIsolatedDoesNotExposeProperties::PluginOne {
+        use base qw(PartiallyIsolatedDoesNotExposeProperties::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-one' => {
+                    optional => 1,
+                },
+                'prop-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    package PartiallyIsolatedDoesNotExposeProperties::PluginTwo {
+        use base qw(PartiallyIsolatedDoesNotExposeProperties::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub plugindata($class) {
+            return { 'isolate-properties' => 1 };
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    sub expect_error($class) {
+        "cannot use property 'prop-two' from isolated plugin 'two'\n";
+    }
+}
+
+package PartiallyIsolatedCanExposeProperties {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return "non-isolated can use exposed properties";
+    }
+
+    package PartiallyIsolatedCanExposeProperties::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {
+            propertyList => {
+                common => {
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    }
+
+    package PartiallyIsolatedCanExposeProperties::PluginOne {
+        use base qw(PartiallyIsolatedCanExposeProperties::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub plugindata($class) {
+            return {
+                'isolate-properties' => 1,
+                'expose-properties' => 1,
+            };
+        }
+
+        sub properties($class) {
+            return {
+                'prop-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-one' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    package PartiallyIsolatedCanExposeProperties::PluginTwo {
+        use base qw(PartiallyIsolatedCanExposeProperties::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-one' => {
+                    optional => 1,
+                },
+                'prop-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    package PartiallyIsolatedCanExposeProperties::PluginThree {
+        use base qw(PartiallyIsolatedCanExposeProperties::PluginBase);
+
+        sub type($class) {
+            return 'three';
+        }
+
+        sub plugindata($class) {
+            return { 'isolate-properties' => 1 };
+        }
+
+        sub properties($class) {
+            return {
+                'prop-three' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-three' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    sub expected_isolated_schema_base($class, $optional) {
+        return {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one three two)],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'three',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-three' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+            ],
+        };
+    }
+}
+
+package PartiallyIsolatedWithNamedExposedProperties {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return "non-isolated can use expose individual properties";
+    }
+
+    package PartiallyIsolatedWithNamedExposedProperties::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {
+            propertyList => {
+                common => {
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    }
+
+    package PartiallyIsolatedWithNamedExposedProperties::PluginOne {
+        use base qw(PartiallyIsolatedWithNamedExposedProperties::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub plugindata($class) {
+            return {
+                'isolate-properties' => 1,
+                'expose-properties' => { 'prop-exposed-one' => 1, 'prop-exposed-two' => 1 },
+            };
+        }
+
+        sub properties($class) {
+            return {
+                'prop-private-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-private-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-exposed-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-exposed-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    package PartiallyIsolatedWithNamedExposedProperties::PluginTwo {
+        use base qw(PartiallyIsolatedWithNamedExposedProperties::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-two' => {
+                    optional => 1,
+                },
+                'prop-exposed-one' => {
+                    optional => 1,
+                },
+                'prop-exposed-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    sub expected_isolated_schema_base($class, $optional) {
+        return {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-exposed-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-exposed-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-private-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-private-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-exposed-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-exposed-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+            ],
+        };
+    }
+}
+
+package PartiallyIsolatedNamedExposedNoUnexposed {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return "non-isolated can use exposed individual properties";
+    }
+
+    package PartiallyIsolatedNamedExposedNoUnexposed::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = {
+            propertyList => {
+                common => {
+                    type => 'string',
+                    optional => 1,
+                },
+            },
+        };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    }
+
+    package PartiallyIsolatedNamedExposedNoUnexposed::PluginOne {
+        use base qw(PartiallyIsolatedNamedExposedNoUnexposed::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub plugindata($class) {
+            return {
+                'isolate-properties' => 1,
+                'expose-properties' => { 'prop-exposed-one' => 1, 'prop-exposed-two' => 1 },
+            };
+        }
+
+        sub properties($class) {
+            return {
+                'prop-private-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-private-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-exposed-one' => {
+                    type => 'string',
+                    optional => 1,
+                },
+                'prop-exposed-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    package PartiallyIsolatedNamedExposedNoUnexposed::PluginTwo {
+        use base qw(PartiallyIsolatedNamedExposedNoUnexposed::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub properties($class) {
+            return {
+                'prop-two' => {
+                    type => 'string',
+                    optional => 1,
+                },
+            };
+        }
+
+        sub options($class) {
+            return {
+                common => {
+                    optional => 1,
+                },
+                'prop-two' => {
+                    optional => 1,
+                },
+                'prop-exposed-one' => {
+                    optional => 1,
+                },
+                'prop-private-two' => {
+                    optional => 1,
+                },
+            };
+        }
+    }
+
+    sub expect_error($class) {
+        "cannot use property 'prop-private-two' from isolated plugin 'one'\n";
+    }
+}
+
 sub test_compare_deeply($got, $expected, $test_name, $test_package) {
     $test_name = "$test_package - $test_name";
     my $description = $test_package->desc();

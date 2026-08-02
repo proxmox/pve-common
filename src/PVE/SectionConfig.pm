@@ -63,7 +63,9 @@ via the I<base plugin>:
 
 =head2 MODES
 
-There are two modes for how properties are exposed.
+There are two modes for how properties are exposed, and a plugin may opt into
+the isolated one on its own even when the config as a whole uses the unified
+mode, see C<L<< plugindata()|/$plugin->plugindata() >>>.
 
 =head3 unified mode (default)
 
@@ -206,7 +208,9 @@ plugin architecture upfront, for example:
     }
 
 Additional properties defined in I<child plugins> are stored in the
-C<propertyList> key. See C<L<< properties()|/$plugin->properties() >>>.
+C<propertyList> key (see C<L<< properties()|/$plugin->properties() >>>),
+provided they do not opt into property isolation (see
+C<L<< plugindata()|/$plugin->plugindata() >>>).
 
 B<NOTE:> It is advised to mark all default properties in C<propertyList> as
 optional using C<< optional => 1 >>, with only very few exceptions. One such
@@ -221,9 +225,10 @@ definitions. Any other attributes, even those specific to C<PVE::SectionConfig>
 (like C<fixed>), are not considered valid. All properties in C<propertyList>
 MUST be defined through a valid JSONSchema.
 
-Property isolation mode can be enabled by setting C<propertyIsolation> to true.
-This replaces the deprecated C<property_isolation> parameter of C<init()>, which
-must not be combined with an explicit C<propertyIsolation> of false.
+Property isolation mode can be enabled globally by setting C<propertyIsolation>
+to true. This replaces the deprecated C<property_isolation> parameter of
+C<init()>, which must not be combined with an explicit C<propertyIsolation> of
+false.
 
 =cut
 
@@ -404,7 +409,21 @@ B<OPTIONAL:> Can be implemented in I<child plugins>.
 This method is used by plugin authors to provide any kind of data specific to
 their plugin implementation and is otherwise not touched by C<L<PVE::SectionConfig>>.
 
-This mostly exists for convenience and doesn't need to be implemented.
+When property isolation is not enabled globally for a config, a plugin may opt
+into isolation for its own properties by setting C<< isolate-properties => 1 >>.
+For transitional periods, an isolated plugin may choose to expose its properties
+to other I<non-isolated> plugins by setting C<< expose-properties => 1 >>. To
+expose only a subset, set it to a hash instead, whose keys are the names of the
+properties to expose:
+
+    'expose-properties' => { 'some-property' => 1 },
+
+An isolated plugin can never access properties of another isolated plugin, even
+if they both set C<expose-properties>.
+
+B<NOTE:> as soon as one plugin isolates its properties, the whole config uses
+the isolated schema, which makes the C<type> property mandatory. See
+C<L<< createSchema()|/$base->createSchema() >>>.
 
 =cut
 
@@ -749,34 +768,82 @@ my sub init_unified($pdata) {
 }
 
 # Go through the plugins and sort their properties into their `isolatedPropertyList` entry.
-my sub collect_isolated_properties($pdata, $property_origins, $all_property_names) {
+my sub collect_exposed_and_isolated_properties(
+    $pdata, $global_isolation, $property_origins, $all_property_names,
+) {
     my $plugins = $pdata->{plugins};
+    my $propertyList = $pdata->{propertyList};
     my $isolatedPropertyList = $pdata->{isolatedPropertyList};
 
-    for my $type (keys $plugins->%*) {
+    for my $type (sort keys $plugins->%*) {
         my $props = $plugins->{$type}->properties();
 
-        my $isolated_props = $isolatedPropertyList->{$type} = {};
+        my $plugin_private = $pdata->{plugindata}->{$type};
+        my $plugin_isolates_properties = $plugin_private->{'isolate-properties'};
+        my $expose_properties = $plugin_private->{'expose-properties'};
+
+        my sub is_property_exposed {
+            my ($name) = @_;
+
+            return 1 if !$plugin_isolates_properties;
+            if (!ref($expose_properties)) {
+                return !!$expose_properties; # bool case
+            } else {
+                # `expose-properties` is a hash:
+                die "'expose-properties' should be a boolean or a hash\n"
+                    if ref($expose_properties) ne 'HASH';
+                return $expose_properties->{$name};
+            }
+        }
+
+        my $isolated_props;
+        # If this plugin is isolated, we fill the isolatedPropertyList entry:
+        if ($global_isolation || $plugin_isolates_properties) {
+            $isolated_props = $isolatedPropertyList->{$type} = {};
+        }
 
         for my $p (keys $props->%*) {
             # Mark that the property exists - this is for better error reporting only.
             $all_property_names->{$p} = 1;
 
-            $isolated_props->{$p} = { $props->{$p}->%* };
+            # Record the isolated property.
+            if ($isolated_props) {
+                $isolated_props->{$p} = { $props->{$p}->%* };
+            }
 
-            # Track the origin, it is what makes the "foreign property" errors below tell
-            # plugin authors where to copy a declaration from.
-            $property_origins->{$p} = $type;
+            if (!$global_isolation && is_property_exposed($p)) {
+                # If this plugin exposes the property, check that it is not a duplicate:
+                my $origin = $propertyList->{$p} && ($property_origins->{$p} // '<base>');
+                die "duplicate property '$p' - already defined in '$origin'\n" if $origin;
+
+                # Now expose the property, using a copy so that modifying the exposed schema
+                # cannot reach back into the plugin's own `properties()` data.
+                $propertyList->{$p} = { $props->{$p}->%* };
+
+                # An exposed declaration is the one a plugin author can copy, so it wins.
+                $property_origins->{$p} = $type;
+            } else {
+                # Track the origin even when nothing is exposed, it is what makes the
+                # "foreign property" errors below actionable.
+                $property_origins->{$p} //= $type;
+            }
         }
     }
 }
 
-my sub init_isolated($pdata) {
+# This is used for both fully and partially isolated section configs.
+my sub init_isolated($pdata, $global_isolation) {
     my $propertyList = $pdata->{propertyList};
+
+    # Make a clone of the base's property list, so plugins which want to
+    # isolate their properties can still use the base plugin properties.
+    my $basePropertyList = {%$propertyList};
+    $pdata->{'base-property-list'} = $basePropertyList;
 
     # The "common" property schema.
     my $common_properties = {};
 
+    # If plugins can expose properties, collect them now into the propertyList.
     # We store the origin of a property in the $property_origins hash.
     my $property_origins = {};
     # Every property name which exists is marked here, so that if someone tries
@@ -784,7 +851,9 @@ my sub init_isolated($pdata) {
     # message than "undefined property".
     my $all_property_names = {};
 
-    collect_isolated_properties($pdata, $property_origins, $all_property_names);
+    collect_exposed_and_isolated_properties(
+        $pdata, $global_isolation, $property_origins, $all_property_names,
+    );
 
     my $plugins = $pdata->{plugins};
     my $isolatedPropertyList = $pdata->{isolatedPropertyList};
@@ -794,16 +863,31 @@ my sub init_isolated($pdata) {
     for my $type (keys $plugins->%*) {
         my $opts = $plugins->{$type}->options();
 
+        my $plugin_private = $pdata->{plugindata}->{$type};
+        my $plugin_isolates_properties = $plugin_private->{'isolate-properties'};
+        # A plugin in isolation mode uses only the base class' `propertyList` as fall back, not
+        # the cumulatively exposed properties.
+        my $plugin_base_properties =
+            $plugin_isolates_properties ? $basePropertyList : $propertyList;
+
         for my $p (keys $opts->%*) {
             $used_options{$p} = 1;
 
-            my $prop = $isolatedPropertyList->{$type}->{$p} // $propertyList->{$p};
+            my $prop;
+            if ($global_isolation || $plugin_isolates_properties) {
+                $prop = $isolatedPropertyList->{$type}->{$p};
+            }
+            $prop //= $plugin_base_properties->{$p};
             if (!$prop) {
                 die "undefined property '$p'" if !$all_property_names->{$p};
                 # The property exists, but is declared by a plugin this one may not reach into.
                 # `$property_origins` covers every declared property, so it is always set here.
                 my $origin = $property_origins->{$p};
-                die "cannot use property '$p' of foreign plugin ('$origin') in isolation mode\n";
+                die "cannot use property '$p' of foreign plugin ('$origin') in isolation mode\n"
+                    if $global_isolation;
+                die "isolated plugin cannot use property '$p' from foreign plugin '$origin'\n"
+                    if $plugin_isolates_properties;
+                die "cannot use property '$p' from isolated plugin '$origin'\n";
             }
         }
 
@@ -822,10 +906,10 @@ my sub init_isolated($pdata) {
 
     # Finally, all non-optional base properties which aren't used by any plugin are still used
     # in the create-schema.
-    for my $p (keys $propertyList->%*) {
+    for my $p (keys $basePropertyList->%*) {
         next if $used_options{$p};
 
-        my $prop = $propertyList->{$p};
+        my $prop = $basePropertyList->{$p};
         next if $prop->{optional};
         # a copy, the schemas we hand out must not alias the plugin's property list
         $common_properties->{$p} = { $prop->%* };
@@ -858,10 +942,23 @@ sub init {
         $pdata->{$k} = {} if !$pdata->{$k};
     }
 
-    if ($property_isolation) {
-        init_isolated($pdata);
-    } else {
+    my $has_isolation = $property_isolation;
+    if (!$has_isolation) {
+        # check plugins for isolation opt-in:
+        my $plugins = $pdata->{plugins};
+        for my $type (keys $plugins->%*) {
+            my $plugin_private = $pdata->{plugindata}->{$type};
+            if ($plugin_private->{'isolate-properties'}) {
+                $has_isolation = 1;
+                last;
+            }
+        }
+    }
+
+    if (!$has_isolation) {
         init_unified($pdata);
+    } else {
+        init_isolated($pdata, $property_isolation);
     }
 }
 
