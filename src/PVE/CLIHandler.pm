@@ -455,10 +455,16 @@ my $print_bash_completion = sub {
 
     my $info = $class->map_method_by_name($name);
 
-    my $prop;
-    if (defined(my $properties = $info->{parameters}->{properties})) {
-        $prop = { $properties->%* }; # clone
-    }
+    # the parameters may be an allOf or oneOf schema, so collect the properties by walking it
+    my $prop = {};
+    PVE::JSONSchema::for_each_property(
+        $info->{parameters} // {},
+        sub {
+            my ($key, $schema) = @_;
+            $prop->{$key} //= $schema;
+            return;
+        },
+    );
     $prop = { %$prop, %$formatter_properties } if $formatter_properties;
 
     my $print_parameter_completion = sub {
