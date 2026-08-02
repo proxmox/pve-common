@@ -101,6 +101,7 @@ package PVE::SectionConfig;
 
 use strict;
 use warnings;
+use feature 'signatures';
 
 use Carp;
 use Digest::SHA;
@@ -329,15 +330,16 @@ rather than just by itself. The same property must not be defined by other
 plugins.
 
 In I<L<isolated mode|/MODES>>, these properties are specific to the plugin
-itself and cannot be used by others. They are however automatically added to
-the plugin's schema and made C<optional> by default.
+itself and cannot be used by others. They are automatically added to the
+plugin's schema.
 
 See the C<L<< options()|/$plugin->options() >>> method for more information.
 
-B<NOTE:> All properties added by child plugins are always marked as C<< optional => 1 >>,
-even if explicitly declared as C<< optional => 0 >>. If that were not the case,
-any plugin could add a new required (non-optional) property and break existing
-plugins.
+B<NOTE:> In I<L<unified mode|/MODES>>, all properties added by child plugins are always
+marked as C<< optional => 1 >>, even if explicitly declared as C<< optional => 0 >>. If that
+were not the case, any plugin could add a new required (non-optional) property to the shared
+property list and break existing plugins. This does not apply in I<L<isolated mode|/MODES>>,
+where each plugin has its own schema, so a property's declared optionality is preserved.
 
 =cut
 
@@ -382,8 +384,9 @@ wishes to use them.
 
 In I<L<isolated mode|/MODES>>, the locally defined properties (those registered
 by overriding C<L<< properties()|/$plugin->properties() >>>) are automatically
-added to the plugin's schema and made C<optional> by default. However, marking
-the property as C<fixed> must still be done via C<L<< options()|/$plugin->options() >>>.
+added to the plugin's schema, keeping the C<optional> flag from their own
+definition. However, marking the property as C<fixed> must still be done via
+C<L<< options()|/$plugin->options() >>>.
 
 =cut
 
@@ -426,51 +429,64 @@ sub has_isolated_properties {
     return defined($isolatedPropertyList) && scalar(keys $isolatedPropertyList->%*) > 0;
 }
 
-my sub compare_property {
-    my ($a, $b, $skip_opts) = @_;
+my sub make_isolated_base_schema($class, $pdata, $plugins, $is_update) {
+    my $type_enum = [];
+    my $one_of = [];
 
-    my $merged = { $a->%*, $b->%* };
-    delete $merged->{$_} for $skip_opts->@*;
+    # Keep whatever the base plugin declared for its type property, only the enum is ours.
+    my $type_schema = { ($pdata->{propertyList}->{type} // {})->%* };
+    $type_schema->{type} = 'string';
+    $type_schema->{description} //= 'Section Type';
+    delete $type_schema->{optional};
 
-    for my $opt (keys $merged->%*) {
-        return 0 if !PVE::Tools::is_deeply($a->{$opt}, $b->{$opt});
+    for my $type (sort keys $plugins->%*) {
+        my $properties = {};
+
+        my $opts = $pdata->{options}->{$type} || {};
+        for my $key (keys $opts->%*) {
+            # The update schema does not contain fixed keys.
+            next if $is_update && $opts->{$key}->{fixed};
+
+            my $schema = $class->get_property_schema($type, $key);
+            $schema = { $schema->%* };
+            $schema->{optional} = 1 if $is_update || $opts->{$key}->{optional};
+            $properties->{$key} = $schema;
+        }
+
+        my $schema = {
+            'instance-type' => $type,
+            additionalProperties => 0,
+            properties => $properties,
+        };
+
+        push $type_enum->@*, $type;
+        push $one_of->@*, $schema;
     }
 
-    return 1;
+    $type_schema->{enum} = $type_enum;
+
+    return {
+        'type-property' => 'type',
+        'type-property-schema' => $type_schema,
+        oneOf => $one_of,
+    };
 }
 
-my sub add_property {
-    my ($props, $key, $prop, $type) = @_;
+# The common properties end up in both the create and the update schema, and callers do modify
+# what they get back, so build a fresh one for each.
+my sub common_properties_schema($pdata) {
+    my $common = $pdata->{'common-properties'} or return;
 
-    if (!defined($props->{$key})) {
-        $props->{$key} = $prop;
-        return;
-    }
+    return {
+        additionalProperties => 0,
+        properties => { map { $_ => { $common->{$_}->%* } } keys $common->%* },
+    };
+}
 
-    if (!defined($props->{$key}->{oneOf})) {
-        if (compare_property($props->{$key}, $prop, ['instance-types'])) {
-            push $props->{$key}->{'instance-types'}->@*, $type;
-        } else {
-            my $new_prop = delete $props->{$key};
-            delete $new_prop->{'type-property'};
-            delete $prop->{'type-property'};
-            $props->{$key} = {
-                'type-property' => 'type',
-                oneOf => [
-                    $new_prop, $prop,
-                ],
-            };
-        }
-    } else {
-        for my $existing_prop ($props->{$key}->{oneOf}->@*) {
-            if (compare_property($existing_prop, $prop, ['instance-types', 'type-property'])) {
-                push $existing_prop->{'instance-types'}->@*, $type;
-                return;
-            }
-        }
-
-        push $props->{$key}->{oneOf}->@*, $prop;
-    }
+# Combines the oneOf with optional common options, with `$main` at the end.
+my sub combine_schemas($main, @common) {
+    @common = (grep { $_ && $_->%* } @common);
+    return (@common) ? { allOf => [@common, $main] } : $main;
 }
 
 =head3 $base->createSchema()
@@ -541,41 +557,37 @@ sub createSchema {
                 $props->{$p} = $propertyList->{$p};
             }
         }
+
+        return {
+            type => "object",
+            additionalProperties => 0,
+            properties => $props,
+        };
     } else {
-        for my $type (sort keys $plugins->%*) {
-            my $opts = $pdata->{options}->{$type} || {};
-            for my $key (sort keys $opts->%*) {
-                my $schema = $class->get_property_schema($type, $key);
-                my $prop = { $schema->%* };
-                $prop->{'instance-types'} = [$type];
-                $prop->{'type-property'} = 'type';
-                $prop->{optional} = 1 if $opts->{$key}->{optional};
+        my $schema = make_isolated_base_schema($class, $pdata, $plugins, 0);
 
-                add_property($props, $key, $prop, $type);
+        if ($skip_type) {
+            # With 'oneOf' we cannot skip the type, since we otherwise don't
+            # know which properties exist. This is currently only used for the
+            # hardware mappings where the API itself is already separated by
+            # type and writes single-section-type section configs. We support
+            # this as a special case to allow those to upgrade as well.
+            if ($schema->{oneOf}->@* != 1) {
+                die "cannot use 'skip_type' for configs with more than 1 section type\n";
             }
+
+            # To drop the type parameter we simply extract the inner object
+            # schema of the generated oneOf.
+            $schema = { $schema->{oneOf}->[0]->%* };
+            delete $schema->{'instance-type'};
         }
-        # add remaining global properties
-        for my $opt (keys $propertyList->%*) {
-            next if $props->{$opt};
-            $props->{$opt} = { $propertyList->{$opt}->%* };
-        }
-        for my $opt (keys $props->%*) {
-            if (my $necessaryTypes = $props->{$opt}->{'instance-types'}) {
-                if ($necessaryTypes->@* == scalar(keys $plugins->%*)) {
-                    delete $props->{$opt}->{'instance-types'};
-                    delete $props->{$opt}->{'type-property'};
-                } else {
-                    $props->{$opt}->{optional} = 1;
-                }
-            }
-        }
+
+        return combine_schemas(
+            $schema,
+            ($props->%*) && { additionalProperties => 0, properties => $props },
+            common_properties_schema($pdata),
+        );
     }
-
-    return {
-        type => "object",
-        additionalProperties => 0,
-        properties => $props,
-    };
 }
 
 =head3 $plugin->updateSchema()
@@ -619,6 +631,17 @@ sub updateSchema {
 
     my $filter_type = $single_class ? $class->type() : undef;
 
+    my $default_update_properties = {
+        digest => get_standard_option('pve-config-digest'),
+        delete => {
+            type => 'string',
+            format => 'pve-configid-list',
+            description => "A list of settings you want to delete.",
+            maxLength => 4096,
+            optional => 1,
+        },
+    };
+
     if (!$class->has_isolated_properties()) {
         for my $p (keys $propertyList->%*) {
             next if $p eq 'type';
@@ -645,57 +668,39 @@ sub updateSchema {
 
             $props->{$p} = $propertyList->{$p};
         }
+
+        $props->{$_} = $default_update_properties->{$_} for keys $default_update_properties->%*;
+
+        return {
+            type => "object",
+            additionalProperties => 0,
+            properties => $props,
+        };
     } else {
-        for my $type (sort keys $plugins->%*) {
-            my $opts = $pdata->{options}->{$type} || {};
-            for my $key (sort keys $opts->%*) {
-                next if $opts->{$key}->{fixed};
-
-                my $schema = $class->get_property_schema($type, $key);
-                my $prop = { $schema->%* };
-                $prop->{'instance-types'} = [$type];
-                $prop->{'type-property'} = 'type';
-                $prop->{optional} = 1;
-
-                add_property($props, $key, $prop, $type);
-            }
-        }
-
-        # optional globals are only usable when a plugin lists them in
-        # options(), which the loop above already added; so keep only the
-        # required globals, such as the section ID and the type - the latter
-        # is carried by update requests to pick the matching per-type variant
-        for my $opt (keys $propertyList->%*) {
-            next if $props->{$opt};
-            next if $propertyList->{$opt}->{optional};
-            $props->{$opt} = { $propertyList->{$opt}->%* };
-        }
-
-        for my $opt (keys $props->%*) {
-            if (my $necessaryTypes = $props->{$opt}->{'instance-types'}) {
-                if ($necessaryTypes->@* == scalar(keys $plugins->%*)) {
-                    delete $props->{$opt}->{'instance-types'};
-                    delete $props->{$opt}->{'type-property'};
+        my $schema = make_isolated_base_schema($class, $pdata, $plugins, 1);
+        if (defined($filter_type)) {
+            my $found = 0;
+            for my $entry ($schema->{oneOf}->@*) {
+                if ($entry->{'instance-type'} eq $filter_type) {
+                    $found = 1;
+                    $schema = { $entry->%* };
+                    delete $schema->{'instance-type'};
+                    last;
                 }
             }
+            # Sanity check - technically this would mean the 'type' method changed its values?
+            die "failed to get type-specific schema for '$filter_type'\n" if !$found;
         }
+        return combine_schemas(
+            $schema,
+            {
+                additionalProperties => 0,
+                properties => $default_update_properties,
+            },
+            ($props->%*) && { additionalProperties => 0, properties => $props },
+            common_properties_schema($pdata),
+        );
     }
-
-    $props->{digest} = get_standard_option('pve-config-digest');
-
-    $props->{delete} = {
-        type => 'string',
-        format => 'pve-configid-list',
-        description => "A list of settings you want to delete.",
-        maxLength => 4096,
-        optional => 1,
-    };
-
-    return {
-        type => "object",
-        additionalProperties => 0,
-        properties => $props,
-    };
 }
 
 =head3 $base->init()
@@ -711,6 +716,128 @@ C<L<< private()|/$base->private() >>> data instead, which is where the decision
 belongs. See L</MODES> in the package-level documentation for more information.
 
 =cut
+
+my sub init_unified($pdata) {
+    my $plugins = $pdata->{plugins};
+    my $propertyList = $pdata->{propertyList};
+
+    for my $type (keys $plugins->%*) {
+        my $props = $plugins->{$type}->properties();
+
+        for my $p (keys $props->%*) {
+            my $res;
+
+            die "duplicate property '$p'" if defined($propertyList->{$p});
+            $res = $propertyList->{$p} = { $props->{$p}->%* };
+            $res->{optional} = 1;
+        }
+    }
+
+    for my $type (keys $plugins->%*) {
+        my $opts = $plugins->{$type}->options();
+
+        for my $p (keys $opts->%*) {
+            my $prop = $propertyList->{$p};
+            die "undefined property '$p'" if !$prop;
+        }
+
+        $pdata->{options}->{$type} = { $opts->%* };
+    }
+
+    $propertyList->{type}->{type} = 'string';
+    $propertyList->{type}->{enum} = [sort keys $plugins->%*];
+}
+
+# Go through the plugins and sort their properties into their `isolatedPropertyList` entry.
+my sub collect_isolated_properties($pdata, $property_origins, $all_property_names) {
+    my $plugins = $pdata->{plugins};
+    my $isolatedPropertyList = $pdata->{isolatedPropertyList};
+
+    for my $type (keys $plugins->%*) {
+        my $props = $plugins->{$type}->properties();
+
+        my $isolated_props = $isolatedPropertyList->{$type} = {};
+
+        for my $p (keys $props->%*) {
+            # Mark that the property exists - this is for better error reporting only.
+            $all_property_names->{$p} = 1;
+
+            $isolated_props->{$p} = { $props->{$p}->%* };
+
+            # Track the origin, it is what makes the "foreign property" errors below tell
+            # plugin authors where to copy a declaration from.
+            $property_origins->{$p} = $type;
+        }
+    }
+}
+
+my sub init_isolated($pdata) {
+    my $propertyList = $pdata->{propertyList};
+
+    # The "common" property schema.
+    my $common_properties = {};
+
+    # We store the origin of a property in the $property_origins hash.
+    my $property_origins = {};
+    # Every property name which exists is marked here, so that if someone tries
+    # to use a property from an isolated plugin we can throw a better error
+    # message than "undefined property".
+    my $all_property_names = {};
+
+    collect_isolated_properties($pdata, $property_origins, $all_property_names);
+
+    my $plugins = $pdata->{plugins};
+    my $isolatedPropertyList = $pdata->{isolatedPropertyList};
+
+    my %used_options = (type => 1);
+
+    for my $type (keys $plugins->%*) {
+        my $opts = $plugins->{$type}->options();
+
+        for my $p (keys $opts->%*) {
+            $used_options{$p} = 1;
+
+            my $prop = $isolatedPropertyList->{$type}->{$p} // $propertyList->{$p};
+            if (!$prop) {
+                die "undefined property '$p'" if !$all_property_names->{$p};
+                # The property exists, but is declared by a plugin this one may not reach into.
+                # `$property_origins` covers every declared property, so it is always set here.
+                my $origin = $property_origins->{$p};
+                die "cannot use property '$p' of foreign plugin ('$origin') in isolation mode\n";
+            }
+        }
+
+        # automatically add the properties to options (if not specified explicitly)
+        if (my $isolated_props = $isolatedPropertyList->{$type}) {
+            for my $p (keys $isolated_props->%*) {
+                next if $opts->{$p};
+                $used_options{$p} = 1;
+                $opts->{$p} = {};
+                $opts->{$p}->{optional} = 1 if $isolated_props->{$p}->{optional};
+            }
+        }
+
+        $pdata->{options}->{$type} = $opts;
+    }
+
+    # Finally, all non-optional base properties which aren't used by any plugin are still used
+    # in the create-schema.
+    for my $p (keys $propertyList->%*) {
+        next if $used_options{$p};
+
+        my $prop = $propertyList->{$p};
+        next if $prop->{optional};
+        # a copy, the schemas we hand out must not alias the plugin's property list
+        $common_properties->{$p} = { $prop->%* };
+    }
+
+    # These are required and used by no plugin, so in practice the section identifier.
+    # Unified mode keeps them required in both schemas, so do the same here.
+    $pdata->{'common-properties'} = $common_properties if $common_properties->%*;
+
+    $propertyList->{type}->{type} = 'string';
+    $propertyList->{type}->{enum} = [sort keys $plugins->%*];
+}
 
 sub init {
     my ($class, %param) = @_;
@@ -731,53 +858,11 @@ sub init {
         $pdata->{$k} = {} if !$pdata->{$k};
     }
 
-    my $plugins = $pdata->{plugins};
-    my $propertyList = $pdata->{propertyList};
-    my $isolatedPropertyList = $pdata->{isolatedPropertyList};
-
-    for my $type (keys $plugins->%*) {
-        my $props = $plugins->{$type}->properties();
-        for my $p (keys $props->%*) {
-            my $res;
-            if ($property_isolation) {
-                $res = $isolatedPropertyList->{$type}->{$p} = {};
-            } else {
-                die "duplicate property '$p'" if defined($propertyList->{$p});
-                $res = $propertyList->{$p} = {};
-            }
-            my $data = $props->{$p};
-            for my $a (keys $data->%*) {
-                $res->{$a} = $data->{$a};
-            }
-            $res->{optional} = 1;
-        }
+    if ($property_isolation) {
+        init_isolated($pdata);
+    } else {
+        init_unified($pdata);
     }
-
-    for my $type (keys $plugins->%*) {
-        my $opts = $plugins->{$type}->options();
-        for my $p (keys $opts->%*) {
-            my $prop;
-            if ($property_isolation) {
-                $prop = $isolatedPropertyList->{$type}->{$p};
-            }
-            $prop //= $propertyList->{$p};
-            die "undefined property '$p'" if !$prop;
-        }
-
-        # automatically the properties to options (if not specified explicitly)
-        if ($property_isolation) {
-            for my $p (keys $isolatedPropertyList->{$type}->%*) {
-                next if $opts->{$p};
-                $opts->{$p} = {};
-                $opts->{$p}->{optional} = 1 if $isolatedPropertyList->{$type}->{$p}->{optional};
-            }
-        }
-
-        $pdata->{options}->{$type} = $opts;
-    }
-
-    $propertyList->{type}->{type} = 'string';
-    $propertyList->{type}->{enum} = [sort keys $plugins->%*];
 }
 
 =head3 $base->lookup($type)

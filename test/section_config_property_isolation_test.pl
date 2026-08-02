@@ -5,6 +5,7 @@ use lib '../src';
 package Conf;
 use strict;
 use warnings;
+use feature 'signatures';
 
 use Test::More;
 
@@ -23,6 +24,7 @@ my $defaultData = {
             type => 'string',
             description => 'common value',
             maxLength => 512,
+            optional => 1,
         },
     },
     propertyIsolation => 1,
@@ -317,109 +319,27 @@ Conf->expect_success(
 );
 
 # schema tests
-my $create_schema = Conf->createSchema();
-my $expected_create_schema = {
-    additionalProperties => 0,
-    type => 'object',
-    properties => {
-        id => {
-            description => "ID",
-            type => 'string',
-            format => 'pve-configid',
-            maxLength => 64,
-        },
-        type => {
-            description => 'Section type.',
-            enum => ['one', 'two'],
-            type => 'string',
-        },
-        common => {
-            maxLength => 512,
-            optional => 1,
-            type => 'string',
-            description => 'common value',
-        },
-        field1 => {
-            type => 'integer',
-            'type-property' => 'type',
-            'instance-types' => ['one'],
-            maximum => 9,
-            optional => 1,
-            minimum => 3,
-            description => 'Field One',
-        },
-        field2 => {
-            oneOf => [
-                {
-                    description => 'Field Two',
-                    optional => 1,
-                    minimum => 10,
-                    'instance-types' => ['one'],
-                    type => 'integer',
-                    maximum => 19,
-                },
-                {
-                    optional => 1,
-                    minimum => 3,
-                    description => 'Field Two but different',
-                    type => 'integer',
-                    'instance-types' => ['two'],
-                    maximum => 9,
-                },
-            ],
-            'type-property' => 'type',
-        },
-        arrayfield => {
-            items => {
-                type => 'string',
-                format => {
-                    subfield1 => {
-                        description => 'first subfield',
-                        type => 'string',
-                    },
-                    subfield2 => {
-                        minimum => 0,
-                        type => 'integer',
-                        optional => 1,
-                    },
-                },
-                description => 'a property string',
-            },
-            description => 'Array Field with property string',
-            type => 'array',
-            optional => 1,
-        },
-        another => {
-            optional => 1,
-            type => 'string',
-            description => 'Another field',
-        },
-    },
+my $id_schema = {
+    description => "ID",
+    type => 'string',
+    format => 'pve-configid',
+    maxLength => 64,
 };
-
-is_deeply($create_schema, $expected_create_schema, "property-isolation create schema test");
-
-my $update_schema = Conf->updateSchema();
-my $expected_update_schema = {
+my $common_schema = {
+    maxLength => 512,
+    optional => 1,
+    type => 'string',
+    description => 'common value',
+};
+my $update_common_schema = {
     additionalProperties => 0,
-    type => 'object',
     properties => {
-        id => {
-            description => "ID",
-            type => 'string',
-            format => 'pve-configid',
-            maxLength => 64,
-        },
-        type => {
-            type => 'string',
-            enum => ['one', 'two'],
-            description => 'Section type.',
-        },
         digest => {
             optional => 1,
             type => 'string',
-            description =>
-                'Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.',
+            description => 'Prevent changes if current configuration file has a'
+                . ' different digest. This can be used to prevent concurrent'
+                . ' modifications.',
             maxLength => 64,
         },
         delete => {
@@ -429,69 +349,127 @@ my $expected_update_schema = {
             optional => 1,
             type => 'string',
         },
-        common => {
-            maxLength => 512,
-            description => 'common value',
-            type => 'string',
-            optional => 1,
-        },
-        field1 => {
-            description => 'Field One',
-            maximum => 9,
-            'instance-types' => ['one'],
-            'type-property' => 'type',
-            minimum => 3,
-            optional => 1,
-            type => 'integer',
-        },
-        field2 => {
-            'type-property' => 'type',
-            oneOf => [
-                {
-                    type => 'integer',
-                    minimum => 10,
-                    optional => 1,
-                    maximum => 19,
-                    'instance-types' => ['one'],
-                    description => 'Field Two',
-                },
-                {
-                    description => 'Field Two but different',
-                    maximum => 9,
-                    'instance-types' => ['two'],
-                    minimum => 3,
-                    optional => 1,
-                    type => 'integer',
-                },
-            ],
-        },
-        arrayfield => {
-            type => 'array',
-            optional => 1,
-            items => {
-                description => 'a property string',
-                type => 'string',
-                format => {
-                    subfield2 => {
-                        type => 'integer',
-                        minimum => 0,
-                        optional => 1,
-                    },
-                    subfield1 => {
-                        description => 'first subfield',
-                        type => 'string',
-                    },
-                },
-            },
-            description => 'Array Field with property string',
-        },
-        another => {
-            description => 'Another field',
-            optional => 1,
-            type => 'string',
-        },
     },
 };
+my sub make_schema($is_update) {
+    my %maybe_optional = $is_update ? (optional => 1) : ();
+    my @update_parts = $is_update ? ($update_common_schema) : ();
+    return {
+        allOf => [
+            @update_parts,
+            {
+                additionalProperties => 0,
+                properties => {
+                    # required in both schemas, it identifies the section
+                    id => { $id_schema->%* },
+                },
+            },
+            {
+                'type-property' => 'type',
+                'type-property-schema' => {
+                    type => 'string',
+                    description => 'Section type.',
+                    enum => [qw(one two)],
+                },
+                oneOf => [
+                    {
+                        'instance-type' => 'one',
+                        additionalProperties => 0,
+                        properties => {
+                            common => { $common_schema->%*, %maybe_optional },
+                            field1 => {
+                                description => 'Field One',
+                                type => 'integer',
+                                minimum => 3,
+                                maximum => 9,
+                                %maybe_optional,
+                            },
+                            field2 => {
+                                description => 'Field Two',
+                                type => 'integer',
+                                minimum => 10,
+                                maximum => 19,
+                                %maybe_optional,
+                            },
+                            another => {
+                                description => 'Another field',
+                                type => 'string',
+                                optional => 1,
+                            },
+                            arrayfield => {
+                                description => "Array Field with property string",
+                                optional => 1,
+                                type => 'array',
+                                items => {
+                                    type => 'string',
+                                    description => 'a property string',
+                                    format => {
+                                        subfield1 => {
+                                            type => 'string',
+                                            description => 'first subfield',
+                                        },
+                                        subfield2 => {
+                                            type => 'integer',
+                                            minimum => 0,
+                                            optional => 1,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    {
+                        'instance-type' => 'two',
+                        additionalProperties => 0,
+                        properties => {
+                            common => { $common_schema->%*, %maybe_optional },
+                            field2 => {
+                                description => 'Field Two but different',
+                                type => 'integer',
+                                minimum => 3,
+                                maximum => 9,
+                                %maybe_optional,
+                            },
+                            another => {
+                                description => 'Another field',
+                                type => 'string',
+                                %maybe_optional,
+                            },
+                            arrayfield => {
+                                optional => 1,
+                                description => "Array Field with property string",
+                                type => 'array',
+                                items => {
+                                    type => 'string',
+                                    description => 'a property string',
+                                    format => {
+                                        subfield1 => {
+                                            type => 'string',
+                                            description => 'first subfield',
+                                        },
+                                        subfield2 => {
+                                            type => 'integer',
+                                            minimum => 0,
+                                            optional => 1,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+}
+
+my $create_schema = Conf->createSchema();
+my $expected_create_schema = make_schema(0);
+
+is_deeply($create_schema, $expected_create_schema, "property-isolation create schema test");
+
+my $update_schema = Conf->updateSchema();
+my $expected_update_schema = make_schema(1);
 is_deeply($update_schema, $expected_update_schema, "property-isolation update schema test");
 
 done_testing();

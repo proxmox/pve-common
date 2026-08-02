@@ -43,12 +43,28 @@ package TestPackage {
         confess "not implemented";
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         confess "not implemented";
     }
 
+    sub expected_isolated_createSchema($class) {
+        return $class->expected_isolated_schema_base(0);
+    }
+
     sub expected_isolated_updateSchema($class) {
-        confess "not implemented";
+        my $schema = $class->expected_isolated_schema_base(1),
+            my $update_prop_schema = {
+                additionalProperties => 0,
+                properties => { $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%* },
+            };
+        if ($schema->{allOf}) {
+            unshift $schema->{allOf}->@*, $update_prop_schema;
+            return $schema;
+        } else {
+            return {
+                allOf => [$update_prop_schema, $schema],
+            };
+        }
     }
 };
 
@@ -161,66 +177,36 @@ package OneOptionalNoCommon {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            type => 'string',
+                            optional => $optional,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 };
@@ -328,50 +314,42 @@ package OneOptionalAllFixedNoCommon {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        $optional ? ()
+                        : (
+                            'prop-one' => {
+                                type => 'string',
+                                optional => $optional,
+                            },
+                        )
+                    },
                 },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        $optional ? ()
+                        : (
+                            'prop-two' => {
+                                type => 'string',
+                                optional => 1,
+                            },
+                        )
+                    },
+                },
+            ],
         };
     }
 };
@@ -471,66 +449,36 @@ package AllUnusedNoCommon {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            type => 'string',
+                            optional => $optional,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -657,70 +605,36 @@ package OptionalCommonUnused {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -856,82 +770,40 @@ package OptionalCommonRequiredByOne {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -1068,74 +940,44 @@ package OptionalCommonRequiredByAll {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -1264,74 +1106,50 @@ package RequiredCommonUnused {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        # a required common property stays required in both schemas
+                        common => {
+                            type => 'string',
+                            optional => 0,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
+                {
                     'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    type => 'string',
-                    optional => 0,
-                },
-            },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
+                    'type-property-schema' => {
+                        type => 'string',
+                        description => 'Section Type',
+                        enum => [qw(one two)],
+                    },
+                    oneOf => [
+                        {
+                            'instance-type' => 'one',
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-one' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
+                        {
+                            'instance-type' => 'two',
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-two' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
                     ],
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    type => 'string',
-                    optional => 0,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -1466,82 +1284,40 @@ package RequiredCommonRequiredByOne {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        common => {
+                            type => 'string',
+                            optional => $optional,
+                        },
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -1670,74 +1446,50 @@ package RequiredCommonRequiredByAll {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        # a required common property stays required in both schemas
+                        common => {
+                            type => 'string',
+                            optional => 0,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
+                {
                     'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    type => 'string',
-                    optional => 0,
-                },
-            },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
+                    'type-property-schema' => {
+                        type => 'string',
+                        description => 'Section Type',
+                        enum => [qw(one two)],
+                    },
+                    oneOf => [
+                        {
+                            'instance-type' => 'one',
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-one' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
+                        {
+                            'instance-type' => 'two',
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-two' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
                     ],
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    type => 'string',
-                    optional => 0,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -1874,74 +1626,44 @@ package RequiredCommonOptionalForAll {
         };
     }
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    type => 'string',
-                    optional => 1,
-                },
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        common => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        common => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }

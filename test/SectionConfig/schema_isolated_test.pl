@@ -29,412 +29,35 @@ use SectionConfig::Helpers qw(
 package TestPackage {
     use Carp qw(confess);
 
-    sub expected_isolated_createSchema($class) {
+    sub expect_error($class) {
+        return;
+    }
+
+    sub expected_isolated_schema_base($class, $optional) {
         confess "not implemented";
     }
 
+    sub expected_isolated_createSchema($class) {
+        return $class->expected_isolated_schema_base(0);
+    }
+
     sub expected_isolated_updateSchema($class) {
-        confess "not implemented";
+        return {
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties =>
+                        { $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%* },
+                },
+                $class->expected_isolated_schema_base(1),
+            ],
+        };
     }
 
     sub desc($class) {
         return undef;
     }
 };
-
-package IdenticalPropertiesOnDifferentPlugins {
-    use base qw(TestPackage);
-
-    sub desc($class) {
-        return "defining identical properties on different plugins does not lead to"
-            . " 'oneOf' being used inside either createSchema or updateSchema";
-    }
-
-    package IdenticalPropertiesOnDifferentPlugins::PluginBase {
-        use base qw(PVE::SectionConfig);
-
-        my $DEFAULT_DATA = { propertyIsolation => 1 };
-
-        sub private($class) {
-            return $DEFAULT_DATA;
-        }
-    };
-
-    package IdenticalPropertiesOnDifferentPlugins::PluginOne {
-        use base qw(IdenticalPropertiesOnDifferentPlugins::PluginBase);
-
-        sub type($class) {
-            return 'one';
-        }
-
-        sub properties($class) {
-            return {
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            };
-        }
-
-        sub options($class) {
-            return {
-                'prop-one' => {
-                    optional => 1,
-                },
-                'prop-two' => {
-                    optional => 1,
-                },
-            };
-        }
-    };
-
-    package IdenticalPropertiesOnDifferentPlugins::PluginTwo {
-        use base qw(IdenticalPropertiesOnDifferentPlugins::PluginBase);
-
-        sub type($class) {
-            return 'two';
-        }
-
-        sub properties($class) {
-            return {
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            };
-        }
-
-        sub options($class) {
-            return {
-                'prop-one' => {
-                    optional => 1,
-                },
-                'prop-two' => {
-                    optional => 1,
-                },
-            };
-        }
-    };
-
-    sub expected_isolated_createSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
-        };
-    }
-}
-
-package IdenticalPropertyOnDifferentPlugin {
-    use base qw(TestPackage);
-
-    sub desc($class) {
-        return "defining identical properties on different plugins does not lead to"
-            . " 'oneOf' being used inside either createSchema or updateSchema";
-    }
-
-    package IdenticalPropertyOnDifferentPlugin::PluginBase {
-        use base qw(PVE::SectionConfig);
-
-        my $DEFAULT_DATA = { propertyIsolation => 1 };
-
-        sub private($class) {
-            return $DEFAULT_DATA;
-        }
-    };
-
-    package IdenticalPropertyOnDifferentPlugin::PluginOne {
-        use base qw(IdenticalPropertyOnDifferentPlugin::PluginBase);
-
-        sub type($class) {
-            return 'one';
-        }
-
-        sub properties($class) {
-            return {
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            };
-        }
-
-        sub options($class) {
-            return {
-                'prop-one' => {
-                    optional => 1,
-                },
-            };
-        }
-    };
-
-    package IdenticalPropertyOnDifferentPlugin::PluginTwo {
-        use base qw(IdenticalPropertyOnDifferentPlugin::PluginBase);
-
-        sub type($class) {
-            return 'two';
-        }
-
-        sub properties($class) {
-            return {
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            };
-        }
-
-        sub options($class) {
-            return {
-                'prop-one' => {
-                    optional => 1,
-                },
-                'prop-two' => {
-                    optional => 1,
-                },
-            };
-        }
-    };
-
-    sub expected_isolated_createSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-            },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
-        };
-    }
-}
-
-package SamePropertyNamesOnDifferentPlugins {
-    use base qw(TestPackage);
-
-    sub desc($class) {
-        return
-            "defining properties with the same name but different optionality"
-            . " on different plugins does not lead to 'oneOf' being used inside"
-            . " either createSchema or updateSchema - because properties defined"
-            . " by plugins are always marked as optional";
-    }
-
-    package SamePropertyNamesOnDifferentPlugins::PluginBase {
-        use base qw(PVE::SectionConfig);
-
-        my $DEFAULT_DATA = { propertyIsolation => 1 };
-
-        sub private($class) {
-            return $DEFAULT_DATA;
-        }
-    };
-
-    package SamePropertyNamesOnDifferentPlugins::PluginOne {
-        use base qw(SamePropertyNamesOnDifferentPlugins::PluginBase);
-
-        sub type($class) {
-            return 'one';
-        }
-
-        sub properties($class) {
-            return {
-                'prop-one' => {
-                    type => 'string',
-                    optional => 0,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            };
-        }
-
-        sub options($class) {
-            return {
-                'prop-one' => {
-                    optional => 0,
-                },
-                'prop-two' => {
-                    optional => 1,
-                },
-            };
-        }
-    };
-
-    package SamePropertyNamesOnDifferentPlugins::PluginTwo {
-        use base qw(SamePropertyNamesOnDifferentPlugins::PluginBase);
-
-        sub type($class) {
-            return 'two';
-        }
-
-        sub properties($class) {
-            return {
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 0,
-                },
-            };
-        }
-
-        sub options($class) {
-            return {
-                'prop-one' => {
-                    optional => 1,
-                },
-                'prop-two' => {
-                    optional => 0,
-                },
-            };
-        }
-    };
-
-    sub expected_isolated_createSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
-        };
-    }
-}
 
 package OptionalCommonRequiredAndOptional {
     use base qw(TestPackage);
@@ -520,74 +143,45 @@ package OptionalCommonRequiredAndOptional {
         }
     };
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    type => 'string',
-                    optional => 1,
-                },
-            },
-        };
-    }
 
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
             },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-one' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
+                },
+            ],
         };
     }
 }
@@ -674,89 +268,44 @@ package RequiredCommonRequiredAndOptional {
         }
     };
 
-    sub expected_isolated_createSchema($class) {
+    sub expected_isolated_schema_base($class, $optional) {
         return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
-                },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'common' => {
-                    oneOf => [
-                        {
-                            'instance-types' => [
-                                "one",
-                            ],
-                            optional => 0,
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one two)],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
                             type => 'string',
+                            optional => $optional,
                         },
-                        {
-                            'instance-types' => [
-                                "two",
-                            ],
+                        'prop-one' => {
+                            type => 'string',
                             optional => 1,
-                            type => 'string',
                         },
-                    ],
-                    'type-property' => 'type',
+                    },
                 },
-            },
-        };
-    }
-
-    sub expected_isolated_updateSchema($class) {
-        return {
-            type => 'object',
-            additionalProperties => 0,
-            properties => {
-                type => {
-                    type => 'string',
-                    enum => [
-                        "one", "two",
-                    ],
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'common' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                        'prop-two' => {
+                            type => 'string',
+                            optional => 1,
+                        },
+                    },
                 },
-                'prop-one' => {
-                    'instance-types' => [
-                        "one",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                'prop-two' => {
-                    'instance-types' => [
-                        "two",
-                    ],
-                    'type-property' => 'type',
-                    type => 'string',
-                    optional => 1,
-                },
-                common => {
-                    type => 'string',
-                    optional => 1,
-                },
-                $SectionConfig::Helpers::UPDATE_SCHEMA_DEFAULT_PROPERTIES->%*,
-            },
+            ],
         };
     }
 }
@@ -782,25 +331,46 @@ sub init_and_run_tests($package) {
 
     my ($base, $plugins) = $system->@{qw(base plugins)};
 
-    for my $plugin ($plugins->@*) {
-        $plugin->register();
+    eval {
+        for my $plugin ($plugins->@*) {
+            $plugin->register();
+        }
+
+        $base->init();
+    };
+    my $err = $@;
+    my $expected_err = $package->expect_error();
+    if ($expected_err) {
+        if (!$err) {
+            fail("'$package' expects an error, but succeeded to initialize");
+        } else {
+            my $substr = $err && substr($err, 0, length($expected_err));
+            ok($substr eq $expected_err, "'$package' expects a specific error")
+                or diag("Got error: $err\nExpected error: $expected_err\n");
+        }
+    } elsif ($err) {
+        fail("'$package' expected no errors - $err");
     }
 
-    $base->init();
+    #<<<
+    SKIP: {
+    #>>>
+        skip "'$package' is supposed to fail initialization", 2 if $err || $expected_err;
 
-    test_compare_deeply(
-        $base->createSchema(),
-        $package->expected_isolated_createSchema(),
-        "isolated - createSchema comparison",
-        $package,
-    );
+        test_compare_deeply(
+            $base->createSchema(),
+            $package->expected_isolated_createSchema(),
+            "isolated - createSchema comparison",
+            $package,
+        );
 
-    test_compare_deeply(
-        $base->updateSchema(),
-        $package->expected_isolated_updateSchema(),
-        "isolated - updateSchema comparison",
-        $package,
-    );
+        test_compare_deeply(
+            $base->updateSchema(),
+            $package->expected_isolated_updateSchema(),
+            "isolated - updateSchema comparison",
+            $package,
+        );
+    }
 
     return;
 }
