@@ -835,10 +835,9 @@ my sub collect_exposed_and_isolated_properties(
 my sub init_isolated($pdata, $global_isolation) {
     my $propertyList = $pdata->{propertyList};
 
-    # Make a clone of the base's property list, so plugins which want to
-    # isolate their properties can still use the base plugin properties.
-    my $basePropertyList = {%$propertyList};
-    $pdata->{'base-property-list'} = $basePropertyList;
+    # Plugins which isolate their properties can still use the base plugin's ones, and `init()`
+    # keeps a pristine copy of those around for exactly that.
+    my $basePropertyList = $pdata->{'base-property-list'};
 
     # The "common" property schema.
     my $common_properties = {};
@@ -941,6 +940,17 @@ sub init {
     for my $k (qw(options plugins plugindata propertyList isolatedPropertyList)) {
         $pdata->{$k} = {} if !$pdata->{$k};
     }
+
+    # `init()` derives from the base plugin's property list and writes the result back into the
+    # very same hash, so remember a pristine copy and restart from it every time. Without this a
+    # second `init()` in one process - which happens as soon as two modules initialize the same
+    # config - would read back its own output and reject it as duplicate properties.
+    my $base_property_list = ($pdata->{'base-property-list'} //= { $pdata->{propertyList}->%* });
+    $pdata->{propertyList} =
+        { map { $_ => { $base_property_list->{$_}->%* } } keys $base_property_list->%* };
+    $pdata->{isolatedPropertyList} = {};
+    $pdata->{options} = {};
+    delete $pdata->{'common-properties'};
 
     my $has_isolation = $property_isolation;
     if (!$has_isolation) {

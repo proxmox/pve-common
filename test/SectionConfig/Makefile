@@ -2,6 +2,7 @@ TESTS = \
 	schema_comparison_test.test				\
 	schema_isolated_test.test				\
 	schema_extra_args_test.test				\
+	init_repeated_test.test					\
 
 
 all:
