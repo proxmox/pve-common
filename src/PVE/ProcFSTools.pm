@@ -21,6 +21,56 @@ my $clock_ticks = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
 my $cpuinfo;
 
+# arm64 /proc/cpuinfo reports the CPU through numeric implementer and part IDs instead of a
+# 'model name' line; map the common ones so read_cpuinfo can present a human-readable model, the
+# same way lscpu does. Extend as needed for newer cores.
+my $arm_cpu_implementers = {
+    0x41 => 'ARM',
+    0x42 => 'Broadcom',
+    0x43 => 'Cavium',
+    0x46 => 'Fujitsu',
+    0x48 => 'HiSilicon',
+    0x4e => 'NVIDIA',
+    0x50 => 'APM',
+    0x51 => 'Qualcomm',
+    0x53 => 'Samsung',
+    0x56 => 'Marvell',
+    0x61 => 'Apple',
+    0x69 => 'Intel',
+    0x6d => 'Microsoft',
+    0xc0 => 'Ampere',
+};
+
+my $arm_cpu_parts = {
+    0x41 => { # ARM
+        0xd03 => 'Cortex-A53',
+        0xd05 => 'Cortex-A55',
+        0xd07 => 'Cortex-A57',
+        0xd08 => 'Cortex-A72',
+        0xd09 => 'Cortex-A73',
+        0xd0a => 'Cortex-A75',
+        0xd0b => 'Cortex-A76',
+        0xd0d => 'Cortex-A77',
+        0xd41 => 'Cortex-A78',
+        0xd0c => 'Neoverse-N1',
+        0xd49 => 'Neoverse-N2',
+        0xd40 => 'Neoverse-V1',
+        0xd4f => 'Neoverse-V2',
+        0xd8e => 'Neoverse-N3',
+        0xd84 => 'Neoverse-V3',
+    },
+    0x46 => { # Fujitsu
+        0x001 => 'A64FX',
+    },
+    0x48 => { # HiSilicon
+        0xd01 => 'Kunpeng-920',
+    },
+    0xc0 => { # Ampere
+        0xac3 => 'Ampere-1',
+        0xac4 => 'Ampere-1a',
+    },
+};
+
 sub read_cpuinfo {
     my $fn = '/proc/cpuinfo';
 
@@ -43,6 +93,7 @@ sub read_cpuinfo {
     my $cpuid = 0;
     my $idhash = {};
     my $count = 0;
+    my ($cpu_implementer, $cpu_part);
     while (defined(my $line = <$fh>)) {
         if ($line =~ m/^processor\s*:\s*\d+\s*$/i) {
             $count++;
@@ -61,6 +112,20 @@ sub read_cpuinfo {
             $idhash->{$1} = 1 if not defined($idhash->{$1});
         } elsif ($line =~ m/^cpu cores\s*:\s*(\d+)\s*$/i) {
             $idhash->{$cpuid} = $1 if defined($idhash->{$cpuid});
+        } elsif ($line =~ m/^CPU implementer\s*:\s*(0x[0-9a-fA-F]+)\s*$/) {
+            $cpu_implementer //= hex($1);
+        } elsif ($line =~ m/^CPU part\s*:\s*(0x[0-9a-fA-F]+)\s*$/) {
+            $cpu_part //= hex($1);
+        }
+    }
+
+    # arm64 has no 'model name'/'vendor_id'; derive them from the implementer and part IDs
+    if ($res->{model} eq 'unknown' && defined($cpu_implementer)) {
+        my $vendor = $arm_cpu_implementers->{$cpu_implementer};
+        $res->{vendor} = $vendor if $vendor && $res->{vendor} eq 'unknown';
+        if (defined($cpu_part)) {
+            $res->{model} = $arm_cpu_parts->{$cpu_implementer}->{$cpu_part}
+                // sprintf('%s part 0x%03x', $vendor // 'ARM', $cpu_part);
         }
     }
 
