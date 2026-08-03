@@ -1634,7 +1634,7 @@ sub check_prop {
         }
 
         if (my $pattern = $schema->{pattern}) {
-            if ($value !~ m/^$pattern$/) {
+            if ($value !~ m/^$pattern\z/) {
                 add_error($errors, $path, "value does not match the regex pattern");
                 return;
             }
