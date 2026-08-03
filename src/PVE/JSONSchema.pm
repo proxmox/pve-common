@@ -1094,9 +1094,11 @@ sub parse_property_string {
 
     my $res = {};
     foreach my $part (split(/,/, $data)) {
-        next if $part =~ /^\s*$/;
+        next if $part =~ /^\s*\z/;
 
-        if ($part =~ /^([^=]+)=(.+)$/) {
+        if ($part =~ /\n/) {
+            die "properties must not contain newlines\n";
+        } elsif ($part =~ /^([^=]+)=(.+)\z/) {
             my ($k, $v) = ($1, $2);
             next if $skip->{$k};
             die "duplicate key in comma-separated list property: $k\n" if defined($res->{$k});
