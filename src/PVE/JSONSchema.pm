@@ -242,7 +242,7 @@ register_format('urlencoded', \&pve_verify_urlencoded);
 
 sub pve_verify_urlencoded {
     my ($text, $noerr) = @_;
-    if ($text !~ /^[-%a-zA-Z0-9_.!~*'()]*$/) {
+    if ($text !~ /^[-%a-zA-Z0-9_.!~*'()]*\z/) {
         return undef if $noerr;
         die "invalid urlencoded string: $text\n";
     }
@@ -254,7 +254,7 @@ register_format('pve-configid', \&pve_verify_configid);
 sub pve_verify_configid {
     my ($id, $noerr) = @_;
 
-    if ($id !~ m/^$CONFIGID_RE$/) {
+    if ($id !~ m/^$CONFIGID_RE\z/) {
         return undef if $noerr;
         die "invalid configuration ID '$id'\n";
     }
@@ -274,7 +274,7 @@ PVE::JSONSchema::register_format('pve-bridge-id', \&parse_bridge_id);
 sub parse_bridge_id {
     my ($id, $noerr) = @_;
 
-    if ($id !~ m/^[-_.\w\d]+$/) {
+    if ($id !~ m/^[-_.\w\d]+\z/) {
         return undef if $noerr;
         die "invalid bridge ID '$id'\n";
     }
@@ -297,7 +297,7 @@ sub parse_id {
         die "$type ID '$id' cannot be shorter than 2 characters\n";
     }
 
-    if ($id !~ m/^[a-z][a-z0-9\-\_\.]*[a-z0-9]$/i) {
+    if ($id !~ m/^[a-z][a-z0-9\-\_\.]*[a-z0-9]\z/i) {
         return undef if $noerr;
         die "$type ID '$id' contains illegal characters\n";
     }
@@ -309,7 +309,7 @@ register_format('pve-vmid', \&pve_verify_vmid);
 sub pve_verify_vmid {
     my ($vmid, $noerr) = @_;
 
-    if ($vmid !~ m/^[1-9][0-9]{2,8}$/) {
+    if ($vmid !~ m/^[1-9][0-9]{2,8}\z/) {
         return undef if $noerr;
         die "value does not look like a valid VM ID\n";
     }
@@ -347,7 +347,7 @@ register_format(
 sub pve_verify_node_name {
     my ($node, $noerr) = @_;
 
-    if ($node !~ m/^([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)$/) {
+    if ($node !~ m/^([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)\z/) {
         return undef if $noerr;
         die "value does not look like a valid node name\n";
     }
@@ -379,7 +379,7 @@ sub parse_idmap {
     foreach my $entry (split_list($idmap)) {
         if ($entry eq '1') {
             $map->{identity} = 1;
-        } elsif ($entry =~ m/^([^:]+):([^:]+)$/) {
+        } elsif ($entry =~ m/^([^:]+):([^:]+)\z/) {
             my ($source, $target) = ($1, $2);
             eval {
                 check_format($idformat, $source, '');
@@ -458,7 +458,7 @@ sub pve_verify_mac_addr {
 
     # don't allow I/G bit to be set, most of the time it breaks things, see:
     # https://pve.proxmox.com/pipermail/pve-devel/2019-March/035998.html
-    if ($mac_addr !~ m/^[a-f0-9][02468ace](?::[a-f0-9]{2}){5}$/i) {
+    if ($mac_addr !~ m/^[a-f0-9][02468ace](?::[a-f0-9]{2}){5}\z/i) {
         return undef if $noerr;
         die "value does not look like a valid unicast MAC address\n";
     }
@@ -482,7 +482,7 @@ register_format('ipv4', \&pve_verify_ipv4);
 sub pve_verify_ipv4 {
     my ($ipv4, $noerr) = @_;
 
-    if ($ipv4 !~ m/^(?:$IPV4RE)$/) {
+    if ($ipv4 !~ m/^(?:$IPV4RE)\z/) {
         return undef if $noerr;
         die "value does not look like a valid IPv4 address\n";
     }
@@ -494,7 +494,7 @@ register_format('ipv6', \&pve_verify_ipv6);
 sub pve_verify_ipv6 {
     my ($ipv6, $noerr) = @_;
 
-    if ($ipv6 !~ m/^(?:$IPV6RE)$/) {
+    if ($ipv6 !~ m/^(?:$IPV6RE)\z/) {
         return undef if $noerr;
         die "value does not look like a valid IPv6 address\n";
     }
@@ -506,7 +506,7 @@ register_format('ip', \&pve_verify_ip);
 sub pve_verify_ip {
     my ($ip, $noerr) = @_;
 
-    if ($ip !~ m/^(?:(?:$IPV4RE)|(?:$IPV6RE))$/) {
+    if ($ip !~ m/^(?:(?:$IPV4RE)|(?:$IPV6RE))\z/) {
         return undef if $noerr;
         die "value does not look like a valid IP address\n";
     }
@@ -518,7 +518,7 @@ PVE::JSONSchema::register_format('ldap-simple-attr', \&verify_ldap_simple_attr);
 sub verify_ldap_simple_attr {
     my ($attr, $noerr) = @_;
 
-    if ($attr =~ m/^[a-zA-Z0-9]+$/) {
+    if ($attr =~ m/^[a-zA-Z0-9]+\z/) {
         return $attr;
     }
 
@@ -585,7 +585,7 @@ register_format('CIDRv6', \&pve_verify_cidrv6);
 sub pve_verify_cidrv6 {
     my ($cidr, $noerr) = @_;
 
-    if ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))$! && ($1 > 7) && ($1 <= 128)) {
+    if ($cidr =~ m!^(?:$IPV6RE)(?:/(\d+))\z! && ($1 > 7) && ($1 <= 128)) {
         return $cidr;
     }
 
@@ -598,7 +598,7 @@ register_format('CIDRv4', \&pve_verify_cidrv4);
 sub pve_verify_cidrv4 {
     my ($cidr, $noerr) = @_;
 
-    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))$! && ($1 > 7) && ($1 <= 32)) {
+    if ($cidr =~ m!^(?:$IPV4RE)(?:/(\d+))\z! && ($1 > 7) && ($1 <= 32)) {
         return $cidr;
     }
 
@@ -625,7 +625,7 @@ sub pve_verify_ipv4_config {
     my ($config, $noerr) = @_;
 
     return $config
-        if $config =~ /^(?:dhcp|manual)$/
+        if $config =~ /^(?:dhcp|manual)\z/
         || pve_verify_cidrv4($config, 1);
     return undef if $noerr;
     die "value does not look like a valid ipv4 network configuration\n";
@@ -637,7 +637,7 @@ sub pve_verify_ipv6_config {
     my ($config, $noerr) = @_;
 
     return $config
-        if $config =~ /^(?:auto|dhcp|manual)$/
+        if $config =~ /^(?:auto|dhcp|manual)\z/
         || pve_verify_cidrv6($config, 1);
     return undef if $noerr;
     die "value does not look like a valid ipv6 network configuration\n";
@@ -648,7 +648,7 @@ register_format('email', \&pve_verify_email);
 sub pve_verify_email {
     my ($email, $noerr) = @_;
 
-    if ($email !~ /^$PVE::ParseUtils::EMAIL_RE$/) {
+    if ($email !~ /^$PVE::ParseUtils::EMAIL_RE\z/) {
         return undef if $noerr;
         die "value does not look like a valid email address\n";
     }
@@ -661,8 +661,8 @@ sub pve_verify_email_or_username {
     my ($email, $noerr) = @_;
 
     if (
-        $email !~ /^$PVE::ParseUtils::EMAIL_RE$/
-        && $email !~ /^$PVE::ParseUtils::EMAIL_USER_RE$/
+        $email !~ /^$PVE::ParseUtils::EMAIL_RE\z/
+        && $email !~ /^$PVE::ParseUtils::EMAIL_USER_RE\z/
     ) {
         return undef if $noerr;
         die "value does not look like a valid email address or user name\n";
@@ -677,7 +677,7 @@ sub pve_verify_dns_name {
 
     my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
 
-    if ($name !~ /^(${namere}\.)*${namere}$/) {
+    if ($name !~ /^(${namere}\.)*${namere}\z/) {
         return undef if $noerr;
         die "value does not look like a valid DNS name\n";
     }
@@ -710,7 +710,7 @@ register_format('pve-iface', \&pve_verify_iface);
 sub pve_verify_iface {
     my ($id, $noerr) = @_;
 
-    if ($id !~ m/^[a-z][a-z0-9_]{1,20}([:\.]\d+)?$/i) {
+    if ($id !~ m/^[a-z][a-z0-9_]{1,20}([:\.]\d+)?\z/i) {
         return undef if $noerr;
         die "invalid network interface name '$id'\n";
     }
@@ -732,7 +732,7 @@ sub pve_verify_vlan_id_or_range {
         return 1;
     };
 
-    if ($vlan !~ m/^(\d+)(?:-(\d+))?$/) {
+    if ($vlan !~ m/^(\d+)(?:-(\d+))?\z/) {
         return if $noerr;
         die "invalid VLAN configuration '$vlan'\n";
     }
@@ -895,7 +895,7 @@ register_format('pve-tag', \&pve_verify_tag);
 sub pve_verify_tag {
     my ($value, $noerr) = @_;
 
-    return $value if $value =~ m/^${PVE_TAG_RE}$/i;
+    return $value if $value =~ m/^${PVE_TAG_RE}\z/i;
 
     return undef if $noerr;
 
@@ -947,9 +947,9 @@ sub pve_verify_tfa_secret {
     # hard to distinguish them without the our previous length constraints, so add a 'v2' of the
     # format to support arbitrary lengths properly:
     if (
-        $key =~ /^v2-0x[0-9a-fA-F]{16,128}$/ || # hex
-        $key =~ /^v2-[A-Z2-7=]{16,128}$/ || # base32
-        $key =~ /^(?:[A-Z2-7=]{16}|[A-Fa-f0-9]{40})$/
+        $key =~ /^v2-0x[0-9a-fA-F]{16,128}\z/ || # hex
+        $key =~ /^v2-[A-Z2-7=]{16,128}\z/ || # base32
+        $key =~ /^(?:[A-Z2-7=]{16}|[A-Fa-f0-9]{40})\z/
         ) # and the old pattern copy&pasted
     {
         return $key;
@@ -965,7 +965,7 @@ PVE::JSONSchema::register_format('pve-task-status-type', \&verify_task_status_ty
 sub verify_task_status_type {
     my ($value, $noerr) = @_;
 
-    return $value if $value =~ m/^(ok|error|warning|unknown)$/i;
+    return $value if $value =~ m/^(ok|error|warning|unknown)\z/i;
 
     return undef if $noerr;
 
@@ -1022,7 +1022,7 @@ sub check_format {
 sub parse_size {
     my ($value) = @_;
 
-    return undef if $value !~ m/^(\d+(\.\d+)?)([KMGT](?:iB)?)?$/;
+    return undef if $value !~ m/^(\d+(\.\d+)?)([KMGT](?:iB)?)?\z/;
     my ($size, $unit) = ($1, $3);
     if ($unit) {
         if ($unit eq 'K' || $unit eq 'KiB') {
@@ -1060,8 +1060,8 @@ sub format_size {
 
 sub parse_boolean {
     my ($bool) = @_;
-    return 1 if $bool =~ m/^(1|on|yes|true)$/i;
-    return 0 if $bool =~ m/^(0|off|no|false)$/i;
+    return 1 if $bool =~ m/^(1|on|yes|true)\z/i;
+    return 0 if $bool =~ m/^(0|off|no|false)\z/i;
     return undef;
 }
 
@@ -1164,13 +1164,13 @@ sub is_number {
     my $value = shift;
 
     # see 'man perlretut'
-    return $value =~ /^[+-]?(\d+\.\d+|\d+\.|\.\d+|\d+)([eE][+-]?\d+)?$/;
+    return $value =~ /^[+-]?(\d+\.\d+|\d+\.|\.\d+|\d+)([eE][+-]?\d+)?\z/;
 }
 
 sub is_integer {
     my $value = shift;
 
-    return $value =~ m/^[+-]?\d+$/;
+    return $value =~ m/^[+-]?\d+\z/;
 }
 
 sub check_type {
