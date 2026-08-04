@@ -1,8 +1,8 @@
-libpve-common-perl (9.2.0) trixie; urgency=medium
+libpve-common-perl (9.2.1) trixie; urgency=medium
 
   * procfs: derive the CPU model on arm64 from the implementer and part.
 
- -- Proxmox Support Team <support@proxmox.com>  Tue, 04 Aug 2026 11:46:27 +0200
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 04 Aug 2026 12:42:18 +0200
 
 libpve-common-perl (9.1.21) trixie; urgency=medium
 
