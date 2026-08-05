@@ -135,26 +135,49 @@ sub strip_leading_text {
     return $content;
 }
 
+# Splits the pem chain into entries with their leading text
 sub split_pem {
     my ($content, %opts) = @_;
-    my $label = $opts{label} // 'CERTIFICATE';
 
-    my $header = $header_re->($label);
-    return split(/(?=$header)/, $content);
+    my $footer = $footer_re->($opts{label} // 'CERTIFICATE');
+
+    return $content =~ /(.*?$footer)/sg;
 }
 
+# Parses the pem or pem chain for complete validity and returns
+# only the pem/pem chain removing any extra text
 sub check_pem {
     my ($content, %opts) = @_;
 
-    $content = strip_leading_text($content);
+    my $label = $opts{label} // 'CERTIFICATE';
+    my $re = $pem_re->($label);
 
-    my $re = $pem_re->($opts{label} // 'CERTIFICATE');
-    $re = qr/($re\n+)*$re/ if $opts{multiple};
+    my @split =
+        $opts{multiple}
+        ? split_pem($content, label => $label)
+        : ($content);
 
-    return $content if $content =~ /^$re$/; # OK
+    if (!@split) {
+        return undef if $opts{noerr};
+        die "PEM chain could not be split into separate entries\n";
+    }
+
+    my $result_pem = "";
+    for my $entry (@split) {
+        my $stripped = strip_leading_text($entry);
+
+        if ($stripped !~ /^$re$/) {
+            $result_pem = "";
+            last;
+        }
+
+        $result_pem .= $stripped;
+    }
+
+    return $result_pem if $result_pem;
 
     return undef if $opts{noerr};
-    die "not a valid PEM-formatted string.\n";
+    die "not a valid PEM-formatted string\n";
 }
 
 sub pem_to_der {
