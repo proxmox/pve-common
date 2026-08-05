@@ -17,6 +17,8 @@ TESTS = lock_file.test			\
 	file-test.test \
 	cmd-test.test \
 	ticket_test.test \
+	check_pem_test.test \
+	split_pem_test.test \
 
 all:
 
