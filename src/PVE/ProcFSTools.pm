@@ -257,7 +257,6 @@ sub read_proc_stat {
         steal => 0,
         guest => 0,
         guest_nice => 0,
-        sum => 0,
     };
 
     my $cpucount = 0;
