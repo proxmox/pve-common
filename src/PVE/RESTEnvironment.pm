@@ -562,6 +562,9 @@ sub fork_worker {
 
         $0 = "task $upid";
         $WORKER_FLAG = 1;
+        # the count is reported at the end of this task, warnings the parent logged while
+        # handling requests before the fork are not part of it
+        $self->{warning_count} = 0;
 
         $SIG{INT} = $SIG{QUIT} = $SIG{TERM} = sub { die "received interrupt\n"; };
 
