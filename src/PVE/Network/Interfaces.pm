@@ -823,6 +823,18 @@ sub __write_etc_network_interfaces($config, $ifupdown2 = undef) {
     foreach my $iface (keys %$ifaces) {
         my $d = $ifaces->{$iface};
 
+        # Every value becomes part of one line of the file, so a line break would inject
+        # arbitrary stanza lines, for example a `pre-up` hook, which ifupdown2 runs as root.
+        # Comments are exempt, they are emitted line by line with a '#' prefix.
+        for my $k (sort keys %$d) {
+            next if $k eq 'comments' || $k eq 'comments6';
+            my $v = $d->{$k};
+            for my $value (ref($v) eq 'ARRAY' ? $v->@* : $v) {
+                die "interface '$iface' - option '$k' contains a line break\n"
+                    if defined($value) && !ref($value) && $value =~ m/[\r\n]/;
+            }
+        }
+
         my ($cidr, $cidr6) = (delete $d->{cidr}, delete $d->{cidr6});
         $d->{address} //= $cidr;
         $d->{address6} //= $cidr6;
