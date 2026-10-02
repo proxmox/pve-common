@@ -1196,7 +1196,7 @@ sub open_in_root($$$;$) {
 
     sysopen(my $dirfh, $rootdir, O_PATH | O_DIRECTORY)
         or die "failed to open directory '$rootdir' - $!\n";
-    my $fh = openat2(fileno($dirfh), $path, $flags, $mode, RESOLVE_IN_ROOT)
+    my $fh = openat2(fileno($dirfh), $path, $flags, $mode, RESOLVE_IN_ROOT | RESOLVE_NO_MAGICLINKS)
         or die "failed to open file '$path' in root '$rootdir' - $!\n";
 
     return $fh;
