@@ -1191,6 +1191,17 @@ sub fchmodat($$$$) {
     ) == 0;
 }
 
+sub open_beneath($$$;$) {
+    my ($directory, $path, $flags, $mode) = @_;
+
+    sysopen(my $dirfh, $directory, O_PATH | O_DIRECTORY)
+        or die "failed to open directory '$directory' - $!\n";
+    my $fh = openat2(fileno($dirfh), $path, $flags, $mode, RESOLVE_BENEATH | RESOLVE_NO_MAGICLINKS)
+        or die "failed to open file '$path' beneath '$directory' - $!\n";
+
+    return $fh;
+}
+
 sub open_in_root($$$;$) {
     my ($rootdir, $path, $flags, $mode) = @_;
 
