@@ -1,3 +1,17 @@
+libpve-common-perl (9.2.3) trixie; urgency=medium
+
+  * proc stat: drop the 'sum' field from the host CPU statistics, for example
+    as sent to external metric servers, as it was never set and always zero.
+
+  * tools: add helper to open a file only if its path resolves beneath a given
+    directory, rejecting any escape through '..' components or symbolic links.
+
+  * tools: explicitly disallow resolving magic links, like those in /proc, when
+    opening a file within a root directory, instead of relying on the current
+    kernel default.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 03 Oct 2026 18:50:00 +0200
+
 libpve-common-perl (9.2.2) trixie; urgency=medium
 
   * schema: improve handling of (trailing) newlines in values
