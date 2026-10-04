@@ -45,6 +45,7 @@ my $render_data = [
     ["bytes", 1024, undef, "1.00 KiB"],
     ["bytes", 1024 * 1024 * 123 + 1024 * 300, 1, "123.3 MiB"],
     ["bytes", 1024 * 1024 * 1024 * 1024 * 4 + 1024 * 1024 * 2048 * 8, undef, "4.02 TiB"],
+    ["yaml", { description => "Erkl\x{e4}rung" }, undef, "description: Erkl\x{e4}rung\n"],
 ];
 
 foreach my $data (@$render_data) {

@@ -27,7 +27,8 @@ PVE::JSONSchema::register_renderer('bytes', \&PVE::Format::render_bytes);
 sub render_yaml {
     my ($value) = @_;
 
-    my $data = YAML::XS::Dump($value);
+    # YAML::XS returns UTF-8 encoded output, but renderers need to return text
+    my $data = decode('UTF-8', YAML::XS::Dump($value));
     $data =~ s/^---[\n\s]//; # remove yaml marker
 
     return $data;
