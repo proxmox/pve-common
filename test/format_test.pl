@@ -7,6 +7,7 @@ use lib '../src';
 use PVE::JSONSchema;
 use PVE::CLIFormatter;
 
+use Encode qw(decode);
 use Test::More;
 use Test::MockModule;
 
@@ -51,6 +52,20 @@ foreach my $data (@$render_data) {
     my $renderer = PVE::JSONSchema::get_renderer($renderer_name);
     my $actual = $renderer->($p1, $p2);
     is($actual, $expected, "string format '$renderer_name'");
+}
+
+# test that non-ASCII characters survive the structured output formats
+my $unicode_data = { description => "Erkl\x{e4}rung" };
+for my $format (qw(json yaml)) {
+    open(my $fh, '>', \my $output) or die "failed to open in-memory file - $!\n";
+    my $stdout = select($fh);
+    PVE::CLIFormatter::print_api_result(
+        $unicode_data, undef, undef, { 'output-format' => $format }, {},
+    );
+    select($stdout);
+    close($fh);
+
+    like(decode('UTF-8', $output), qr/Erkl\x{e4}rung/, "output format '$format' is UTF-8 encoded");
 }
 
 done_testing();
