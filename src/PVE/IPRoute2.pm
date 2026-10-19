@@ -142,10 +142,11 @@ sub get_bridge_port_mapping($ip_links = undef) {
             next;
         }
 
-        push($mapping->{ $ip_link->{master} }->@*, $iface_name)
-            if ip_link_is_physical($ip_link)
-            || ip_link_is_vlan($ip_link)
-            || ip_link_is_bond($ip_link);
+        if (
+            ip_link_is_physical($ip_link) || ip_link_is_vlan($ip_link) || ip_link_is_bond($ip_link)
+        ) {
+            push($mapping->{ $ip_link->{master} }->@*, $iface_name);
+        }
     }
 
     return $mapping;
