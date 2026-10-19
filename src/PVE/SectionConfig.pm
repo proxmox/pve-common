@@ -263,6 +263,9 @@ For example:
 
 =cut
 
+# ha-manager without commit "rules: fix call to parent classes register() method" accidentally
+# passed a second argument, so needs a versioned Breaks before enforcing callers to use a single
+# argument or adding a second argument to the method.
 sub register {
     my ($class) = @_;
 
