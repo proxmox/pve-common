@@ -1,3 +1,12 @@
+libpve-common-perl (9.2.4) trixie; urgency=medium
+
+  * iproute2: speed up finding the physical ports of a bridge, and add a helper
+    to map all bridges to their ports at once. This allows SDN to compute them
+    a single time when applying VLAN or QinQ zones on a non-VLAN-aware bridge,
+    instead of once for every VNet, which got slow with many VNets.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 19 Oct 2026 22:29:37 +0200
+
 libpve-common-perl (9.2.3) trixie; urgency=medium
 
   * proc stat: drop the 'sum' field from the host CPU statistics, for example
