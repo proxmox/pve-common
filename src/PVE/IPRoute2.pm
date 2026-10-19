@@ -127,4 +127,28 @@ sub get_vlan_information() {
     return \%vlan_information;
 }
 
+sub get_bridge_port_mapping($ip_links = undef) {
+    $ip_links = ip_link_details() if !defined($ip_links);
+
+    my $mapping = {};
+
+    for my $iface_name (keys $ip_links->%*) {
+        my $ip_link = $ip_links->{$iface_name};
+        next if !ip_link_is_bridge_member($ip_link);
+
+        if (!defined($ip_link->{master})) {
+            # should never happen, but handle the case nonetheless
+            warn "found bridge_member without master";
+            next;
+        }
+
+        push($mapping->{ $ip_link->{master} }->@*, $iface_name)
+            if ip_link_is_physical($ip_link)
+            || ip_link_is_vlan($ip_link)
+            || ip_link_is_bond($ip_link);
+    }
+
+    return $mapping;
+}
+
 1;
