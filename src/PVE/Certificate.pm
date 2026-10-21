@@ -5,6 +5,7 @@ use warnings;
 
 use Date::Parse;
 use Encode qw(decode encode);
+use List::Util qw(max);
 use MIME::Base64 qw(decode_base64 encode_base64);
 use Net::SSLeay;
 
@@ -364,6 +365,28 @@ sub check_expiry {
     my $not_after = get_expiration_as_epoch($cert_path);
 
     return ($not_after < $timestamp) ? 1 : 0;
+}
+
+# Long-lived certs are renewed once 2/3 of their lifetime has elapsed; short-lived ones (under
+# ten days) already at 1/2, following Let's Encrypt's integration guide. A 3-day floor still
+# applies so the daily-update service has a couple of chances to retry transient failures.
+sub get_cert_renew_lead_time {
+    my ($cert_path) = @_;
+
+    my ($not_before, $not_after) = get_validity_as_epoch($cert_path);
+    my $lifetime = $not_after - $not_before;
+
+    if ($lifetime <= 0) {
+        warn "Unexpected validity period ($lifetime s) for '$cert_path', falling back to a 30 day"
+            . " renewal lead time\n";
+
+        return 30 * 24 * 60 * 60;
+    }
+
+    my $scale = $lifetime < (10 * 24 * 60 * 60) ? 2 : 3;
+    my $lead = int($lifetime / $scale);
+
+    return max($lead, 3 * 24 * 60 * 60); # 3 day minimum
 }
 
 # Create a CSR and certificate key for a given order
