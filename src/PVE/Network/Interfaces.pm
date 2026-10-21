@@ -163,6 +163,7 @@ sub __read_etc_network_interfaces($fh, $ip_links = undef, $active_ifaces = undef
         'ovs_mtu' => 'mtu',
         'bond-slaves' => 'slaves',
         'bond_slaves' => 'slaves',
+        'bond-ports' => 'slaves', # ifupdown2 alias
         'bond-xmit-hash-policy' => 'bond_xmit_hash_policy',
         'bond-mode' => 'bond_mode',
         'bond-miimon' => 'bond_miimon',
@@ -171,6 +172,7 @@ sub __read_etc_network_interfaces($fh, $ip_links = undef, $active_ifaces = undef
         'bridge-stp' => 'bridge_stp',
         'bridge-ports' => 'bridge_ports',
         'bridge-vids' => 'bridge_vids',
+        'bridge-trunk' => 'bridge_vids', # ifupdown2 alias
     };
 
     my $line;
