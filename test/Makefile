@@ -16,6 +16,7 @@ TESTS = lock_file.test			\
 	section_config_property_isolation_test.test \
 	file-test.test \
 	cmd-test.test \
+	ticket_test.test \
 
 all:
 
