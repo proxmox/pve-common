@@ -88,11 +88,16 @@ sub verify_rsa_ticket {
 
                 my $age = time() - $ttime;
 
+                # Assembling only escapes '%' and ':', so any other escape sequence stems from a
+                # ticket assembled by an older version that did not escape '%'. Decoding it would
+                # yield different data than what was signed, for example another user name.
+                my $unexpected_escape = defined($data) && $data =~ m/%(?!25|3A)[0-9A-Fa-f]{2}/;
+
                 if (defined($data)) {
                     $data = uri_unescape($data);
                 }
 
-                if (($age > $min_age) && ($age < $max_age)) {
+                if (!$unexpected_escape && ($age > $min_age) && ($age < $max_age)) {
                     if (defined($data)) {
                         return wantarray ? ($data, $age) : $data;
                     } else {

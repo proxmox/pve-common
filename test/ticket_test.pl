@@ -5,6 +5,7 @@ use v5.36;
 use lib '../src';
 
 use Crypt::OpenSSL::RSA;
+use MIME::Base64;
 use Test::More;
 
 use PVE::Ticket;
@@ -25,5 +26,20 @@ for my $data ('root@pam', 'a%b@pve', 'a%41b@pve', 'a%3Ab@pve', 'a%25b@pve', 'a:b
 my $ticket = PVE::Ticket::assemble_rsa_ticket($rsa_priv, 'PVE', undef, 'secret');
 is(verify($ticket, 'secret'), 1, "ticket without data");
 is(verify($ticket, 'other'), undef, "ticket without data, wrong secret data");
+
+# older versions only escaped ':' when assembling a ticket
+my sub assemble_ticket_without_percent_escape($data) {
+    my $plain = sprintf("PVE:%s:%08X", $data =~ s/:/%3A/gr, time());
+    return "${plain}::" . encode_base64($rsa_priv->sign($plain), '');
+}
+
+for my $data ('root@pam', 'a%b@pve', 'a:b') {
+    my $ticket = assemble_ticket_without_percent_escape($data);
+    is(verify($ticket), $data, "ticket without percent escape for '$data'");
+}
+for my $data ('a%41b@pve', 'a%6fb@pve') {
+    my $ticket = assemble_ticket_without_percent_escape($data);
+    is(verify($ticket), undef, "ticket without percent escape for '$data' is rejected");
+}
 
 done_testing();
