@@ -58,7 +58,7 @@ sub assemble_rsa_ticket {
     my $plain = "$prefix:";
 
     if (defined($data)) {
-        $data = uri_escape($data, ':');
+        $data = uri_escape($data, '%:');
         $plain .= "$data:";
     }
 
