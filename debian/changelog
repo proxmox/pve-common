@@ -1,3 +1,18 @@
+libpve-common-perl (9.2.5) trixie; urgency=medium
+
+  * network interfaces: accept the 'bond-ports' and 'bridge-trunk' aliases that
+    ifupdown2 supports for 'bond-slaves' and 'bridge-vids'. Before, a bond set
+    up with 'bond-ports' showed up without any ports, and saving the
+    configuration added a conflicting 'bond-slaves none' or default
+    'bridge-vids' line. Saving now writes the canonical option names instead.
+
+  * ticket: also escape the percent sign when embedding data, like the user
+    name, into an authentication ticket. Before, a user name containing a '%'
+    followed by two hexadecimal digits was decoded into a different user name
+    when the ticket got verified.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 23 Oct 2026 19:45:49 +0200
+
 libpve-common-perl (9.2.4) trixie; urgency=medium
 
   * iproute2: speed up finding the physical ports of a bridge, and add a helper
