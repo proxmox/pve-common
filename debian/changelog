@@ -1,3 +1,20 @@
+libpve-common-perl (9.2.6) trixie; urgency=medium
+
+  * ticket: reject old authentication tickets with unexpected percent escapes,
+    which could resolve to a different user name. Affected users need to log
+    in again.
+
+  * certificate: add helpers to read the validity period and calculate an ACME
+    renewal lead time from it, enabling support for shorter-lived certificates.
+    Use one third of the lifetime, or half for certificates valid for less than
+    ten days, with a three-day minimum to allow retries.
+
+  * command execution: add a helper to build SSH commands with shell-quoted
+    remote arguments and an explicit end to SSH options, preserving spaces and
+    special characters in remote arguments.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 27 Oct 2026 20:26:59 +0100
+
 libpve-common-perl (9.2.5) trixie; urgency=medium
 
   * network interfaces: accept the 'bond-ports' and 'bridge-trunk' aliases that
