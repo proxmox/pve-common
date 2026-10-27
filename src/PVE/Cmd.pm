@@ -16,6 +16,7 @@ use Time::HiRes qw(usleep alarm);
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
+    build_ssh_command
     pipe_socket
     run
     run_command
@@ -331,6 +332,20 @@ sub run($cmd, %param) {
 # run() is the canonical name; run_command is kept as a migration wrapper
 sub run_command {
     return run(@_);
+}
+
+# Construct a single command from an SSH command $ssh_cmd and the command to run on the SSH
+# destination $remote_cmd, doing shell quoting. Will terminate options for the SSH command with '--'
+# if the SSH command does not already do so. Ideally, the SSH command already contains '--' before
+# its destination argument.
+sub build_ssh_command($ssh_cmd, $remote_cmd) {
+    my $has_terminator = scalar(grep { $_ eq '--' } $ssh_cmd->@*) ? 1 : 0;
+
+    my $full_cmd = [$ssh_cmd->@*];
+    push $full_cmd->@*, '--' if !$has_terminator;
+    push $full_cmd->@*, map { shell_quote($_) } $remote_cmd->@*;
+
+    return $full_cmd;
 }
 
 # Run a command with a tcp socket as standard input.
