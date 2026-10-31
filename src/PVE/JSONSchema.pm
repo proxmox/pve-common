@@ -2666,6 +2666,49 @@ sub dump_config {
     return $data;
 }
 
+sub redact_sensitive_value($schema, $value, $placeholder) {
+    return $value if !defined($value);
+    return [map { redact_sensitive_value($schema, $_, $placeholder) } $value->@*]
+        if ref($value) eq 'ARRAY';
+    return $value if $value !~ m/\S/;
+    return $placeholder if $schema->{sensitive};
+    return redact_sensitive_value($schema->{items}, $value, $placeholder) if $schema->{items};
+
+    my $format = $schema->{format};
+    $format = get_format($format) if defined($format) && !ref($format);
+    return $value if ref($format) ne 'HASH';
+
+    my ($default_key) = grep { $format->{$_}->{default_key} } keys $format->%*;
+    my $key_schema = sub($key) {
+        my $key_schema = $format->{$key} // return;
+        return defined($key_schema->{alias}) ? $format->{ $key_schema->{alias} } : $key_schema;
+    };
+
+    my @parts = split(/,/, $value, -1);
+    for my $part (@parts) {
+        if (my ($key, $key_value) = $part =~ m/^([^=]+)=(.*)$/) {
+            my $schema = $key_schema->($key) or next;
+            $part = "$key=" . redact_sensitive_value($schema, $key_value, $placeholder);
+        } elsif (defined($default_key)) {
+            $part = redact_sensitive_value($format->{$default_key}, $part, $placeholder);
+        }
+    }
+    return join(',', @parts);
+}
+
+sub redact_raw_config($schema, $raw, $placeholder) {
+    my $props = $schema->{properties} or die "got strange schema\n";
+
+    my @lines = split(/\n/, $raw, -1);
+    for my $line (@lines) {
+        my ($prefix, $key, $value) = $line =~ m/^(\s*(\S+?):\s*)(.*)$/ or next;
+        my $prop = $props->{$key} or next;
+        $prop = $props->{ $prop->{alias} } // next if defined($prop->{alias});
+        $line = $prefix . redact_sensitive_value($prop, $value, $placeholder);
+    }
+    return join("\n", @lines);
+}
+
 # helpers used to generate our manual pages
 
 my $find_schema_default_key = sub {

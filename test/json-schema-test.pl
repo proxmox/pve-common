@@ -863,4 +863,152 @@ for my $test ($check_one_of->@*) {
     };
 }
 
+PVE::JSONSchema::register_format(
+    'test-redact',
+    {
+        name => { type => 'string', default_key => 1, optional => 1 },
+        secret => { type => 'string', sensitive => 1, optional => 1 },
+        'old-secret' => { alias => 'secret' },
+    },
+);
+
+my $redact_value_tests = [
+    {
+        name => 'sensitive value',
+        schema => { type => 'string', sensitive => 1 },
+        in => 'hunter2',
+        out => '***',
+    },
+    {
+        name => 'other value',
+        schema => { type => 'string' },
+        in => 'visible',
+        out => 'visible',
+    },
+    {
+        name => 'sensitive sub-key',
+        schema => { type => 'string', format => 'test-redact' },
+        in => 'name=foo,secret=bar',
+        out => 'name=foo,secret=***',
+    },
+    {
+        name => 'sensitive sub-key via alias',
+        schema => { type => 'string', format => 'test-redact' },
+        in => 'foo,old-secret=bar',
+        out => 'foo,old-secret=***',
+    },
+    {
+        name => 'sensitive default key',
+        schema => {
+            type => 'string',
+            format => { secret => { type => 'string', default_key => 1, sensitive => 1 } },
+        },
+        in => 'bar,,',
+        out => '***,,',
+    },
+    {
+        name => 'format without sensitive sub-keys',
+        schema => { type => 'string', format => { name => { type => 'string' } } },
+        in => 'not=a,valid',
+        out => 'not=a,valid',
+    },
+    {
+        name => 'empty sensitive value',
+        schema => { type => 'string', sensitive => 1 },
+        in => '',
+        out => '',
+    },
+    {
+        name => 'nested format',
+        schema => {
+            type => 'string',
+            format => {
+                inner => { type => 'string', format => 'test-redact' },
+                other => { type => 'string' },
+            },
+        },
+        in => 'other=x,inner=secret=bar',
+        out => 'other=x,inner=secret=***',
+    },
+    {
+        name => 'unset value',
+        schema => { type => 'string', sensitive => 1 },
+        in => undef,
+        out => undef,
+    },
+    {
+        name => 'array item',
+        schema => { type => 'array', items => { type => 'string', format => 'test-redact' } },
+        in => 'foo,secret=bar',
+        out => 'foo,secret=***',
+    },
+    {
+        name => 'array of items',
+        schema => { type => 'array', items => { type => 'string', format => 'test-redact' } },
+        in => ['foo,secret=bar', 'baz'],
+        out => ['foo,secret=***', 'baz'],
+    },
+    {
+        name => 'sensitive array',
+        schema => { type => 'array', sensitive => 1, items => { type => 'string' } },
+        in => ['foo', 'bar'],
+        out => ['***', '***'],
+    },
+];
+
+for my $test ($redact_value_tests->@*) {
+    my $res = PVE::JSONSchema::redact_sensitive_value($test->{schema}, $test->{in}, '***');
+    is_deeply($res, $test->{out}, "redact $test->{name}");
+}
+
+my $redact_config_schema = {
+    type => 'object',
+    properties => {
+        password => { type => 'string', sensitive => 1 },
+        'old-password' => { type => 'string', alias => 'password' },
+        options => { type => 'string', format => 'test-redact' },
+        name => { type => 'string' },
+        tokens => { type => 'array', items => { type => 'string', sensitive => 1 } },
+    },
+};
+my $redact_config_in = <<'EOF';
+#password: in a comment
+password: hunter2
+old-password: aliased
+options: foo,secret=bar
+name: visible
+tokens: first
+tokens: second
+invalid line
+
+[snapshot]
+  password:   older
+[special:cloudinit]
+password: applied
+password:
+EOF
+my $redact_config_out = <<'EOF';
+#password: in a comment
+password: ***
+old-password: ***
+options: foo,secret=***
+name: visible
+tokens: ***
+tokens: ***
+invalid line
+
+[snapshot]
+  password:   ***
+[special:cloudinit]
+password: ***
+password:
+EOF
+is(
+    PVE::JSONSchema::redact_raw_config($redact_config_schema, $redact_config_in, '***'),
+    $redact_config_out,
+    'redact key/value config',
+);
+eval { PVE::JSONSchema::redact_raw_config({ type => 'object' }, $redact_config_in, '***') };
+like($@, qr/strange schema/, 'redact key/value config fails without properties');
+
 done_testing();
