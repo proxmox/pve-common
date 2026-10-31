@@ -1807,6 +1807,54 @@ sub write_config {
     return $out;
 }
 
+=head3 $base->redact_raw_config(...)
+
+=head3 $base->redact_raw_config($raw, $placeholder)
+
+    $redacted = PVE::Example::BasePlugin->redact_raw_config($raw, $placeholder)
+    $redacted = $class->redact_raw_config($raw, $placeholder)
+
+Returns the contents of a C<L<PVE::SectionConfig>> file with the value of every
+property marked as C<sensitive> replaced by C<$placeholder>, including sensitive
+keys of property strings.
+
+Works on the raw text, so lines that
+C<L<< parse_config()|/$base->parse_config(...) >>> would skip as invalid are
+kept. As in C<L<< parse_config()|/$base->parse_config(...) >>>, a section ends
+at the next empty line. Outside of sections of a known
+I<L<< type|/$plugin->type() >>>, only properties that are not isolated to a
+plugin are recognized.
+
+=cut
+
+sub redact_raw_config($class, $raw, $placeholder) {
+    my ($type, $in_section) = ('', 0);
+    my @lines = split(/\n/, $raw, -1);
+    for my $line (@lines) {
+        next if $line =~ m/^\s*#/;
+
+        if ($line eq '') {
+            ($type, $in_section) = ('', 0);
+            next;
+        }
+
+        if (!$in_section) {
+            my ($header_type) = $class->parse_section_header($line);
+            if (defined($header_type)) {
+                ($type, $in_section) = ($header_type, 1);
+                next;
+            }
+        }
+
+        if (my ($prefix, $key, $value) = $line =~ m/^(\s+(\S+)\s+)(.*)$/) {
+            my $schema = $class->get_property_schema($type, $key) or next;
+            $line =
+                $prefix . PVE::JSONSchema::redact_sensitive_value($schema, $value, $placeholder);
+        }
+    }
+    return join("\n", @lines);
+}
+
 sub assert_if_modified {
     my ($cfg, $digest) = @_;
 

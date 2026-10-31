@@ -85,6 +85,7 @@ sub properties {
             description => 'Another field',
             type => 'string',
             optional => 1,
+            sensitive => 1,
         },
         arrayfield => {
             description => "Array Field with property string",
@@ -395,6 +396,7 @@ my sub make_schema($is_update) {
                                 description => 'Another field',
                                 type => 'string',
                                 optional => 1,
+                                sensitive => 1,
                             },
                             arrayfield => {
                                 description => "Array Field with property string",
@@ -480,6 +482,47 @@ ok(
     !exists(Conf->private()->{isolatedPropertyList}->{unknown}),
     "property lookup does not add a property list",
 );
+
+my $redact_in = <<"EOF";
+one: a
+	another secret
+
+two: b
+	another visible
+
+unknown: c
+	another isolated
+
+two: d
+one: d-ignored
+	another visible
+
+one: e
+two: e-ignored
+	another secret
+	another
+EOF
+my $redact_out = <<"EOF";
+one: a
+	another <redacted>
+
+two: b
+	another visible
+
+unknown: c
+	another isolated
+
+two: d
+one: d-ignored
+	another visible
+
+one: e
+two: e-ignored
+	another <redacted>
+	another
+EOF
+is(Conf->redact_raw_config($redact_in, '<redacted>'), $redact_out,
+    "property-isolation redact test");
 
 done_testing();
 

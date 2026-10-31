@@ -75,6 +75,7 @@ sub properties {
         another => {
             description => 'Another field',
             type => 'string',
+            sensitive => 1,
         },
     };
 }
@@ -115,6 +116,7 @@ sub properties {
                     subfield1 => {
                         type => 'string',
                         description => 'first subfield',
+                        sensitive => 1,
                     },
                     subfield2 => {
                         type => 'integer',
@@ -300,6 +302,7 @@ my $expected_create_schema = {
                     'subfield1' => {
                         'description' => 'first subfield',
                         'type' => 'string',
+                        'sensitive' => 1,
                     },
                 },
                 'type' => 'string',
@@ -311,6 +314,7 @@ my $expected_create_schema = {
             'description' => 'Another field',
             'optional' => 1,
             'type' => 'string',
+            'sensitive' => 1,
         },
     },
 };
@@ -369,6 +373,7 @@ my $expected_update_schema = {
                     subfield1 => {
                         description => 'first subfield',
                         type => 'string',
+                        sensitive => 1,
                     },
                 },
             },
@@ -379,10 +384,45 @@ my $expected_update_schema = {
             description => 'Another field',
             optional => 1,
             type => 'string',
+            sensitive => 1,
         },
     },
 };
 is_deeply($update_schema, $expected_update_schema, "update schema test");
+
+my $redact_in = <<"EOF";
+one: t1
+	common foo
+	another secret1
+
+# another: comment
+two: t2
+	field2 5
+	another  secret2
+invalid line
+	arrayfield subfield2=2,subfield1=secret3
+
+bad: unknown
+	another secret4
+	unknownfield visible
+EOF
+my $redact_out = <<"EOF";
+one: t1
+	common foo
+	another <redacted>
+
+# another: comment
+two: t2
+	field2 5
+	another  <redacted>
+invalid line
+	arrayfield subfield2=2,subfield1=<redacted>
+
+bad: unknown
+	another <redacted>
+	unknownfield visible
+EOF
+is(Conf->redact_raw_config($redact_in, '<redacted>'), $redact_out, "redact raw config");
 
 done_testing();
 
