@@ -1306,7 +1306,8 @@ sub get_property_schema {
 
     my $schema;
     if ($class->has_isolated_properties()) {
-        $schema = $pdata->{isolatedPropertyList}->{$type}->{$key};
+        my $isolated = $pdata->{isolatedPropertyList}->{$type};
+        $schema = $isolated->{$key} if $isolated;
     }
     $schema //= $pdata->{propertyList}->{$key};
 

@@ -472,6 +472,15 @@ my $update_schema = Conf->updateSchema();
 my $expected_update_schema = make_schema(1);
 is_deeply($update_schema, $expected_update_schema, "property-isolation update schema test");
 
+ok(
+    !defined(Conf->get_property_schema('unknown', 'another')),
+    "unknown type has no isolated properties",
+);
+ok(
+    !exists(Conf->private()->{isolatedPropertyList}->{unknown}),
+    "property lookup does not add a property list",
+);
+
 done_testing();
 
 1;
