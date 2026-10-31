@@ -1791,6 +1791,14 @@ my $default_schema_noref = {
             optional => 1,
             default => 0,
         },
+        sensitive => {
+            type => "boolean",
+            description =>
+                "Whether the value is a secret or derived from one, like a password, a"
+                . " password hash or an API token.",
+            optional => 1,
+            default => 0,
+        },
         properties => {
             type => "object",
             description => "This is a definition for the properties of an object value",
