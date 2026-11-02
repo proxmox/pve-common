@@ -1,3 +1,16 @@
+libpve-common-perl (9.2.7) trixie; urgency=medium
+
+  * rest environment: start each worker task with a clean warning count.
+    Tasks forked after a plain API request that logged a warning in the same
+    process ended with a WARNINGS status, although nothing in their own log
+    warned.
+
+  * tools: add helpers to compare version numbers and to check for a minimum
+    Proxmox VE version, moved over from qemu-server so that other packages can
+    use them too.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 02 Nov 2026 23:45:58 +0100
+
 libpve-common-perl (9.2.6) trixie; urgency=medium
 
   * ticket: reject old authentication tickets with unexpected percent escapes,
