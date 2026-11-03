@@ -522,14 +522,21 @@ sub handle {
         # Type resolution must happen before normalization, since normalization needs to know
         # the schema of values, for which the type must already be known, otherwise the oneOf
         # variants will be ignored and normalization silently skips over parameters.
-        # The property name is fixed, matching the 'type-property' SectionConfig generates.
         my $resolve_type_hook = $info->{resolve_type};
-        if ($resolve_type_hook && ref($param) eq 'HASH' && !defined($param->{type})) {
-            # The callback only inspects the parameters, so hand it a clone.
-            my $resolved_type = $resolve_type_hook->(clone($param));
-            # NOTE: the resolved type is passed on to the method's code, which must tolerate it.
-            if (defined($resolved_type)) {
-                $param->{type} = $resolved_type;
+        if ($resolve_type_hook && ref($param) eq 'HASH') {
+            my $type_property;
+            if (PVE::JSONSchema::is_object_like_schema($schema)) {
+                $type_property = PVE::JSONSchema::get_object_type_property($schema);
+            }
+            # TODO enforce that 'type-property' is defined instead of using a default?
+            $type_property //= 'type';
+            if (!defined($param->{$type_property})) {
+                # The callback only inspects the parameters, so hand it a clone.
+                my $resolved_type = $resolve_type_hook->(clone($param));
+                # NOTE: the resolved type is passed on to the method's code, which must tolerate it.
+                if (defined($resolved_type)) {
+                    $param->{$type_property} = $resolved_type;
+                }
             }
         }
 

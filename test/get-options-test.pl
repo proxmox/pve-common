@@ -741,12 +741,162 @@ package DirectOneOf {
                 error => "400 not enough arguments\n",
             },
             {
-                desc => "mandatory arg_param is is functional",
+                desc => "mandatory arg_param is functional",
                 args => [qw(--type two 33)],
                 arg_param => [qw(prop-two)],
                 expected => {
                     type => 'two',
                     'prop-two' => 33,
+                },
+            },
+        );
+    }
+}
+
+package OneOfWithCustomResolvedTypeProperty {
+    usebase;
+
+    sub desc($class) {
+        "oneOf as top-level with a custom 'type-property' that is resolved via 'resolve_type'";
+    }
+
+    sub schema($class) {
+        my $implicit_type_discriminator = {
+            type => 'string',
+            description => 'A property from which the type can be deduced.',
+            enum => ['deduce-type-one', 'deduce-type-two'],
+        };
+        return {
+            'type-property' => 'custom-type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'The type.',
+                enum => ['one', 'two'],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        'implicit-type-discriminator' => $implicit_type_discriminator,
+                        'prop-one' => {
+                            optional => 1,
+                            type => 'string',
+                            description => 'a or b',
+                            enum => ['a', 'b'],
+                        },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        'implicit-type-discriminator' => $implicit_type_discriminator,
+                        'prop-two' => {
+                            type => 'number',
+                            description => 'number',
+                            minimum => 3,
+                            maximum => 100,
+                        },
+                    },
+                },
+            ],
+        };
+    }
+
+    sub additional_method_info($class) {
+        return (
+            resolve_type => sub {
+                my ($param) = @_;
+                return 'one' if $param->{'implicit-type-discriminator'} eq 'deduce-type-one';
+                return 'two' if $param->{'implicit-type-discriminator'} eq 'deduce-type-two';
+                die "unable to resolve type\n";
+            },
+        );
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix --custom-type <string> [OPTIONS]\n"
+            . "  --custom-type <one | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [custom-type=one]\n" . "\n"
+            . "  --implicit-type-discriminator <deduce-type-one | deduce-type-two>\n"
+            . "\t     A property from which the type can be deduced.\n" . "\n"
+            . "  --prop-one <a | b>\n"
+            . "\t     a or b\n" . "\n"
+            . " [custom-type=two]\n" . "\n"
+            . "  --implicit-type-discriminator <deduce-type-one | deduce-type-two>\n"
+            . "\t     A property from which the type can be deduced.\n" . "\n"
+            . "  --prop-two <number> (3 - 100)\n"
+            . "\t     number\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "implicit-type-discriminator parameter works",
+                args => [qw(--implicit-type-discriminator deduce-type-one)],
+                expected => {
+                    'custom-type' => 'one',
+                    'implicit-type-discriminator' => 'deduce-type-one',
+                },
+            },
+            {
+                desc => "valid options parse",
+                args => [qw(--implicit-type-discriminator deduce-type-one --prop-one a)],
+                expected => {
+                    'custom-type' => 'one',
+                    'implicit-type-discriminator' => 'deduce-type-one',
+                    'prop-one' => 'a',
+                },
+            },
+            {
+                desc => "invalid options are rejected",
+                args => [qw(--implicit-type-discriminator deduce-type-one --prop-invalid a)],
+                error => "400 unable to parse option\n",
+            },
+            {
+                desc => "optional arg_param is optional",
+                args => [qw(--implicit-type-discriminator deduce-type-one)],
+                arg_param => [qw(prop-one)],
+                expected => {
+                    'custom-type' => 'one',
+                    'implicit-type-discriminator' => 'deduce-type-one',
+                },
+            },
+            {
+                desc => "optional arg_param is functional",
+                args => [qw(--implicit-type-discriminator deduce-type-one b)],
+                arg_param => [qw(prop-one)],
+                expected => {
+                    'custom-type' => 'one',
+                    'implicit-type-discriminator' => 'deduce-type-one',
+                    'prop-one' => 'b',
+                },
+            },
+            {
+                desc => "mandatory arg_param is mandatory",
+                args => [qw(--implicit-type-discriminator deduce-type-two)],
+                arg_param => [qw(prop-two)],
+                error => "400 not enough arguments\n",
+            },
+            {
+                desc => "mandatory arg_param is is functional",
+                args => [qw(--implicit-type-discriminator deduce-type-two 33)],
+                arg_param => [qw(prop-two)],
+                expected => {
+                    'custom-type' => 'two',
+                    'implicit-type-discriminator' => 'deduce-type-two',
+                    'prop-two' => 33,
+                },
+            },
+            {
+                desc => "explicit type takes precedence",
+                args => [qw(--implicit-type-discriminator deduce-type-two --custom-type one)],
+                expected => {
+                    'custom-type' => 'one',
+                    'implicit-type-discriminator' => 'deduce-type-two',
                 },
             },
         );

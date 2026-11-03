@@ -2254,6 +2254,16 @@ sub get_object_property_schema($schema, $key, $object_data = undef) {
     return;
 }
 
+# Get the type property of an object-like schema. Returns undef if there is no type property.
+sub get_object_type_property($schema) {
+    if (my $all_of = $schema->{allOf}) {
+        for my $subschema ($all_of->@*) {
+            return $subschema->{'type-property'} if defined($subschema->{'type-property'});
+        }
+    }
+    return $schema->{'type-property'};
+}
+
 # $schema: an object-like schema
 # $sub: sub($key, $schema, $one_of_instance_info) ->
 #    ()     empty list -> continue
