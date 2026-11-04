@@ -647,7 +647,7 @@ sub __interface_to_string($iface, $d, $family, $first_block, $ifupdown2 = undef)
 
     } elsif ($d->{type} eq 'bond') {
 
-        $d->{slaves} =~ s/[;,\s]+/ /g;
+        $d->{slaves} =~ s/[;,\s]+/ /g if $d->{slaves};
         my $slaves = $d->{slaves} || 'none';
         $raw .= "\tbond-slaves $slaves\n";
         $done->{slaves} = 1;
