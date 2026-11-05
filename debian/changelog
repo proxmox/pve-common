@@ -1,3 +1,17 @@
+libpve-common-perl (9.2.8) trixie; urgency=medium
+
+  * network: interfaces: add guard for substitution in bond slaves property,
+    avoiding a perl warning
+
+  * fix #5978: pem parser: relax parsing of chain entries to allow additional
+    information before each chain element, not just for the chain itself, and
+    add tests covering the parsing and splitting implementation
+
+  * fix #6305: cli formatter: avoid encoding YAML output twice, which broke
+    output with special characeters
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 05 Nov 2026 14:14:09 +0100
+
 libpve-common-perl (9.2.7) trixie; urgency=medium
 
   * rest environment: start each worker task with a clean warning count.
