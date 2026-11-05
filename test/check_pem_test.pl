@@ -178,6 +178,43 @@ EOF
     },
     {
         expected_success => 1,
+        name => "multiple pem",
+        multiple => 1,
+        pem => <<'EOF',
+Subject: CN=some.test.content
+Issuer: CN=Org Issuing CA 3
+-----BEGIN CERTIFICATE-----
+1WtzZGhmbGtqYXNoZ2RmaXVwYWJ2aXV1YXdlYmxmamlraGFzZGtmYWlzdXBkdW5i
+dmFpdXdlYmdmw7ZrYWpkc2JoZmdpYXNkbmJpZnVhYmdzaWprZmdyYXNkaHJmaW9h
+dXNkbmF1c2JmZ3ZramFzZGJma2phc2RibmZpanVhIHNkb3ZuYmF3b3VlYmZnb2F3
+c2JlZ2tseTxzZWl2IGF3ZWlidm4=
+-----END CERTIFICATE-----
+Subject: CN=Org Issuing CA 3
+Issuer: CN=Org Root CA
+-----BEGIN CERTIFICATE-----
+2WtzZGhmbGtqYXNoZ2RmaXVwYWJ2aXV1YXdlYmxmamlraGFzZGtmYWlzdXBkdW5i
+dmFpdXdlYmdmw7ZrYWpkc2JoZmdpYXNkbmJpZnVhYmdzaWprZmdyYXNkaHJmaW9h
+dXNkbmF1c2JmZ3ZramFzZGJma2phc2RibmZpanVhIHNkb3ZuYmF3b3VlYmZnb2F3
+c2JlZ2tseTxzZWl2IGF3ZWlidm4=
+-----END CERTIFICATE-----
+EOF
+        expected_result => <<'EOF',
+-----BEGIN CERTIFICATE-----
+1WtzZGhmbGtqYXNoZ2RmaXVwYWJ2aXV1YXdlYmxmamlraGFzZGtmYWlzdXBkdW5i
+dmFpdXdlYmdmw7ZrYWpkc2JoZmdpYXNkbmJpZnVhYmdzaWprZmdyYXNkaHJmaW9h
+dXNkbmF1c2JmZ3ZramFzZGJma2phc2RibmZpanVhIHNkb3ZuYmF3b3VlYmZnb2F3
+c2JlZ2tseTxzZWl2IGF3ZWlidm4=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+2WtzZGhmbGtqYXNoZ2RmaXVwYWJ2aXV1YXdlYmxmamlraGFzZGtmYWlzdXBkdW5i
+dmFpdXdlYmdmw7ZrYWpkc2JoZmdpYXNkbmJpZnVhYmdzaWprZmdyYXNkaHJmaW9h
+dXNkbmF1c2JmZ3ZramFzZGJma2phc2RibmZpanVhIHNkb3ZuYmF3b3VlYmZnb2F3
+c2JlZ2tseTxzZWl2IGF3ZWlidm4=
+-----END CERTIFICATE-----
+EOF
+    },
+    {
+        expected_success => 1,
         name => "big pem different label",
         multiple => 1,
         label => "LABEL",
