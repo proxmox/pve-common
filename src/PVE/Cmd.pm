@@ -101,6 +101,7 @@ sub run($cmd, %param) {
     my $laststderr;
     my $timeout;
     my $oldtimeout;
+    my $armed_at;
     my $pid;
     my $exitcode = -1;
 
@@ -194,9 +195,15 @@ sub run($cmd, %param) {
 
         die $err if $err;
 
+        # disable the caller's alarm before installing our own handler, so
+        # the caller's alarm cannot fire into it and be reported as ours
+        if ($timeout) {
+            $oldtimeout = alarm(0);
+            $armed_at = Time::HiRes::time();
+        }
         local $SIG{ALRM} = sub { die "got timeout\n"; }
             if $timeout;
-        $oldtimeout = alarm($timeout) if $timeout;
+        alarm($timeout) if $timeout;
 
         &$afterfork() if $afterfork;
 
@@ -296,20 +303,35 @@ sub run($cmd, %param) {
             }
         }
 
-        alarm(0);
+        alarm(0) if $timeout; # while our handler is still in place
     };
 
     my $err = $@;
 
-    alarm(0);
+    alarm(0) if $armed_at;
 
     if ($errmsg && $laststderr) {
-        &$errfunc(undef); # flush laststderr
+        # the caller's alarm can fire during the flush, and the callback can
+        # die on its own, so do not let it replace the error we already have
+        my $flush_error;
+        eval { &$errfunc(undef) }; # flush laststderr
+        $flush_error = $@;
+        if (length($flush_error)) {
+            if ($err eq "got timeout\n") {
+                warn $flush_error;
+            } else {
+                $err = "$flush_error\n$err";
+            }
+        }
     }
 
     umask($old_umask) if defined($old_umask);
 
-    alarm($oldtimeout) if $oldtimeout;
+    # give the caller's alarm back what is left of it, a lock may depend on it
+    if ($oldtimeout) {
+        my $left = $oldtimeout - (Time::HiRes::time() - $armed_at);
+        alarm($left > 0 ? $left : 0.001);
+    }
 
     if ($err) {
         if ($pid && ($err eq "got timeout\n")) {

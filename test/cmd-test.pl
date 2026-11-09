@@ -11,6 +11,7 @@ use lib '../src';
 use PVE::Cmd;
 
 use Test::More;
+use Time::HiRes ();
 
 # shell_quote: quote a single argument for the shell
 #
@@ -66,6 +67,50 @@ eval { PVE::Cmd::run(['false']) };
 ok($@, 'run dies on a failing command without noerr');
 
 is(PVE::Cmd::run_command(['true']), 0, 'run_command works as a wrapper for run');
+
+# run must leave a pending alarm of its caller alone, like the time limit of a lock
+#
+# name  - how run is called
+# cmd   - command to run, sleeps for a second by default
+# param - parameters for run
+my $caller_alarm_tests = [
+    { name => 'without a timeout', param => {} },
+    { name => 'with a timeout', param => { timeout => 5 } },
+    {
+        name => 'with a timeout on a command that cannot start',
+        cmd => ['/nonexistent/command'],
+        param => { timeout => 5 },
+    },
+];
+for my $test ($caller_alarm_tests->@*) {
+    my $fired;
+    local $SIG{ALRM} = sub { $fired = Time::HiRes::time() };
+    my $start = Time::HiRes::time();
+    Time::HiRes::alarm(2);
+    eval { PVE::Cmd::run($test->{cmd} // ['sleep', '1'], $test->{param}->%*) };
+    Time::HiRes::sleep(0.1) until $fired || Time::HiRes::time() - $start > 5;
+    Time::HiRes::alarm(0);
+    ok($fired, "the caller's alarm still fires after run $test->{name}");
+    my $after = defined($fired) ? $fired - $start : 99;
+    cmp_ok($after, '<', 2.5, "run $test->{name} does not delay the caller's alarm");
+}
+
+# the flush of the last buffered stderr line must not replace the error that
+# made run stop, even if the errfunc dies on it
+{
+    my @warned;
+    local $SIG{__WARN__} = sub { push @warned, @_ };
+    eval {
+        PVE::Cmd::run(
+            ['sh', '-c', 'echo boomtrigger >&2; sleep 5'],
+            timeout => 1,
+            errmsg => 'msg',
+            errfunc => sub { die "boom\n" if defined($_[0]) && $_[0] =~ /boomtrigger/ },
+        );
+    };
+    like($@, qr/got timeout/, 'run reports its timeout, not a dying errfunc');
+    like(join('', @warned), qr/boom/, 'run warns about the dying errfunc');
+}
 
 # TODO:
 # - cover pipe_socket (needs a socket peer)
