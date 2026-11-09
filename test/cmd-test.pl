@@ -10,6 +10,7 @@ use lib '../src';
 
 use PVE::Cmd;
 
+use POSIX ();
 use Test::More;
 use Time::HiRes ();
 
@@ -112,9 +113,46 @@ for my $test ($caller_alarm_tests->@*) {
     like(join('', @warned), qr/boom/, 'run warns about the dying errfunc');
 }
 
+# run must not leave its command behind when it dies, whatever makes it die
+#
+# name  - when run dies
+# param - parameters for run
+# alarm - seconds until the caller's alarm handler dies
+# err   - expected error
+my $reap_tests = [
+    { name => 'its own timeout fires', param => { timeout => 1 }, err => qr/got timeout/ },
+    {
+        name => 'outfunc dies',
+        param => { outfunc => sub { die "outfunc failed\n" } },
+        err => qr/outfunc failed/,
+    },
+    { name => "the caller's alarm handler dies", alarm => 1, err => qr/caller timed out/ },
+];
+for my $test ($reap_tests->@*) {
+    my $pid;
+    my %param = ($test->{param} // {})->%*;
+    my $outfunc = delete($param{outfunc}) // sub { };
+    eval {
+        local $SIG{ALRM} = sub { die "caller timed out\n" };
+        alarm($test->{alarm}) if $test->{alarm};
+        PVE::Cmd::run(
+            ['sh', '-c', 'echo $$; exec sleep 30'],
+            outfunc => sub { $pid //= $_[0]; $outfunc->(@_) },
+            %param,
+        );
+    };
+    my $err = $@;
+    alarm(0);
+    like($err, $test->{err}, "run dies when $test->{name}");
+    ok(
+        waitpid($pid, POSIX::WNOHANG) == -1 && !kill(0, $pid),
+        "run reaps the command when $test->{name}",
+    );
+}
+
 # TODO:
 # - cover pipe_socket (needs a socket peer)
-# - cover timeouts and the errfunc/logfunc callbacks
+# - cover the errfunc/logfunc callbacks
 # - more tests
 
 done_testing();

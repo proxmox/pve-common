@@ -103,6 +103,7 @@ sub run($cmd, %param) {
     my $oldtimeout;
     my $armed_at;
     my $pid;
+    my $reaped;
     my $exitcode = -1;
 
     my $outfunc;
@@ -227,51 +228,30 @@ sub run($cmd, %param) {
             foreach my $h (@handles) {
                 my $buf = '';
                 my $count = sysread($h, $buf, 4096);
-                if (!defined($count)) {
-                    my $err = $!;
-                    kill(9, $pid);
-                    waitpid($pid, 0);
-                    die $err;
-                }
+                die $! if !defined($count);
                 $select->remove($h) if !$count;
                 if ($h eq $reader) {
                     if ($outfunc || $logfunc) {
-                        eval {
-                            while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
-                                my $line = $outlog . $1;
-                                $outlog = '';
-                                &$outfunc($line) if $outfunc;
-                                &$logfunc($line) if $logfunc;
-                            }
-                            $outlog .= $buf;
-                        };
-                        my $err = $@;
-                        if ($err) {
-                            kill(9, $pid);
-                            waitpid($pid, 0);
-                            die $err;
+                        while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
+                            my $line = $outlog . $1;
+                            $outlog = '';
+                            &$outfunc($line) if $outfunc;
+                            &$logfunc($line) if $logfunc;
                         }
+                        $outlog .= $buf;
                     } elsif (!$quiet) {
                         print $buf;
                         *STDOUT->flush();
                     }
                 } elsif ($h eq $error) {
                     if ($errfunc || $logfunc) {
-                        eval {
-                            while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
-                                my $line = $errlog . $1;
-                                $errlog = '';
-                                &$errfunc($line) if $errfunc;
-                                &$logfunc($line) if $logfunc;
-                            }
-                            $errlog .= $buf;
-                        };
-                        my $err = $@;
-                        if ($err) {
-                            kill(9, $pid);
-                            waitpid($pid, 0);
-                            die $err;
+                        while ($buf =~ s/^([^\010\r\n]*)(?:\n|(?:\010)+|\r\n?)//) {
+                            my $line = $errlog . $1;
+                            $errlog = '';
+                            &$errfunc($line) if $errfunc;
+                            &$logfunc($line) if $logfunc;
                         }
+                        $errlog .= $buf;
                     } elsif (!$quiet) {
                         print STDERR $buf;
                         *STDERR->flush();
@@ -286,7 +266,7 @@ sub run($cmd, %param) {
         &$errfunc($errlog) if $errfunc && $errlog;
         &$logfunc($errlog) if $logfunc && $errlog;
 
-        waitpid($pid, 0);
+        $reaped = waitpid($pid, 0); # same statement, so no signal handler runs in between
 
         if ($? == -1) {
             die "failed to execute\n";
@@ -309,6 +289,12 @@ sub run($cmd, %param) {
     my $err = $@;
 
     alarm(0) if $armed_at;
+
+    # whatever made us die, also a signal handler of the caller, the command must not outlive us
+    if ($pid && !$reaped) {
+        kill(9, $pid);
+        waitpid($pid, 0);
+    }
 
     if ($errmsg && $laststderr) {
         # the caller's alarm can fire during the flush, and the callback can
@@ -335,8 +321,6 @@ sub run($cmd, %param) {
 
     if ($err) {
         if ($pid && ($err eq "got timeout\n")) {
-            kill(9, $pid);
-            waitpid($pid, 0);
             die "command '$cmdstr' failed: $err";
         }
 
