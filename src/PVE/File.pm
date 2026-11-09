@@ -118,7 +118,8 @@ sub file_copy($filename, $dst, $max = undef, $perm = undef) {
 sub file_read_first_line($filename) {
     my $fh = IO::File->new($filename, "r");
     if (!$fh) {
-        return undef if $! == POSIX::ENOENT;
+        # treat ENOENT and ESRCH (No such process, e.g. exit during openin /proc/<pid>) the same
+        return undef if $! == POSIX::ENOENT || $! == POSIX::ESRCH;
         die "file '$filename' exists but open for reading failed - $!\n";
     }
     my $res = <$fh>;

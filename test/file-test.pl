@@ -10,6 +10,8 @@ use PVE::File;
 
 use Encode;
 use File::Path qw(remove_tree);
+use POSIX ();
+use Test::MockModule;
 use Test::More;
 
 # TODO:
@@ -62,6 +64,20 @@ is_deeply(
     $wide_chars_written,
     "simple write-read-compare test with wide-characters",
 );
+
+# a file below /proc/<pid>/ of a process that is just exiting can fail to open with ESRCH
+{
+    my $io_file = Test::MockModule->new('IO::File');
+    $io_file->redefine(
+        new => sub {
+            $! = POSIX::ESRCH;
+            return undef;
+        },
+    );
+    my $res = eval { PVE::File::file_read_first_line("/proc/1/stat") };
+    is($@, '', "ESRCH on open does not die");
+    is($res, undef, "ESRCH on open is treated like a file that does not exist");
+}
 
 done_testing();
 
