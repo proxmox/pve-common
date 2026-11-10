@@ -297,11 +297,6 @@ my $server_run = sub {
     # fixme: handle restart lockfd
     &$lockpidfile($self);
 
-    # remove FD_CLOEXEC bit to reuse on exec
-    $self->{daemon_lock_fh}->fcntl(Fcntl::F_SETFD(), 0);
-
-    $ENV{PVE_DAEMON_LOCK_FD} = $self->{daemon_lock_fh}->fileno;
-
     # run in background
     my $spid;
 
@@ -499,6 +494,10 @@ sub restart_daemon {
     sleep($waittime) if $waittime; # avoid high server load due to restarts
 
     PVE::INotify::inotify_close();
+
+    # remove FD_CLOEXEC bit to reuse on exec
+    $self->{daemon_lock_fh}->fcntl(Fcntl::F_SETFD(), 0);
+    $ENV{PVE_DAEMON_LOCK_FD} = $self->{daemon_lock_fh}->fileno;
 
     exec(@{ $self->{cmdline} });
 
