@@ -1,3 +1,23 @@
+libpve-common-perl (9.2.9) trixie; urgency=medium
+
+  * rest handler: honor the 'type-property' of the parameter schema when
+    resolving the type of a request, instead of always assuming 'type'.
+
+  * daemon: only pass the PID lock on when the daemon re-executes itself.
+    Commands started by a daemon inherited the lock and, if they outlived the
+    daemon, made a restart fail with 'daemon already started'.
+
+  * fix #8288: file: treat a process that exits while its /proc entry is being
+    read as not running, instead of failing. On boot, this could abort the
+    start of all guests, so that guests of later startup orders stayed stopped.
+
+  * network: interfaces: convert carriage returns in interface comments to
+    newlines when writing the configuration. ifupdown2 reads a standalone
+    carriage return as a line break, which allowed injecting configuration
+    lines through a comment.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 12 Nov 2026 23:58:17 +0100
+
 libpve-common-perl (9.2.8) trixie; urgency=medium
 
   * network: interfaces: add guard for substitution in bond slaves property,
