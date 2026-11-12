@@ -777,6 +777,10 @@ sub __interface_to_string($iface, $d, $family, $first_block, $ifupdown2 = undef)
 
         # add comments
         my $comments = $d->{"comments$suffix"} || '';
+
+        $comments =~ s/\r\n/\n/g;
+        $comments =~ s/\r/\n/g;
+
         foreach my $cl (split(/\n/, $comments)) {
             $raw .= "#$cl\n";
         }
