@@ -1865,6 +1865,16 @@ my $default_schema_noref = {
             description =>
                 "This provides an enumeration of possible values that are valid for the instance property.",
         },
+        multiline => {
+            type => "boolean",
+            optional => 1,
+            description => "If the instance value is a string, this hints"
+                . " that the string is a multi-line string. Note that the"
+                . " 'pattern' or 'format' keywords should be used to validate"
+                . " whether a string may actually contain newlines or not."
+                . " This keyword specifically only acts as a hint, not as a"
+                . " validation guarantee.",
+        },
         description => {
             type => "string",
             optional => 1,
