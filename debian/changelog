@@ -1,3 +1,29 @@
+libpve-common-perl (9.2.10) trixie; urgency=medium
+
+  * cmd run: keep a pending alarm of the caller armed with the time it has
+    left, instead of canceling or delaying it. Cluster-wide locks limit how
+    long they are held through such an alarm, so only the first command run
+    under a lock was limited, for example 'vgs' but not the following
+    'lvcreate' on shared LVM.
+
+  * cmd run: kill the command if the run gets aborted from outside, like by
+    the timeout of a lock. Before, the operation failed and released the lock
+    while its command kept running, for example an 'rbd create' on a pool
+        whose placement groups never become active.
+
+  * json schema: add a 'sensitive' flag to mark properties that hold secrets,
+    like passwords or API tokens, and helpers to replace such values in the
+    raw text of key/value and section config files. Only the sensitive keys
+    of a property string get replaced, and invalid lines are kept as is. This
+    allows other packages to redact secrets where configs reach a wider
+    audience, like in the system report.
+
+  * json schema: add a 'multiline' keyword as a hint for clients that a string
+    can span multiple lines, so its newlines must not be folded or replaced.
+    The keyword does not affect validation.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 15 Nov 2026 22:32:14 +0100
+
 libpve-common-perl (9.2.9) trixie; urgency=medium
 
   * rest handler: honor the 'type-property' of the parameter schema when
