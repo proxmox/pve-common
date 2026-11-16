@@ -1011,4 +1011,20 @@ is(
 eval { PVE::JSONSchema::redact_raw_config({ type => 'object' }, $redact_config_in, '***') };
 like($@, qr/strange schema/, 'redact key/value config fails without properties');
 
+my $typed_one_of = { 'type-property' => 'kind', oneOf => [] };
+for my $test (
+    ['plain object', { properties => {} }, undef],
+    ['oneOf', $typed_one_of, 'kind'],
+    ['oneOf in an allOf', { allOf => [{ properties => {} }, $typed_one_of] }, 'kind'],
+    [
+        'oneOf in a nested allOf',
+        { allOf => [{ allOf => [{ properties => {} }, $typed_one_of] }, { properties => {} }] },
+        'kind',
+    ],
+) {
+    my ($description, $schema, $expected) = $test->@*;
+    is(PVE::JSONSchema::get_object_type_property($schema), $expected,
+        "type property: $description");
+}
+
 done_testing();
