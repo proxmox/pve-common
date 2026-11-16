@@ -754,6 +754,19 @@ sub getopt_usage {
 
     my $out = '';
 
+    # All types of each type property, as { 'type=foo' => 1, ... }
+    my $all_types = {};
+    my sub collect_types($schema) {
+        use feature 'current_sub';
+
+        if (defined(my $type_property = $schema->{'type-property'})) {
+            my $types = ($schema->{'type-property-schema'} // {})->{enum} // [];
+            $all_types->{$type_property}->{"${type_property}=$_"} = 1 for $types->@*;
+        }
+        __SUB__->($_) for ($schema->{allOf} // [])->@*;
+    }
+    collect_types($schema);
+
     my $arg_hash = {};
 
     my $args = '';
@@ -799,9 +812,10 @@ sub getopt_usage {
 
     my $idx_param = {}; # -vlan\d+ -scsi\d+
 
-    my $opts = '';
-
-    my $type_specific_opts = {};
+    # [key, description], for conditional ones followed by their 'type=foo' and usage text
+    my @general_opts;
+    my @conditional_opts;
+    my @required_opts;
 
     my sub handle_property($k, $prop_schema, $type_keys, $is_optional) {
         return if $arg_hash->{$k};
@@ -841,11 +855,18 @@ sub getopt_usage {
             $is_optional = ($target && $target->{optional}) // 0;
         }
 
-        if ($type_keys) {
-            $type_specific_opts->{$type_keys} //= '';
-            $type_specific_opts->{$type_keys} .=
-                $get_property_description->($base, 'arg', $prop_schema, $format, $param_map->{$k});
+        my $describe = sub($prop_schema) {
+            return $get_property_description->(
+                $base, 'arg', $prop_schema, $format, $param_map->{$k},
+            );
+        };
 
+        my $usage_arg = "--$base <$type_text>";
+
+        if ($type_keys) {
+            my $required = !$is_optional && !defined($prop_schema->{alias});
+            push @conditional_opts,
+                [$k, $describe->($prop_schema), $type_keys, $required ? $usage_arg : undef];
             return;
         }
 
@@ -853,6 +874,8 @@ sub getopt_usage {
         if (my $type_property = $prop_schema->{'type-property'}) {
             # save type specific descriptions for later
             my $type_schema = get_object_property_schema($schema, $type_property);
+            $all_types->{$type_property}->{"${type_property}=$_"} = 1
+                for (($type_schema // {})->{enum} // [])->@*;
             if ($prop_schema->{oneOf}) {
                 # it's optional if there are less options than types
                 $is_optional = 1
@@ -860,23 +883,17 @@ sub getopt_usage {
                 for my $alternative ($prop_schema->{oneOf}->@*) {
                     # it's optional if at least one variant is optional
                     $is_optional = 1 if $alternative->{optional};
+                    my $description = $describe->($alternative);
                     for my $type ($alternative->{'instance-types'}->@*) {
-                        my $key = "${type_property}=${type}";
-                        $type_specific_opts->{$key} //= "";
-                        $type_specific_opts->{$key} .= $get_property_description->(
-                            $base, 'arg', $alternative, $format, $param_map->{$k},
-                        );
+                        push @conditional_opts, [$k, $description, "${type_property}=${type}"];
                     }
                 }
             } elsif (my $types = $prop_schema->{'instance-types'}) {
                 # it's optional if not all types has that option
                 $is_optional = 1 if scalar($type_schema->{enum}->@*) > scalar($types->@*);
+                my $description = $describe->($prop_schema);
                 for my $type ($types->@*) {
-                    my $key = "${type_property}=${type}";
-                    $type_specific_opts->{$key} //= "";
-                    $type_specific_opts->{$key} .= $get_property_description->(
-                        $base, 'arg', $prop_schema, $format, $param_map->{$k},
-                    );
+                    push @conditional_opts, [$k, $description, "${type_property}=${type}"];
                 }
             }
         } elsif ($prop_schema->{oneOf}) {
@@ -884,25 +901,15 @@ sub getopt_usage {
             for my $alternative ($prop_schema->{oneOf}->@*) {
                 # it's optional if at least one variant is optional
                 $is_optional = 1 if $alternative->{optional};
-                push $res->@*,
-                    $get_property_description->(
-                        $base, 'arg', $alternative, $format, $param_map->{$k},
-                    );
+                push $res->@*, $describe->($alternative);
             }
-            if ($format eq 'asciidoc') {
-                $opts .= join("\n\nor\n\n", $res->@*);
-            } else {
-                $opts .= join("  or\n\n", $res->@*);
-            }
+            my $separator = $format eq 'asciidoc' ? "\n\nor\n\n" : "  or\n\n";
+            push @general_opts, [$k, join($separator, $res->@*)];
         } else {
-            $opts .=
-                $get_property_description->($base, 'arg', $prop_schema, $format, $param_map->{$k});
+            push @general_opts, [$k, $describe->($prop_schema)];
         }
 
-        if (!$is_optional && !defined($prop_schema->{alias})) {
-            $args .= " " if $args;
-            $args .= "--$base <$type_text>";
-        }
+        push @required_opts, [$k, $usage_arg] if !$is_optional && !defined($prop_schema->{alias});
 
         return;
     }
@@ -942,8 +949,77 @@ sub getopt_usage {
         }
     }
 
-    # options can be entirely type specific, in which case only $type_specific_opts is filled
-    my $has_options = $opts || $type_specific_opts->%*;
+    # collect the types per distinct description of an option
+    my @grouped_opts;
+    my $group_of = {};
+    for my $entry (@conditional_opts) {
+        my ($key, $description, $type, $usage_arg) = $entry->@*;
+        my $group = (
+            $group_of->{$key}->{$description} //= do {
+                push @grouped_opts,
+                    {
+                        key => $key,
+                        description => $description,
+                        types => {},
+                        required => $usage_arg,
+                    };
+                $grouped_opts[-1];
+            }
+        );
+        $group->{types}->{$type} = 1;
+        $group->{required} = undef if !defined($usage_arg);
+    }
+
+    # the same for all types of a type property, so not conditional
+    my $is_general = sub($group) {
+        for my $types (values $all_types->%*) {
+            next if scalar(keys $types->%*) < 2;
+            return 1 if !grep { !$group->{types}->{$_} } keys $types->%*;
+        }
+        return 0;
+    };
+    my $is_listed = { map { $_->[0] . "\0" . $_->[1] => 1 } @general_opts };
+    for my $group (grep { $is_general->($_) } @grouped_opts) {
+        next if $is_listed->{ $group->{key} . "\0" . $group->{description} };
+        push @general_opts, [$group->{key}, $group->{description}];
+        push @required_opts, [$group->{key}, $group->{required}] if $group->{required};
+    }
+    @grouped_opts = grep { !$is_general->($_) } @grouped_opts;
+
+    for my $required (sort { $a->[0] cmp $b->[0] } @required_opts) {
+        $args .= " " if $args;
+        $args .= $required->[1];
+    }
+
+    for my $group (@grouped_opts) {
+        my @types = sort keys $group->{types}->%*;
+        my $type_text = join('; ', @types);
+        # shorten 'type=bar; type=foo' to 'type=bar, foo'
+        my %type_properties = map { m/^([^=\s]+)=\S+$/ ? ($1 => 1) : ('' => 1) } @types;
+        if (!$type_properties{''} && scalar(keys %type_properties) == 1) {
+            my ($type_property) = keys %type_properties;
+            $type_text = "${type_property}=" . join(', ', map { s/^[^=]+=//r } @types);
+        }
+        $group->{type_text} = $type_text;
+
+        if ($format eq 'asciidoc') {
+            $group->{description} =~ s/\n\n\z/\n+\n`[$type_text]`\n\n/;
+        } else {
+            my $indent = "             ";
+            my $note = Text::Wrap::wrap($indent, $indent, "[$type_text]");
+            $group->{description} =~ s/\n\n\z/\n$note\n\n/;
+        }
+    }
+    my $conditional_opts = join(
+        '',
+        map { $_->{description} }
+            sort { $a->{key} cmp $b->{key} || $a->{type_text} cmp $b->{type_text} } @grouped_opts,
+    );
+
+    my $opts = join('', map { $_->[1] } sort { $a->[0] cmp $b->[0] } @general_opts);
+
+    # options can be entirely type specific, in which case only $conditional_opts is filled
+    my $has_options = $opts || $conditional_opts;
 
     if ($format eq 'asciidoc') {
         my $safeprefix = $prefix =~ s/\s/_/rg;
@@ -977,21 +1053,13 @@ sub getopt_usage {
 
     $out .= $opts if $opts;
 
-    if (scalar(keys $type_specific_opts->%*)) {
+    if ($conditional_opts) {
         if ($format eq 'asciidoc') {
             $out .= "\n\n\n`Conditional options:`\n\n";
         } else {
             $out .= " Conditional options:\n\n";
         }
-    }
-
-    for my $type_opts (sort keys $type_specific_opts->%*) {
-        if ($format eq 'asciidoc') {
-            $out .= "`[$type_opts]` ;;\n\n";
-        } else {
-            $out .= " [$type_opts]\n\n";
-        }
-        $out .= $type_specific_opts->{$type_opts};
+        $out .= $conditional_opts;
     }
 
     return $out;

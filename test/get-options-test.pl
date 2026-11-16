@@ -48,6 +48,10 @@ package TestBase {
         confess "implement me";
     }
 
+    sub asciidoc_usage_str($class, $prefix) {
+        return undef;
+    }
+
     # The remaining `usage_str` inputs, overridden by tests which want to cover them.
 
     sub usage_arg_param($class) {
@@ -223,6 +227,18 @@ package TestBase {
             my $desc = $subclass->desc();
 
             is($got, $expected, "$desc - long usage description matches");
+
+            $expected = $subclass->asciidoc_usage_str($prefix) // next;
+            $got = $class->usage_str(
+                $subclass,
+                $prefix,
+                $subclass->usage_arg_param(),
+                {},
+                'asciidoc',
+                $subclass->usage_param_cb(),
+                $subclass->usage_formatter_properties(),
+            );
+            is($got, $expected, "$desc - asciidoc usage description matches");
         }
     }
 }
@@ -687,12 +703,12 @@ package DirectOneOf {
             . "  --type     <one | two>\n"
             . "\t     The type.\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=one]\n" . "\n"
             . "  --prop-one <a | b>\n"
-            . "\t     a or b\n" . "\n"
-            . " [type=two]\n" . "\n"
+            . "\t     a or b\n"
+            . "\t     [type=one]\n" . "\n"
             . "  --prop-two <number> (3 - 100)\n"
-            . "\t     number\n" . "\n";
+            . "\t     number\n"
+            . "\t     [type=two]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -816,20 +832,19 @@ package OneOfWithCustomResolvedTypeProperty {
     }
 
     sub long_usage_str($class, $prefix) {
-        "USAGE: $prefix --custom-type <string> [OPTIONS]\n"
+        "USAGE: $prefix"
+            . " --custom-type <string> --implicit-type-discriminator <string> [OPTIONS]\n"
             . "  --custom-type <one | two>\n"
             . "\t     The type.\n" . "\n"
+            . "  --implicit-type-discriminator <deduce-type-one | deduce-type-two>\n"
+            . "\t     A property from which the type can be deduced.\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [custom-type=one]\n" . "\n"
-            . "  --implicit-type-discriminator <deduce-type-one | deduce-type-two>\n"
-            . "\t     A property from which the type can be deduced.\n" . "\n"
             . "  --prop-one <a | b>\n"
-            . "\t     a or b\n" . "\n"
-            . " [custom-type=two]\n" . "\n"
-            . "  --implicit-type-discriminator <deduce-type-one | deduce-type-two>\n"
-            . "\t     A property from which the type can be deduced.\n" . "\n"
+            . "\t     a or b\n"
+            . "\t     [custom-type=one]\n" . "\n"
             . "  --prop-two <number> (3 - 100)\n"
-            . "\t     number\n" . "\n";
+            . "\t     number\n"
+            . "\t     [custom-type=two]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -955,12 +970,12 @@ package OneOfArrayVsScalar {
             . "  --type     <one | two>\n"
             . "\t     The type.\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=one]\n" . "\n"
             . "  --values   <array>\n"
-            . "\t     An array.\n" . "\n"
-            . " [type=two]\n" . "\n"
+            . "\t     An array.\n"
+            . "\t     [type=one]\n" . "\n"
             . "  --values   <string>\n"
-            . "\t     A single string.\n" . "\n";
+            . "\t     A single string.\n"
+            . "\t     [type=two]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -1071,12 +1086,12 @@ package OneOfFlagVsString {
             . "  --type     <flag | word>\n"
             . "\t     The type.\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=flag]\n" . "\n"
             . "  --mode     <boolean>\n"
-            . "\t     A flag.\n" . "\n"
-            . " [type=word]\n" . "\n"
+            . "\t     A flag.\n"
+            . "\t     [type=flag]\n" . "\n"
             . "  --mode     <auto | off | on>\n"
-            . "\t     A word.\n" . "\n";
+            . "\t     A word.\n"
+            . "\t     [type=word]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -1311,6 +1326,254 @@ package FixedSecondTypeProperty {
     }
 }
 
+package OneOfSharedOptions {
+    usebase;
+
+    sub desc($class) {
+        'oneOf with options shared by some or all variants';
+    }
+
+    sub schema($class) {
+        my $everywhere = { type => 'string', description => 'For all types.' };
+        my $anywhere = { optional => 1, type => 'string', description => 'Optional for all.' };
+        my $partly = { type => 'string', description => 'Required for some.' };
+        my $shared = { optional => 1, type => 'string', description => 'For some types.' };
+        return {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'The type.',
+                enum => ['one', 'two', 'three'],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => {
+                        anywhere => $anywhere,
+                        everywhere => $everywhere,
+                        partly => $partly,
+                        shared => $shared,
+                        differs =>
+                            { optional => 1, type => 'boolean', description => 'A flag.' },
+                    },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => {
+                        anywhere => $anywhere,
+                        everywhere => $everywhere,
+                        partly => $partly,
+                        differs =>
+                            { optional => 1, type => 'string', description => 'A word.' },
+                        own => { optional => 1, type => 'integer', description => 'For two.' },
+                    },
+                },
+                {
+                    'instance-type' => 'three',
+                    additionalProperties => 0,
+                    properties => {
+                        anywhere => $anywhere,
+                        everywhere => $everywhere,
+                        partly => { $partly->%*, optional => 1 },
+                        shared => $shared,
+                        differs =>
+                            { optional => 1, type => 'string', description => 'A word.' },
+                    },
+                },
+            ],
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix --everywhere <string> --type <string> [OPTIONS]\n"
+            . "  --anywhere <string>\n"
+            . "\t     Optional for all.\n" . "\n"
+            . "  --everywhere <string>\n"
+            . "\t     For all types.\n" . "\n"
+            . "  --partly   <string>\n"
+            . "\t     Required for some.\n" . "\n"
+            . "  --type     <one | three | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . "  --differs  <boolean>\n"
+            . "\t     A flag.\n"
+            . "\t     [type=one]\n" . "\n"
+            . "  --differs  <string>\n"
+            . "\t     A word.\n"
+            . "\t     [type=three, two]\n" . "\n"
+            . "  --own      <integer>\n"
+            . "\t     For two.\n"
+            . "\t     [type=two]\n" . "\n"
+            . "  --shared   <string>\n"
+            . "\t     For some types.\n"
+            . "\t     [type=one, three]\n" . "\n";
+    }
+
+    sub asciidoc_usage_str($class, $prefix) {
+        "[[cli_test_OneOfSharedOptions]]\n"
+            . "*$prefix* `--everywhere <string> --type <string>` `[OPTIONS]`\n"
+            . "`--anywhere` `<string>` ::\n\n"
+            . "Optional for all.\n\n"
+            . "`--everywhere` `<string>` ::\n\n"
+            . "For all types.\n\n"
+            . "`--partly` `<string>` ::\n\n"
+            . "Required for some.\n\n"
+            . "`--type` `<one | three | two>` ::\n\n"
+            . "The type.\n\n"
+            . "\n\n\n`Conditional options:`\n\n"
+            . "`--differs` `<boolean>` ::\n\n"
+            . "A flag.\n+\n`[type=one]`\n\n"
+            . "`--differs` `<string>` ::\n\n"
+            . "A word.\n+\n`[type=three, two]`\n\n"
+            . "`--own` `<integer>` ::\n\n"
+            . "For two.\n+\n`[type=two]`\n\n"
+            . "`--shared` `<string>` ::\n\n"
+            . "For some types.\n+\n`[type=one, three]`\n\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "option of some types",
+                args => [qw(--type three --shared foo --everywhere bar)],
+                expected => { type => 'three', shared => 'foo', everywhere => 'bar' },
+            },
+        );
+    }
+}
+
+package TwoTypedOneOfs {
+    usebase;
+
+    sub desc($class) {
+        'two oneOf with a type property each';
+    }
+
+    sub schema($class) {
+        my $shared = { optional => 1, type => 'string', description => 'For all types.' };
+        my $typed = sub($type_property, %properties) {
+            return {
+                'type-property' => $type_property,
+                'type-property-schema' => {
+                    type => 'string',
+                    description => "The $type_property.",
+                    enum => [sort keys %properties],
+                },
+                oneOf => [
+                    map { {
+                        'instance-type' => $_,
+                        additionalProperties => 0,
+                        properties => $properties{$_},
+                    } } sort keys %properties
+                ],
+            };
+        };
+        my $own = sub($name) {
+            return { optional => 1, type => 'string', description => "For $name." };
+        };
+        return {
+            allOf => [
+                $typed->(
+                    'type',
+                    a => { shared => $shared, 'only-a' => $own->('a') },
+                    b => { shared => $shared },
+                ),
+                $typed->(
+                    'mode',
+                    x => { shared => $shared },
+                    y => { 'only-y' => $own->('y') },
+                ),
+            ],
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix --mode <string> --type <string> [OPTIONS]\n"
+            . "  --mode     <x | y>\n"
+            . "\t     The mode.\n" . "\n"
+            . "  --shared   <string>\n"
+            . "\t     For all types.\n" . "\n"
+            . "  --type     <a | b>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . "  --only-a   <string>\n"
+            . "\t     For a.\n"
+            . "\t     [type=a]\n" . "\n"
+            . "  --only-y   <string>\n"
+            . "\t     For y.\n"
+            . "\t     [mode=y]\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "option of both type properties",
+                args => [qw(--type a --mode x --shared foo --only-a bar)],
+                expected => { type => 'a', mode => 'x', shared => 'foo', 'only-a' => 'bar' },
+            },
+        );
+    }
+}
+
+package LegacyInstanceTypes {
+    usebase;
+
+    sub desc($class) {
+        "properties with 'instance-types'";
+    }
+
+    sub schema($class) {
+        {
+            additionalProperties => 0,
+            properties => {
+                type => {
+                    type => 'string',
+                    description => 'The type.',
+                    enum => ['one', 'two'],
+                },
+                both => {
+                    optional => 1,
+                    type => 'string',
+                    description => 'For both types.',
+                    'type-property' => 'type',
+                    'instance-types' => ['one', 'two'],
+                },
+                single => {
+                    optional => 1,
+                    type => 'string',
+                    description => 'For one type.',
+                    'type-property' => 'type',
+                    'instance-types' => ['one'],
+                },
+            },
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix --type <string> [OPTIONS]\n"
+            . "  --both     <string>\n"
+            . "\t     For both types.\n" . "\n"
+            . "  --type     <one | two>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . "  --single   <string>\n"
+            . "\t     For one type.\n"
+            . "\t     [type=one]\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "option of one type",
+                args => [qw(--type one --single foo --both bar)],
+                expected => { type => 'one', single => 'foo', both => 'bar' },
+            },
+        );
+    }
+}
+
 package OneOfInAllOf {
     usebase;
 
@@ -1393,16 +1656,18 @@ package OneOfInAllOf {
             . "  --type     <one | two>\n"
             . "\t     The type.\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=one]\n" . "\n"
             . "  --flag1    <boolean>\n"
-            . "\t     required flag\n" . "\n"
-            . "  --prop-one <a | b>\n"
-            . "\t     a or b\n" . "\n"
-            . " [type=two]\n" . "\n"
+            . "\t     required flag\n"
+            . "\t     [type=one]\n" . "\n"
             . "  --flag2    <boolean>\n"
-            . "\t     optional flag\n" . "\n"
+            . "\t     optional flag\n"
+            . "\t     [type=two]\n" . "\n"
+            . "  --prop-one <a | b>\n"
+            . "\t     a or b\n"
+            . "\t     [type=one]\n" . "\n"
             . "  --prop-two <number> (3 - 100)\n"
-            . "\t     number\n" . "\n";
+            . "\t     number\n"
+            . "\t     [type=two]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -1506,12 +1771,12 @@ package AllOfInOneOf {
             . "  --type     <one | two>\n"
             . "\t     The type.\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=one]\n" . "\n"
             . "  --prop-one <string>\n"
-            . "\t     a string\n" . "\n"
-            . " [type=two]\n" . "\n"
+            . "\t     a string\n"
+            . "\t     [type=one]\n" . "\n"
             . "  --prop-two <number>\n"
-            . "\t     number\n" . "\n";
+            . "\t     number\n"
+            . "\t     [type=two]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -1618,20 +1883,21 @@ package NestedOneOf {
             . "  --type     <one | two>\n"
             . "\t     The type.\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=one]\n" . "\n"
-            . "  --prop-one <string>\n"
-            . "\t     a string\n" . "\n"
-            . " [type=two]\n" . "\n"
             . "  --inner-type <inner1 | inner2>\n"
-            . "\t     Inner type.\n" . "\n"
-            . "  --prop-two <number>\n"
-            . "\t     number\n" . "\n"
-            . " [type=two and inner-type=inner1]\n" . "\n"
+            . "\t     Inner type.\n"
+            . "\t     [type=two]\n" . "\n"
             . "  --prop-inner <string>\n"
-            . "\t     an inner string\n" . "\n"
-            . " [type=two and inner-type=inner2]\n" . "\n"
+            . "\t     an inner string\n"
+            . "\t     [type=two and inner-type=inner1]\n" . "\n"
             . "  --prop-inner <number>\n"
-            . "\t     an inner number\n" . "\n";
+            . "\t     an inner number\n"
+            . "\t     [type=two and inner-type=inner2]\n" . "\n"
+            . "  --prop-one <string>\n"
+            . "\t     a string\n"
+            . "\t     [type=one]\n" . "\n"
+            . "  --prop-two <number>\n"
+            . "\t     number\n"
+            . "\t     [type=two]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -1750,19 +2016,17 @@ package SectionConfigTestCreate {
     sub long_usage_str($class, $prefix) {
         "USAGE: $prefix"
             . " --type <string> [OPTIONS]\n"
+            . "  --common   <string>\n"
+            . "\t     A common string.\n" . "\n"
             . "  --type     <one | two>\n"
             . "\t     Section Type\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=one]\n" . "\n"
-            . "  --common   <string>\n"
-            . "\t     A common string.\n" . "\n"
             . "  --prop-one <string>\n"
-            . "\t     A string for type one.\n" . "\n"
-            . " [type=two]\n" . "\n"
-            . "  --common   <string>\n"
-            . "\t     A common string.\n" . "\n"
+            . "\t     A string for type one.\n"
+            . "\t     [type=one]\n" . "\n"
             . "  --prop-two <string>\n"
-            . "\t     A string for type two.\n" . "\n";
+            . "\t     A string for type two.\n"
+            . "\t     [type=two]\n" . "\n";
     }
 
     sub invocations($class) {
@@ -1833,6 +2097,8 @@ package SectionConfigTestUpdate {
     sub long_usage_str($class, $prefix) {
         "USAGE: $prefix"
             . "  [OPTIONS]\n"
+            . "  --common   <string>\n"
+            . "\t     A common string.\n" . "\n"
             . "  --delete   <string>\n"
             . "\t     A list of settings you want to delete.\n" . "\n"
             . "  --digest   <string>\n"
@@ -1841,16 +2107,12 @@ package SectionConfigTestUpdate {
             . "  --type     <one | two>\n"
             . "\t     Section Type\n" . "\n"
             . " Conditional options:\n" . "\n"
-            . " [type=one]\n" . "\n"
-            . "  --common   <string>\n"
-            . "\t     A common string.\n" . "\n"
             . "  --prop-one <string>\n"
-            . "\t     A string for type one.\n" . "\n"
-            . " [type=two]\n" . "\n"
-            . "  --common   <string>\n"
-            . "\t     A common string.\n" . "\n"
+            . "\t     A string for type one.\n"
+            . "\t     [type=one]\n" . "\n"
             . "  --prop-two <string>\n"
-            . "\t     A string for type two.\n" . "\n";
+            . "\t     A string for type two.\n"
+            . "\t     [type=two]\n" . "\n";
     }
 
     sub invocations($class) {
