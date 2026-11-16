@@ -832,8 +832,7 @@ package OneOfWithCustomResolvedTypeProperty {
     }
 
     sub long_usage_str($class, $prefix) {
-        "USAGE: $prefix"
-            . " --custom-type <string> --implicit-type-discriminator <string> [OPTIONS]\n"
+        "USAGE: $prefix --implicit-type-discriminator <string> [OPTIONS]\n"
             . "  --custom-type <one | two>\n"
             . "\t     The type.\n" . "\n"
             . "  --implicit-type-discriminator <deduce-type-one | deduce-type-two>\n"

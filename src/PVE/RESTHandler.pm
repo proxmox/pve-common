@@ -767,6 +767,8 @@ sub getopt_usage {
     }
     collect_types($schema);
 
+    my $type_property = PVE::JSONSchema::get_object_type_property($schema // {}) // 'type';
+
     my $arg_hash = {};
 
     my $args = '';
@@ -938,7 +940,7 @@ sub getopt_usage {
         # The type for section config update methods is optional, since it can
         # be inferred from the existing config:
         my $force_optional = undef;
-        $force_optional = 1 if $entry->[0] eq 'type' && $resolve_type;
+        $force_optional = 1 if $entry->[0] eq $type_property && $resolve_type;
         handle_property($entry->[0], $entry->[1], undef, $force_optional);
     }
     for my $key (sort keys %type_specific_properties) {
