@@ -2077,7 +2077,8 @@ my $method_schema = {
         resolve_type => {
             type => 'coderef',
             description =>
-                "A function which is called with the parameters to determine the value of the 'type' property of a oneOf parameter schema, so that clients may omit it.",
+                "A function which is called with the parameters to determine the value of the 'type' property of a oneOf parameter schema, so that clients may omit it."
+                . " The command line parser calls it before it converts or checks the values of options.",
             optional => 1,
         },
         permissions => {
@@ -2377,7 +2378,7 @@ sub deny_alias_shadowing($schema) {
 # a way to parse command line parameters, using a
 # schema to configure Getopt::Long
 sub get_options {
-    my ($schema, $args, $arg_param, $fixed_param, $param_mapping_hash) = @_;
+    my ($schema, $args, $arg_param, $fixed_param, $param_mapping_hash, $resolve_type) = @_;
 
     if (!is_object_like_schema($schema)) {
         raise("too many arguments\n", code => HTTP_BAD_REQUEST)
@@ -2450,6 +2451,16 @@ sub get_options {
     raise("unable to parse option\n", code => HTTP_BAD_REQUEST)
         if !Getopt::Long::GetOptionsFromArray($args, $opts, @getopt);
 
+    # decode after Getopt as we are not sure how well it handles unicode
+    my $decode_value = sub {
+        my ($value) = @_;
+        return decode('locale', $value) if !ref($value);
+        return [map { decode('locale', $_) } $value->@*] if ref($value) eq 'ARRAY';
+        return decode('locale', $$value) if ref($value) eq 'SCALAR';
+        raise("decoding options failed, unknown reference\n", code => HTTP_BAD_REQUEST);
+    };
+
+    my @unassigned_arg_params;
     if (@$args) {
         if ($list_param) {
             $opts->{$list_param} = $args;
@@ -2469,27 +2480,7 @@ sub get_options {
                     next;
                 }
                 if (!@$args) {
-                    # check if all left-over arg_param are optional, else we
-                    # must die as the mapping is then ambigious
-                    for (; $i < scalar(@$arg_param); $i++) {
-                        my $prop = $arg_param->[$i];
-                        my $prop_schema = get_object_property_schema($schema, $prop, $opts);
-                        # 'arg_param' properties must exist, however, it may be the case that
-                        # the property is inside a oneOf of another type, in which case
-                        # we assume the 'arg_param' is optional.
-                        # For instance, if we were to have `path` for storages as arg_param,
-                        # but the storage type is not path-based, then it has no `path`
-                        # property.
-                        # Before the introduction of `oneOf`, the property would always exist
-                        # as optional, and the section config's validation would fail *later*.
-                        # Since we can have `oneOf` schemas now, we can disregard the parameter
-                        # early.
-                        next if !$prop_schema;
-
-                        # Otherwise, check the optionality.
-                        raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
-                            if !$prop_schema->{optional};
-                    }
+                    push @unassigned_arg_params, $arg_param->@[$i .. $arg_param->$#*];
                     if ($arg_param->[-1] eq 'extra-args') {
                         $opts->{'extra-args'} = [];
                     }
@@ -2508,25 +2499,37 @@ sub get_options {
                 if ($arg_name eq 'extra-args') {
                     $opts->{'extra-args'} = [];
                 } else {
-                    my $prop_schema = get_object_property_schema($schema, $arg_name, $opts);
-                    # Like above: if the property schema cannot be found,
-                    # assuming the 'arg_param' list is otherwise valid, then a
-                    # type property of a oneOf sent the above into a subschema
-                    # where the parameter does not exist, thus we consider it
-                    # optional.
-                    next if !$prop_schema;
-
-                    # Otherwise, check the optionality.
-                    raise("not enough arguments\n", code => HTTP_BAD_REQUEST)
-                        if !$prop_schema->{optional};
+                    push @unassigned_arg_params, $arg_name;
                 }
             }
         }
     }
 
+    # selects the oneOf variant for the lookups below, the type can also be fixed or resolved
+    my $variant_data = { $opts->%*, ($fixed_param // {})->%* };
+    my ($type_property, $resolved_type, $resolve_err);
+    if ($resolve_type && defined($type_property = get_object_type_property($schema))) {
+        if (!defined($variant_data->{$type_property})) {
+            my $param = { map { $_ => $decode_value->($opts->{$_}) } keys $opts->%* };
+            $resolved_type = eval { $resolve_type->({ $param->%*, ($fixed_param // {})->%* }) };
+            $resolve_err = $@;
+            $variant_data->{$type_property} = $resolved_type if defined($resolved_type);
+        }
+    }
+
+    # Left-over arg_param must be optional, as the mapping is ambiguous otherwise. One that the
+    # variant does not have counts as optional.
+    for my $arg_name (@unassigned_arg_params) {
+        my $prop_schema = get_object_property_schema($schema, $arg_name, $variant_data) or next;
+        raise("not enough arguments\n", code => HTTP_BAD_REQUEST) if !$prop_schema->{optional};
+    }
+
+    # only now, as a missing argument may be why the resolver failed
+    die $resolve_err if $resolve_err;
+
     foreach my $entry (@interactive) {
         my ($opt, $func) = @$entry;
-        my $pd = get_object_property_schema($schema, $opt, $opts);
+        my $pd = get_object_property_schema($schema, $opt, $variant_data);
         my $value = $opts->{$opt};
         # Again, `$pd` can be `undef` if the top level schema is a oneOf schema
         # and the type does not match, in which case we act like the parameter
@@ -2536,25 +2539,10 @@ sub get_options {
         }
     }
 
-    # decode after Getopt as we are not sure how well it handles unicode
-    foreach my $p (keys %$opts) {
-        if (!ref($opts->{$p})) {
-            $opts->{$p} = decode('locale', $opts->{$p});
-        } elsif (ref($opts->{$p}) eq 'ARRAY') {
-            my $tmp = [];
-            foreach my $v (@{ $opts->{$p} }) {
-                push @$tmp, decode('locale', $v);
-            }
-            $opts->{$p} = $tmp;
-        } elsif (ref($opts->{$p}) eq 'SCALAR') {
-            $opts->{$p} = decode('locale', $$opts->{$p});
-        } else {
-            raise("decoding options failed, unknown reference\n", code => HTTP_BAD_REQUEST);
-        }
-    }
+    $opts->{$_} = $decode_value->($opts->{$_}) for keys %$opts;
 
     foreach my $p (keys %$opts) {
-        if (my $pd = get_object_property_schema($schema, $p, $opts)) {
+        if (my $pd = get_object_property_schema($schema, $p, $variant_data)) {
             my $value = $opts->{$p};
             if ($pd->{type} && $pd->{type} eq 'boolean') {
                 if ($value eq '') {
@@ -2579,6 +2567,8 @@ sub get_options {
             }
         }
     }
+
+    $opts->{$type_property} = $resolved_type if defined($resolved_type);
 
     foreach my $p (keys %$fixed_param) {
         $opts->{$p} = $fixed_param->{$p};

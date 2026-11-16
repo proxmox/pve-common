@@ -1027,4 +1027,25 @@ for my $test (
         "type property: $description");
 }
 
+my $resolved_one_of = {
+    'type-property' => 'kind',
+    'type-property-schema' => { type => 'string', enum => ['a', 'b'] },
+    oneOf => [
+        map { { 'instance-type' => $_, properties => { id => { type => 'string' } } } } 'a',
+        'b',
+    ],
+};
+my $resolve_kind = sub {
+    my ($param) = @_;
+    die "ID 'gone' does not exist\n" if $param->{id} eq 'gone';
+    return 'b';
+};
+is_deeply(
+    PVE::JSONSchema::get_options($resolved_one_of, ['--id', 'there'], [], {}, {}, $resolve_kind),
+    { id => 'there', kind => 'b' },
+    'get_options: resolved type is part of the result',
+);
+eval { PVE::JSONSchema::get_options($resolved_one_of, ['--id', 'gone'], [], {}, {}, $resolve_kind) };
+is($@, "ID 'gone' does not exist\n", 'get_options: failure to resolve the type is fatal');
+
 done_testing();

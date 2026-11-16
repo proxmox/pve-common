@@ -985,6 +985,332 @@ package OneOfArrayVsScalar {
     }
 }
 
+package OneOfFlagVsString {
+    usebase;
+
+    sub desc($class) {
+        'oneOf with clashing parameter flag vs string and a resolved type';
+    }
+
+    sub schema($class) {
+        {
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        id => {
+                            type => 'string',
+                            description => 'The ID, which determines the type.',
+                            enum => ['flagged', 'worded'],
+                        },
+                    },
+                },
+                {
+                    'type-property' => 'type',
+                    'type-property-schema' => {
+                        type => 'string',
+                        description => 'The type.',
+                        enum => ['flag', 'word'],
+                    },
+                    oneOf => [
+                        {
+                            'instance-type' => 'flag',
+                            additionalProperties => 0,
+                            properties => {
+                                'mode' => {
+                                    optional => 1,
+                                    type => 'boolean',
+                                    description => 'A flag.',
+                                },
+                            },
+                        },
+                        {
+                            'instance-type' => 'word',
+                            additionalProperties => 0,
+                            properties => {
+                                'mode' => {
+                                    optional => 1,
+                                    type => 'string',
+                                    description => 'A word.',
+                                    enum => ['on', 'off', 'auto'],
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    sub additional_method_info($class) {
+        return (
+            resolve_type => sub {
+                my ($param) = @_;
+                return 'flag' if $param->{id} eq 'flagged';
+                return 'word' if $param->{id} eq 'worded';
+                die "unable to resolve type\n";
+            },
+        );
+    }
+
+    # wraps the schema in a further allOf
+    sub usage_formatter_properties($class) {
+        return {
+            quiet => {
+                type => 'boolean',
+                description => 'Be quiet.',
+                optional => 1,
+            },
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        "USAGE: $prefix --id <string> [OPTIONS]\n"
+            . "  --id\t     <flagged | worded>\n"
+            . "\t     The ID, which determines the type.\n" . "\n"
+            . "  --type     <flag | word>\n"
+            . "\t     The type.\n" . "\n"
+            . " Conditional options:\n" . "\n"
+            . " [type=flag]\n" . "\n"
+            . "  --mode     <boolean>\n"
+            . "\t     A flag.\n" . "\n"
+            . " [type=word]\n" . "\n"
+            . "  --mode     <auto | off | on>\n"
+            . "\t     A word.\n" . "\n";
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "flag variant without value",
+                args => [qw(--id flagged --mode)],
+                expected => { type => 'flag', id => 'flagged', mode => 1 },
+            },
+            {
+                desc => "flag variant with value",
+                args => [qw(--id flagged --mode off)],
+                expected => { type => 'flag', id => 'flagged', mode => 0 },
+            },
+            {
+                desc => "flag variant refuses a word that is no boolean",
+                args => [qw(--id flagged --mode auto)],
+                error => "400 unable to parse boolean option\n",
+            },
+            {
+                desc => "string variant keeps a word that is a boolean too",
+                args => [qw(--id worded --mode on)],
+                expected => { type => 'word', id => 'worded', mode => 'on' },
+            },
+            {
+                desc => "string variant keeps a word that is no boolean",
+                args => [qw(--id worded --mode auto --quiet)],
+                expected => { type => 'word', id => 'worded', mode => 'auto' },
+                expected_format_options => { quiet => 1 },
+            },
+            {
+                desc => "explicit type takes precedence",
+                args => [qw(--id flagged --type word --mode auto)],
+                expected => { type => 'word', id => 'flagged', mode => 'auto' },
+            },
+            {
+                desc => "type resolved from a fixed parameter",
+                args => [qw(--mode auto)],
+                fixed_param => { id => 'worded' },
+                expected => { type => 'word', id => 'worded', mode => 'auto' },
+            },
+            {
+                desc => "fixed type takes precedence",
+                args => [qw(--id flagged --mode auto)],
+                fixed_param => { type => 'word' },
+                expected => { type => 'word', id => 'flagged', mode => 'auto' },
+            },
+        );
+    }
+}
+
+package OneOfRequiredPerType {
+    usebase;
+
+    sub desc($class) {
+        'oneOf with parameters that only one variant requires';
+    }
+
+    sub schema($class) {
+        my $string = sub($description, %rest) {
+            return { type => 'string', description => $description, %rest };
+        };
+        {
+            allOf => [
+                {
+                    additionalProperties => 0,
+                    properties => {
+                        id => $string->(
+                            'The ID, which determines the type.',
+                            enum => ['locked', 'open', 'untyped', 'gone'],
+                        ),
+                    },
+                },
+                {
+                    'type-property' => 'type',
+                    'type-property-schema' =>
+                        $string->('The type.', enum => ['secret', 'plain']),
+                    oneOf => [
+                        {
+                            'instance-type' => 'secret',
+                            additionalProperties => 0,
+                            properties => {
+                                password => $string->('A password.'),
+                                target => $string->('A target.'),
+                            },
+                        },
+                        {
+                            'instance-type' => 'plain',
+                            additionalProperties => 0,
+                            properties => {
+                                note => $string->('A note.', optional => 1),
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    sub additional_method_info($class) {
+        return (
+            resolve_type => sub {
+                my ($param) = @_;
+                my $id = $param->{id} // die "no ID given\n";
+                die "ID '$id' does not exist\n" if $id eq 'gone';
+                return { locked => 'secret', open => 'plain' }->{$id};
+            },
+        );
+    }
+
+    sub usage_param_cb($class) {
+        return sub {
+            return [{
+                name => 'password',
+                desc => '<password>',
+                func => sub { return $_[0] // 'prompted' },
+                interactive => 1,
+            }];
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        return undef;
+    }
+
+    sub invocations($class) {
+        my $arg_param = ['id', 'target'];
+        return (
+            {
+                desc => "resolved variant has neither the missing argument nor the password",
+                args => [qw(open --note text)],
+                arg_param => $arg_param,
+                expected => { type => 'plain', id => 'open', note => 'text' },
+            },
+            {
+                desc => "fixed variant has neither the missing argument nor the password",
+                args => [qw(locked)],
+                arg_param => $arg_param,
+                fixed_param => { type => 'plain' },
+                expected => { type => 'plain', id => 'locked' },
+            },
+            {
+                desc => "resolved variant requires the missing argument",
+                args => [qw(locked)],
+                arg_param => $arg_param,
+                error => "400 not enough arguments\n",
+            },
+            {
+                desc => "resolved variant asks for the password",
+                args => [qw(locked there)],
+                arg_param => $arg_param,
+                expected =>
+                    { type => 'secret', id => 'locked', target => 'there', password => 'prompted' },
+            },
+            {
+                desc => "unresolved type falls back to the first variant with the argument",
+                args => [qw(untyped)],
+                arg_param => $arg_param,
+                error => "400 not enough arguments\n",
+            },
+            {
+                desc => "missing arguments are reported before a failure to resolve the type",
+                args => [],
+                arg_param => $arg_param,
+                error => "400 not enough arguments\n",
+            },
+            {
+                desc => "failure to resolve the type",
+                args => [qw(gone there)],
+                arg_param => $arg_param,
+                error => "ID 'gone' does not exist\n",
+            },
+        );
+    }
+}
+
+package FixedSecondTypeProperty {
+    usebase;
+
+    sub desc($class) {
+        'two oneOf with a type property each, the second one fixed';
+    }
+
+    sub schema($class) {
+        my $typed = sub($type_property, %properties) {
+            return {
+                'type-property' => $type_property,
+                'type-property-schema' => {
+                    type => 'string',
+                    description => "The $type_property.",
+                    enum => [sort keys %properties],
+                },
+                oneOf => [
+                    map { {
+                        'instance-type' => $_,
+                        additionalProperties => 0,
+                        properties => $properties{$_},
+                    } } sort keys %properties
+                ],
+            };
+        };
+        my $opt = sub($type) {
+            return { opt => { optional => 1, type => $type, description => "A $type." } };
+        };
+        return {
+            allOf => [
+                $typed->('type', a => {}, b => {}),
+                $typed->('mode', flag => $opt->('boolean'), word => $opt->('string')),
+            ],
+        };
+    }
+
+    sub long_usage_str($class, $prefix) {
+        return undef;
+    }
+
+    sub invocations($class) {
+        return (
+            {
+                desc => "string variant keeps a word",
+                args => [qw(--type a --opt text)],
+                fixed_param => { mode => 'word' },
+                expected => { type => 'a', mode => 'word', opt => 'text' },
+            },
+            {
+                desc => "flag variant without value",
+                args => [qw(--type a --opt)],
+                fixed_param => { mode => 'flag' },
+                expected => { type => 'a', mode => 'flag', opt => 1 },
+            },
+        );
+    }
+}
+
 package OneOfInAllOf {
     usebase;
 
