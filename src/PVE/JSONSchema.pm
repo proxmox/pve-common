@@ -864,6 +864,7 @@ my $remote_format = {
     },
     apitoken => {
         type => 'string',
+        sensitive => 1,
         description => 'A full Proxmox API token including the secret value.',
         format_description => 'PVEAPIToken=user@realm!token=SECRET',
     },
