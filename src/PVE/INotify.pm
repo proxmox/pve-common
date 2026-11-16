@@ -601,15 +601,17 @@ sub write_etc_hosts {
 
 register_file('etchosts', "/etc/hosts", \&read_etc_hosts, \&write_etc_hosts);
 
-sub read_etc_resolv_conf {
-    my ($filename, $fh) = @_;
+my sub parse_resolv_conf {
+    my ($fh, $all_search_domains) = @_;
 
     my $res = {};
 
     my $nscount = 0;
     while (my $line = <$fh>) {
         chomp $line;
-        if ($line =~ m/^(search|domain)\s+(\S+)\s*/) {
+        if ($all_search_domains && $line =~ m/^search\s+(\S.*)$/) {
+            $res->{search} = join(' ', split(/\s+/, $1));
+        } elsif ($line =~ m/^(search|domain)\s+(\S+)\s*/) {
             $res->{search} = $2;
         } elsif ($line =~ m/^\s*nameserver\s+($PVE::Tools::IPRE)\s*/) {
             $nscount++;
@@ -618,6 +620,27 @@ sub read_etc_resolv_conf {
             }
         }
     }
+
+    return $res;
+}
+
+# only returns the first search domain, as callers use it to build an FQDN
+sub read_etc_resolv_conf {
+    my ($filename, $fh) = @_;
+
+    return parse_resolv_conf($fh, 0);
+}
+
+# like read_file('resolvconf'), but returns all domains of a 'search' directive, separated by a
+# single space. the obsolete 'domain' directive only takes one domain, see resolv.conf(5).
+sub read_resolv_conf_with_search_list {
+    my ($filename) = @_;
+
+    $filename //= '/etc/resolv.conf';
+
+    open(my $fh, '<', $filename) or return undef;
+    my $res = parse_resolv_conf($fh, 1);
+    close($fh);
 
     return $res;
 }

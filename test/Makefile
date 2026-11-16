@@ -19,6 +19,7 @@ TESTS = lock_file.test			\
 	ticket_test.test \
 	check_pem_test.test \
 	split_pem_test.test \
+	resolv_conf_test.test \
 
 all:
 
