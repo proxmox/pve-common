@@ -396,7 +396,9 @@ In I<L<isolated mode|/MODES>>, the locally defined properties (those registered
 by overriding C<L<< properties()|/$plugin->properties() >>>) are automatically
 added to the plugin's schema, keeping the C<optional> flag from their own
 definition. However, marking the property as C<fixed> must still be done via
-C<L<< options()|/$plugin->options() >>>.
+C<L<< options()|/$plugin->options() >>>. A property that is listed there without
+C<optional> is required in the schema of the plugin, even if it is declared as
+optional, for example by the base plugin.
 
 =cut
 
@@ -473,7 +475,11 @@ my sub make_isolated_base_schema($class, $pdata, $plugins, $is_update) {
 
             my $schema = $class->get_property_schema($type, $key);
             $schema = { $schema->%* };
-            $schema->{optional} = 1 if $is_update || $opts->{$key}->{optional};
+            if ($is_update || $opts->{$key}->{optional}) {
+                $schema->{optional} = 1;
+            } elsif ($pdata->{isolatedPropertyList}->{$type}) {
+                $schema->{optional} = 0 if $schema->{optional}; # its options decide
+            }
             $properties->{$key} = $schema;
         }
 

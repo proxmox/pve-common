@@ -63,10 +63,8 @@ package OptionalCommonRequiredAndOptional {
     use base qw(TestPackage);
 
     sub desc($class) {
-        return
-            "optional default properties not required by all plugins"
-            . " are optional in both schemas for plugins that use them,"
-            . " even if a plugin marks it as required";
+        return "optional default properties are required in the create schema"
+            . " of the plugins that mark them as required";
     }
 
     package OptionalCommonRequiredAndOptional::PluginBase {
@@ -159,7 +157,7 @@ package OptionalCommonRequiredAndOptional {
                     properties => {
                         'common' => {
                             type => 'string',
-                            optional => 1,
+                            optional => $optional,
                         },
                         'prop-one' => {
                             type => 'string',

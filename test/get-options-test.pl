@@ -2117,8 +2117,7 @@ package SectionConfigTestCreate {
     }
 
     sub long_usage_str($class, $prefix) {
-        "USAGE: $prefix"
-            . " --type <string> [OPTIONS]\n"
+        "USAGE: $prefix --common <string> --type <string> [OPTIONS]\n"
             . "  --common   <string>\n"
             . "\t     A common string.\n" . "\n"
             . "  --type     <one | two>\n"

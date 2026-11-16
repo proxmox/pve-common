@@ -647,8 +647,8 @@ package OptionalCommonRequiredByOne {
             "in unified mode, optional default properties declared as"
             . " non-optional by some but not all plugins are always optional"
             . " for both schemas"
-            . " - in isolated mode, these properties are available and optional"
-            . " only for the plugins that use them";
+            . " - in isolated mode, these properties are only available for the"
+            . " plugins that use them, and required where a plugin says so";
     }
 
     package OptionalCommonRequiredByOne::PluginBase {
@@ -789,7 +789,7 @@ package OptionalCommonRequiredByOne {
                         },
                         'common' => {
                             type => 'string',
-                            optional => 1,
+                            optional => $optional,
                         },
                     },
                 },
@@ -815,7 +815,7 @@ package OptionalCommonRequiredByAll {
         return
             "in unified mode, optional default properties required by all plugins"
             . " are required in createSchema and optional in updateSchema"
-            . " - in isolated mode, these properties are optional in *both* schemas";
+            . " - in isolated mode as well";
     }
 
     package OptionalCommonRequiredByAll::PluginBase {
@@ -959,7 +959,7 @@ package OptionalCommonRequiredByAll {
                         },
                         'common' => {
                             type => 'string',
-                            optional => 1,
+                            optional => $optional,
                         },
                     },
                 },
@@ -973,7 +973,7 @@ package OptionalCommonRequiredByAll {
                         },
                         'common' => {
                             type => 'string',
-                            optional => 1,
+                            optional => $optional,
                         },
                     },
                 },
