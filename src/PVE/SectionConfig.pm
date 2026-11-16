@@ -217,7 +217,8 @@ optional using C<< optional => 1 >>, with only very few exceptions. One such
 exception would be a property that you intend to use as unique identifier of a
 section. In that case, ensure that you explicitly define it with
 C<< optional => 0 >> and that it is not used in any child plugins'
-C<L<< options()|/$plugin->options() >>> method.
+C<L<< options()|/$plugin->options() >>> method. A required default property that
+only some child plugins list there is required for all of them nonetheless.
 
 B<NOTE:> When specifying the default properties in the C<propertyList> key, you
 MAY only add attributes related to C<L<PVE::JSONSchema>> to property
@@ -470,6 +471,7 @@ my sub make_isolated_base_schema($class, $pdata, $plugins, $is_update) {
 
         my $opts = $pdata->{options}->{$type} || {};
         for my $key (keys $opts->%*) {
+            next if ($pdata->{'common-properties'} // {})->{$key};
             # The update schema does not contain fixed keys.
             next if $is_update && $opts->{$key}->{fixed};
 
@@ -869,7 +871,8 @@ my sub init_isolated($pdata, $global_isolation) {
     my $plugins = $pdata->{plugins};
     my $isolatedPropertyList = $pdata->{isolatedPropertyList};
 
-    my %used_options = (type => 1);
+    # by how many plugins an option is used
+    my %option_users;
 
     for my $type (keys $plugins->%*) {
         my $opts = $plugins->{$type}->options();
@@ -882,7 +885,7 @@ my sub init_isolated($pdata, $global_isolation) {
             $plugin_isolates_properties ? $basePropertyList : $propertyList;
 
         for my $p (keys $opts->%*) {
-            $used_options{$p} = 1;
+            $option_users{$p}++;
 
             my $prop;
             if ($global_isolation || $plugin_isolates_properties) {
@@ -906,7 +909,6 @@ my sub init_isolated($pdata, $global_isolation) {
         if (my $isolated_props = $isolatedPropertyList->{$type}) {
             for my $p (keys $isolated_props->%*) {
                 next if $opts->{$p};
-                $used_options{$p} = 1;
                 $opts->{$p} = {};
                 $opts->{$p}->{optional} = 1 if $isolated_props->{$p}->{optional};
             }
@@ -915,10 +917,11 @@ my sub init_isolated($pdata, $global_isolation) {
         $pdata->{options}->{$type} = $opts;
     }
 
-    # Finally, all non-optional base properties which aren't used by any plugin are still used
-    # in the create-schema.
+    # Finally, all non-optional base properties which aren't used by all plugins are still used
+    # in the create-schema. A plugin that lists one must not take it away from the others.
+    my $plugin_count = scalar(keys $plugins->%*);
     for my $p (keys $basePropertyList->%*) {
-        next if $used_options{$p};
+        next if $p eq 'type' || ($option_users{$p} // 0) == $plugin_count;
 
         my $prop = $basePropertyList->{$p};
         next if $prop->{optional};
@@ -926,7 +929,7 @@ my sub init_isolated($pdata, $global_isolation) {
         $common_properties->{$p} = { $prop->%* };
     }
 
-    # These are required and used by no plugin, so in practice the section identifier.
+    # These are required and not listed by all plugins, so in practice the section identifier.
     # Unified mode keeps them required in both schemas, so do the same here.
     $pdata->{'common-properties'} = $common_properties if $common_properties->%*;
 

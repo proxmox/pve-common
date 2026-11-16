@@ -1159,10 +1159,9 @@ package RequiredCommonRequiredByOne {
 
     sub desc($class) {
         return
-            "in unified mode, optional default properties that at least one"
-            . " plugin declares as required are always required in both schemas"
-            . " - in isolated mode, the same properties are only available to the"
-            . " plugin that declares them while *also being optional* in both schemas";
+            "for both unified and isolated mode, required default properties"
+            . " that only some plugins declare remain required for all plugins in"
+            . " both schemas";
     }
 
     package RequiredCommonRequiredByOne::PluginBase {
@@ -1286,36 +1285,46 @@ package RequiredCommonRequiredByOne {
 
     sub expected_isolated_schema_base($class, $optional) {
         return {
-            'type-property' => 'type',
-            'type-property-schema' => {
-                type => 'string',
-                description => 'Section Type',
-                enum => [qw(one two)],
-            },
-            oneOf => [
+            allOf => [
                 {
-                    'instance-type' => 'one',
                     additionalProperties => 0,
                     properties => {
+                        # a required common property stays required in both schemas
                         common => {
                             type => 'string',
-                            optional => $optional,
-                        },
-                        'prop-one' => {
-                            type => 'string',
-                            optional => 1,
+                            optional => 0,
                         },
                     },
                 },
                 {
-                    'instance-type' => 'two',
-                    additionalProperties => 0,
-                    properties => {
-                        'prop-two' => {
-                            type => 'string',
-                            optional => 1,
-                        },
+                    'type-property' => 'type',
+                    'type-property-schema' => {
+                        type => 'string',
+                        description => 'Section Type',
+                        enum => [qw(one two)],
                     },
+                    oneOf => [
+                        {
+                            'instance-type' => 'one',
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-one' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
+                        {
+                            'instance-type' => 'two',
+                            additionalProperties => 0,
+                            properties => {
+                                'prop-two' => {
+                                    type => 'string',
+                                    optional => 1,
+                                },
+                            },
+                        },
+                    ],
                 },
             ],
         };
