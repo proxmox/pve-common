@@ -947,6 +947,111 @@ package PartiallyIsolatedNamedExposedNoUnexposed {
     }
 }
 
+package PartiallyIsolatedRequiredProperties {
+    use base qw(TestPackage);
+
+    sub desc($class) {
+        return "only the schema of an isolating plugin requires its required properties";
+    }
+
+    package PartiallyIsolatedRequiredProperties::PluginBase {
+        use base qw(PVE::SectionConfig);
+
+        my $DEFAULT_DATA = { propertyList => {} };
+
+        sub private($class) {
+            return $DEFAULT_DATA;
+        }
+    }
+
+    # may derive the value when checking a config, like it can in unified mode
+    package PartiallyIsolatedRequiredProperties::PluginOne {
+        use base qw(PartiallyIsolatedRequiredProperties::PluginBase);
+
+        sub type($class) {
+            return 'one';
+        }
+
+        sub properties($class) {
+            return { 'prop-one' => { type => 'string' } };
+        }
+
+        sub options($class) {
+            return { 'prop-one' => {}, 'prop-three' => {} };
+        }
+    }
+
+    package PartiallyIsolatedRequiredProperties::PluginTwo {
+        use base qw(PartiallyIsolatedRequiredProperties::PluginBase);
+
+        sub type($class) {
+            return 'two';
+        }
+
+        sub plugindata($class) {
+            return { 'isolate-properties' => 1 };
+        }
+
+        sub properties($class) {
+            return { 'prop-two' => { type => 'string' } };
+        }
+
+        sub options($class) {
+            return { 'prop-two' => {} };
+        }
+    }
+
+    package PartiallyIsolatedRequiredProperties::PluginThree {
+        use base qw(PartiallyIsolatedRequiredProperties::PluginBase);
+
+        sub type($class) {
+            return 'three';
+        }
+
+        sub plugindata($class) {
+            return { 'isolate-properties' => 1, 'expose-properties' => 1 };
+        }
+
+        sub properties($class) {
+            return { 'prop-three' => { type => 'string' } };
+        }
+
+        sub options($class) {
+            return { 'prop-three' => {} };
+        }
+    }
+
+    sub expected_isolated_schema_base($class, $optional) {
+        my $required = { type => 'string', ($optional ? (optional => 1) : ()) };
+        my $shared = { type => 'string', optional => 1 };
+        return {
+            'type-property' => 'type',
+            'type-property-schema' => {
+                type => 'string',
+                description => 'Section Type',
+                enum => [qw(one three two)],
+            },
+            oneOf => [
+                {
+                    'instance-type' => 'one',
+                    additionalProperties => 0,
+                    properties => { 'prop-one' => $shared, 'prop-three' => $shared },
+                },
+                {
+                    'instance-type' => 'three',
+                    additionalProperties => 0,
+                    properties => { 'prop-three' => $required },
+                },
+                {
+                    'instance-type' => 'two',
+                    additionalProperties => 0,
+                    properties => { 'prop-two' => $required },
+                },
+            ],
+        };
+    }
+}
+
 sub test_compare_deeply($got, $expected, $test_name, $test_package) {
     $test_name = "$test_package - $test_name";
     my $description = $test_package->desc();

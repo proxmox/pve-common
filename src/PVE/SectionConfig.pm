@@ -346,8 +346,10 @@ See the C<L<< options()|/$plugin->options() >>> method for more information.
 B<NOTE:> In I<L<unified mode|/MODES>>, all properties added by child plugins are always
 marked as C<< optional => 1 >>, even if explicitly declared as C<< optional => 0 >>. If that
 were not the case, any plugin could add a new required (non-optional) property to the shared
-property list and break existing plugins. This does not apply in I<L<isolated mode|/MODES>>,
-where each plugin has its own schema, so a property's declared optionality is preserved.
+property list and break existing plugins. This does not apply to the properties a plugin
+isolates: only its own schema lists them, so their declared optionality is preserved. If only
+some plugins isolate their properties, the ones of the other plugins and the exposed ones are
+shared and thus marked as optional too.
 
 =cut
 
@@ -820,8 +822,9 @@ my sub collect_exposed_and_isolated_properties(
                 die "duplicate property '$p' - already defined in '$origin'\n" if $origin;
 
                 # Now expose the property, using a copy so that modifying the exposed schema
-                # cannot reach back into the plugin's own `properties()` data.
-                $propertyList->{$p} = { $props->{$p}->%* };
+                # cannot reach back into the plugin's own `properties()` data. Optional like in
+                # unified mode, where only the config check of a plugin enforces what it requires.
+                $propertyList->{$p} = { $props->{$p}->%*, optional => 1 };
 
                 # An exposed declaration is the one a plugin author can copy, so it wins.
                 $property_origins->{$p} = $type;
