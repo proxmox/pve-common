@@ -203,7 +203,7 @@ sub generate_usage_str {
 
     my $param_cb = $gen_param_mapping_func->($cli_handler_class);
 
-    my ($subcmd, $def, undef, undef, $cmdstr) = resolve_cmd($cmd);
+    my ($subcmd, $def, $cmd_args, undef, $cmdstr) = resolve_cmd($cmd);
 
     my $generate_weak;
     $generate_weak = sub {
@@ -254,6 +254,16 @@ sub generate_usage_str {
             $abort->("unknown command '$cmd->[0]'") if !$def;
             my ($class, $name, $arg_param, $fixed_param, undef, $formatter_properties) = @$def;
 
+            # Arguments of the command can follow it, to only get the options for those.
+            my $given_param = {};
+            if (ref($arg_param) eq 'ARRAY') {
+                my @values = ($cmd_args // [])->@*;
+                for my $arg_name ($arg_param->@*) {
+                    last if !@values || $values[0] =~ m/^-/;
+                    $given_param->{$arg_name} = shift @values;
+                }
+            }
+
             $str .= $indent;
             $str .= $class->usage_str(
                 $name,
@@ -263,6 +273,7 @@ sub generate_usage_str {
                 $format,
                 $param_cb,
                 $formatter_properties,
+                $given_param,
             );
         }
         return $str;
@@ -284,7 +295,9 @@ __PACKAGE__->register_method({
             'extra-args' => PVE::JSONSchema::get_standard_option(
                 'extra-args',
                 {
-                    description => 'Shows help for a specific command',
+                    description =>
+                        'Shows help for a specific command. Its arguments can follow, to'
+                        . ' only list the options of the type they select.',
                     completion => $complete_command_names,
                 },
             ),

@@ -2078,7 +2078,7 @@ my $method_schema = {
             type => 'coderef',
             description =>
                 "A function which is called with the parameters to determine the value of the 'type' property of a oneOf parameter schema, so that clients may omit it."
-                . " The command line parser calls it before it converts or checks the values of options.",
+                . " The command line parser calls it before it converts or checks the values of options. The help command calls it with the arguments it got and ignores a failure, so it must only look things up.",
             optional => 1,
         },
         permissions => {

@@ -52,6 +52,11 @@ package TestBase {
         return undef;
     }
 
+    # Usage for given parameters, as hashes with 'desc', 'given', 'expected' and 'arg_param'.
+    sub given_usage_strs($class, $prefix) {
+        return ();
+    }
+
     # The remaining `usage_str` inputs, overridden by tests which want to cover them.
 
     sub usage_arg_param($class) {
@@ -211,6 +216,22 @@ package TestBase {
     sub test_usage_strings($class) {
         for my $subclass (@all_tests) {
             my $prefix = "test $subclass";
+            my $desc = $subclass->desc();
+
+            for my $given ($subclass->given_usage_strs($prefix)) {
+                my $got = $class->usage_str(
+                    $subclass,
+                    $prefix,
+                    $given->{arg_param} // $subclass->usage_arg_param(),
+                    {},
+                    'long',
+                    $subclass->usage_param_cb(),
+                    $subclass->usage_formatter_properties(),
+                    $given->{given},
+                );
+                is($got, $given->{expected}, "$desc - usage with $given->{desc}");
+            }
+
             my $expected = $subclass->long_usage_str($prefix);
             next if !defined($expected);
 
@@ -223,8 +244,6 @@ package TestBase {
                 $subclass->usage_param_cb(),
                 $subclass->usage_formatter_properties(),
             );
-
-            my $desc = $subclass->desc();
 
             is($got, $expected, "$desc - long usage description matches");
 
@@ -709,6 +728,31 @@ package DirectOneOf {
             . "  --prop-two <number> (3 - 100)\n"
             . "\t     number\n"
             . "\t     [type=two]\n" . "\n";
+    }
+
+    sub given_usage_strs($class, $prefix) {
+        return (
+            {
+                desc => 'the type given as option',
+                given => { type => 'two' },
+                expected => "USAGE: $prefix --prop-two <number> --type two [OPTIONS]\n"
+                    . "  --prop-two <number> (3 - 100)\n"
+                    . "\t     number\n" . "\n",
+            },
+            {
+                desc => 'the type given as argument',
+                arg_param => ['type'],
+                given => { type => 'one' },
+                expected => "USAGE: $prefix one [OPTIONS]\n"
+                    . "  --prop-one <a | b>\n"
+                    . "\t     a or b\n" . "\n",
+            },
+            {
+                desc => 'an unknown type given',
+                given => { type => 'three' },
+                expected => $class->long_usage_str($prefix),
+            },
+        );
     }
 
     sub invocations($class) {
@@ -1214,6 +1258,44 @@ package OneOfRequiredPerType {
 
     sub long_usage_str($class, $prefix) {
         return undef;
+    }
+
+    sub given_usage_strs($class, $prefix) {
+        my $arg_param = ['id', 'target'];
+        return (
+            {
+                desc => 'an ID of the type that requires an argument',
+                arg_param => $arg_param,
+                given => { id => 'locked' },
+                expected => "USAGE: $prefix locked <target>\n"
+                    . "  <target>   <string>\n"
+                    . "\t     A target.\n" . "\n",
+            },
+            {
+                desc => 'an ID of the type without that argument',
+                arg_param => $arg_param,
+                given => { id => 'open' },
+                expected => "USAGE: $prefix open [OPTIONS]\n"
+                    . "  --note     <string>\n"
+                    . "\t     A note.\n" . "\n",
+            },
+            {
+                desc => 'an ID whose type cannot be resolved',
+                arg_param => $arg_param,
+                given => { id => 'gone' },
+                expected => "USAGE: $prefix <id> <target> [OPTIONS]\n"
+                    . "  <id>\t     <gone | locked | open | untyped>\n"
+                    . "\t     The ID, which determines the type.\n" . "\n"
+                    . "  <target>   <string>\n"
+                    . "\t     A target.\n" . "\n"
+                    . "  --type     <plain | secret>\n"
+                    . "\t     The type.\n" . "\n"
+                    . " Conditional options:\n" . "\n"
+                    . "  --note     <string>\n"
+                    . "\t     A note.\n"
+                    . "\t     [type=plain]\n" . "\n",
+            },
+        );
     }
 
     sub invocations($class) {
@@ -1897,6 +1979,28 @@ package NestedOneOf {
             . "  --prop-two <number>\n"
             . "\t     number\n"
             . "\t     [type=two]\n" . "\n";
+    }
+
+    sub given_usage_strs($class, $prefix) {
+        return (
+            {
+                desc => 'the outer type given',
+                given => { type => 'two' },
+                expected => "USAGE: $prefix"
+                    . " --inner-type <string> --prop-two <number> --type two [OPTIONS]\n"
+                    . "  --inner-type <inner1 | inner2>\n"
+                    . "\t     Inner type.\n" . "\n"
+                    . "  --prop-two <number>\n"
+                    . "\t     number\n" . "\n"
+                    . " Conditional options:\n" . "\n"
+                    . "  --prop-inner <string>\n"
+                    . "\t     an inner string\n"
+                    . "\t     [inner-type=inner1]\n" . "\n"
+                    . "  --prop-inner <number>\n"
+                    . "\t     an inner number\n"
+                    . "\t     [inner-type=inner2]\n" . "\n",
+            },
+        );
     }
 
     sub invocations($class) {

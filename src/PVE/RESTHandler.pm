@@ -722,8 +722,19 @@ my $compute_param_mapping_hash = sub {
 #   'asciidoc' ... generate asciidoc for man pages (like 'full')
 # $param_cb    ... mapping for string parameters to file path parameters
 # $formatter_properties  ... additional property definitions (passed to output formatter)
+# $given_param ... parameters that are known already, to only list the options of the oneOf
+#                  variant they select ('pvesm help add nfs')
 sub getopt_usage {
-    my ($info, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties) = @_;
+    my (
+        $info,
+        $prefix,
+        $arg_param,
+        $fixed_param,
+        $format,
+        $param_cb,
+        $formatter_properties,
+        $given_param,
+    ) = @_;
 
     $format = 'long' if !$format;
 
@@ -769,6 +780,23 @@ sub getopt_usage {
 
     my $type_property = PVE::JSONSchema::get_object_type_property($schema // {}) // 'type';
 
+    my $selected_types = {};
+    if ($given_param && $given_param->%*) {
+        my $param = { $given_param->%* };
+        # the resolver fails if the given parameters do not suffice
+        $param->{$type_property} //=
+            eval { $resolve_type->({ $param->%*, ($fixed_param // {})->%* }) }
+            if $resolve_type;
+
+        for my $property (keys $all_types->%*) {
+            my $type = $param->{$property} // next;
+            $selected_types->{$property} = $type
+                if $all_types->{$property}->{"${property}=${type}"};
+        }
+    }
+    # shown in place of the parameters, but only if they select a type
+    my $given = $selected_types->%* ? $given_param : {};
+
     my $arg_hash = {};
 
     my $args = '';
@@ -777,7 +805,8 @@ sub getopt_usage {
 
     my @checked_arg_params;
     foreach my $p (@$arg_param) {
-        my @arg_schema_candidates = get_object_property_schema($schema, $p);
+        # none if the selected type does not have that parameter
+        my @arg_schema_candidates = get_object_property_schema($schema, $p, $selected_types);
         next if !@arg_schema_candidates;
 
         my $is_optional = $arg_schema_candidates[0]->{optional};
@@ -795,6 +824,10 @@ sub getopt_usage {
 
         $arg_hash->{$p} = 1;
         $args .= " " if $args;
+        if (defined(my $value = $given->{$p})) {
+            $args .= $value;
+            next;
+        }
         if ($pd->{format} && $pd->{format} =~ m/-list/) {
             $args .= "{<$p>}";
         } else {
@@ -823,6 +856,11 @@ sub getopt_usage {
         return if $arg_hash->{$k};
         return if defined($fixed_param->{$k});
         return if $ignore_standard_output_options && $standard_output_options->{$k};
+
+        if (!$type_keys && defined(my $type = $selected_types->{$k})) {
+            push @required_opts, [$k, "--$k $type"] if defined($given->{$k});
+            return;
+        }
 
         my $type_text = $prop_schema->{type} || 'string';
 
@@ -922,8 +960,17 @@ sub getopt_usage {
     PVE::JSONSchema::for_each_property(
         $schema,
         sub($key, $prop_schema, $one_of_info) {
-            if ($one_of_info->@*) {
-                my $type_key = join(' and ', map { "$_->[0]=$_->[1]" } $one_of_info->@*);
+            my @variants;
+            for my $variant ($one_of_info->@*) {
+                my $selected = $selected_types->{ $variant->[0] };
+                if (!defined($selected)) {
+                    push @variants, $variant;
+                } elsif ($selected ne $variant->[1]) {
+                    return; # of another type
+                }
+            }
+            if (@variants) {
+                my $type_key = join(' and ', map { "$_->[0]=$_->[1]" } @variants);
                 my $list = ($type_specific_properties{$type_key} //= []);
                 push $list->@*, [$key, $prop_schema];
             } else {
@@ -1068,13 +1115,29 @@ sub getopt_usage {
 }
 
 sub usage_str {
-    my ($self, $name, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties)
-        = @_;
+    my (
+        $self,
+        $name,
+        $prefix,
+        $arg_param,
+        $fixed_param,
+        $format,
+        $param_cb,
+        $formatter_properties,
+        $given_param,
+    ) = @_;
 
     my $info = $self->map_method_by_name($name);
 
     return getopt_usage(
-        $info, $prefix, $arg_param, $fixed_param, $format, $param_cb, $formatter_properties,
+        $info,
+        $prefix,
+        $arg_param,
+        $fixed_param,
+        $format,
+        $param_cb,
+        $formatter_properties,
+        $given_param,
     );
 }
 
