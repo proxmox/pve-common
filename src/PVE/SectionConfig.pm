@@ -456,6 +456,24 @@ sub has_isolated_properties {
     return defined($isolatedPropertyList) && scalar(keys $isolatedPropertyList->%*) > 0;
 }
 
+=head3 $base->base_properties()
+
+    $props = PVE::Example::Plugin->base_properties()
+
+Returns the properties that the I<base plugin> declares itself, before and after
+C<L<< init()|/$base->init() >>>. The hash is the internal one and must not be modified.
+
+=cut
+
+sub base_properties {
+    my ($class) = @_;
+
+    my $pdata = $class->private();
+
+    # init() adds the properties of the plugins to the list and keeps the original ones apart
+    return $pdata->{'base-property-list'} // $pdata->{propertyList} // {};
+}
+
 my sub make_isolated_base_schema($class, $pdata, $plugins, $is_update) {
     my $type_enum = [];
     my $one_of = [];

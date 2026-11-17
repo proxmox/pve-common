@@ -49,14 +49,19 @@ for my $config ($configs->@*) {
     my ($name, $base_data, $plugin_data) = $config->@*;
 
     my $base = make_config($name, $base_data, $plugin_data);
+    my $base_properties = sub { return join(' ', sort keys $base->base_properties()->%*) };
+
+    is($base_properties->(), 'id', "$name - base properties before init");
 
     eval { $base->init() };
     is($@, '', "$name - first init");
+    is($base_properties->(), 'id', "$name - base properties after init");
     my $create = $base->createSchema();
     my $update = $base->updateSchema();
 
     eval { $base->init() };
     is($@, '', "$name - second init");
+    is($base_properties->(), 'id', "$name - base properties after second init");
 
     is_deeply($base->createSchema(), $create, "$name - create schema is stable");
     is_deeply($base->updateSchema(), $update, "$name - update schema is stable");
