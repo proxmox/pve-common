@@ -1,3 +1,21 @@
+libpve-common-perl (9.2.11) trixie; urgency=medium
+
+  * cli: list options that depend on a type, like those of the HA rules, once
+    with the types they apply to, instead of repeating them for every type.
+
+  * cli help: only list the options of one type if the arguments selecting it
+    follow the command, for example 'ha-manager help rules add node-affinity'.
+
+  * cli: fix parsing an option as flag if another type has a flag of that
+    name and the type is derived from other parameters, like for 'pvesm set'.
+
+  * section config: fixes for configs where plugins isolate their properties:
+    keep the properties of the other plugins optional in the schema, let an
+    isolating plugin require a property that is declared as optional, and
+    keep a required common property if a plugin lists it.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 17 Nov 2026 21:41:46 +0100
+
 libpve-common-perl (9.2.10) trixie; urgency=medium
 
   * cmd run: keep a pending alarm of the caller armed with the time it has
