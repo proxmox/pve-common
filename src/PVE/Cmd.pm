@@ -290,10 +290,21 @@ sub run($cmd, %param) {
 
     alarm(0) if $armed_at;
 
-    # whatever made us die, also a signal handler of the caller, the command must not outlive us
+    # The eval can die before reaping the command, also when a signal handler of the caller dies.
+    # Kill the command, so it does not keep running once the caller gave up on it, for example after
+    # releasing the lock it holds for the command. Only wait a bounded time for it to exit, as a
+    # command in uninterruptible sleep, for example on unresponsive storage, may never do so.
     if ($pid && !$reaped) {
         kill(9, $pid);
-        waitpid($pid, 0);
+        my $give_up_at = Time::HiRes::time() + 5;
+        while (!waitpid($pid, POSIX::WNOHANG)) {
+            if (Time::HiRes::time() >= $give_up_at) {
+                warn "command '$cmdstr' (PID $pid) did not exit after being killed, not waiting"
+                    . " for it any longer\n";
+                last;
+            }
+            usleep(10_000);
+        }
     }
 
     if ($errmsg && $laststderr) {
