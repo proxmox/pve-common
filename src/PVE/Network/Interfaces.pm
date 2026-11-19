@@ -134,7 +134,7 @@ my $check_mtu = sub($ifaces, $parent, $child) {
 #       gateway6 => IP,
 #       comments6 => [ "..." ],
 #
-#       <known options>, # like bridge_ports, ovs_*
+#       <known options>, # interface-wide (shared by inet/inet6): bridge_ports, ovs_*, vrf
 #
 #       # extra/unknown options stored by-family:
 #       options => { <inet options>... }
@@ -226,6 +226,7 @@ sub __read_etc_network_interfaces($fh, $ip_links = undef, $active_ifaces = undef
 
                     my $simple_options = {
                         'mtu' => 1,
+                        'vrf' => 1,
                         'ovs_type' => 1,
                         'ovs_options' => 1,
                         'ovs_bridge' => 1,
@@ -885,12 +886,21 @@ sub __write_etc_network_interfaces($config, $ifupdown2 = undef) {
                 my $n = $ifaces->{$p};
                 $n->{autostart} = 1;
                 die "OVS bond '$iface' - unable to find slave '$p'\n" if !$n;
+                die "OVS bond '$iface' - slave '$p' cannot have a VRF master\n" if $n->{vrf};
                 die
                     "OVS bond '$iface' - wrong interface type on slave '$p' ('$n->{type}' != 'eth')\n"
                     if $n->{type} ne 'eth';
                 &$check_mtu($ifaces, $iface, $p);
             }
         }
+    }
+
+    # OVS ports are enslaved to the OVS datapath and OVS bonds are no L3 endpoint, an OVS internal
+    # port has to be used for that. OVS bridges and internal ports are devices without a master.
+    foreach my $iface (keys %$ifaces) {
+        my $d = $ifaces->{$iface};
+        die "iface '$iface' - VRF is not supported on OVS ports and bonds\n"
+            if $d->{vrf} && ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSBond');
     }
 
     # check bond
@@ -904,6 +914,7 @@ sub __write_etc_network_interfaces($config, $ifupdown2 = undef) {
             $n->{autostart} = 1;
 
             die "bond '$iface' - unable to find slave '$p'\n" if !$n;
+            die "bond '$iface' - slave '$p' cannot have a VRF master\n" if $n->{vrf};
             die
                 "bond '$iface' - wrong interface type on slave '$p' ('$n->{type}' != 'eth or bond')\n"
                 if ($n->{type} ne 'eth' && $n->{type} ne 'bond');
@@ -1027,6 +1038,7 @@ sub __write_etc_network_interfaces($config, $ifupdown2 = undef) {
                 }
                 my $n = $ifaces_copy->{$p};
                 die "bridge '$iface' - unable to find bridge port '$p'\n" if !$n;
+                die "bridge '$iface' - port '$p' cannot have a VRF master\n" if $n->{vrf};
                 die "iface $p - ip address can't be set on interface if bridged in $iface\n"
                     if ($n->{method} && $n->{method} eq 'static' && $n->{address} ne '0.0.0.0')
                     || ($n->{method6} && $n->{method6} eq 'static' && $n->{address6} ne '::');
