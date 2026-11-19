@@ -266,7 +266,7 @@ sub run($cmd, %param) {
         &$errfunc($errlog) if $errfunc && $errlog;
         &$logfunc($errlog) if $logfunc && $errlog;
 
-        $reaped = waitpid($pid, 0); # same statement, so no signal handler runs in between
+        $reaped = waitpid($pid, 0);
 
         if ($? == -1) {
             die "failed to execute\n";
