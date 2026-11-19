@@ -1,3 +1,27 @@
+libpve-common-perl (9.2.12) trixie; urgency=medium
+
+  * json schema: mark the API token of a remote endpoint, as used for remote
+    migration, as sensitive. Tools that mask sensitive API parameters, for
+    example in logs, can then keep the secret of the token out of their output.
+
+  * inotify: add a reader for resolv.conf that returns all domains of the
+    'search' line, for the DNS API of a node. The existing reader keeps
+    returning only the first domain, as the handling of the node certificate
+    relies on that.
+
+  * tools: file locks:
+    - allow running code under a file lock only if the lock is free, without
+      waiting for it. This is for code that the holder of the lock can be
+      waiting for, like the post-stop hook of a container, which needs the
+      config lock of its guest.
+    - add a helper that lets a forked process close the file locks it inherited
+      from its parent. Such a process kept a lock held until it exited, also
+      after the parent had released it. For example, the ID of a destroyed VM
+      stayed locked while a worker was still wiping its disk on an LVM storage
+      with 'saferemove' enabled.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 19 Nov 2026 16:12:57 +0100
+
 libpve-common-perl (9.2.11) trixie; urgency=medium
 
   * cli: list options that depend on a type, like those of the HA rules, once
