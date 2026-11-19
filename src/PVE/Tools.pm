@@ -199,7 +199,8 @@ sub run_with_timeout {
 # Since this is the only way we lock now and we don't have the old
 # 'lock(); code(); unlock();' pattern anymore we do not actually need to
 # count how deep we're nesting. Therefore this hash now stores a weak reference
-# to a boolean telling us whether we already have a lock.
+# to a scalar holding the locked file handle. If the lock has not been acquired
+# yet, it holds a false value.
 
 my $lock_handles = {};
 
@@ -244,7 +245,7 @@ sub lock_file_full {
     if (!$checkptr || !$$checkptr) {
         # We cannot create a weak reference in a single atomic step, so we first
         # create a false-value, then create a reference to it, then weaken it,
-        # and after successfully locking the file we change the boolean value.
+        # and after successfully locking the file we store the handle in it.
         #
         # The reason for this is that if an outer SIGALRM throws an exception
         # between creating the reference and weakening it, a subsequent call to
@@ -254,8 +255,8 @@ sub lock_file_full {
         #
         # An externally triggered exception elsewhere in the code will cause the
         # weak reference to become 'undef', and since the file handle is only
-        # stored in the local scope in $local_fh, the file will be closed by
-        # perl's cleanup routines as well.
+        # stored in the local scope in $local_fh and $check, the file will be
+        # closed by perl's cleanup routines as well.
         #
         # This still assumes that an IO::File handle can properly deal with such
         # exceptions thrown during its own destruction, but that's up to perls
@@ -267,7 +268,7 @@ sub lock_file_full {
             $@ = "can't lock file '$filename' - $@";
             return undef;
         }
-        $check = 1;
+        $check = $local_fh;
     }
     $res = eval { &$code(@param); };
     return undef if $@;
@@ -304,11 +305,23 @@ sub try_lock_file {
             return 0 if $!{EWOULDBLOCK};
             die "can't lock file '$filename' - $!\n";
         }
-        $check = 1;
+        $check = $local_fh;
     }
     $code->(@param);
 
     return 1;
+}
+
+# Close this process's copies of lock handles inherited from its ancestors, so
+# it does not keep their locks held after they released them.
+sub close_inherited_lock_handles {
+    for my $pid (keys %$lock_handles) {
+        next if $pid == $$;
+        for my $checkptr (values $lock_handles->{$pid}->%*) {
+            close($$checkptr) if $checkptr && $$checkptr;
+        }
+        delete $lock_handles->{$pid};
+    }
 }
 
 # file_ helper for backward compat, prefer PVE::File directly for new usage.

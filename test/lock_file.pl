@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use Socket;
+use Fcntl qw(:flock);
 use POSIX (); # don't import assert()
 
 use PVE::Tools qw(lock_file_full try_lock_file);
@@ -134,6 +135,58 @@ sub fork_try_lock_test() {
     assert('try after release');
 }
 
+sub lock_is_free {
+    open(my $fh, '>>', $name) or die "open(): $!\n";
+    return flock($fh, LOCK_EX | LOCK_NB);
+}
+
+sub inherited_lock_test {
+    my ($close_in_child, $try_lock) = @_;
+
+    socketpair(my $fparent, my $fchild, AF_UNIX, SOCK_STREAM, PF_UNSPEC)
+        or die "socketpair(): $!\n";
+
+    # both ways to take the lock report an error of the code in $@ here
+    my $lock = sub {
+        my ($code) = @_;
+        return lock_file_full($name, 10, 0, $code) if !$try_lock;
+        eval { try_lock_file($name, $code) or die "lock is not free\n" };
+    };
+
+    my $pid;
+    $lock->(
+        sub {
+            $pid = fork() // die "fork(): $!\n";
+            if (!$pid) {
+                close($fparent);
+                PVE::Tools::close_inherited_lock_handles() if $close_in_child;
+                print {$fchild} "1\n";
+                $fchild->flush();
+                <$fchild>; # wait for parent to finish checks
+                POSIX::_exit(0);
+            }
+            close($fchild);
+            my $line = <$fparent>;
+            die "child failed to start\n" if !$line || $line ne "1\n";
+            die "lock released while the parent still holds it\n" if lock_is_free();
+        },
+    );
+
+    my $err = $@;
+    my $free = !$err && lock_is_free();
+    print {$fparent} "2\n";
+    $fparent->flush();
+    waitpid($pid, 0) if $pid;
+    close($fparent);
+    die $err if $err;
+
+    if ($close_in_child) {
+        die "child kept the inherited lock held\n" if !$free;
+    } else {
+        die "child did not inherit the lock\n" if $free;
+    }
+}
+
 eval {
     # Regular lock:
     new();
@@ -226,6 +279,14 @@ eval {
     assert('try after error');
 
     fork_try_lock_test();
+
+    # Lock held by child after parent released it?
+    inherited_lock_test(0);
+    # Lock free once child closed inherited copies?
+    inherited_lock_test(1);
+    # The same for a lock taken with try_lock_file():
+    inherited_lock_test(0, 1);
+    inherited_lock_test(1, 1);
 };
 my $err = $@;
 system("rm $name*");
