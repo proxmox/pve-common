@@ -39,6 +39,7 @@ our @EXPORT_OK = qw(
     $IPV4RE
     lock_file
     lock_file_full
+    try_lock_file
     run_command
     file_set_contents
     file_get_contents
@@ -277,6 +278,37 @@ sub lock_file {
     my ($filename, $timeout, $code, @param) = @_;
 
     return lock_file_full($filename, $timeout, 0, $code, @param);
+}
+
+# Like lock_file(), but does not wait for the lock. Returns 1 if the lock was free and $code ran
+# under it. Returns 0, without running $code, if another process holds the lock. The result of
+# $code is not passed on. Other than lock_file(), this dies if $code dies or if the lock file
+# cannot be opened, so that a caller can tell the three cases apart.
+#
+# As with lock_file(), $code also runs if this process holds the lock already. That is not checked
+# any further, so nested in a shared lock of lock_file_full(), $code runs with the shared lock only.
+sub try_lock_file {
+    my ($filename, $code, @param) = @_;
+
+    my $lockhash = ($lock_handles->{$$} //= {});
+
+    my $checkptr = $lockhash->{$filename};
+    my $check = 0; # This must not go out of scope before running the code.
+    my $local_fh; # This must stay local
+    if (!$checkptr || !$$checkptr) {
+        # same order as in lock_file_full(), see there
+        $lockhash->{$filename} = \$check;
+        weaken $lockhash->{$filename};
+        $local_fh = IO::File->new(">>$filename") or die "can't open file '$filename' - $!\n";
+        if (!flock($local_fh, LOCK_EX | LOCK_NB)) {
+            return 0 if $!{EWOULDBLOCK};
+            die "can't lock file '$filename' - $!\n";
+        }
+        $check = 1;
+    }
+    $code->(@param);
+
+    return 1;
 }
 
 # file_ helper for backward compat, prefer PVE::File directly for new usage.
