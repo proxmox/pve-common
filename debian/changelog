@@ -1,3 +1,25 @@
+libpve-common-perl (9.2.13) trixie; urgency=medium
+
+  * cmd: run: do not wait indefinitely for a killed command to exit, for
+    example one stuck on unresponsive storage, so that the timeout of the
+    caller still applies, like the one of cluster file system locks.
+
+  * network: interfaces: store the VRF as interface-wide setting, so that
+    removing the IPv4 configuration of an interface no longer drops it.
+    Writing the configuration now fails if a bridge port, bond slave, OVS port
+    or OVS bond has a VRF set, as none of them can be in a VRF.
+
+  * network: interfaces: add the ip-forward option, for example for the
+    uplinks of SDN zones with a dedicated VRF, which need IPv4 forwarding.
+    Only values that ifupdown2 accepts are interpreted, and bridge ports
+    cannot have it.
+
+  * section config: reject line feeds in items of array properties. Such an
+    item ended the section when writing the config, so the following lines of
+    the section were lost when reading it again.
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 20 Nov 2026 05:43:49 +0100
+
 libpve-common-perl (9.2.12) trixie; urgency=medium
 
   * json schema: mark the API token of a remote endpoint, as used for remote
