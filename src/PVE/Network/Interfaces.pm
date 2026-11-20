@@ -172,6 +172,7 @@ sub __read_etc_network_interfaces($fh, $ip_links = undef, $active_ifaces = undef
         'bridge-stp' => 'bridge_stp',
         'bridge-ports' => 'bridge_ports',
         'bridge-vids' => 'bridge_vids',
+        'ip_forward' => 'ip-forward',
         'bridge-trunk' => 'bridge_vids', # ifupdown2 alias
     };
 
@@ -271,6 +272,10 @@ sub __read_etc_network_interfaces($fh, $ip_links = undef, $active_ifaces = undef
                         } else {
                             $d->{$id} = $value;
                         }
+                    } elsif ($id eq 'ip-forward' && $value =~ m/^(?:on|yes|1|off|no|0)$/) {
+                        # only the values ifupdown2 accepts, others are kept as they are; use the
+                        # first accepted value if it is set more than once
+                        $d->{$id} //= $value =~ m/^(?:on|yes|1)$/ ? 1 : 0;
                     } elsif ($simple_options->{$id}) {
                         $d->{$id} = $value;
                     } elsif ($id eq 'slaves' || $id eq 'bridge_ports') {
@@ -763,6 +768,10 @@ sub __interface_to_string($iface, $d, $family, $first_block, $ifupdown2 = undef)
     }
 
     if ($first_block) {
+        $raw .= "\tip-forward " . ($d->{'ip-forward'} ? 'on' : 'off') . "\n"
+            if defined($d->{'ip-forward'});
+        $done->{'ip-forward'} = 1;
+
         # print other settings
         foreach my $k (sort keys %$d) {
             next if $done->{$k};
@@ -1039,6 +1048,8 @@ sub __write_etc_network_interfaces($config, $ifupdown2 = undef) {
                 my $n = $ifaces_copy->{$p};
                 die "bridge '$iface' - unable to find bridge port '$p'\n" if !$n;
                 die "bridge '$iface' - port '$p' cannot have a VRF master\n" if $n->{vrf};
+                die "bridge '$iface' - port '$p' cannot have ip-forward set\n"
+                    if defined($n->{'ip-forward'});
                 die "iface $p - ip address can't be set on interface if bridged in $iface\n"
                     if ($n->{method} && $n->{method} eq 'static' && $n->{address} ne '0.0.0.0')
                     || ($n->{method6} && $n->{method6} eq 'static' && $n->{address6} ne '::');
