@@ -1219,7 +1219,9 @@ sub check_value {
 
     die "got undefined value\n" if !defined($value);
 
-    die "property contains a line feed\n" if $value =~ m/[\n\r]/;
+    for my $v (ref($value) eq 'ARRAY' ? $value->@* : $value) {
+        die "property contains a line feed\n" if $v =~ m/[\n\r]/;
+    }
 
     if (!$skipSchemaCheck) {
         my $errors = {};
@@ -1689,6 +1691,7 @@ my sub format_config_line {
         die "property '$key' is not an array" if ref($value) ne 'ARRAY';
         my $result = '';
         for my $line ($value->@*) {
+            die "property '$key' contains a line feed\n" if $line =~ m/[\n\r]/;
             $result .= "\t$key $line\n" if $value ne '';
         }
         return $result;

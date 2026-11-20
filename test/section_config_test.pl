@@ -424,6 +424,17 @@ bad: unknown
 EOF
 is(Conf->redact_raw_config($redact_in, '<redacted>'), $redact_out, "redact raw config");
 
+# parse_property_string() skips whitespace-only parts, so line feeds can pass format checks
+for my $item ("subfield1=test,\n", "subfield1=test,\r") {
+    my $section = { type => 'two', field2 => 5, another => 'foo', arrayfield => [$item] };
+
+    eval { Conf::Two->check_config('t2', $section, 1, 1) };
+    like($@, qr/line feed/, "check_config rejects a line feed in an array item");
+
+    eval { Conf->write_config('test.cfg', { ids => { t2 => $section }, order => { t2 => 1 } }) };
+    like($@, qr/line feed/, "write_config rejects a line feed in an array item");
+}
+
 done_testing();
 
 1;
