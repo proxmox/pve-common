@@ -1,3 +1,13 @@
+libpve-common-perl (9.2.14) trixie; urgency=medium
+
+  * json schema: show the plain parameter name in errors, for example 'path'
+    instead of 'oneOf[dir].path'. Among others, errors for HA rules have used
+    such long names since version 9.1.21. The web UI then could not highlight
+    the invalid field. Scripts that check API errors for the long names need
+    to use the plain name.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 22 Nov 2026 22:27:35 +0100
+
 libpve-common-perl (9.2.13) trixie; urgency=medium
 
   * cmd: run: do not wait indefinitely for a killed command to exit, for
