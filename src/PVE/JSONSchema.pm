@@ -1487,18 +1487,12 @@ my sub check_one_of($original_value, $schema, $one_of, $path, $errors, $collect_
         my $variant_name = $variant->{'instance-type'}
             or die "missing 'instance-type' in oneOf variant\n";
         if ($variant_name eq $instance_type) {
-            my $subpath = "oneOf[$variant_name]";
-            my $variant_path = $path ? "$path.$subpath" : $subpath;
             my $unknown = {};
-            check_prop(
-                $original_value, $variant, $variant_path, $errors, undef, $unknown,
-            );
+            check_prop($original_value, $variant, $path, $errors, undef, $unknown);
 
             # The enclosing oneOf owns the type property, so variants do not need to declare it.
             delete $unknown->{$type_property};
-            propagate_unknown_properties(
-                $variant_path, $errors, $collect_unknown, $unknown,
-            );
+            propagate_unknown_properties($path, $errors, $collect_unknown, $unknown);
             return;
         }
     }

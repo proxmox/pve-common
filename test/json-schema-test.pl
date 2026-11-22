@@ -570,8 +570,7 @@ my $check_one_of = [
                     'old-type' => 'replacement',
                 },
                 must_fail => {
-                    'oneOf[one].old-type' =>
-                        qr/^cannot set both 'old-type' and its alias target 'type'/,
+                    'old-type' => qr/^cannot set both 'old-type' and its alias target 'type'/,
                 },
             },
             {
@@ -588,8 +587,8 @@ my $check_one_of = [
                     second => 'hello',
                 },
                 must_fail => {
-                    'oneOf[one].first' => qr/^property is missing /,
-                    'oneOf[one].second' => qr/^property is not defined /,
+                    'first' => qr/^property is missing /,
+                    'second' => qr/^property is not defined /,
                 },
             },
             {
@@ -599,8 +598,8 @@ my $check_one_of = [
                     first => 'hello',
                 },
                 must_fail => {
-                    'oneOf[two].first' => qr/^property is not defined /,
-                    'oneOf[two].second' => qr/^property is missing /,
+                    'first' => qr/^property is not defined /,
+                    'second' => qr/^property is missing /,
                 },
             },
         ],
@@ -710,7 +709,7 @@ my $check_one_of = [
                     'one-b' => 'hello',
                 },
                 must_fail => {
-                    'oneOf[one].one-b' => qr/^type check \('number'\) failed/,
+                    'one-b' => qr/^type check \('number'\) failed/,
                 },
             },
             {
@@ -732,7 +731,7 @@ my $check_one_of = [
                     'inner-type' => 'inner-a',
                 },
                 must_fail => {
-                    'oneOf[two].oneOf[inner-a].inner-a-elem' => qr/^property is missing /,
+                    'inner-a-elem' => qr/^property is missing /,
                 },
             },
             {
@@ -757,7 +756,7 @@ my $check_one_of = [
                     'inner-a-elem' => 'correct',
                 },
                 must_fail => {
-                    'oneOf[two].oneOf[inner-b].inner-b-elem' => qr/^property is missing /,
+                    'inner-b-elem' => qr/^property is missing /,
                     'inner-a-elem' => qr/^property is not defined /,
                 },
             },
@@ -770,6 +769,63 @@ my $check_one_of = [
                     'two-b' => 'hello',
                     'inner-type' => 'inner-b',
                     'inner-b-elem' => 'correct3',
+                },
+            },
+        ],
+    },
+    {
+        name => 'one-of as the value of a property',
+        schema => {
+            type => 'object',
+            additionalProperties => 0,
+            properties => {
+                inner => {
+                    'type-property' => 'type',
+                    'type-property-schema' => {
+                        type => 'string',
+                        enum => ['one', 'two'],
+                    },
+                    oneOf => [
+                        {
+                            'instance-type' => 'one',
+                            additionalProperties => 0,
+                            properties => {
+                                first => {
+                                    type => 'string',
+                                },
+                            },
+                        },
+                        {
+                            'instance-type' => 'two',
+                            additionalProperties => 0,
+                            properties => {
+                                second => {
+                                    type => 'integer',
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        },
+        subtests => [
+            {
+                name => 'valid',
+                in => { inner => { type => 'two', second => 3 } },
+            },
+            {
+                name => 'wrong type',
+                in => { inner => { type => 'one', second => 3 } },
+                must_fail => {
+                    'inner.first' => qr/^property is missing /,
+                    'inner.second' => qr/^property is not defined /,
+                },
+            },
+            {
+                name => 'invalid value',
+                in => { inner => { type => 'two', second => 'three' } },
+                must_fail => {
+                    'inner.second' => qr/^type check \('integer'\) failed/,
                 },
             },
         ],

@@ -1767,7 +1767,7 @@ package OneOfInAllOf {
                 desc => "type specific mandator parameter is checked",
                 args => [qw(--type one --mandatory foo --flag)],
                 error => {
-                    'oneOf[one].flag1' => 'property is missing and it is not optional',
+                    'flag1' => 'property is missing and it is not optional',
                 },
             },
             {
@@ -1794,7 +1794,7 @@ package OneOfInAllOf {
                 desc => "other type mandatory parameter is checked",
                 args => [qw(--type two --mandatory foo --flag2)],
                 error => {
-                    'oneOf[two].prop-two' => 'property is missing and it is not optional',
+                    'prop-two' => 'property is missing and it is not optional',
                 },
             },
         );
