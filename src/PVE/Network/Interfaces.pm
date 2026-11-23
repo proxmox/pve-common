@@ -924,6 +924,23 @@ sub __write_etc_network_interfaces($config, $ifupdown2 = undef) {
             if $d->{vrf} && ($d->{type} eq 'OVSPort' || $d->{type} eq 'OVSBond');
     }
 
+    # check ovs_options
+    foreach my $iface (sort keys %$ifaces) {
+        my $d = $ifaces->{$iface};
+        next if !defined($d->{ovs_options});
+
+        if ($d->{ovs_options} =~ m/^\s*$/) {
+            delete $d->{ovs_options};
+            next;
+        }
+
+        die "iface '$iface' - ovs_options is only allowed on OVS interfaces\n"
+            if ($d->{type} // '') !~ m/^OVS/ && !$d->{ovs_type};
+
+        die "iface '$iface' - ovs_options must not contain Mako template tags\n"
+            if $d->{ovs_options} =~ m/(?:<%|\$\{)/;
+    }
+
     # check bond
     foreach my $iface (keys %$ifaces) {
         my $d = $ifaces->{$iface};
