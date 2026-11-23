@@ -1,3 +1,16 @@
+libpve-common-perl (9.2.15) trixie; urgency=medium
+
+  * network: interfaces: reject line breaks in option values when writing
+    /etc/network/interfaces, as each option must stay on a single line.
+    Comments can still span multiple lines.
+
+  * network: interfaces: tighten validation of 'ovs_options' when writing the
+    configuration. Empty or whitespace-only values are now omitted instead of
+    writing a blank option line, non-empty values are only accepted on OVS
+    interfaces, and template tags are refused.
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 23 Nov 2026 04:17:48 +0100
+
 libpve-common-perl (9.2.14) trixie; urgency=medium
 
   * json schema: show the plain parameter name in errors, for example 'path'
